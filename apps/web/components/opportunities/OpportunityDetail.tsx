@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertCircle, Bookmark, BookmarkCheck, CalendarClock, Lock, MapPin, Monitor, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { Button, ButtonLink, Card, Notice, StatusPill, VerifiedBadge } from "../ui";
 import { WhenText, modeText, type OpportunitySummary } from "./OpportunityRow";
+import { miles } from "../../lib/format";
 
 export type OpportunityDetailData = OpportunitySummary & {
   description: string;
@@ -73,7 +74,7 @@ export default function OpportunityDetail({
             <span className="inline-flex items-center gap-1.5">
               {o.mode === "remote" ? <Monitor aria-hidden className="h-4 w-4" /> : <MapPin aria-hidden className="h-4 w-4" />}
               {o.mode === "remote" ? "Remote" : `${o.public_area || modeText(o.mode)}${o.mode === "hybrid" ? " · hybrid" : ""}`}
-              {o.distance_miles != null ? ` · ${o.distance_miles} mi away` : ""}
+              {o.distance_miles != null ? ` · ${miles(o.distance_miles)} away` : ""}
             </span>
             <span className="inline-flex items-center gap-1.5">
               {o.organization_slug ? (

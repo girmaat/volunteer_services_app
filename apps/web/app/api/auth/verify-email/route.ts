@@ -42,7 +42,8 @@ export async function GET(req: Request) {
     });
 
     if (meRes.ok) {
-      const me: any = await meRes.json().catch(() => null);
+      const body: any = await meRes.json().catch(() => null);
+      const me = body?.user ?? body; // /v1/me returns { user }
       const role = String(me?.role || "");
       const accountType = String(me?.account_type || "");
       const requesterMode = String(me?.requester_mode || "");

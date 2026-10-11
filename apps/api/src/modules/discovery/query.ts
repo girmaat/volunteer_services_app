@@ -57,7 +57,10 @@ const HELP_TO_CATEGORY: Record<string, string[]> = {
   community: ["events"],
   events: ["events"],
   errands: ["errands"],
-  companionship: ["companionship"]
+  companionship: ["companionship"],
+  skilled: ["skilled"],
+  "elderly-care": ["elderly-care"],
+  children: ["children"]
 };
 
 const DAY_CODES = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];

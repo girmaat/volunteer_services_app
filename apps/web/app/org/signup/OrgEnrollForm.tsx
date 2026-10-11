@@ -3,134 +3,128 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import authStyles from "../../(auth)/auth.module.css";
-import styles from "./page.module.css";
+import { MailCheck } from "lucide-react";
+import { buttonClass } from "../../../components/ui/Button";
 
 export type OrgEnrollState = {
   view: "form" | "sent";
-  orgName?: string;
-  orgSlug?: string;
+  values?: Record<string, string>;
   adminEmail?: string;
-  delivery?: string;
   verifyUrl?: string;
   error?: string;
-  info?: string;
 };
 
 type ServerAction = (prevState: OrgEnrollState, formData: FormData) => Promise<OrgEnrollState>;
 
-function SubmitButton({ children }: { children: string }) {
+const input = "h-11 w-full rounded border border-line-strong bg-surface px-3 text-base";
+const label = "text-sm font-semibold text-ink";
+
+function Submit() {
   const { pending } = useFormStatus();
   return (
-    <button className={authStyles.button} type="submit" disabled={pending} aria-disabled={pending}>
-      {pending ? "Working..." : children}
+    <button type="submit" disabled={pending} aria-busy={pending || undefined} className={buttonClass("primary", "lg", "w-full sm:w-auto")}>
+      {pending ? "Creating…" : "Create organization account"}
     </button>
   );
 }
 
+/** Logged-out organization sign-up: the organization basics and your account, in one short form. */
 export default function OrgEnrollForm({ action }: { action: ServerAction }) {
   const [state, formAction] = useActionState(action, { view: "form" });
+  const v = state.values ?? {};
 
   if (state.view === "sent") {
     return (
-      <div className={styles.stack}>
-        <p className={styles.success}>Account created. Please verify your email to continue.</p>
-        {state.info ? <p className={styles.note}>{state.info}</p> : null}
-
+      <div className="rounded-lg border border-line bg-surface p-6" role="status">
+        <MailCheck aria-hidden className="h-7 w-7 text-primary" />
+        <h2 className="m-0 mt-3 text-xl font-semibold">Check your email</h2>
+        <p className="m-0 mt-2 text-muted">
+          We sent a link to <strong className="text-ink">{state.adminEmail}</strong>. Open it to finish setting up your organization.
+        </p>
         {state.verifyUrl ? (
-          <p className={styles.note}>
-            Development only — verification link:{" "}
-            <a className={styles.link} href={state.verifyUrl}>
-              {state.verifyUrl}
-            </a>
+          <p className="m-0 mt-4 break-all rounded bg-wash p-3 text-sm">
+            Development only: <a href={state.verifyUrl}>verification link</a>
           </p>
         ) : null}
-
-        <p className={styles.note}>
-          Already verified? <Link prefetch={false} className={styles.link} href="/login">Log in</Link>
+        <p className="m-0 mt-4 text-sm text-muted">
+          Already verified?{" "}
+          <Link prefetch={false} href="/login" className="font-medium text-primary">
+            Log in
+          </Link>
         </p>
       </div>
     );
   }
 
   return (
-    <form action={formAction} className={styles.stack}>
-      {state.error ? <p className={styles.error}>{state.error}</p> : null}
+    <form action={formAction} className="grid gap-6">
+      {state.error ? (
+        <p role="alert" className="m-0 rounded border border-danger bg-danger-tint px-4 py-3 text-sm text-ink">
+          {state.error}
+        </p>
+      ) : null}
 
-      <div className={styles.card}>
-        <h2 className={styles.h2}>Create an organization</h2>
-
-        <label className={styles.field}>
-          Organization name
-          <input name="orgName" required minLength={2} defaultValue={state.orgName || ""}  className={authStyles.input} />
-        </label>
-
-        <label className={styles.field}>
-          Organization slug (URL-friendly)
-          <input
-            name="orgSlug"
-            required
-            minLength={2}
-            placeholder="e.g. city-food-bank"
-            defaultValue={state.orgSlug || ""}
-           className={authStyles.input} />
-        </label>
-
-        <label className={styles.field}>
-          Summary
-          <textarea name="orgSummary" required minLength={10} rows={3}  className={authStyles.textarea} />
-        </label>
-
-        <label className={styles.field}>
-          Location
-          <input name="orgLocation" required minLength={2} placeholder="City, State"  className={authStyles.input} />
-        </label>
-
-        <label className={styles.field}>
-          Contact email (used for domain-based joins)
-          <input name="orgContactEmail" type="email" required  className={authStyles.input} />
-        </label>
-
-        <label className={styles.field}>
-          Website URL (optional)
-          <input name="orgWebsiteUrl" type="url" placeholder="https://example.org"  className={authStyles.input} />
-        </label>
-
-        <label className={styles.field}>
-          Mission (optional)
-          <input name="orgMission"  className={authStyles.input} />
-        </label>
-      </div>
-
-      <div className={styles.card}>
-        <h2 className={styles.h2}>Admin account</h2>
-
-        <label className={styles.field}>
-          Full name
-          <input name="adminFullName" required minLength={2}  className={authStyles.input} />
-        </label>
-
-        <label className={styles.field}>
-          Admin email
-          <input name="adminEmail" type="email" required defaultValue={state.adminEmail || ""}  className={authStyles.input} />
-        </label>
-
-        <label className={styles.field}>
-          Password
-          <input name="password" type="password" required minLength={8}  className={authStyles.input} />
-        </label>
-
-        <label className={styles.field}>
-          Confirm password
-          <input name="confirmPassword" type="password" required minLength={8}  className={authStyles.input} />
-        </label>
-
-        <div className={styles.submitRow}>
-          <SubmitButton>Create org account</SubmitButton>
-          <p className={styles.note}>
-            Already have an account? <Link prefetch={false} className={styles.link} href="/login">Log in</Link>
+      <fieldset className="m-0 grid gap-4 rounded-lg border border-line bg-surface p-5 sm:p-6">
+        <legend className="px-1 text-base font-semibold">Your organization</legend>
+        <div className="grid gap-1.5">
+          <label htmlFor="org-name" className={label}>
+            Organization name
+          </label>
+          <input id="org-name" name="orgName" required minLength={2} defaultValue={v.orgName} autoComplete="organization" className={input} />
+        </div>
+        <div className="grid gap-1.5">
+          <label htmlFor="org-summary" className={label}>
+            What does it do?
+          </label>
+          <input id="org-summary" name="orgSummary" required minLength={10} maxLength={200} defaultValue={v.orgSummary} placeholder="e.g. A neighborhood food pantry serving Queens families" className={input} aria-describedby="org-summary-hint" />
+          <p id="org-summary-hint" className="m-0 text-sm text-muted">
+            One sentence. It appears under your name in search results.
           </p>
         </div>
+        <div className="grid gap-1.5">
+          <label htmlFor="org-loc" className={label}>
+            City or area
+          </label>
+          <input id="org-loc" name="orgLocation" required minLength={2} defaultValue={v.orgLocation} placeholder="e.g. Queens, NY" className={input} />
+        </div>
+      </fieldset>
+
+      <fieldset className="m-0 grid gap-4 rounded-lg border border-line bg-surface p-5 sm:p-6">
+        <legend className="px-1 text-base font-semibold">You</legend>
+        <div className="grid gap-1.5">
+          <label htmlFor="adm-name" className={label}>
+            Your name
+          </label>
+          <input id="adm-name" name="adminFullName" required autoComplete="name" defaultValue={v.adminFullName} className={input} />
+        </div>
+        <div className="grid gap-1.5">
+          <label htmlFor="adm-email" className={label}>
+            Work email
+          </label>
+          <input id="adm-email" name="adminEmail" type="email" required autoComplete="email" defaultValue={v.adminEmail} className={input} aria-describedby="adm-email-hint" />
+          <p id="adm-email-hint" className="m-0 text-sm text-muted">
+            You’ll sign in with this. Teammates with the same email domain can ask to join.
+          </p>
+        </div>
+        <div className="grid gap-1.5">
+          <label htmlFor="adm-pass" className={label}>
+            Password
+          </label>
+          <input id="adm-pass" name="password" type="password" required minLength={8} autoComplete="new-password" className={input} aria-describedby="adm-pass-hint" />
+          <p id="adm-pass-hint" className="m-0 text-sm text-muted">
+            At least 8 characters.
+          </p>
+        </div>
+      </fieldset>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="m-0 text-sm text-muted">
+          Already have a ThankYou account?{" "}
+          <Link prefetch={false} href="/login?returnTo=/org/signup" className="font-medium text-primary">
+            Log in to add an organization
+          </Link>
+        </p>
+        <Submit />
       </div>
     </form>
   );

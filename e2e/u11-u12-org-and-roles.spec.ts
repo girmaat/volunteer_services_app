@@ -1,36 +1,36 @@
-import { api, createUser, db, expect, PASSWORD, run, signedIn, submit, test, uniq, uniqEmail } from "./support";
+import { api, createUser, db, expect, expectAccessible, PASSWORD, run, signedIn, submit, test, uniq, uniqEmail } from "./support";
 
 // U11 · Org admin: sign up an org, submit verification, invite a team member, post a recurring
 // request, take attendance, export the roster.
 test("U11 org admin: sign up, verify, invite, recurring request, attendance, roster", async ({ page, browser }) => {
-  const slug = `riverside-${run}`;
   const orgName = `Riverside Mutual Aid ${run}`;
+  // One short form: no slug to invent, no separate contact email (it defaults to yours).
   await page.goto("/org/signup");
   await page.getByLabel("Organization name").fill(orgName);
-  await page.getByLabel(/Organization slug/).fill(slug);
-  await page.getByLabel("Summary").fill("Neighbors helping neighbors along the river.");
-  await page.getByLabel("Location").fill("Astoria, Queens, NY");
-  await page.getByLabel(/Contact email/).fill(`hello.${run}@example.test`);
-  await page.getByLabel("Full name").fill("Riley Admin");
-  await page.getByLabel("Admin email").fill(uniqEmail("riley"));
+  await page.getByLabel("What does it do?").fill("Neighbors helping neighbors along the river.");
+  await page.getByLabel("City or area").fill("Astoria, Queens, NY");
+  await page.getByLabel("Your name").fill("Riley Admin");
+  await page.getByLabel("Work email").fill(uniqEmail("riley"));
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create org account" }).click();
+  await page.getByRole("button", { name: "Create organization account" }).click();
+  await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
   const verify = page.locator('a[href*="verify-email?token="]').first();
   await expect(verify).toBeVisible();
   await page.goto((await verify.getAttribute("href"))!);
-  await expect(page).toHaveURL(/\/onboarding/); // verifying signs you in
 
-  // Onboarding: admin contact, then the organization profile.
-  await page.goto("/org/onboarding/admin");
-  await page.getByLabel("Full name").fill("Riley Admin");
-  await page.getByLabel("Phone").fill("718-555-0100");
-  await page.getByRole("button", { name: "Save admin profile" }).click();
-  await expect(page.getByRole("heading", { name: "Organization profile" })).toBeVisible();
-  await page.getByRole("button", { name: "Save organization profile" }).click();
-  await page.getByRole("button", { name: "Finish onboarding" }).click();
-  await expect(page).toHaveURL(/\/org\/dashboard/);
+  // Verifying signs you in and lands on one "finish setting up" page, prefilled from sign-up.
+  await expect(page).toHaveURL(/\/org\/onboarding$/);
+  await expect(page.getByRole("heading", { name: `Finish setting up ${orgName}` })).toBeVisible();
+  await expect(page.getByLabel("Your name")).toHaveValue("Riley Admin");
+  await expectAccessible(page, "/org/onboarding");
+  await page.getByLabel(/Phone/).fill("718-555-0100");
+  await page.getByRole("button", { name: "Go to Org Home" }).click();
+  await expect(page).toHaveURL(/\/org\/dashboard\?welcome=1/);
+  await expect(page.getByText("Your organization is set up.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Finish setting up" })).toBeVisible();
+  // The address was generated from the name.
+  const slug = (await db.query("SELECT slug FROM organizations WHERE name = $1", [orgName])).rows[0].slug as string;
+  expect(slug).toMatch(/^riverside-mutual-aid-/);
 
   // Verification.
   await page.goto("/org/settings");

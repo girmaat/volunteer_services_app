@@ -5,8 +5,9 @@ import { signUpAndOnboardVolunteer } from "./flows";
 // see Recommended with "why it matches".
 test("U2 new volunteer onboards and sees why opportunities match", async ({ page }) => {
   await signUpAndOnboardVolunteer(page);
-  await expect(page).toHaveURL(/\/volunteer\/dashboard/);
-  await expect(page.getByRole("heading", { name: "Picked for you" })).toBeVisible();
+  // Onboarding ends on a results screen, not an empty dashboard.
+  await expect(page.getByRole("heading", { name: /Here’s what we found for you/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Go to my home" })).toBeVisible();
 
   await page.goto("/volunteer/opportunities/recommended");
   const first = page.getByRole("region", { name: "Results" }).getByRole("listitem").first();

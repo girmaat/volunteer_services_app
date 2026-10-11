@@ -2,343 +2,165 @@ import { forwardHeaders } from "../../../lib/forward";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
-import authStyles from "../../(auth)/auth.module.css";
-import styles from "./page.module.css";
+import { Building2, Users } from "lucide-react";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
+import { Button, Notice } from "../../../components/ui";
 import OrgEnrollForm, { type OrgEnrollState } from "./OrgEnrollForm";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Register your organization", alternates: { canonical: "/org/signup" } };
 
-function safeMessage(err: any, fallback: string) {
-  const msg = String(err?.message || err?.error?.message || "").trim();
-  return msg ? msg : fallback;
+const input = "h-11 w-full rounded border border-line-strong bg-surface px-3 text-base";
+const label = "text-sm font-semibold text-ink";
+
+function message(err: unknown, fallback: string) {
+  const e = err as { message?: string; error?: { message?: string }; errors?: { fieldErrors?: Record<string, string[]> } } | null;
+  const field = e?.errors?.fieldErrors ? Object.values(e.errors.fieldErrors).flat()[0] : null;
+  return String(field || e?.error?.message || e?.message || fallback);
 }
 
-async function createOrgAction(formData: FormData) {
+/** Signed-in: start an organization from your existing account (your roles stay). */
+async function createOrgAction(fd: FormData) {
   "use server";
-
-  const payload = {
-    org: {
-      name: String(formData.get("name") || "").trim(),
-      slug: String(formData.get("slug") || "").trim(),
-      summary: String(formData.get("summary") || "").trim(),
-      location: String(formData.get("location") || "").trim(),
-      mission: String(formData.get("mission") || "").trim() || null,
-      website_url: String(formData.get("website_url") || "").trim() || null,
-      contact_email: String(formData.get("contact_email") || "").trim() || null
-    }
-  };
-
-  if (!payload.org.contact_email) {
-    redirect(`/org/signup?error=${encodeURIComponent("Contact email is required to enable org joins.")}`);
-  }
-
+  const s = (k: string) => String(fd.get(k) || "").trim();
   const res = await backendFetch("/v1/orgs/create", {
     method: "POST",
     headers: { "content-type": "application/json", ...(await forwardHeaders()) },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ org: { name: s("name"), summary: s("summary"), location: s("location") }, admin: { fullName: s("fullName") || undefined } }),
     cache: "no-store"
   });
-
-  if (res.status === 401) redirect("/login");
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    redirect(`/org/signup?error=${encodeURIComponent(safeMessage(err, "Create organization failed"))}`);
-  }
-
+  if (res.status === 401) redirect("/login?returnTo=/org/signup");
+  if (!res.ok) redirect(`/org/signup?error=${encodeURIComponent(message(await res.json().catch(() => null), "We couldn’t create the organization."))}`);
   redirect("/org/onboarding");
 }
 
-async function joinOrgAction(formData: FormData) {
+async function joinOrgAction(fd: FormData) {
   "use server";
-
-  const orgSlug = String(formData.get("orgSlug") || "").trim();
-  if (!orgSlug) redirect(`/org/signup?error=${encodeURIComponent("Organization slug is required")}`);
-
+  const orgSlug = String(fd.get("orgSlug") || "")
+    .trim()
+    .replace(/^.*\/organizations\//, "");
+  if (!orgSlug) redirect(`/org/signup?error=${encodeURIComponent("Paste the organization’s ThankYou address or name.")}`);
   const res = await backendFetch("/v1/orgs/join", {
     method: "POST",
     headers: { "content-type": "application/json", ...(await forwardHeaders()) },
     body: JSON.stringify({ orgSlug }),
     cache: "no-store"
   });
-
-  if (res.status === 401) redirect("/login");
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    redirect(`/org/signup?error=${encodeURIComponent(safeMessage(err, "Join failed"))}`);
-  }
-
-  // After joining, route based on org onboarding completion.
-  const me = await backendFetch("/v1/org/me", { method: "GET", cache: "no-store" });
-  if (me.ok) {
-    const ctx: any = await me.json().catch(() => null);
-    const done = Boolean(ctx?.org?.onboarding_completed);
-    redirect(done ? "/org/dashboard" : "/org/onboarding");
-  }
-
-  redirect("/org/onboarding");
+  if (res.status === 401) redirect("/login?returnTo=/org/signup");
+  if (!res.ok) redirect(`/org/signup?error=${encodeURIComponent(message(await res.json().catch(() => null), "We couldn’t add you to that organization."))}`);
+  redirect("/org/dashboard");
 }
 
-async function enrollAction(prevState: OrgEnrollState, formData: FormData): Promise<OrgEnrollState> {
+/** Logged-out: create the organization and its first admin together; then verify the email. */
+async function enrollAction(_prev: OrgEnrollState, fd: FormData): Promise<OrgEnrollState> {
   "use server";
-
-  const orgName = String(formData.get("orgName") || "").trim();
-  const orgSlug = String(formData.get("orgSlug") || "").trim();
-  const orgSummary = String(formData.get("orgSummary") || "").trim();
-  const orgLocation = String(formData.get("orgLocation") || "").trim();
-  const orgContactEmail = String(formData.get("orgContactEmail") || "").trim();
-  const orgWebsiteUrl = String(formData.get("orgWebsiteUrl") || "").trim();
-  const orgMission = String(formData.get("orgMission") || "").trim();
-
-  const adminFullName = String(formData.get("adminFullName") || "").trim();
-  const adminEmail = String(formData.get("adminEmail") || "").trim().toLowerCase();
-  const password = String(formData.get("password") || "");
-  const confirmPassword = String(formData.get("confirmPassword") || "");
-
-  if (!orgName || !orgSlug || !orgSummary || !orgLocation || !orgContactEmail) {
-    return {
-      view: "form",
-      orgName,
-      orgSlug,
-      adminEmail,
-      error: "Organization name, slug, summary, location, and contact email are required."
-    };
-  }
-
-  if (!adminFullName || !adminEmail) {
-    return {
-      view: "form",
-      orgName,
-      orgSlug,
-      adminEmail,
-      error: "Admin name and email are required."
-    };
-  }
-
-  if (password.length < 8) {
-    return {
-      view: "form",
-      orgName,
-      orgSlug,
-      adminEmail,
-      error: "Password must be at least 8 characters."
-    };
-  }
-
-  if (password !== confirmPassword) {
-    return {
-      view: "form",
-      orgName,
-      orgSlug,
-      adminEmail,
-      error: "Passwords do not match."
-    };
-  }
-
+  const values: Record<string, string> = {};
+  for (const k of ["orgName", "orgSummary", "orgLocation", "adminFullName", "adminEmail"]) values[k] = String(fd.get(k) || "").trim();
+  const password = String(fd.get("password") || "");
+  if (password.length < 8) return { view: "form", values, error: "Choose a password with at least 8 characters." };
   const res = await fetch(`${API_BASE_URL_SERVER}/v1/orgs/enroll`, {
     method: "POST",
     headers: { "content-type": "application/json", ...(await forwardHeaders()) },
     body: JSON.stringify({
-      org: {
-        name: orgName,
-        slug: orgSlug,
-        summary: orgSummary,
-        location: orgLocation,
-        contact_email: orgContactEmail,
-        website_url: orgWebsiteUrl || null,
-        mission: orgMission || null
-      },
-      admin: {
-        fullName: adminFullName,
-        email: adminEmail,
-        password
-      }
+      org: { name: values.orgName, summary: values.orgSummary, location: values.orgLocation },
+      admin: { fullName: values.adminFullName, email: values.adminEmail.toLowerCase(), password }
     }),
     cache: "no-store"
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    return {
-      view: "form",
-      orgName,
-      orgSlug,
-      adminEmail,
-      error: safeMessage(err, "Organization signup failed")
-    };
-  }
-
-  const data = await res.json().catch(() => ({}));
-  return {
-    view: "sent",
-    orgName,
-    orgSlug,
-    adminEmail,
-    delivery: String(data?.emailDelivery || ""),
-    verifyUrl: String(data?.dev_verify_url || ""),
-    info: "Check your inbox to verify your admin email address."
-  };
+  if (!res.ok) return { view: "form", values, error: message(await res.json().catch(() => null), "We couldn’t create the account. Try again.") };
+  const data = (await res.json().catch(() => ({}))) as { dev_verify_url?: string };
+  return { view: "sent", adminEmail: values.adminEmail, verifyUrl: data.dev_verify_url || "" };
 }
 
 export default async function Page(props: { searchParams?: Promise<{ error?: string }> }) {
-  const searchParams = await props.searchParams;
+  const sp = (await props.searchParams) || {};
   const user = await getCurrentUser();
-  const error = searchParams?.error ? String(searchParams.error) : "";
-
-  // If an org user already has org context, skip this page.
-  if (user) {
-    const accountType = String((user as any).account_type || "");
-    const isOrgTeamMember = user.role === "org_admin" || accountType === "org_team_member";
-
-    if (isOrgTeamMember) {
-      const orgRes = await backendFetch("/v1/org/me", { method: "GET", cache: "no-store" });
-      if (orgRes.ok) {
-        const ctx: any = await orgRes.json().catch(() => null);
-        const done = Boolean(ctx?.org?.onboarding_completed);
-        redirect(done ? "/org/dashboard" : "/org/onboarding");
-      }
-    }
-  }
+  // Already in an organization: go there.
+  if (user?.orgs?.length) redirect("/org/dashboard");
 
   return (
-    <section className={authStyles.page}>
-      <header className={authStyles.header}>
-        <h1 className={authStyles.title}>Organization setup</h1>
-        <p className={authStyles.subtitle}>
-          Create a new organization or join an existing one. This page is intentionally accessible even when org context
-          is missing.
-        </p>
-      </header>
+    <div className="mx-auto max-w-2xl">
+      <p className="m-0 text-sm font-semibold uppercase tracking-wide text-primary">For nonprofits and community groups</p>
+      <h1 className="m-0 mt-2 font-display text-3xl font-bold">Register your organization</h1>
+      <p className="m-0 mt-2 text-lg text-muted">Post volunteer opportunities, review applicants and track attendance. Free. Takes about two minutes.</p>
+      {sp.error ? (
+        <div className="mt-6">
+          <Notice tone="danger">{sp.error}</Notice>
+        </div>
+      ) : null}
 
-      <div className={styles.pageTight}>
-        {error ? <p className={styles.error}>{error}</p> : null}
-
+      <div className="mt-8">
         {user ? (
-          <div className={styles.stack}>
-            <div className={styles.note}>
-              Signed in as <strong>{user.email}</strong>.{" "}
-              <Link prefetch={false} className={styles.link} href="/settings">
-                Account settings
-              </Link>
-            </div>
-
-            {user.role === "requester" && String((user as any).requester_mode || "") !== "organization" ? (
-              <div className={styles.card}>
-                <h2 className={styles.h2}>Not an org requester yet</h2>
-                <p className={styles.note}>
-                  To create or join an organization, choose <strong>Requester (Organization)</strong> in onboarding.
-                </p>
-                <Link prefetch={false} className={styles.link} href="/onboarding">
-                  Go to onboarding
-                </Link>
+          <div className="grid gap-6">
+            <form action={createOrgAction} className="grid gap-4 rounded-lg border border-line bg-surface p-5 sm:p-6">
+              <h2 className="m-0 flex items-center gap-2 text-lg font-semibold">
+                <Building2 aria-hidden className="h-5 w-5 text-primary" /> Start a new organization
+              </h2>
+              <p className="m-0 -mt-2 text-sm text-muted">You’ll be its admin, signed in as {user.email}. Anything you already do on ThankYou stays as it is.</p>
+              <div className="grid gap-1.5">
+                <label htmlFor="c-name" className={label}>
+                  Organization name
+                </label>
+                <input id="c-name" name="name" required minLength={2} autoComplete="organization" className={input} />
               </div>
-            ) : null}
-
-            {!user.profile_completed ? (
-              <div className={styles.card}>
-                <h2 className={styles.h2}>Complete your profile first</h2>
-                <p className={styles.note}>Finish your personal profile so we can create or join your organization.</p>
-                <Link prefetch={false} className={styles.link} href="/onboarding">
-                  Continue onboarding
-                </Link>
+              <div className="grid gap-1.5">
+                <label htmlFor="c-sum" className={label}>
+                  What does it do?
+                </label>
+                <input id="c-sum" name="summary" required minLength={10} maxLength={200} placeholder="One sentence for search results" className={input} />
               </div>
-            ) : null}
-
-            <div className={styles.twoCol}>
-              <div className={styles.card}>
-                <h2 className={styles.h2}>Create organization</h2>
-                <p className={styles.note}>
-                  Create a new organization and become its admin. After creation you will continue to org onboarding.
-                </p>
-
-                <form action={createOrgAction} className={styles.stack}>
-                  <label className={styles.field}>
-                    Organization name
-                    <input name="name" required minLength={2}  className={authStyles.input} />
-                  </label>
-
-                  <label className={styles.field}>
-                    Organization slug
-                    <input name="slug" required minLength={2} placeholder="e.g. city-food-bank"  className={authStyles.input} />
-                  </label>
-
-                  <label className={styles.field}>
-                    Summary
-                    <textarea name="summary" required minLength={10} rows={3}  className={authStyles.textarea} />
-                  </label>
-
-                  <label className={styles.field}>
-                    Location
-                    <input name="location" required minLength={2} placeholder="City, State"  className={authStyles.input} />
-                  </label>
-
-                  <label className={styles.field}>
-                    Contact email (used for domain-based joins)
-                    <input name="contact_email" type="email" required  className={authStyles.input} />
-                  </label>
-
-                  <label className={styles.field}>
-                    Website URL (optional)
-                    <input name="website_url" type="url" placeholder="https://example.org"  className={authStyles.input} />
-                  </label>
-
-                  <label className={styles.field}>
-                    Mission (optional)
-                    <input name="mission"  className={authStyles.input} />
-                  </label>
-
-                  <div className={styles.submitRow}>
-                    <button className={authStyles.button} type="submit" disabled={!user.profile_completed}>
-                      Create organization
-                    </button>
-                  </div>
-                </form>
+              <div className="grid gap-1.5">
+                <label htmlFor="c-loc" className={label}>
+                  City or area
+                </label>
+                <input id="c-loc" name="location" required minLength={2} placeholder="e.g. Queens, NY" className={input} />
               </div>
-
-              <div className={styles.card}>
-                <h2 className={styles.h2}>Join organization</h2>
-                <p className={styles.note}>
-                  Join an existing organization if your email domain matches the organization&apos;s contact email domain
-                  (or website domain). If you need access but domains don&apos;t match, ask an admin to add you.
-                </p>
-
-                <form action={joinOrgAction} className={styles.stack}>
-                  <label className={styles.field}>
-                    Organization slug
-                    <input name="orgSlug" required minLength={2} placeholder="e.g. city-food-bank"  className={authStyles.input} />
+              {!user.display_name ? (
+                <div className="grid gap-1.5">
+                  <label htmlFor="c-you" className={label}>
+                    Your name
                   </label>
-
-                  <div className={styles.submitRow}>
-                    <button className={authStyles.button} type="submit" disabled={!user.profile_completed}>
-                      Join organization
-                    </button>
-                  </div>
-                </form>
+                  <input id="c-you" name="fullName" required autoComplete="name" className={input} />
+                </div>
+              ) : null}
+              <div>
+                <Button type="submit" size="lg">
+                  Create organization
+                </Button>
               </div>
-            </div>
+            </form>
 
-            <div className={styles.note}>
-              Want an individual volunteer/requester account instead?{" "}
-              <Link prefetch={false} className={styles.link} href="/onboarding">
-                Go to onboarding
-              </Link>
-            </div>
+            <form action={joinOrgAction} className="grid gap-3 rounded-lg border border-line bg-surface p-5 sm:p-6">
+              <h2 className="m-0 flex items-center gap-2 text-lg font-semibold">
+                <Users aria-hidden className="h-5 w-5 text-primary" /> Join your team’s organization
+              </h2>
+              <p className="m-0 -mt-1 text-sm text-muted">
+                Works when your email matches the organization’s domain. Otherwise, ask one of its admins to invite you from their Team page.
+              </p>
+              <div className="grid gap-1.5">
+                <label htmlFor="j-slug" className={label}>
+                  Organization’s ThankYou address
+                </label>
+                <input id="j-slug" name="orgSlug" required placeholder="e.g. thankyou.org/organizations/harbor-food-bank" className={input} />
+              </div>
+              <div>
+                <Button type="submit" variant="secondary">
+                  Ask to join
+                </Button>
+              </div>
+            </form>
           </div>
         ) : (
-          <div className={styles.stack}>
-            <div className={styles.card}>
-              <p className={styles.note}>
-                Already have an account? <Link prefetch={false} className={styles.link} href="/login">Log in</Link> to create or join an organization
-                from your existing profile.
-              </p>
-            </div>
-
-            <OrgEnrollForm action={enrollAction} />
-          </div>
+          <OrgEnrollForm action={enrollAction} />
         )}
       </div>
-    </section>
+
+      <p className="m-0 mt-8 text-sm text-muted">
+        Volunteering or asking for help as yourself?{" "}
+        <Link prefetch={false} href={user ? "/onboarding" : "/signup"} className="font-medium text-primary">
+          {user ? "Set up your personal account" : "Create a personal account"}
+        </Link>
+      </p>
+    </div>
   );
 }

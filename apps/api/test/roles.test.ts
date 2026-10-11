@@ -132,3 +132,33 @@ describe("org onboarding", () => {
     expect(u.rows[0].onboarding_completed).toBe(true);
   });
 });
+
+describe("organization sign-up", () => {
+  it("generates a unique address from the name and defaults the contact email", async () => {
+    const body = (n: number) => ({
+      org: { name: "Riverside Mutual Aid", summary: "Neighbors helping neighbors along the river.", location: "Astoria, NY" },
+      admin: { fullName: "Riley Admin", email: `riley.${n}@example.org`, password: "Long-Enough-123!" }
+    });
+    const a = await anon().post("/v1/orgs/enroll").send(body(1));
+    expect(a.status, JSON.stringify(a.body)).toBe(202);
+    const b = await anon().post("/v1/orgs/enroll").send(body(2));
+    expect(a.body.org.slug).toBe("riverside-mutual-aid");
+    expect(b.body.org.slug).toBe("riverside-mutual-aid-2");
+    const org = await pool.query("SELECT contact_email FROM organizations WHERE slug = 'riverside-mutual-aid'");
+    expect(org.rows[0].contact_email).toBe("riley.1@example.org");
+    // Org-only accounts aren't held at a personal verification step.
+    const u = await pool.query("SELECT onboarding_completed, verification_required FROM users WHERE email = 'riley.1@example.org'");
+    expect(u.rows[0]).toMatchObject({ onboarding_completed: true, verification_required: false });
+  });
+
+  it("a volunteer can start an organization and keeps volunteering", async () => {
+    await createUser({ email: "vol.founder@thankyou.test", roles: ["volunteer"] });
+    const v = await as("vol.founder@thankyou.test");
+    const r = await v.post("/v1/orgs/create", { org: { name: "Founder Food Share", summary: "A small food share run by neighbors.", location: "Queens, NY" } });
+    expect(r.status, JSON.stringify(r.body)).toBe(201);
+    const me = await v.get("/v1/me");
+    expect(me.body.user.roles).toContain("volunteer");
+    expect(me.body.user.orgs.map((o: { slug: string }) => o.slug)).toContain(r.body.org.slug);
+    expect(me.body.user.active_context).toBe(`org:${r.body.org.slug}`);
+  });
+});

@@ -64,7 +64,7 @@ export function profileHref(ctx: AppContext) {
 /** Public paths under /org that are reachable before an organization exists. */
 export const PUBLIC_ORG_PATHS = ["/org/signup", "/org/invite", "/org/enroll"];
 /** Areas that render the signed-in app shell (their layouts render it). */
-export const APP_AREAS = ["/volunteer", "/requester", "/org", "/settings", "/admin", "/inbox"];
+export const APP_AREAS = ["/volunteer", "/requester", "/org", "/settings", "/admin", "/inbox", "/notifications"];
 
 /** The default context for a signed-in user (used by shared areas such as Settings). */
 export function defaultContext(user: { role?: string | null; active_context?: string | null; is_platform_admin?: boolean }): AppContext {

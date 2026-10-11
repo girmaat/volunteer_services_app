@@ -28,9 +28,13 @@ test("U8 reminder → confirm attendance, ICS, late cancel promotes the waitlist
   expect(email.rows.map((r) => r.subject).join()).toContain(title);
 
   const v = await signedIn(browser, ada.email);
-  await v.page.goto("/settings/notifications");
-  await v.page.getByRole("link", { name: new RegExp(`${title}.*starts in 2 days`) }).click();
+  // From the bell: the menu lists it unread; opening it deep-links and marks it read.
+  await v.page.goto("/volunteer/dashboard");
+  await v.page.getByRole("button", { name: /Notifications, \d+ unread/ }).click();
+  await v.page.getByRole("menuitem", { name: new RegExp(`${title}.*starts in 2 days`) }).click();
   await expect(v.page).toHaveURL(new RegExp(`/volunteer/applications/${a.applicationId}`));
+  const read = await db.query("SELECT read_at FROM notifications WHERE user_id = $1 AND type = 'attendance_reminder'", [ada.id]);
+  expect(read.rows[0].read_at).toBeTruthy();
   await submit(v.page, v.page.getByRole("button", { name: "I'm still coming" }));
   await expect(v.page.getByText("Thanks for confirming").first()).toBeVisible();
 
@@ -107,8 +111,8 @@ test("U9 complete, double-blind reviews appear only when both are in", async ({ 
   await expect(v.page.getByText("Careful, tidy work.")).toBeVisible();
 });
 
-// U10 · Volunteer: the Impact page shows hours, tasks and outcomes; export CSV.
-test("U10 impact page shows hours, tasks and outcomes and exports CSV", async ({ browser }) => {
+// U10 · Volunteer: the Impact page shows totals and completed work, takes a note; export CSV.
+test("U10 impact page shows completed work, takes a note and exports CSV", async ({ browser }) => {
   const owner = await createUser({ name: "Iris Owner", roles: ["requester"] });
   const vol = await createUser({ name: `Ian${run} Impact`, roles: ["volunteer"] });
   const title = uniq("Sort a little free library");
@@ -120,8 +124,25 @@ test("U10 impact page shows hours, tasks and outcomes and exports CSV", async ({
 
   const { page } = await signedIn(browser, vol.email);
   await page.goto("/volunteer/history");
-  for (const h of ["Hours", "Tasks", "Outcomes"]) await expect(page.getByRole("heading", { name: h, exact: true })).toBeVisible();
-  await expect(page.locator("main")).toContainText(title);
+  // One page: totals, the timeline of completed work, badges and reviews.
+  await expect(page.getByRole("heading", { name: "Your volunteering" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Badges" })).toBeVisible();
+  await expect(page.locator("main")).toContainText("Hours given");
+  const item = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: title }) });
+  await expect(item).toContainText("2 h (from the schedule)");
+
+  // An optional note, with corrected hours, folds into that item and replaces the estimate.
+  await item.getByText("Add a note or correct the hours").click();
+  await item.getByLabel(/What happened/).fill("Shelved 40 books.");
+  await item.getByLabel(/Hours/).fill("3");
+  await submit(page, item.getByRole("button", { name: "Save" }));
+  await expect(page.getByText("Saved to your impact.")).toBeVisible();
+  await expect(item).toContainText("Shelved 40 books.");
+  await expect(item).toContainText("3 h");
+
+  // The old tab URLs land on the right section.
+  await page.goto("/volunteer/history/hours");
+  await expect(page).toHaveURL(/\/volunteer\/history#hours$/);
 
   const href = await page.getByRole("link", { name: /CSV/ }).getAttribute("href");
   const res = await page.request.get(href!);
@@ -131,4 +152,5 @@ test("U10 impact page shows hours, tasks and outcomes and exports CSV", async ({
   const csv = await res.text();
   expect(csv.split("\n")[0]).toMatch(/title|date|hours/i);
   expect(csv).toContain(title);
+  expect(csv).toContain("Shelved 40 books.");
 });

@@ -5,6 +5,7 @@ import { requireVolunteerUser } from "../../middleware/auth";
 import { illustrateRows } from "./helpers";
 import { pool } from "../../lib/db";
 import { computeBadges } from "./badges";
+import { totalHours } from "./impact";
 import { wrap } from "../../lib/http";
 
 export function registerVolunteerHistoryRoutes(app: Express) {
@@ -45,33 +46,20 @@ app.get(
       [user.id]
     );
 
-    // Completed opportunities count toward hours automatically (commitment length, else the
-    // request's duration), unless the volunteer logged hours for that request themselves.
-    const done = await pool.query(
-      `SELECT a.id AS application_id, r.id AS request_id, r.title, COALESCE(a.completed_at, a.updated_at) AS completed_at,
-              ROUND(COALESCE(EXTRACT(EPOCH FROM (c.end_at - c.start_at)) / 3600, r.duration_minutes / 60.0, 1)::numeric, 2)::float AS hours,
-              EXISTS (SELECT 1 FROM volunteer_impact_entries i WHERE i.volunteer_user_id = $1 AND i.request_id = r.id)
-                OR EXISTS (SELECT 1 FROM volunteer_task_entries t WHERE t.volunteer_user_id = $1 AND t.request_id = r.id) AS logged
-         FROM request_applications a
-         JOIN service_requests r ON r.id = a.request_id
-         LEFT JOIN LATERAL (SELECT start_at, end_at FROM request_commitments c
-                             WHERE c.request_id = a.request_id AND c.volunteer_user_id = a.volunteer_user_id AND c.end_at IS NOT NULL
-                             ORDER BY c.updated_at DESC LIMIT 1) c ON TRUE
-        WHERE a.volunteer_user_id = $1 AND a.status = 'completed'
-        ORDER BY COALESCE(a.completed_at, a.updated_at) DESC`,
-      [user.id]
-    );
-    const completedHours = done.rows.filter((d) => !d.logged).reduce((n, d) => n + Number(d.hours || 0), 0);
-    const totalHours = Number(impact.rows[0]?.hours || 0) + Number(tasks.rows[0]?.hours || 0) + completedHours;
+    // Completed engagements count toward hours (what they logged for it, else the scheduled
+    // length), plus anything logged that isn't tied to a completed engagement.
+    const { work, hours: allHours } = await totalHours(user.id);
+    const completedHours = work.filter((w) => w.auto_hours).reduce((n, w) => n + w.hours, 0);
+    const done = { rows: work };
 
     return res.json({
-      recent_completed: done.rows.slice(0, 5).map(({ logged: _l, ...d }) => d),
+      recent_completed: done.rows.slice(0, 5).map((d) => ({ application_id: d.application_id, title: d.title, completed_at: d.completed_at, hours: d.hours })),
       completed_hours: completedHours,
       completed_count: completed.rows[0]?.count ?? 0,
       impact_count: impact.rows[0]?.count ?? 0,
       tasks_count: tasks.rows[0]?.count ?? 0,
       outcomes_count: outcomes.rows[0]?.count ?? 0,
-      total_hours: totalHours
+      total_hours: allHours
     });
   })
 );
@@ -475,6 +463,68 @@ app.post(
     );
 
     return res.json({ ok: true });
+  })
+);
+
+// The Impact page in one call: totals, completed work (with any notes they logged), badges and
+// what people said.
+app.get(
+  "/v1/volunteer/impact",
+  wrap(async (req, res) => {
+    const user = await requireVolunteerUser(req, res);
+    if (!user) return;
+    const uid = String(user.id);
+    const [{ work, hours }, notes, badgeState, reviews] = await Promise.all([
+      totalHours(uid),
+      pool.query(
+        `SELECT id, 'note' AS kind, request_id, impact_date AS date, hours::float AS hours, notes AS text, NULL::text AS quantity FROM volunteer_impact_entries WHERE volunteer_user_id = $1
+         UNION ALL
+         SELECT id, 'task', request_id, task_date, duration_hours::float, task, NULL FROM volunteer_task_entries WHERE volunteer_user_id = $1
+         UNION ALL
+         SELECT id, 'outcome', request_id, outcome_date, NULL, outcome, NULLIF(TRIM(CONCAT(quantity, ' ', unit)), '') FROM volunteer_outcome_entries WHERE volunteer_user_id = $1
+         ORDER BY date DESC`,
+        [uid]
+      ),
+      computeBadges(uid),
+      pool.query(
+        `SELECT vr.rating, vr.comment, vr.created_at, r.title AS request_title,
+                COALESCE(o.name, NULLIF(p.display_name, ''), 'Member') AS reviewer_name
+           FROM visible_volunteer_reviews vr
+           LEFT JOIN service_requests r ON r.id = vr.request_id
+           LEFT JOIN organizations o ON o.slug = r.requester_org_slug
+           LEFT JOIN user_profiles p ON p.user_id = vr.reviewer_user_id
+          WHERE vr.volunteer_user_id = $1
+          ORDER BY vr.created_at DESC`,
+        [uid]
+      )
+    ]);
+    const byRequest = new Map<string, unknown[]>();
+    const other: unknown[] = [];
+    for (const n of notes.rows) {
+      const item = { id: n.id, kind: n.kind, date: n.date ? new Date(n.date).toISOString().slice(0, 10) : null, hours: n.hours, text: n.text, quantity: n.quantity };
+      if (n.request_id && work.some((w) => w.request_id === n.request_id)) {
+        const k = String(n.request_id);
+        byRequest.set(k, [...(byRequest.get(k) ?? []), item]);
+      } else other.push(item);
+    }
+    const ratings = reviews.rows.map((r) => Number(r.rating || 0));
+    return res.json({
+      totals: {
+        hours,
+        completed: work.length,
+        organizations: new Set(work.filter((w) => w.org_slug).map((w) => w.org_slug)).size,
+        people: new Set(work.filter((w) => w.requester_user_id).map((w) => w.requester_user_id)).size,
+        badges: badgeState.badges.filter((b: { earned: boolean }) => b.earned).length
+      },
+      timeline: work.map(({ requester_user_id: _r, org_slug: _o, ...w }) => ({ ...w, notes: byRequest.get(w.request_id) ?? [] })),
+      other_notes: other,
+      badges: badgeState.badges,
+      reviews: {
+        count: ratings.length,
+        average: ratings.length ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10 : null,
+        latest: reviews.rows.slice(0, 3)
+      }
+    });
   })
 );
 }

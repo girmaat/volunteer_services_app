@@ -305,9 +305,11 @@ export function registerOrgTeamRoutes(app: Express) {
           `UPDATE users
              SET role='org_admin',
                  account_type='org_team_member',
+                 profile_completed=TRUE,
+                 availability_completed=TRUE,
                  onboarding_completed=TRUE,
-                 verification_required=TRUE,
-                 verification_status='required',
+                 verification_required=FALSE,
+                 verification_status='not_required',
                  updated_at=NOW()
            WHERE id=$1`,
           [String((user as any).id)]

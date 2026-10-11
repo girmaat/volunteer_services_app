@@ -203,3 +203,37 @@ layouts and called the API several times).
   (org settings, admin) still rely on the API's validation for errors.
 - Dev-only audit findings: `braces` (via eslint-config-next, no fix published) and `postcss-selector-parser`
   (via Tailwind 3). Production dependencies: no known vulnerabilities.
+
+## UX pass: onboarding, org sign-up, notifications, Impact (2026-10-11)
+
+1. **Sign-up / onboarding is a short stepper** (`/onboarding?step=role|about|interests|schedule|needs`).
+   Radio cards for "help / need a hand / organization", chips for kinds of help, skills and causes,
+   the time zone pre-set from the browser, Sat/Sun pre-picked, only the name required. Interests can be
+   skipped. It ends on `/onboarding/welcome`: four recommended opportunities (volunteers) or an
+   "Ask for help" start (requesters) instead of an empty dashboard. The header shows "Finish setting up"
+   until it's done.
+2. **Org sign-up is one form** (organization name, what it does, city; your name, work email,
+   password). The address (slug) is generated from the name and the contact email defaults to yours.
+   Verifying lands on a single "Finish setting up {org}" page, prefilled, then Org Home with a welcome
+   toast. Signed-in people can start or join an organization from `/org/signup`; a volunteer who starts
+   one keeps volunteering. Org admins and invited teammates are no longer left with onboarding marked
+   incomplete. The old `/org/onboarding/admin` and `/organization` URLs redirect.
+3. **Notifications**: the bell opens a panel with the latest eight, unread dots, "Mark all read" and
+   "See all". `/notifications` has All/Unread, Today/Yesterday/This week/Earlier groups and "Show
+   older". Every item opens through `/notifications/open/:id`, which marks it read and deep-links to
+   the thing it is about (new `GET /v1/notifications/:id`). Settings → Notifications is now only the
+   email/in-app preferences.
+4. **Impact is one page** (`/volunteer/history`): totals, a timeline of completed work, an optional
+   note or corrected hours on each item, badges with progress to the next one, reviews, CSV export
+   and Share. New `GET /v1/volunteer/impact`. Hours come from one place (`modules/volunteer/impact.ts`):
+   logged hours for an engagement replace the scheduled estimate instead of adding to it, so the page,
+   the summary, badges and the CSV agree (the CSV used to count both). The old tab URLs redirect to
+   the matching section.
+5. Small fixes found on the way: distances are rounded ("3.1 mi", "under a mile" — the dashboard
+   showed 3.132485859088846 mi); the verify-email redirect read the wrong `/v1/me` shape and sent org
+   admins to volunteer onboarding.
+
+Checks: 1,616 API tests pass (new: impact totals/notes/CSV, notification detail, org slug generation,
+volunteer starting an org); 18 E2E tests pass on two consecutive runs, updated for the new flows; the
+axe/375 px gate now also covers `/org/signup`, the onboarding steps, `/onboarding/welcome`,
+`/notifications`, `/volunteer/history` and `/org/onboarding`. Replaced files are copied to `.retired/`.

@@ -6,17 +6,8 @@ import { Button, Notice } from "../../../components/ui";
 
 export const dynamic = "force-dynamic";
 
-type Item = { id: string; type: string; title: string; body: string; href: string | null; created_at: string; read_at: string | null };
 type Pref = { type: string; label: string; email: boolean; in_app: boolean };
 
-const when = (iso: string) => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-
-async function markAllRead() {
-  "use server";
-  await backendFetch("/v1/notifications/read", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ all: true }) });
-  revalidatePath("/settings/notifications");
-  redirect("/settings/notifications");
-}
 
 async function savePreferences(fd: FormData) {
   "use server";
@@ -28,45 +19,18 @@ async function savePreferences(fd: FormData) {
 
 export default async function Page(props: { searchParams?: Promise<{ saved?: string; error?: string }> }) {
   const sp = (await props.searchParams) || {};
-  const [n, p] = await Promise.all([backendFetch("/v1/notifications?limit=50"), backendFetch("/v1/notifications/preferences")]);
-  const list = n.ok ? ((await n.json()) as { notifications: Item[]; unread_count: number }) : null;
+  const p = await backendFetch("/v1/notifications/preferences");
   const prefs = p.ok ? ((await p.json()) as { preferences: Pref[] }).preferences : [];
 
   return (
     <div className="grid gap-10">
-      <section id="recent" aria-labelledby="recent-h">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 id="recent-h" className="m-0 text-lg">
-            Notifications {list?.unread_count ? <span className="text-sm font-normal text-muted">· {list.unread_count} unread</span> : null}
-          </h2>
-          {list?.unread_count ? (
-            <form action={markAllRead}>
-              <Button type="submit" size="sm" variant="secondary">
-                Mark all as read
-              </Button>
-            </form>
-          ) : null}
-        </div>
-        {!list ? <Notice tone="danger">Notifications couldn&apos;t load.</Notice> : null}
-        {list && !list.notifications.length ? <p className="m-0 mt-3 text-muted">Nothing yet. We&apos;ll let you know when something happens.</p> : null}
-        {list?.notifications.length ? (
-          <ul className="m-0 mt-3 border-t border-line p-0">
-            {list.notifications.map((x) => (
-              <li key={x.id} className="list-none border-b border-line">
-                <Link prefetch={false} href={x.href || "#"} className="flex items-start gap-3 px-1 py-3 text-ink no-underline hover:text-ink">
-                  <span aria-hidden className={`mt-2 h-2 w-2 shrink-0 rounded-full ${x.read_at ? "bg-transparent" : "bg-sun"}`} />
-                  <span className="min-w-0">
-                    <span className={x.read_at ? "" : "font-semibold"}>{x.title}</span>
-                    {x.read_at ? null : <span className="sr-only"> (unread)</span>}
-                    {x.body ? <span className="block text-sm text-muted">{x.body}</span> : null}
-                    <span className="block text-xs text-muted">{when(x.created_at)}</span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </section>
+      <p className="m-0 text-sm text-muted">
+        Your notifications are on{" "}
+        <Link prefetch={false} href="/notifications" className="font-medium text-primary">
+          the Notifications page
+        </Link>{" "}
+        (and under the bell). Here you choose what we email you.
+      </p>
 
       <section id="preferences" aria-labelledby="prefs-h">
         <h2 id="prefs-h" className="m-0 text-lg">

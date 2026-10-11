@@ -8,7 +8,7 @@ import { Logo } from "./Logo";
 import { buttonClass } from "../ui/Button";
 import { cn } from "../../lib/cn";
 
-type SessionUser = { role: string | null; is_platform_admin: boolean } | null;
+type SessionUser = { role: string | null; is_platform_admin: boolean; onboarding_completed?: boolean; has_org?: boolean } | null;
 
 const LINKS = [
   { href: "/opportunities", label: "Opportunities" },
@@ -38,9 +38,15 @@ export default function MarketingHeader() {
     user === undefined ? (
       <span className="inline-block h-10 w-40" aria-hidden />
     ) : user ? (
-      <Link className={buttonClass("primary", "md")} href={user.is_platform_admin ? "/admin" : "/dashboard"}>
-        Go to my dashboard
-      </Link>
+      user.onboarding_completed === false && !user.has_org && !user.is_platform_admin ? (
+        <Link className={buttonClass("primary", "md")} href="/onboarding">
+          Finish setting up
+        </Link>
+      ) : (
+        <Link className={buttonClass("primary", "md")} href={user.is_platform_admin ? "/admin" : "/dashboard"}>
+          Go to my dashboard
+        </Link>
+      )
     ) : (
       <>
         <Link className={buttonClass("ghost", "md")} href="/login">

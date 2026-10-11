@@ -94,4 +94,20 @@ export function registerNotificationRoutes(app: Express) {
   });
   app.get("/v1/notifications/unsubscribe", unsubscribe);
   app.post("/v1/notifications/unsubscribe", unsubscribe);
+
+  // Registered last so it never shadows the fixed paths above.
+  // One notification (its link), for "open and mark read".
+  app.get(
+    "/v1/notifications/:id",
+    wrap(async (req, res) => {
+      const user = await requireAuthedUser(req, res);
+      if (!user) return;
+      const id = z.string().uuid().safeParse(req.params.id);
+      if (!id.success) return res.status(400).json({ message: "Invalid id" });
+      const r = await pool.query("SELECT id, type, title, body, href, created_at, read_at FROM notifications WHERE id = $1 AND user_id = $2", [id.data, user.id]);
+      if (!r.rowCount) return res.status(404).json({ message: "Notification not found" });
+      return res.json(r.rows[0]);
+    })
+  );
+
 }

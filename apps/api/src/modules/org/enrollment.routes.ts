@@ -10,6 +10,17 @@ import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { authHeaderToken, buildInsertSql, buildUpdateSql, getOrgContextForUser, getPublicColumns, pgErrorCode, publicTableExists, requireAdmin, requireOrg, slugifyOrgSlug, webBaseUrl } from "./context";
 
+/** A free slug for a new organization: "riverside-mutual-aid", then "-2", "-3"… */
+async function uniqueOrgSlug(name: string) {
+  const base = slugifyOrgSlug(name).slice(0, 60) || "organization";
+  const taken = new Set(
+    (await pool.query("SELECT slug FROM organizations WHERE slug = $1 OR slug LIKE $2", [base, `${base}-%`])).rows.map((r) => String(r.slug))
+  );
+  if (!taken.has(base)) return base;
+  for (let i = 2; i < 1000; i++) if (!taken.has(`${base}-${i}`)) return `${base}-${i}`;
+  return `${base}-${Date.now().toString(36)}`;
+}
+
 export function registerOrgEnrollmentRoutes(app: Express) {
 
   // Legacy endpoint (removed by orgReq)
@@ -22,13 +33,15 @@ export function registerOrgEnrollmentRoutes(app: Express) {
     wrap(async (req: any, res: any) => {
       const schema = z.object({
         org: z.object({
-          name: z.string().min(2),
-          slug: z.string().min(2),
-          summary: z.string().min(10),
-          location: z.string().min(2),
+          name: z.string().trim().min(2),
+          // Optional: generated from the name (and made unique) when left out.
+          slug: z.string().min(2).optional().nullable(),
+          summary: z.string().trim().min(10, "Describe what your organization does in a sentence"),
+          location: z.string().trim().min(2),
           mission: z.string().min(2).optional().nullable(),
           website_url: HttpUrl.optional().nullable(),
-          contact_email: z.string().email()
+          // Optional: defaults to the admin's email.
+          contact_email: z.string().email().optional().nullable()
         }),
         admin: z.object({
           fullName: z.string().min(1),
@@ -40,10 +53,10 @@ export function registerOrgEnrollmentRoutes(app: Express) {
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
-      const orgSlug = slugifyOrgSlug(parsed.data.org.slug);
-      if (!orgSlug) return res.status(400).json({ message: "Invalid org slug" });
-
       const email = parsed.data.admin.email.toLowerCase().trim();
+      const orgSlug = parsed.data.org.slug ? slugifyOrgSlug(parsed.data.org.slug) : await uniqueOrgSlug(parsed.data.org.name);
+      if (!orgSlug) return res.status(400).json({ message: "Invalid org slug" });
+      const contactEmail = parsed.data.org.contact_email || email;
 
       const existingUser = await pool.query("SELECT id, email_verified_at FROM users WHERE email=$1", [email]);
       if ((existingUser.rowCount ?? 0) > 0) return res.status(409).json({ message: "Email already in use" });
@@ -55,8 +68,10 @@ export function registerOrgEnrollmentRoutes(app: Express) {
 
       // Create user (org team member)
       const userRows = await pool.query(
+        // Org-only account: no volunteer/requester profile to fill in. Verification belongs to the
+        // organization (organizations.verification_status), not to the person.
         `INSERT INTO users (email, password_hash, role, account_type, profile_completed, availability_completed, onboarding_completed, verification_required, verification_status)
-         VALUES ($1, $2, 'org_admin', 'org_team_member', TRUE, FALSE, TRUE, TRUE, 'required')
+         VALUES ($1, $2, 'org_admin', 'org_team_member', TRUE, TRUE, TRUE, FALSE, 'not_required')
          RETURNING id`,
         [email, passwordHash]
       );
@@ -80,7 +95,7 @@ export function registerOrgEnrollmentRoutes(app: Express) {
           parsed.data.org.location,
           parsed.data.org.mission ?? null,
           parsed.data.org.website_url ?? null,
-          parsed.data.org.contact_email,
+          contactEmail,
           userId
         ]
       );
@@ -117,7 +132,7 @@ If you didn't create this account, you can ignore this email.`
 
       const dev_verify_url = devEmailLink(verifyUrl, delivery.delivery);
 
-      return res.status(202).json({ status: "accepted", emailDelivery: delivery.delivery, dev_verify_url });
+      return res.status(202).json({ status: "accepted", org: { slug: orgSlug }, emailDelivery: delivery.delivery, dev_verify_url });
     })
   );
 
@@ -132,35 +147,27 @@ If you didn't create this account, you can ignore this email.`
       const user = await requireUserBySession(pool, token);
       if (!user) return res.status(401).json({ message: "Not authenticated" });
 
-      // Only authenticated, verified accounts in the requester onboarding flow may create an org this way.
-      if (String((user as any).role || "") !== "requester") {
-        return res.status(403).json({ message: "Forbidden" });
-      }
-
-      if (String((user as any).requester_mode || "") !== "organization") {
-        return res.status(400).json({ message: "Requester mode must be 'organization' to create an org" });
-      }
-
-      if (!(user as any).profile_completed) {
-        return res.status(400).json({ message: "Complete your profile before creating an organization" });
-      }
+      // Any signed-in person with a verified email can start an organization. Their volunteer or
+      // requester roles stay; organization access comes from the membership.
+      if (!(user as any).email_verified_at) return res.status(403).json({ message: "Verify your email first" });
 
       const schema = z.object({
         org: z.object({
-          name: z.string().min(2),
-          slug: z.string().min(2),
-          summary: z.string().min(10),
-          location: z.string().min(2),
+          name: z.string().trim().min(2),
+          slug: z.string().min(2).optional().nullable(),
+          summary: z.string().trim().min(10, "Describe what your organization does in a sentence"),
+          location: z.string().trim().min(2),
           mission: z.string().min(2).optional().nullable(),
           website_url: HttpUrl.optional().nullable(),
-          contact_email: z.string().email()
-        })
+          contact_email: z.string().email().optional().nullable()
+        }),
+        admin: z.object({ fullName: z.string().trim().min(1).optional(), phone: z.string().trim().max(40).optional() }).optional()
       });
 
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
-      const orgSlug = slugifyOrgSlug(parsed.data.org.slug);
+      const orgSlug = parsed.data.org.slug ? slugifyOrgSlug(parsed.data.org.slug) : await uniqueOrgSlug(parsed.data.org.name);
       if (!orgSlug) return res.status(400).json({ message: "Invalid org slug" });
 
       const client = await pool.connect();
@@ -206,7 +213,7 @@ If you didn't create this account, you can ignore this email.`
             location: parsed.data.org.location,
             mission: parsed.data.org.mission ?? null,
             website_url: parsed.data.org.website_url ?? null,
-            contact_email: parsed.data.org.contact_email,
+            contact_email: parsed.data.org.contact_email || String((user as any).email),
             created_by_user_id: String((user as any).id),
             verification_required: true,
             verification_status: "required",
@@ -235,23 +242,26 @@ If you didn't create this account, you can ignore this email.`
         // Use ON CONFLICT DO NOTHING to be tolerant of varying constraint names.
         await client.query(`${memberInsert.sql} ON CONFLICT DO NOTHING`, memberInsert.params);
 
-        // Convert account to org admin (mutually exclusive from individual requester)
-        const userUpdate = buildUpdateSql(
-          "users",
-          "id",
-          String((user as any).id),
-          {
-            role: "org_admin",
-            account_type: "org_team_member",
-            verification_required: true,
-            verification_status: "required",
-            updated_at: new Date()
-          },
-          userCols,
-          ["id", "role"]
-        );
-
-        await client.query(userUpdate.sql, userUpdate.params);
+        // An account with no volunteer/requester role becomes an org-only account; anyone else keeps
+        // their roles and gains the organization as another context.
+        const roles = await client.query("SELECT 1 FROM user_roles WHERE user_id = $1 LIMIT 1", [String((user as any).id)]);
+        if (!roles.rowCount) {
+          await client.query(
+            `UPDATE users SET role = 'org_admin', account_type = 'org_team_member', profile_completed = TRUE, availability_completed = TRUE,
+                    onboarding_completed = TRUE, verification_required = FALSE, verification_status = 'not_required', updated_at = NOW()
+              WHERE id = $1`,
+            [String((user as any).id)]
+          );
+        }
+        if (parsed.data.admin?.fullName || parsed.data.admin?.phone) {
+          await client.query(
+            `INSERT INTO user_profiles (user_id, full_name, phone) VALUES ($1, $2, $3)
+             ON CONFLICT (user_id) DO UPDATE SET full_name = COALESCE(EXCLUDED.full_name, user_profiles.full_name), phone = COALESCE(EXCLUDED.phone, user_profiles.phone), updated_at = NOW()`,
+            [String((user as any).id), parsed.data.admin?.fullName ?? null, parsed.data.admin?.phone ?? null]
+          );
+        }
+        await client.query("UPDATE sessions SET active_context = $2 WHERE session_token = $1::uuid", [token, `org:${orgSlug}`]);
+        void userCols;
 
         await client.query("COMMIT");
         return res.status(201).json({ org: { slug: orgSlug } });
@@ -294,21 +304,8 @@ app.post(
     const user = await requireUserBySession(pool, token);
     if (!user) return res.status(401).json({ message: "Not authenticated" });
 
-    const role = String((user as any).role || "");
-    const requesterMode = String((user as any).requester_mode || "");
-
-    // Only org-requester accounts (requester_mode=organization) or existing org_admin accounts may join.
-    if (role === "requester") {
-      if (requesterMode !== "organization") {
-        return res.status(400).json({ message: "Requester mode must be 'organization' to join an organization" });
-      }
-    } else if (role !== "org_admin") {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
-    if (!(user as any).profile_completed) {
-      return res.status(400).json({ message: "Complete your profile before joining an organization" });
-    }
+    // Any signed-in person with a verified email may join (their own roles stay).
+    if (!(user as any).email_verified_at) return res.status(403).json({ message: "Verify your email first" });
 
     // No switching: if already active in any org, block join.
     const existing = await pool.query(
@@ -382,17 +379,16 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
       [orgSlug, String((user as any).id)]
     );
 
-    // Convert account to org admin (mutually exclusive from individual requester).
-    await pool.query(
-      `UPDATE users
-         SET role='org_admin',
-             account_type='org_team_member',
-             verification_required=TRUE,
-             verification_status='required',
-             updated_at=NOW()
-       WHERE id=$1`,
-      [String((user as any).id)]
-    );
+    // An account with no volunteer/requester role becomes an org-only account.
+    const roles = await pool.query("SELECT 1 FROM user_roles WHERE user_id = $1 LIMIT 1", [String((user as any).id)]);
+    if (!roles.rowCount) {
+      await pool.query(
+        `UPDATE users SET role='org_admin', account_type='org_team_member', profile_completed=TRUE, availability_completed=TRUE,
+                onboarding_completed=TRUE, verification_required=FALSE, verification_status='not_required', updated_at=NOW()
+          WHERE id=$1`,
+        [String((user as any).id)]
+      );
+    }
 
     return res.status(201).json({ org: { slug: orgSlug } });
   })
@@ -520,16 +516,17 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
           return res.status(400).json({ message: "Contact email is required" });
         }
 
-        // Also require minimal admin personal profile (name + phone) before org onboarding can complete.
+        // Also require the admin's name before org onboarding can complete.
         const adminProfileRes = await pool.query(
           "SELECT full_name, phone FROM user_profiles WHERE user_id=$1",
           [String((ok.user as any).id)]
         );
         const adminProfile = adminProfileRes.rows[0] as any;
+        // A named point of contact is required; a phone number is optional (messages and the
+        // organization's contact email cover it).
         const adminNameOk = Boolean(String(adminProfile?.full_name || "").trim());
-        const adminPhoneOk = Boolean(String(adminProfile?.phone || "").trim());
-        if (!adminNameOk || !adminPhoneOk) {
-          return res.status(400).json({ message: "Admin profile (name and phone) must be completed before finishing organization onboarding" });
+        if (!adminNameOk) {
+          return res.status(400).json({ message: "Add your name as the organization's point of contact" });
         }
       }
 

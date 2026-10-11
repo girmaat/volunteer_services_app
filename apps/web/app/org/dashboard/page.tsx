@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { CheckCircle2, ChevronRight, Circle } from "lucide-react";
-import { backendFetch, getCurrentUser } from "../../lib/backend";
+import { backendFetch } from "../../lib/backend";
 import { getOrgContext } from "../../lib/org";
-import { ButtonLink, Card, EmptyState, Notice, PageHeader, StatStrip, StatusPill } from "../../../components/ui";
+import { ButtonLink, Card, EmptyState, Notice, PageHeader, StatStrip, StatusPill, Toast } from "../../../components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -64,9 +64,10 @@ function SetupChecklist({ steps }: { steps: { done: boolean; label: string; href
   );
 }
 
-export default async function OrgDashboardPage() {
+export default async function OrgDashboardPage(props: { searchParams?: Promise<{ welcome?: string }> }) {
+  const welcome = (await props.searchParams)?.welcome === "1";
   // /v1/me (cached) carries the org context, so this page still makes two backend calls.
-  const [me, org] = await Promise.all([getCurrentUser(), getOrgContext()]);
+  const org = await getOrgContext();
   const res = await backendFetch("/v1/org/dashboard");
   const data = res.ok ? ((await res.json()) as OrgDashboard) : null;
 
@@ -82,13 +83,14 @@ export default async function OrgDashboardPage() {
         <Notice tone="danger">The dashboard couldn&apos;t load. Refresh to try again.</Notice>
       ) : (
         <>
+          {welcome ? <Toast message="Your organization is set up. Next: post your first request." /> : null}
           <SetupChecklist
             steps={[
-              { done: Boolean(me?.profile_completed), label: "Add your contact details", href: "/org/onboarding/admin" },
+              { done: Boolean(org?.org.onboarding_completed), label: "Set up your organization's profile", href: "/org/onboarding" },
               {
-                done: Boolean(org?.org.mission && org?.org.contact_email && (org?.org.service_area || org?.org.location)),
-                label: "Describe your organization: mission, service area and contact",
-                href: "/org/onboarding/organization"
+                done: Boolean(org?.org.mission || org?.org.website_url || org?.org.logo_url),
+                label: "Add your mission, website or logo so volunteers know who you are",
+                href: "/org/settings"
               },
               {
                 done: ["submitted", "approved", "verified"].includes(String(org?.org.verification_status || "")) || !org?.org.verification_required,

@@ -75,6 +75,25 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
     expect(sum.body.completed_count).toBe(1);
     expect(sum.body.total_hours).toBe(1.5);
     expect(sum.body.recent_completed[0].title).toBe("Hours: shift");
+
+    // The Impact page: same totals, the engagement on the timeline, an optional note folded into it.
+    const imp = await v.get("/v1/volunteer/impact");
+    expect(imp.status).toBe(200);
+    expect(imp.body.totals).toMatchObject({ hours: 1.5, completed: 1 });
+    expect(imp.body.timeline[0]).toMatchObject({ title: "Hours: shift", hours: 1.5, auto_hours: true, notes: [] });
+    const noted = await v.post("/v1/volunteer/history/impact", { request_id: d.body.id, request_application_id: ap.body.applicationId, impact_date: new Date().toISOString().slice(0, 10), hours: 2, notes: "Stayed late to help." });
+    expect(noted.status).toBeLessThan(300);
+    const after = await v.get("/v1/volunteer/impact");
+    expect(after.body.totals.hours).toBe(2); // logged hours replace the scheduled estimate, never add to it
+    expect(after.body.timeline[0]).toMatchObject({ hours: 2, auto_hours: false });
+    expect(after.body.timeline[0].notes[0].text).toBe("Stayed late to help.");
+    expect(after.body.other_notes).toEqual([]);
+    const csv = await v.get("/v1/volunteer/history/export.csv");
+    const row = csv.text.split("\r\n").find((l: string) => l.includes("Hours: shift"));
+    expect(row).toContain('"completed"');
+    expect(row).toContain('"2"');
+    expect(row).toContain("Stayed late to help.");
+    expect(csv.text.split("\r\n").filter((l: string) => l.includes("Hours: shift"))).toHaveLength(1);
   });
 
   it("exports impact as CSV safe for spreadsheets", async () => {
@@ -83,7 +102,7 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
     const r = await (await as(EMAILS.volunteer)).get("/v1/volunteer/history/export.csv");
     expect(r.status).toBe(200);
     expect(r.headers["content-type"]).toContain("text/csv");
-    expect(r.text).toContain('"type","date","request","hours","detail","quantity"');
+    expect(r.text).toContain('"type","date","request","with","hours","detail","quantity"');
     expect(r.text).toContain(`"'=HYPERLINK(""x"")"`);
   });
 });

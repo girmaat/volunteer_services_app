@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MapPin, Monitor, Shuffle, CalendarClock, Sparkles, AlertCircle } from "lucide-react";
 import { VerifiedBadge } from "../ui/Badge";
 import { describeRrule, formatInZone } from "../../lib/time";
+import { miles } from "../../lib/format";
 
 export type OpportunitySummary = {
   id: string;
@@ -78,7 +79,7 @@ export default function OpportunityRow({ o, href, compact, viewerTz }: { o: Oppo
             <span className="inline-flex items-center gap-1.5">
               <ModeIcon mode={o.mode} />
               {where}
-              {o.distance_miles != null ? ` · ${o.distance_miles} mi` : ""}
+              {o.distance_miles != null ? ` · ${miles(o.distance_miles)}` : ""}
             </span>
             {by ? (
               <span className="inline-flex items-center gap-1.5">

@@ -42,3 +42,19 @@ describe("notify()", () => {
     expect(await sendAttendanceReminders()).toBe(0);
   });
 });
+
+describe("notification detail (deep links from the bell)", () => {
+  it("returns one of your own notifications and nobody else's", async () => {
+    const { as } = await import("./helpers");
+    const uid = await createUser({ email: "notify.detail@thankyou.test", roles: ["volunteer"] });
+    const { notificationId } = await notify(uid, "message_received", { title: "New message", href: "/messages" });
+    const me = await as("notify.detail@thankyou.test");
+    const r = await me.get(`/v1/notifications/${notificationId}`);
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ id: notificationId, title: "New message", href: "/messages", read_at: null });
+    // The fixed paths still win over :id.
+    expect((await me.get("/v1/notifications/unread-count")).status).toBe(200);
+    expect((await me.get("/v1/notifications/not-a-uuid")).status).toBe(400);
+    expect((await (await as(EMAILS.volunteer)).get(`/v1/notifications/${notificationId}`)).status).toBe(404);
+  });
+});

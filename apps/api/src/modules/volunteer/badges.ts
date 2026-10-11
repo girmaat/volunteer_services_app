@@ -3,6 +3,7 @@
  * job after work is completed, never inside a GET request.
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { completedWork } from "./impact";
 import { pool } from "../../lib/db";
 import { notify } from "../notifications/service";
 
@@ -15,22 +16,20 @@ export async function computeBadges(userId: string) {
         `SELECT updated_at FROM request_applications WHERE volunteer_user_id = $1 AND status='completed' ORDER BY updated_at ASC`,
         [userId]
       ),
-      pool.query(
-        `
-        SELECT d, hrs FROM (
-          SELECT impact_date::date AS d, COALESCE(hours,0)::float AS hrs
-          FROM volunteer_impact_entries
-          WHERE volunteer_user_id = $1
-          UNION ALL
-          SELECT task_date::date AS d, COALESCE(duration_hours,0)::float AS hrs
-          FROM volunteer_task_entries
-          WHERE volunteer_user_id = $1
-        ) x
-        WHERE d IS NOT NULL
-        ORDER BY d ASC
-        `,
-        [userId]
-      ),
+      // Hour milestones use the same hours as Impact: completed engagements plus other logged time.
+      completedWork(userId).then(async (work) => {
+        const extra = await pool.query(
+          `SELECT d, hrs FROM (
+             SELECT impact_date::date AS d, COALESCE(hours,0)::float AS hrs, request_id FROM volunteer_impact_entries WHERE volunteer_user_id = $1
+             UNION ALL
+             SELECT task_date::date, COALESCE(duration_hours,0)::float, request_id FROM volunteer_task_entries WHERE volunteer_user_id = $1
+           ) x WHERE d IS NOT NULL AND (request_id IS NULL OR NOT (request_id = ANY($2::uuid[])))`,
+          [userId, work.map((w) => w.request_id)]
+        );
+        const rows = [...work.map((w) => ({ d: w.completed_at, hrs: w.hours })), ...extra.rows.map((r) => ({ d: String(r.d), hrs: Number(r.hrs) }))];
+        rows.sort((a, b) => new Date(a.d).getTime() - new Date(b.d).getTime());
+        return { rows };
+      }),
       pool.query(`SELECT rating, created_at FROM visible_volunteer_reviews WHERE volunteer_user_id = $1 ORDER BY created_at ASC`, [userId])
     ]);
 
@@ -77,7 +76,7 @@ export async function computeBadges(userId: string) {
       {
         id: "ten_hours",
         title: "10 volunteer hours",
-        description: "Log at least 10 total hours (impact + tasks).",
+        description: "Reach 10 volunteer hours.",
         earned: cumulative >= 10,
         earned_at: hourEarnedAt[10],
         progress: cumulative,

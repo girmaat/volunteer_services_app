@@ -5,6 +5,8 @@ import { api, createUser, expect, expectNoHorizontalScroll, postRequest, run, si
 test.describe("U15 on a 375 px phone", () => {
   test("U2 on a phone: sign up, onboard, see recommendations", async ({ page }) => {
     await signUpAndOnboardVolunteer(page, "Mia Mobile");
+    await expectNoHorizontalScroll(page);
+    await page.getByRole("link", { name: "Go to my home" }).click();
     await expect(page).toHaveURL(/\/volunteer\/dashboard/);
     await expectNoHorizontalScroll(page);
     // Bottom tab bar instead of the sidebar.

@@ -6,6 +6,7 @@ import type { Express } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { pool } from "../../lib/db";
+import { completedWork } from "../volunteer/impact";
 import { wrap } from "../../lib/http";
 import type { PolicyUser } from "../../lib/policy";
 import { requireAuthedUser, requireVolunteerUser } from "../../middleware/auth";
@@ -163,24 +164,30 @@ export function registerAccountRoutes(app: Express) {
     wrap(async (req, res) => {
       const user = await requireVolunteerUser(req, res);
       if (!user) return;
-      const r = await pool.query(
-        `SELECT 'hours' AS kind, i.impact_date AS date, r.title AS request, i.hours AS hours, i.notes AS detail, NULL::text AS quantity
+      // Same numbers as the Impact page: one row per completed engagement (credited hours),
+      // then anything logged that isn't tied to a completed engagement.
+      const work = await completedWork(user.id);
+      const done = work.map((w) => w.request_id);
+      const notes = await pool.query(
+        `SELECT 'note' AS kind, i.impact_date AS date, r.title AS request, i.request_id, i.hours AS hours, i.notes AS detail, NULL::text AS quantity
            FROM volunteer_impact_entries i LEFT JOIN service_requests r ON r.id = i.request_id WHERE i.volunteer_user_id = $1
          UNION ALL
-         SELECT 'task', t.task_date, r.title, t.duration_hours, t.task, NULL FROM volunteer_task_entries t LEFT JOIN service_requests r ON r.id = t.request_id WHERE t.volunteer_user_id = $1
+         SELECT 'task', t.task_date, r.title, t.request_id, t.duration_hours, t.task, NULL FROM volunteer_task_entries t LEFT JOIN service_requests r ON r.id = t.request_id WHERE t.volunteer_user_id = $1
          UNION ALL
-         SELECT 'outcome', o.outcome_date, r.title, NULL, o.outcome, CONCAT(o.quantity, ' ', o.unit) FROM volunteer_outcome_entries o LEFT JOIN service_requests r ON r.id = o.request_id WHERE o.volunteer_user_id = $1
-         UNION ALL
-         SELECT 'completed', a.completed_at::date, r.title,
-                ROUND(COALESCE(EXTRACT(EPOCH FROM (c.end_at - c.start_at)) / 3600, r.duration_minutes / 60.0, 1)::numeric, 2), NULL, NULL
-           FROM request_applications a JOIN service_requests r ON r.id = a.request_id
-           LEFT JOIN request_commitments c ON c.request_id = a.request_id AND c.volunteer_user_id = a.volunteer_user_id
-          WHERE a.volunteer_user_id = $1 AND a.status = 'completed'
+         SELECT 'outcome', o.outcome_date, r.title, o.request_id, NULL, o.outcome, CONCAT(o.quantity, ' ', o.unit) FROM volunteer_outcome_entries o LEFT JOIN service_requests r ON r.id = o.request_id WHERE o.volunteer_user_id = $1
          ORDER BY date DESC NULLS LAST`,
         [user.id]
       );
-      const lines = [["type", "date", "request", "hours", "detail", "quantity"].map(csvCell).join(",")];
-      for (const row of r.rows) lines.push([row.kind, row.date ? new Date(row.date).toISOString().slice(0, 10) : "", row.request, row.hours, row.detail, row.quantity].map(csvCell).join(","));
+      const d = (v: unknown) => (v ? new Date(v as string).toISOString().slice(0, 10) : "");
+      const lines = [["type", "date", "request", "with", "hours", "detail", "quantity"].map(csvCell).join(",")];
+      for (const w of work) {
+        const detail = notes.rows.filter((n) => n.request_id === w.request_id && n.detail).map((n) => String(n.detail)).join(" | ");
+        lines.push(["completed", d(w.completed_at), w.title, w.organization_name || w.requester_name || "", w.hours, detail, ""].map(csvCell).join(","));
+      }
+      for (const n of notes.rows) {
+        if (n.request_id && done.includes(String(n.request_id))) continue;
+        lines.push([n.kind, d(n.date), n.request || "", "", n.hours ?? "", n.detail, n.quantity].map(csvCell).join(","));
+      }
       res.setHeader("content-type", "text/csv; charset=utf-8");
       res.setHeader("content-disposition", 'attachment; filename="thankyou-impact.csv"');
       return res.send("﻿" + lines.join("\r\n"));
