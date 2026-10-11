@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic";
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login?returnTo=/admin");
-  if (!user.is_platform_admin) redirect("/403");
+  // Moderators work the queues; settings, users and admins stay with platform admins (the API enforces it).
+  const moderator = user.is_platform_admin || user.platform_admin_role === "moderator";
+  if (!moderator) redirect("/403");
 
   return (
     <AppShell user={user} context="admin">

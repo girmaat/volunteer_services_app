@@ -16,6 +16,7 @@ import { registerRequesterRoutes } from "./modules/requester";
 import { registerSettingsRoutes } from "./modules/settings/routes";
 import { registerOrgRoutes } from "./modules/org";
 import { registerAdminRoutes } from "./modules/admin";
+import { adminAudit } from "./middleware/adminAudit";
 import { registerRequestRoutes } from "./modules/requests/routes";
 import { registerNotificationRoutes } from "./modules/notifications/routes";
 import { registerDiscoveryRoutes } from "./modules/discovery/routes";
@@ -97,6 +98,7 @@ export function createApp(): Express {
   registerReviewRoutes(app);
   registerApplicantRoutes(app);
   onHourly(revealDueReviews);
+  app.use("/v1/admin", adminAudit);
   registerAdminRoutes(app);
 
   app.use(notFoundHandler);

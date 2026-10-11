@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
-import { requirePlatformAdmin } from "../../admin/auth";
+import { requireModerator, requirePlatformAdmin } from "../../admin/auth";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { parseLimit, parseOffset, shareLinksHaveModerationCols, shareReportsHaveModerationCols } from "./helpers";
@@ -90,7 +90,7 @@ app.get(
   app.get(
     "/v1/admin/reports",
     wrap(async (req, res) => {
-      const r = await requirePlatformAdmin(pool, req, res);
+      const r = await requireModerator(pool, req, res);
       if (!r) return;
 
       const status = String((req.query.status as any) || "").trim();
@@ -102,6 +102,12 @@ app.get(
       if (status && ["submitted", "in_review", "resolved", "dismissed"].includes(status)) {
         params.push(status);
         where = `WHERE status = $${params.length}`;
+      }
+      // Category queues (harassment, scam, safety…): one queue per category.
+      const category = String((req.query.category as any) || "").trim().slice(0, 40);
+      if (category) {
+        params.push(category);
+        where = `${where ? where + " AND" : "WHERE"} category = $${params.length}`;
       }
       params.push(limit);
       params.push(offset);
@@ -233,7 +239,7 @@ return res.json({ reports: rows.rows, limit, offset });
   app.get(
     "/v1/admin/reports/:id",
     wrap(async (req, res) => {
-      const r = await requirePlatformAdmin(pool, req, res);
+      const r = await requireModerator(pool, req, res);
       if (!r) return;
 
       const reportId = String(req.params.id || "").trim();
@@ -368,7 +374,7 @@ return res.json({ reports: rows.rows, limit, offset });
   app.post(
     "/v1/admin/reports/:id/update",
     wrap(async (req, res) => {
-      const r = await requirePlatformAdmin(pool, req, res);
+      const r = await requireModerator(pool, req, res);
       if (!r) return;
 
       const reportId = String(req.params.id || "");
@@ -418,7 +424,7 @@ return res.json({ reports: rows.rows, limit, offset });
   app.post(
     "/v1/admin/share-reports/:id/action",
     wrap(async (req, res) => {
-      const r = await requirePlatformAdmin(pool, req, res);
+      const r = await requireModerator(pool, req, res);
       if (!r) return;
 
       const reportId = String(req.params.id || "");
@@ -555,7 +561,7 @@ return res.json({ reports: rows.rows, limit, offset });
   app.get(
     "/v1/admin/incidents",
     wrap(async (req, res) => {
-      const r = await requirePlatformAdmin(pool, req, res);
+      const r = await requireModerator(pool, req, res);
       if (!r) return;
 
       const status = String((req.query.status as any) || "").trim();
@@ -612,7 +618,7 @@ return res.json({ reports: rows.rows, limit, offset });
   app.post(
     "/v1/admin/incidents/:id/update",
     wrap(async (req, res) => {
-      const r = await requirePlatformAdmin(pool, req, res);
+      const r = await requireModerator(pool, req, res);
       if (!r) return;
 
       const incidentId = String(req.params.id || "");

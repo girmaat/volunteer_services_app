@@ -1,3 +1,4 @@
+import MetricsPanel from "./MetricsPanel";
 import Link from "next/link";
 import { backendFetch, getCurrentUser } from "../lib/backend";
 import { redirect } from "next/navigation";
@@ -69,6 +70,8 @@ function Stat({ label, value }: { label: string; value: any }) {
 }
 
 export default async function Page(props: { searchParams?: Promise<{ ok?: string; error?: string }> }) {
+  const viewer = await getCurrentUser();
+  if (viewer && !viewer.is_platform_admin) redirect("/admin/moderation");
   const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -246,6 +249,8 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
           </div>
         ) : null}
       </div>
+
+      <MetricsPanel />
 
       <div className="adminStats">
         <Stat label="Users" value={c.users_total} />

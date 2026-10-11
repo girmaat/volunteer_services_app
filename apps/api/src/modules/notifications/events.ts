@@ -124,13 +124,13 @@ export async function onRequestNeedsReview({ requestId }: { requestId: string })
   if (!req) return;
   await notifyModerators("moderation", {
     title: `Review needed: “${req.title}”`,
-    href: "/admin/review",
+    href: "/admin/moderation?tab=review",
     data: { requestId },
     email: {
       subject: `Review needed: “${req.title}”`,
       heading: "A sensitive request is waiting for review",
       lines: [`“${req.title}” is in a sensitive category and stays hidden until a moderator approves it.`],
-      cta: { label: "Open the review queue", url: "/admin/review" }
+      cta: { label: "Open the review queue", url: "/admin/moderation?tab=review" }
     }
   });
 }

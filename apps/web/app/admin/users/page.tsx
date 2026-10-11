@@ -1,3 +1,4 @@
+import { setBackgroundCheck, shadowBan } from "../_actions";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -400,6 +401,22 @@ export default async function Page(
                         ) : (
                           <button className="btn" type="submit">Clear strikes</button>
                         )}
+                      </form>
+
+                      <form action={shadowBan.bind(null, u.id, !(u as any).shadow_banned, "/admin/users")}>
+                        <button className="btn" type="submit" title="Their requests and messages stay visible only to them">
+                          {(u as any).shadow_banned ? "Lift shadow-ban" : "Shadow-ban"}
+                        </button>
+                      </form>
+
+                      <form action={setBackgroundCheck.bind(null, u.id, "/admin/users")}>
+                        <select className="input" name="status" aria-label="Background check" defaultValue={(u as any).background_check_status || "none"}>
+                          <option value="none">Background check: none</option>
+                          <option value="pending">Background check: pending</option>
+                          <option value="cleared">Background check: cleared</option>
+                          <option value="expired">Background check: expired</option>
+                        </select>
+                        <button className="btn" type="submit">Save</button>
                       </form>
 
                       {u.banned_until && new Date(u.banned_until).getTime() > Date.now() ? (

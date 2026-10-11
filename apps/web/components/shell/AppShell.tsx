@@ -45,7 +45,8 @@ export default function AppShell({
   banner?: ReactNode;
   children: ReactNode;
 }) {
-  const items = navFor(context);
+  // Moderators (not admins) only see the queues they can work.
+  const items = context === "admin" && !user.is_platform_admin ? navFor("admin").filter((i) => ["/admin/moderation", "/admin/opportunities"].includes(i.href)) : navFor(context);
   const label = contextLabel(context, orgName);
   const name = user.display_name || user.email.split("@")[0];
 

@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
-import { requirePlatformAdmin } from "../../admin/auth";
+import { requireModerator, requirePlatformAdmin } from "../../admin/auth";
 import { pool } from "../../lib/db";
+import { transitionRequest, TransitionError, type RequestEvent } from "../requests/lifecycle";
 import { wrap } from "../../lib/http";
 import { parseLimit, parseOffset } from "./helpers";
 
@@ -153,7 +154,7 @@ export function registerAdminContentRoutes(app: Express) {
   app.get(
     "/v1/admin/requests",
     wrap(async (req, res) => {
-      const r = await requirePlatformAdmin(pool, req, res);
+      const r = await requireModerator(pool, req, res);
       if (!r) return;
 
       const q = String((req.query.q as any) || "").trim();
@@ -168,10 +169,12 @@ export function registerAdminContentRoutes(app: Express) {
         params.push(`%${q}%`);
         clauses.push(`(r.title ILIKE $${params.length} OR r.description ILIKE $${params.length})`);
       }
-      if (status && ["open", "paused", "closed"].includes(status)) {
+      if (status && ["draft", "open", "pending", "filled", "paused", "completed", "canceled"].includes(status)) {
         params.push(status);
-        clauses.push(`status = $${params.length}`);
+        clauses.push(`r.status = $${params.length}`);
       }
+      if (status === "in_review") clauses.push(`r.review_status = 'pending_review'`);
+      if (status === "removed") clauses.push(`r.removed_at IS NOT NULL`);
 
       const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
@@ -183,6 +186,11 @@ export function registerAdminContentRoutes(app: Express) {
            r.id,
            r.title,
            r.status,
+           r.review_status,
+           r.category,
+           r.is_sensitive,
+           r.removed_at,
+           r.removed_reason,
            r.mode,
            r.location_text,
            r.needed_by,
@@ -207,7 +215,7 @@ export function registerAdminContentRoutes(app: Express) {
   app.patch(
     "/v1/admin/requests/:id",
     wrap(async (req, res) => {
-      const r = await requirePlatformAdmin(pool, req, res);
+      const r = await requireModerator(pool, req, res);
       if (!r) return;
 
       const requestId = String(req.params.id || "").trim();
@@ -216,6 +224,7 @@ export function registerAdminContentRoutes(app: Express) {
           title: z.string().min(1).max(200).optional(),
           description: z.string().min(1).max(8000).optional(),
           status: z.enum(["open", "paused", "closed"]).optional(),
+          reason: z.string().max(500).optional(),
           mode: z.enum(["in-person", "remote", "hybrid"]).optional().nullable(),
           location_text: z.string().max(500).optional().nullable(),
           needed_by: z.string().datetime().optional().nullable(),
@@ -225,9 +234,26 @@ export function registerAdminContentRoutes(app: Express) {
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
-      const fields = parsed.data as any;
+      const { status: wantStatus, reason, ...rest } = parsed.data as any;
+      const fields = rest;
       const keys = Object.keys(fields);
-      if (keys.length === 0) return res.status(400).json({ message: "No changes" });
+      if (keys.length === 0 && !wantStatus) return res.status(400).json({ message: "No changes" });
+      // Status changes go through the lifecycle (audited, applicants notified).
+      if (wantStatus) {
+        const cur = await pool.query("SELECT status FROM service_requests WHERE id::text = $1", [requestId]);
+        if (!cur.rowCount) return res.status(404).json({ message: "Service request not found" });
+        const from = String(cur.rows[0].status);
+        const event = wantStatus === "paused" ? "pause" : wantStatus === "closed" ? "take_down" : from === "paused" ? "resume" : from === "canceled" ? "restore" : null;
+        if (event) {
+          try {
+            await transitionRequest(requestId, event as RequestEvent, { userId: String((r.user as any).id), kind: "admin" }, { reason: reason || (event === "take_down" ? "Closed by a moderator" : null) });
+          } catch (e) {
+            if (e instanceof TransitionError) return res.status(e.status).json({ message: e.message });
+            throw e;
+          }
+        }
+        if (!keys.length) return res.json({ ok: true });
+      }
 
       const sets: string[] = [];
       const params: any[] = [requestId];

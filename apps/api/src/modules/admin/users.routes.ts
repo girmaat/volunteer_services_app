@@ -104,6 +104,8 @@ export function registerAdminUsersRoutes(app: Express) {
            u.verification_status,
            u.strike_count,
            u.banned_until,
+           u.shadow_banned,
+           (SELECT background_check_status FROM user_profiles bp WHERE bp.user_id = u.id) AS background_check_status,
            u.banned_reason,
            u.created_at,
            u.updated_at,

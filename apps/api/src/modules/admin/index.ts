@@ -6,6 +6,7 @@ import { registerAdminUsersRoutes } from "./users.routes";
 import { registerAdminModerationRoutes } from "./moderation.routes";
 import { registerAdminContentRoutes } from "./content.routes";
 import { registerAdminVerificationRoutes } from "./verification.routes";
+import { registerAdminQueueRoutes } from "./queues.routes";
 
 /** All /v1 routes for the admin area. */
 export function registerAdminRoutes(app: Express) {
@@ -16,4 +17,5 @@ export function registerAdminRoutes(app: Express) {
   registerAdminModerationRoutes(app);
   registerAdminContentRoutes(app);
   registerAdminVerificationRoutes(app);
+  registerAdminQueueRoutes(app);
 }

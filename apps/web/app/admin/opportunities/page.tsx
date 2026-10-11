@@ -1,138 +1,125 @@
-import { backendFetch, getCurrentUser } from "../../lib/backend";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import Link from "next/link";
+import { backendFetch } from "../../lib/backend";
+import { Button, Notice, PageHeader, StatusPill } from "../../../components/ui";
+import { restoreRequest, takeDown } from "../_actions";
 
 export const dynamic = "force-dynamic";
 
-type ReqRow = {
+type Row = {
   id: string;
   title: string;
   status: string;
+  review_status: string;
+  category: string | null;
+  is_sensitive: boolean;
+  removed_at: string | null;
+  removed_reason: string | null;
   mode: string | null;
   location_text: string | null;
-  needed_by: string | null;
-  tags: string[];
+  created_at: string;
   requester_email: string | null;
   requester_org_slug: string | null;
-  created_at: string;
 };
 
-async function loadRequests(q: string, status: string): Promise<ReqRow[]> {
-  const params = new URLSearchParams();
-  if (q) params.set("q", q);
-  if (status) params.set("status", status);
-  const url = params.toString() ? `/v1/admin/requests?${params.toString()}` : "/v1/admin/requests";
-  const res = await backendFetch(url, { method: "GET" });
-  if (!res.ok) throw new Error("Failed to load service requests");
-  const json = (await res.json()) as { requests: ReqRow[] };
-  return json.requests || [];
-}
+const STATUSES = [
+  ["", "Any status"],
+  ["open", "Open"],
+  ["pending", "Partly filled"],
+  ["filled", "Filled"],
+  ["paused", "Paused"],
+  ["draft", "Draft"],
+  ["in_review", "In review"],
+  ["completed", "Completed"],
+  ["canceled", "Canceled"],
+  ["removed", "Removed by moderators"]
+];
 
-export default async function Page(
-  props: { searchParams?: Promise<{ q?: string; status?: string; error?: string; ok?: string }> }
-) {
-  const searchParams = await props.searchParams;
-  const me = await getCurrentUser();
-  if (!me) redirect("/login");
-
-  const q = String(searchParams?.q || "").trim();
-  const status = String(searchParams?.status || "").trim();
-  const rows = await loadRequests(q, status);
-
-  async function updateStatus(formData: FormData) {
-    "use server";
-    const id = String(formData.get("id") || "");
-    const next = String(formData.get("status") || "open");
-    const res = await backendFetch(`/v1/admin/requests/${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ status: next })
-    });
-    const json = (await res.json().catch(() => ({}))) as any;
-    if (!res.ok) redirect(`/admin/opportunities?${q ? `q=${encodeURIComponent(q)}&` : ""}${status ? `status=${encodeURIComponent(status)}&` : ""}error=${encodeURIComponent(String(json?.message || "Failed"))}`);
-    revalidatePath("/admin/opportunities");
-    redirect(`/admin/opportunities?${q ? `q=${encodeURIComponent(q)}&` : ""}${status ? `status=${encodeURIComponent(status)}&` : ""}ok=1`);
-  }
-
-  const error = searchParams?.error ? decodeURIComponent(String(searchParams.error)) : "";
-  const ok = searchParams?.ok === "1";
+export default async function AdminRequests(props: { searchParams?: Promise<{ q?: string; status?: string; error?: string; flash?: string }> }) {
+  const sp = (await props.searchParams) || {};
+  const q = (sp.q || "").trim();
+  const status = (sp.status || "").trim();
+  const qs = new URLSearchParams({ limit: "100", ...(q ? { q } : {}), ...(status ? { status } : {}) });
+  const r = await backendFetch(`/v1/admin/requests?${qs}`);
+  const rows = r.ok ? ((await r.json()) as { requests: Row[] }).requests : null;
+  const back = `/admin/opportunities?${new URLSearchParams({ ...(q ? { q } : {}), ...(status ? { status } : {}) })}`;
 
   return (
-    <div className="adminGrid">
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
-        <div>
-          <h1 style={{ margin: 0 }}>Opportunity management</h1>
-          <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>Moderate service requests (visibility + status).</p>
-        </div>
-
-        <form method="get" action="/admin/opportunities" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <input className="input" name="q" aria-label="Q" placeholder="Search title / description" defaultValue={q} style={{ width: 240 }} />
-          <select className="input" name="status" aria-label="Status" defaultValue={status || ""}>
-            <option value="">Any status</option>
-            <option value="open">Open</option>
-            <option value="paused">Paused</option>
-            <option value="closed">Closed</option>
-          </select>
-          <button className="btn" type="submit">Filter</button>
-        </form>
-      </header>
-
-      {ok ? (
-        <div className="adminCard" style={{ borderColor: "rgba(0,120,0,0.25)", background: "rgba(0,120,0,0.05)" }}>
-          <strong>Saved.</strong>
+    <>
+      <PageHeader title="Requests" description="Search every request. Take down anything that breaks the rules — the poster sees your reason and applicants are told." />
+      {sp.flash ? (
+        <div className="mb-4">
+          <Notice tone="success">{sp.flash === "removed" ? "Request taken down." : sp.flash === "restored" ? "Request restored." : "Saved."}</Notice>
         </div>
       ) : null}
-      {error ? (
-        <div className="adminCard" style={{ borderColor: "rgba(180,0,0,0.25)", background: "rgba(180,0,0,0.05)" }}>
-          <strong>Couldn&apos;t complete that action.</strong>
-          <div style={{ marginTop: 6 }}>{error}</div>
+      {sp.error ? (
+        <div className="mb-4">
+          <Notice tone="danger">{sp.error}</Notice>
         </div>
       ) : null}
-
-      <div className="adminCard">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Request</th>
-              <th>Status</th>
-              <th>Requester</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td>
-                  <div style={{ fontWeight: 900 }}>{r.title}</div>
-                  <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                    {r.mode ? `${r.mode}` : ""}{r.location_text ? ` · ${r.location_text}` : ""}{r.needed_by ? ` · Needed by ${new Date(r.needed_by).toLocaleDateString()}` : ""}
-                  </div>
-                  {r.tags?.length ? <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Tags: {r.tags.join(", ")}</div> : null}
-                </td>
-                <td className="muted" style={{ fontSize: 12 }}>{r.status}</td>
-                <td className="muted" style={{ fontSize: 12 }}>
-                  {r.requester_org_slug ? `Org: ${r.requester_org_slug}` : r.requester_email || "—"}
-                  <div style={{ marginTop: 4 }}>{new Date(r.created_at).toLocaleDateString()}</div>
-                </td>
-                <td>
-                  <div className="adminActions">
-                    <form action={updateStatus}>
-                      <input type="hidden" name="id" value={r.id} />
-                      <select className="input" name="status" aria-label="Status" defaultValue={r.status}>
-                        <option value="open">Open</option>
-                        <option value="paused">Paused</option>
-                        <option value="closed">Closed</option>
-                      </select>
-                      <button className="btn" type="submit">Update</button>
-                    </form>
-                    <a className="btn" href={`/requests/${encodeURIComponent(r.id)}`}>View</a>
-                  </div>
-                </td>
-              </tr>
+      <form method="get" className="mb-5 flex flex-wrap items-end gap-2">
+        <label className="grid gap-1 text-sm">
+          Search
+          <input name="q" defaultValue={q} className="h-10 w-64 max-w-full rounded border border-line-strong bg-surface px-3" />
+        </label>
+        <label className="grid gap-1 text-sm">
+          Status
+          <select name="status" defaultValue={status} className="h-10 rounded border border-line-strong bg-surface px-2">
+            {STATUSES.map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          </select>
+        </label>
+        <Button type="submit" size="sm" variant="secondary">
+          Filter
+        </Button>
+      </form>
+      {!rows ? <Notice tone="danger">Requests unavailable.</Notice> : null}
+      <ul className="m-0 border-t border-line p-0">
+        {(rows || []).map((x) => (
+          <li key={x.id} className="list-none border-b border-line py-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="m-0 font-semibold">
+                  <Link href={`/opportunities/${x.id}`} className="text-ink">
+                    {x.title || "Untitled"}
+                  </Link>
+                </p>
+                <p className="m-0 mt-0.5 text-sm text-muted">
+                  {x.category || "—"}
+                  {x.is_sensitive ? " (sensitive)" : ""} · {x.mode === "remote" ? "Remote" : x.location_text || "—"} · {x.requester_org_slug || x.requester_email || "—"} ·{" "}
+                  {new Date(x.created_at).toLocaleDateString("en-US")}
+                </p>
+                {x.removed_reason ? <p className="m-0 mt-1 text-sm text-danger">Removed: {x.removed_reason}</p> : null}
+              </div>
+              <StatusPill kind="request" status={x.review_status === "pending_review" ? "in_review" : x.status} />
+            </div>
+            <div className="mt-2">
+              {x.removed_at ? (
+                <form action={restoreRequest.bind(null, x.id, back)}>
+                  <Button type="submit" size="sm" variant="secondary">
+                    Restore
+                  </Button>
+                </form>
+              ) : ["draft", "open", "pending", "filled", "paused"].includes(x.status) ? (
+                <details>
+                  <summary className="cursor-pointer text-sm font-medium text-danger">Take down…</summary>
+                  <form action={takeDown.bind(null, x.id, back)} className="mt-2 flex flex-wrap items-end gap-2">
+                    <label className="grid gap-1 text-sm">
+                      Reason (the poster sees this)
+                      <input name="reason" required minLength={5} maxLength={500} className="h-10 w-80 max-w-full rounded border border-line-strong bg-surface px-3" />
+                    </label>
+                    <Button type="submit" size="sm" variant="danger">
+                      Take down
+                    </Button>
+                  </form>
+                </details>
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

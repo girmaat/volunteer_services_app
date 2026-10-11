@@ -37,12 +37,12 @@ export function navFor(ctx: AppContext): NavItem[] {
     case "admin":
       return [
         { href: "/admin", label: "Overview", icon: "home", exact: true },
-        { href: "/admin/users", label: "Users", icon: "users" },
-        { href: "/admin/organizations", label: "Organizations", icon: "building", match: ["/admin/organizations", "/admin/org-verification"] },
+        { href: "/admin/moderation", label: "Moderation", icon: "flag", match: ["/admin/moderation", "/admin/reports", "/admin/incidents"] },
         { href: "/admin/opportunities", label: "Requests", icon: "list" },
-        { href: "/admin/reports", label: "Reports", icon: "flag", match: ["/admin/reports", "/admin/incidents"] },
+        { href: "/admin/users", label: "Users", icon: "users", match: ["/admin/users", "/admin/enforcement"] },
+        { href: "/admin/organizations", label: "Organizations", icon: "building", match: ["/admin/organizations", "/admin/org-verification"] },
         { href: "/admin/verification", label: "Verification", icon: "shield" },
-        { href: "/admin/enforcement", label: "Enforcement", icon: "file" }
+        { href: "/admin/audit", label: "Audit log", icon: "file" }
       ];
   }
 }
