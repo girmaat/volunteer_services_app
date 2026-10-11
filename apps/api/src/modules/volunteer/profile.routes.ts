@@ -34,7 +34,7 @@ app.get(
          (SELECT COUNT(*)::int FROM volunteer_saved_requests WHERE user_id = $1) AS saved,
          (SELECT COUNT(*)::int FROM request_applications
            WHERE volunteer_user_id = $1 AND status IN ('pending','accepted')) AS applications,
-         (SELECT COUNT(*)::int FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL) AS unread,
+         (SELECT COUNT(*)::int FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL AND status = 'sent') AS unread,
          (SELECT COUNT(*)::int FROM request_commitments
            WHERE volunteer_user_id = $1 AND start_at > NOW() AND status IN ('scheduled','confirmed')) AS upcoming`,
       [user.id]

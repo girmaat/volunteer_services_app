@@ -7,7 +7,7 @@ describe("organization area", () => {
     const me = await api.get("/v1/org/me");
     expect(me.status).toBe(200);
     expect(me.body.org.slug).toBeTruthy();
-    for (const p of ["/v1/org/dashboard", "/v1/org/requests", "/v1/org/applications", "/v1/org/roster", "/v1/org/members", "/v1/org/incidents", "/v1/org/documents", "/v1/org/reports/impact", "/v1/org/messages/inbox"]) {
+    for (const p of ["/v1/org/dashboard", "/v1/org/requests", "/v1/org/applications", "/v1/org/roster", "/v1/org/members", "/v1/org/incidents", "/v1/org/documents", "/v1/org/reports/impact", "/v1/inbox/conversations?as=org"]) {
       const res = await api.get(p);
       expect([200, 404], p).toContain(res.status);
       if (res.status === 404) expect(res.body.error?.code, p).not.toBe("not_found");

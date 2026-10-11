@@ -122,7 +122,7 @@ export default async function OrgRosterPage(
                   </div>
 
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <Link className={styles.badge} href={`/org/messages/${r.volunteer_user_id}`}>
+                    <Link className={styles.badge} href={`/inbox`}>
                       Message
                     </Link>
                                       </div>

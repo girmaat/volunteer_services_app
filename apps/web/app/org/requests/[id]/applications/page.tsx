@@ -161,7 +161,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                     ) : null}
                   </div>
 
-                  <Link href={`/org/messages/${a.volunteer_user_id}?requestId=${a.request_id}&applicationId=${a.application_id}`}>Message</Link>
+                  <Link href={`/inbox/start?requestId=${a.request_id}&volunteerId=${a.volunteer_user_id}`}>Message</Link>
                 </div>
 
                 {a.message ? <div style={{ marginTop: 8 }}>{a.message}</div> : null}

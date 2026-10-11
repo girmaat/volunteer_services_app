@@ -74,14 +74,15 @@ describe("request → apply → accept → message → complete → review", () 
     expect([200, 409]).toContain(acceptAgain.status);
   });
 
+  let conversationId = "";
   it("both sides can message in the request thread", async () => {
     const vol = await as(EMAILS.volunteer);
     const req = await as(EMAILS.requester);
-    const requesterId = await userId(EMAILS.requester);
-    const volunteerId = await userId(EMAILS.volunteer);
-    const sent = await vol.post(`/v1/volunteer/messages/thread/${requesterId}`, { body: "Hi Rose, what time works?" });
-    expect([200, 201]).toContain(sent.status);
-    const thread = await req.get(`/v1/requester/messages/thread/${volunteerId}`);
+    const list = await vol.get("/v1/inbox/conversations?as=volunteer");
+    conversationId = list.body.conversations.find((c: { request_id: string }) => c.request_id === requestId).id;
+    const sent = await vol.post(`/v1/inbox/conversations/${conversationId}/messages`, { body: "Hi Rose, what time works?" });
+    expect(sent.status).toBe(201);
+    const thread = await req.get(`/v1/inbox/conversations/${conversationId}`);
     expect(thread.status).toBe(200);
     expect(JSON.stringify(thread.body)).toContain("what time works");
   });
@@ -118,10 +119,9 @@ describe("request → apply → accept → message → complete → review", () 
     const req = await as(EMAILS.requester);
     const vol = await as(EMAILS.volunteer);
     const volunteerId = await userId(EMAILS.volunteer);
-    const requesterId = await userId(EMAILS.requester);
     const block = await req.post("/v1/settings/blocked-users", { blocked_user_id: volunteerId, reason: "test" });
     expect([200, 201]).toContain(block.status);
-    const sent = await vol.post(`/v1/volunteer/messages/thread/${requesterId}`, { body: "hello?" });
+    const sent = await vol.post(`/v1/inbox/conversations/${conversationId}/messages`, { body: "hello?" });
     expect(sent.status).toBe(403);
     const list = await req.get("/v1/settings/blocked-users");
     expect(JSON.stringify(list.body)).not.toContain("volunteer.local@thankyou.test");

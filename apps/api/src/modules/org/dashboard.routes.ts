@@ -45,10 +45,9 @@ export function registerOrgDashboardRoutes(app: Express) {
           `
           SELECT COUNT(*)::int AS c
           FROM direct_messages d
-          WHERE d.recipient_user_id IN (
-            SELECT user_id FROM organization_members WHERE org_slug=$1 AND status='active' AND user_id IS NOT NULL
-          )
-          AND d.read_at IS NULL
+          JOIN conversations c ON c.id = d.conversation_id
+          WHERE c.org_slug = $1 AND d.sender_user_id = c.volunteer_user_id
+          AND d.read_at IS NULL AND d.status = 'sent'
           `,
           [orgSlug]
         ),
@@ -86,7 +85,7 @@ export function registerOrgDashboardRoutes(app: Express) {
             r.id AS request_id,
             r.title AS request_title,
             v.id AS volunteer_user_id,
-            v.email AS volunteer_email,
+            CASE WHEN a.status IN ('accepted','confirmed','completed') THEN v.email END AS volunteer_email,
             vp.display_name AS volunteer_display_name,
             COALESCE(vp.public_location, vp.location) AS volunteer_public_location
           FROM request_applications a

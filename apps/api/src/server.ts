@@ -5,6 +5,7 @@ import { pendingMigrations } from "./db/migrator";
 import { createApp } from "./app";
 import { startGeoBackfill } from "./lib/geoRuntime";
 import { startJobs, stopJobs } from "./jobs/queue";
+import { startRealtime, stopRealtime } from "./modules/messaging/realtime";
 
 async function start() {
   const pending = await pendingMigrations(migrationPool);
@@ -15,6 +16,7 @@ async function start() {
 
   const app = createApp();
   await startJobs();
+  await startRealtime();
   startGeoBackfill();
 
   const server = app.listen(env.PORT, () => logger.info(`ThankYou API listening on http://localhost:${env.PORT}`));
@@ -27,6 +29,7 @@ async function start() {
     logger.info({ signal }, "shutting down");
     server.close(async () => {
       await stopJobs().catch(() => undefined);
+      await stopRealtime().catch(() => undefined);
       await pool.end().catch(() => undefined);
       if (migrationPool !== pool) await migrationPool.end().catch(() => undefined);
       process.exit(0);

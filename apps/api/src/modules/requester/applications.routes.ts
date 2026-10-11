@@ -28,7 +28,7 @@ app.get(
         a.created_at,
         a.updated_at,
         a.volunteer_user_id,
-        u.email AS volunteer_email,
+        NULL::text AS volunteer_email, -- pending/waitlisted only: never shown before acceptance
         COALESCE(NULLIF(p.display_name, ''), NULLIF(split_part(COALESCE(p.full_name, ''), ' ', 1), ''), 'Member') AS volunteer_display_name,
         p.avatar_url AS volunteer_avatar_url,
         COALESCE(p.public_location, p.location) AS volunteer_public_location,

@@ -64,8 +64,8 @@ export default async function Page() {
 
     revalidatePath("/settings/blocked-users");
     revalidatePath("/settings");
-    revalidatePath("/volunteer/messages");
-    revalidatePath("/requester/messages");
+    revalidatePath("/inbox");
+    revalidatePath("/inbox");
   }
 
   async function unblockUser(formData: FormData) {
@@ -79,8 +79,8 @@ export default async function Page() {
 
     revalidatePath("/settings/blocked-users");
     revalidatePath("/settings");
-    revalidatePath("/volunteer/messages");
-    revalidatePath("/requester/messages");
+    revalidatePath("/inbox");
+    revalidatePath("/inbox");
   }
 
   return (

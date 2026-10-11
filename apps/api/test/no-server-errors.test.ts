@@ -7,7 +7,8 @@ const fill = (p: string) =>
   p.replace(/:([A-Za-z_]+)/g, (_m, name: string) => (/slug/i.test(name) ? "no-such-org" : /token/i.test(name) ? "no-such-token" : FAKE_UUID));
 
 // Endpoints whose side effects would disturb other tests when called with an empty body.
-const SKIP = new Set(["POST /v1/auth/logout", "POST /v1/admin/platform/settings/maintenance"]);
+// The SSE stream never ends by design; it has its own test in messaging.test.ts.
+const SKIP = new Set(["POST /v1/auth/logout", "POST /v1/admin/platform/settings/maintenance", "GET /v1/inbox/stream"]);
 
 /**
  * Smoke sweep: every route, called by every role with placeholder ids and an empty body, must answer

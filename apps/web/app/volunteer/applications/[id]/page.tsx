@@ -217,7 +217,7 @@ export default async function VolunteerApplicationDetailPage(
 
         <div className={styles.actionsRow}>
           {app.requester_user_id ? (
-            <Link className={styles.navLink} href={`/volunteer/messages/${app.requester_user_id}?requestId=${app.opportunity_id}&applicationId=${app.id}`}>
+            <Link className={styles.navLink} href={`/inbox/start?requestId=${app.opportunity_id}`}>
               Open messages
             </Link>
           ) : null}

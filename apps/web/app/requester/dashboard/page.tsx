@@ -70,11 +70,7 @@ async function getReputationSummary(): Promise<ReputationSummary | null> {
 }
 
 function threadHref(t: RecentThread) {
-  const qs = new URLSearchParams();
-  if (t.request_id) qs.set("requestId", t.request_id);
-  if (t.application_id) qs.set("applicationId", t.application_id);
-  const q = qs.toString();
-  return `/requester/messages/${t.peer_id}` + (q ? `?${q}` : "");
+  return t.request_id ? `/inbox/start?requestId=${t.request_id}&volunteerId=${t.peer_id}` : "/inbox";
 }
 
 function relTime(iso: string) {
@@ -97,7 +93,7 @@ export default async function Page() {
         actions={
           <>
             <ButtonLink href="/requester/requests/new">Ask for help</ButtonLink>
-            <ButtonLink href="/requester/messages" variant="secondary">
+            <ButtonLink href="/inbox" variant="secondary">
               Inbox
             </ButtonLink>
           </>
@@ -109,7 +105,7 @@ export default async function Page() {
           { label: "Open requests", value: counts.activeRequests, href: "/requester/requests" },
           { label: "Applicants to review", value: counts.pendingApplications, href: "/requester/applications", attention: counts.pendingApplications > 0 },
           { label: "Upcoming", value: counts.upcoming, href: "/requester/requests", hint: "scheduled visits" },
-          { label: "Unread conversations", value: counts.unreadThreads, href: "/requester/messages", attention: counts.unreadThreads > 0 },
+          { label: "Unread conversations", value: counts.unreadThreads, href: "/inbox", attention: counts.unreadThreads > 0 },
           ...(rep ? [{ label: "Your rating", value: rep.received.count ? `${rep.received.average_rating.toFixed(1)} ★` : "—", href: "/requester/reputation", hint: `${rep.received.count} reviews` }] : [])
         ]}
       />
@@ -151,7 +147,7 @@ export default async function Page() {
             <h2 id="recent-msgs" className="m-0 text-lg">
               Recent messages
             </h2>
-            <Link href="/requester/messages" className="text-sm font-medium text-primary">
+            <Link href="/inbox" className="text-sm font-medium text-primary">
               Open inbox
             </Link>
           </div>

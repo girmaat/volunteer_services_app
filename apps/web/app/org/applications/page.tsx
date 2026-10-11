@@ -133,7 +133,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
                   ) : null}
                   <Link
                     className="ml-1 text-sm font-medium text-primary"
-                    href={`/org/messages/${a.volunteer_user_id}?requestId=${a.request_id}&applicationId=${a.application_id}`}
+                    href={`/inbox/start?requestId=${a.request_id}&volunteerId=${a.volunteer_user_id}`}
                   >
                     Message
                   </Link>

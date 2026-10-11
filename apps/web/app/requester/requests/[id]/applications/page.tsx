@@ -368,7 +368,7 @@ export default async function Page(
       </button>
     </form>
 
-    <Link className={styles.button} href={`/requester/messages/${a.volunteer_user_id}?requestId=${id}&applicationId=${a.id}`}>
+    <Link className={styles.button} href={`/inbox/start?requestId=${id}&volunteerId=${a.volunteer_user_id}`}>
       Message
     </Link>
 
@@ -381,7 +381,7 @@ export default async function Page(
   </div>
 ) : (
   <div className={styles.actionsRow}>
-    <Link className={styles.button} href={`/requester/messages/${a.volunteer_user_id}?requestId=${id}&applicationId=${a.id}`}>
+    <Link className={styles.button} href={`/inbox/start?requestId=${id}&volunteerId=${a.volunteer_user_id}`}>
       Message
     </Link>
 

@@ -19,6 +19,10 @@ import { registerAdminRoutes } from "./modules/admin";
 import { registerRequestRoutes } from "./modules/requests/routes";
 import { registerNotificationRoutes } from "./modules/notifications/routes";
 import { registerDiscoveryRoutes } from "./modules/discovery/routes";
+import { registerMessagingRoutes } from "./modules/messaging/routes";
+import { onMessageReceived } from "./modules/messaging/jobs";
+import { registerJobHandler } from "./jobs/queue";
+import { runHourly } from "./jobs/maintenance";
 import { registerDocsRoutes } from "./openapi/docs";
 
 export function createApp(): Express {
@@ -84,6 +88,9 @@ export function createApp(): Express {
   registerRequestRoutes(app);
   registerNotificationRoutes(app);
   registerDiscoveryRoutes(app);
+  registerMessagingRoutes(app);
+  registerJobHandler("notify.message_received", onMessageReceived);
+  registerJobHandler("maintenance.hourly", runHourly);
   registerAdminRoutes(app);
 
   app.use(notFoundHandler);

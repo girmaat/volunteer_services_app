@@ -7,7 +7,6 @@ import { registerOrgApplicationsRoutes } from "./applications.routes";
 import { registerOrgComplianceRoutes } from "./compliance.routes";
 import { registerOrgDocumentsRoutes } from "./documents.routes";
 import { registerOrgReportsRoutes } from "./reports.routes";
-import { registerOrgMessagesRoutes } from "./messages.routes";
 
 /** All /v1 routes for the org area. */
 export function registerOrgRoutes(app: Express) {
@@ -19,5 +18,4 @@ export function registerOrgRoutes(app: Express) {
   registerOrgComplianceRoutes(app);
   registerOrgDocumentsRoutes(app);
   registerOrgReportsRoutes(app);
-  registerOrgMessagesRoutes(app);
 }

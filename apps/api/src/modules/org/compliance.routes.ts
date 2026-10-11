@@ -40,7 +40,7 @@ export function registerOrgComplianceRoutes(app: Express) {
         `
         SELECT
           v.id AS volunteer_user_id,
-          v.email AS volunteer_email,
+          CASE WHEN COUNT(*) FILTER (WHERE a.status IN ('accepted','confirmed','completed')) > 0 THEN v.email END AS volunteer_email,
           vp.display_name AS volunteer_display_name,
           vp.avatar_url AS volunteer_avatar_url,
           COALESCE(vp.public_location, vp.location) AS volunteer_public_location,

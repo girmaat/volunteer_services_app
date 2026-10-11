@@ -55,7 +55,7 @@ export default async function OrgDashboardPage() {
             stats={[
               { label: "Open requests", value: data.openRequests, href: "/org/requests" },
               { label: "Applicants to review", value: data.pendingApplications, href: "/org/applications", attention: data.pendingApplications > 0 },
-              { label: "Unread messages", value: data.unreadMessages, href: "/org/messages", attention: data.unreadMessages > 0 },
+              { label: "Unread messages", value: data.unreadMessages, href: "/inbox", attention: data.unreadMessages > 0 },
               { label: "Team members", value: data.activeMembers, href: "/org/team" }
             ]}
           />

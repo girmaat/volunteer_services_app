@@ -38,7 +38,7 @@ export function registerOrgApplicationsRoutes(app: Express) {
           r.id AS request_id,
           r.title AS request_title,
           v.id AS volunteer_user_id,
-          v.email AS volunteer_email,
+          CASE WHEN a.status IN ('accepted','confirmed','completed') THEN v.email END AS volunteer_email,
           vp.display_name AS volunteer_display_name,
           vp.avatar_url AS volunteer_avatar_url,
           COALESCE(vp.public_location, vp.location) AS volunteer_public_location,

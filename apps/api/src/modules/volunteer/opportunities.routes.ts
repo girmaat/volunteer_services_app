@@ -7,6 +7,7 @@ import { listVolunteerSavedOpportunities, volunteerOpportunityRowsForUser } from
 import { pool } from "../../lib/db";
 import { discoverableSql } from "../requests/lifecycle";
 import { applyEligibility } from "../requests/eligibility";
+import { ensureConversation, sendMessage, SendError } from "../messaging/service";
 import { sendDetail } from "../discovery/routes";
 import { loadViewer } from "../discovery/query";
 import { enqueue } from "../../jobs/queue";
@@ -495,6 +496,13 @@ app.post(
       [user.id, id, initial, parsed.data.message]
     );
     await enqueue("notify.application_received", { applicationId: String(inserted.rows[0].id) });
+    // The application message opens the conversation with the organizer (same safety checks as any message).
+    try {
+      const conv = await ensureConversation(id, String(user.id));
+      await sendMessage(user as PolicyUser, conv, parsed.data.message);
+    } catch (err) {
+      if (!(err instanceof SendError)) throw err;
+    }
 
     return res.status(201).json({
       applicationId: inserted.rows[0]?.id,

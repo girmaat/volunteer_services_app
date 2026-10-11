@@ -12,7 +12,15 @@ const nextConfig = {
       { source: "/volunteer/saved", destination: "/volunteer/opportunities/saved", permanent: true },
       { source: "/requester", destination: "/requester/dashboard", permanent: true },
       { source: "/org", destination: "/org/dashboard", permanent: true },
-      { source: "/org/enroll", destination: "/org/signup", permanent: true }
+      { source: "/org/enroll", destination: "/org/signup", permanent: true },
+      // One inbox for every role (Phase 4.6).
+      { source: "/volunteer/messages/:path*", destination: "/inbox", permanent: true },
+      { source: "/requester/messages/:path*", destination: "/inbox", permanent: true },
+      { source: "/org/messages/:path*", destination: "/inbox", permanent: true },
+      { source: "/volunteer/messages", destination: "/inbox", permanent: true },
+      { source: "/requester/messages", destination: "/inbox", permanent: true },
+      { source: "/org/messages", destination: "/inbox", permanent: true },
+      { source: "/dashboard/home", destination: "/home", permanent: true }
     ];
   },
 

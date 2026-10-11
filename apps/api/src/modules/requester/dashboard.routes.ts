@@ -66,7 +66,7 @@ app.get(
         [user.id]
       ),
       pool.query(
-        "SELECT COUNT(DISTINCT sender_user_id)::int AS c FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL",
+        "SELECT COUNT(DISTINCT sender_user_id)::int AS c FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL AND status = 'sent'",
         [user.id]
       )
     ]);
@@ -100,7 +100,7 @@ app.get(
         a.message,
         a.created_at,
         a.volunteer_user_id,
-        u.email AS volunteer_email,
+        NULL::text AS volunteer_email, -- pending/waitlisted only: never shown before acceptance
         COALESCE(NULLIF(p.display_name, ''), NULLIF(split_part(COALESCE(p.full_name, ''), ' ', 1), ''), 'Member') AS volunteer_display_name,
         p.avatar_url AS volunteer_avatar_url,
         COALESCE(p.public_location, p.location) AS volunteer_public_location
@@ -129,7 +129,7 @@ app.get(
           created_at,
           read_at
         FROM direct_messages
-        WHERE sender_user_id = $1 OR recipient_user_id = $1
+        WHERE (sender_user_id = $1 OR (recipient_user_id = $1 AND status = 'sent'))
       ),
       agg AS (
         SELECT
@@ -156,7 +156,7 @@ app.get(
         a.request_id,
         a.application_id,
         r.title AS request_title,
-        u.email AS peer_email,
+        NULL::text AS peer_email, -- contact details stay in the app (4.6)
         COALESCE(NULLIF(p.display_name, ''), NULLIF(split_part(COALESCE(p.full_name, ''), ' ', 1), ''), 'Member') AS peer_display_name,
         p.avatar_url AS peer_avatar_url,
         COALESCE(p.public_location, p.location) AS peer_public_location,

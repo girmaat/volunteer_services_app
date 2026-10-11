@@ -36,7 +36,7 @@ app.get(
         FROM direct_messages dm
         JOIN users su ON su.id = dm.sender_user_id
         LEFT JOIN user_profiles p ON p.user_id = dm.sender_user_id
-        WHERE dm.recipient_user_id = $1
+        WHERE dm.recipient_user_id = $1 AND dm.status = 'sent'
 
         UNION ALL
 
@@ -217,7 +217,7 @@ app.get(
       SELECT COUNT(1)::int AS c FROM (
         SELECT dm.created_at AS created_at
         FROM direct_messages dm
-        WHERE dm.recipient_user_id = $1
+        WHERE dm.recipient_user_id = $1 AND dm.status = 'sent'
 
         UNION ALL
 
@@ -565,7 +565,7 @@ app.get(
         r.resolved_at,
 
         r.target_user_id,
-        tu.email AS target_user_email,
+        NULL::text AS target_user_email, -- reporters see display names, not emails
         COALESCE(NULLIF(tup.display_name, ''), NULLIF(split_part(COALESCE(tup.full_name, ''), ' ', 1), ''), 'Member') AS target_user_display_name,
 
         r.target_request_id,

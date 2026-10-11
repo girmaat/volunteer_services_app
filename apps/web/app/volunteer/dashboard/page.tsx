@@ -36,7 +36,7 @@ export default async function Page() {
           stats={[
             { label: "Applications in progress", value: counts.applicationsNeedingAction, href: "/volunteer/applications" },
             { label: "Upcoming", value: counts.upcomingCommitments, href: "/volunteer/calendar", hint: "confirmed shifts" },
-            { label: "Unread messages", value: counts.unreadMessages, href: "/volunteer/messages", attention: counts.unreadMessages > 0 },
+            { label: "Unread messages", value: counts.unreadMessages, href: "/inbox", attention: counts.unreadMessages > 0 },
             { label: "Saved", value: counts.savedOpportunities, href: "/volunteer/opportunities/saved" }
           ]}
         />
