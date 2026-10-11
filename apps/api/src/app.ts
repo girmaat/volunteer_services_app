@@ -18,6 +18,7 @@ import { registerOrgRoutes } from "./modules/org";
 import { registerAdminRoutes } from "./modules/admin";
 import { registerRequestRoutes } from "./modules/requests/routes";
 import { registerNotificationRoutes } from "./modules/notifications/routes";
+import { registerDiscoveryRoutes } from "./modules/discovery/routes";
 import { registerDocsRoutes } from "./openapi/docs";
 
 export function createApp(): Express {
@@ -82,6 +83,7 @@ export function createApp(): Express {
   registerOrgRoutes(app);
   registerRequestRoutes(app);
   registerNotificationRoutes(app);
+  registerDiscoveryRoutes(app);
   registerAdminRoutes(app);
 
   app.use(notFoundHandler);

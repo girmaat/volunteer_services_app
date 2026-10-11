@@ -236,6 +236,12 @@ export function publishProblems(row: Record<string, any>): string[] {
 }
 
 async function afterTransition(res: TransitionResult, actor: Actor, reason: string | null) {
+  if ((res.event === "publish" || res.event === "approve") && res.to === "open") {
+    // Geocode the public area (never the exact address) so "Near you" and distances work.
+    const loc = await defaultPool.query("SELECT mode, public_area, location_lat FROM service_requests WHERE id = $1", [res.id]);
+    const l = loc.rows[0];
+    if (l && l.mode !== "remote" && l.public_area && l.location_lat == null) await enqueue("geocode.request", { requestId: res.id, locationText: String(l.public_area) });
+  }
   if (res.to === "filled" && res.from !== "filled") await enqueue("notify.request_filled", { requestId: res.id });
   if (res.to === "canceled") await enqueue("notify.request_canceled", { requestId: res.id, reason, byAdmin: actor.kind === "admin" });
   if (res.event === "publish" && res.review_status === "pending_review") await enqueue("notify.request_needs_review", { requestId: res.id });

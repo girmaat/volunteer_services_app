@@ -7,6 +7,8 @@ import { listVolunteerSavedOpportunities, volunteerOpportunityRowsForUser } from
 import { pool } from "../../lib/db";
 import { discoverableSql } from "../requests/lifecycle";
 import { applyEligibility } from "../requests/eligibility";
+import { sendDetail } from "../discovery/routes";
+import { loadViewer } from "../discovery/query";
 import { enqueue } from "../../jobs/queue";
 import type { PolicyUser } from "../../lib/policy";
 import { wrap } from "../../lib/http";
@@ -405,41 +407,9 @@ app.get(
     if (!idParsed.success) return res.status(400).json({ message: "Invalid id" });
     const id = idParsed.data;
 
-    const rows = await pool.query(
-      `
-      SELECT
-        o.id,
-        o.title,
-        o.description AS summary,
-        COALESCE(o.location_text, '') AS location,
-        COALESCE(o.mode, 'remote') AS mode,
-        o.updated_at,
-        org.name AS organization_name,
-        o.requester_user_id AS requester_user_id,
-        o.tags,
-        (s.user_id IS NOT NULL) AS saved,
-        a.id AS application_id,
-        a.status AS application_status,
-        a.message AS application_message,
-        a.created_at AS application_created_at
-      FROM service_requests o
-      LEFT JOIN organizations org ON org.slug = o.requester_org_slug
-      LEFT JOIN volunteer_saved_requests s ON s.user_id = $1 AND s.request_id = o.id
-      LEFT JOIN LATERAL (
-        SELECT id, status, message, created_at
-        FROM request_applications
-        WHERE volunteer_user_id = $1 AND request_id = o.id
-        ORDER BY updated_at DESC
-        LIMIT 1
-      ) a ON TRUE
-      WHERE o.id = $2
-      `,
-      [user.id, id]
-    );
-
-    if (rows.rowCount === 0) return res.status(404).json({ message: "Opportunity not found" });
-
-    return res.json(rows.rows[0]);
+    // Same visibility and privacy rules as discovery (4.4/4.5).
+    const viewer = await loadViewer(user as PolicyUser);
+    return sendDetail(res, user as PolicyUser, viewer, id);
   })
 );
 

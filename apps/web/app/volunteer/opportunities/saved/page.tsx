@@ -1,65 +1,34 @@
-import styles from "../../volunteer.module.css";
-import OpportunityTabs from "../_components/OpportunityTabs";
-import { type OpportunityListItem } from "../_components/OpportunityCard";
-import SavedOpportunitiesClient from "./SavedOpportunitiesClient";
 import { backendFetch } from "../../../lib/backend";
-import { redirect } from "next/navigation";
+import { ButtonLink, EmptyState, LinkTabs, Notice, PageHeader } from "../../../../components/ui";
+import OpportunityRow, { type OpportunitySummary } from "../../../../components/opportunities/OpportunityRow";
 
 export const dynamic = "force-dynamic";
 
-async function load(): Promise<{ opportunities: OpportunityListItem[]; error?: string }> {
-  const returnTo = "/volunteer/opportunities/saved";
-  const res = await backendFetch("/v1/volunteer/opportunities/saved", { method: "GET" });
-
-  if (res.status === 401) {
-    redirect(`/login?returnTo=${encodeURIComponent(returnTo)}`);
-  }
-
-  if (!res.ok) {
-    let msg = "";
-    try {
-      const data = (await res.json()) as any;
-      msg = typeof data?.message === "string" ? data.message : "";
-    } catch {
-      msg = "";
-    }
-    return { opportunities: [], error: msg || res.statusText || "Internal server error" };
-  }
-
-  return { opportunities: (await res.json()) as OpportunityListItem[] };
-}
+const TABS = [
+  { href: "/volunteer/opportunities/recommended", label: "Recommended" },
+  { href: "/volunteer/opportunities/nearby", label: "Near you" },
+  { href: "/volunteer/opportunities/remote", label: "Remote" },
+  { href: "/volunteer/opportunities/saved", label: "Saved" }
+];
 
 export default async function Page() {
-  const { opportunities, error } = await load();
-
+  const res = await backendFetch("/v1/volunteer/opportunities/saved");
+  const items = res.ok ? ((await res.json()) as OpportunitySummary[]) : null;
   return (
-    <div>
-      <div className={styles.row}>
-        <div>
-          <h1 className={styles.sectionTitle}>Saved opportunities</h1>
-          <p className={styles.meta}>Opportunities you’ve saved (DB-backed).</p>
-        </div>
-        <div className={styles.small}>{error ? "—" : opportunities.length} total</div>
-      </div>
-
-      <OpportunityTabs />
-
-      {error ? (
-        <div className={styles.banner}>
-          <p className={styles.bannerTitle}>Couldn&apos;t load opportunities</p>
-          <p className={styles.bannerBody}>{error}</p>
-        </div>
-      ) : opportunities.length === 0 ? (
-        <div className={styles.banner}>
-          <p className={styles.bannerTitle}>No opportunities found</p>
-          <p className={styles.bannerBody}>Browse other tabs, or use “Unsave” here to remove items quickly.</p>
-        </div>
+    <>
+      <PageHeader title="Saved" description="Opportunities you bookmarked. Ones that close or fill drop off automatically." />
+      <LinkTabs label="Opportunity lists" items={TABS} />
+      {items === null ? <Notice tone="danger">Saved opportunities couldn&apos;t load. Refresh to try again.</Notice> : null}
+      {items && items.length === 0 ? (
+        <EmptyState title="Nothing saved yet" body="Tap Save on any opportunity to keep it here." action={<ButtonLink href="/volunteer/opportunities/recommended">Find opportunities</ButtonLink>} />
       ) : null}
-
-      <SavedOpportunitiesClient initial={opportunities} />
-    </div>
+      {items?.length ? (
+        <ul className="m-0 border-t border-line p-0">
+          {items.map((o) => (
+            <OpportunityRow key={o.id} o={o} href={`/volunteer/opportunities/${o.id}`} />
+          ))}
+        </ul>
+      ) : null}
+    </>
   );
 }
-
-
-

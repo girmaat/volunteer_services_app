@@ -180,7 +180,8 @@ export function registerRequestRoutes(app: Express) {
       // Editing a request that's waiting for review takes it out of the queue until it's submitted again.
       if (row.review_status === "pending_review") await pool.query("UPDATE service_requests SET review_status = 'approved' WHERE id = $1", [row.id]);
       if (live && (f.mode || f.publicArea || f.exactAddress)) {
-        const loc = await pool.query("SELECT mode, COALESCE(exact_address, public_area) AS q FROM service_requests WHERE id = $1", [row.id]);
+        // Geocode the public area only: distances must not reveal the exact address.
+        const loc = await pool.query("SELECT mode, public_area AS q FROM service_requests WHERE id = $1", [row.id]);
         if (loc.rows[0]?.mode !== "remote" && loc.rows[0]?.q) await enqueue("geocode.request", { requestId: row.id, locationText: String(loc.rows[0].q) });
       }
       if (live && f.volunteersNeeded !== undefined) await syncStaffing(row.id, { userId: user.id, kind: "user" });
