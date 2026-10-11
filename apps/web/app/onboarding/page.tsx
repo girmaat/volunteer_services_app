@@ -419,17 +419,17 @@ export default async function Page() {
                 <div>
                   <div className={styles.meta}>Logistics (optional)</div>
                   <div className={styles.buttonRow}>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="hasCar" defaultChecked={!!profile?.has_car} /> Has a car
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="hasCar" defaultChecked={!!profile?.has_car} /> Has a car
                     </label>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="canLiftHeavy" defaultChecked={!!profile?.can_lift_heavy} /> Can lift heavy
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="canLiftHeavy" defaultChecked={!!profile?.can_lift_heavy} /> Can lift heavy
                     </label>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="stairsOk" defaultChecked={!!profile?.stairs_ok} /> OK with stairs
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="stairsOk" defaultChecked={!!profile?.stairs_ok} /> OK with stairs
                     </label>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="petFriendly" defaultChecked={!!profile?.pet_friendly} /> Pet friendly
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="petFriendly" defaultChecked={!!profile?.pet_friendly} /> Pet friendly
                     </label>
                   </div>
                 </div>
@@ -467,20 +467,20 @@ export default async function Page() {
                 <div>
                   <div className={styles.meta}>Logistics (optional)</div>
                   <div className={styles.buttonRow}>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="parkingAvailable" defaultChecked={!!profile?.parking_available} /> Parking available
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="parkingAvailable" defaultChecked={!!profile?.parking_available} /> Parking available
                     </label>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="elevatorAvailable" defaultChecked={!!profile?.elevator_available} /> Elevator available
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="elevatorAvailable" defaultChecked={!!profile?.elevator_available} /> Elevator available
                     </label>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="stairsPresent" defaultChecked={!!profile?.stairs_present} /> Stairs present
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="stairsPresent" defaultChecked={!!profile?.stairs_present} /> Stairs present
                     </label>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="petsAtHome" defaultChecked={!!profile?.pets_at_home} /> Pets at home
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="petsAtHome" defaultChecked={!!profile?.pets_at_home} /> Pets at home
                     </label>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="smokeFree" defaultChecked={!!profile?.smoke_free} /> Smoke-free home
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="smokeFree" defaultChecked={!!profile?.smoke_free} /> Smoke-free home
                     </label>
                   </div>
                 </div>
@@ -513,14 +513,14 @@ export default async function Page() {
                 <div>
                   <div className={styles.meta}>Communication & safety preferences (optional)</div>
                   <div className={styles.buttonRow}>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="meetInPublicFirst" defaultChecked={!!profile?.meet_in_public_first} /> Meet in public first
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="meetInPublicFirst" defaultChecked={!!profile?.meet_in_public_first} /> Meet in public first
                     </label>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="someoneElsePresent" defaultChecked={!!profile?.someone_else_present} /> Someone else present
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="someoneElsePresent" defaultChecked={!!profile?.someone_else_present} /> Someone else present
                     </label>
-                    <label className={styles.meta}>
-                      <input type="checkbox" name="maskPreferred" defaultChecked={!!profile?.mask_preferred} /> Mask preferred
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="maskPreferred" defaultChecked={!!profile?.mask_preferred} /> Mask preferred
                     </label>
                   </div>
                 </div>
@@ -542,16 +542,16 @@ export default async function Page() {
               <input className={styles.input} name="timezone" defaultValue="America/New_York" required />
             </label>
 
-            <div>
-              <div className={styles.meta}>Days available</div>
-              <div className={styles.buttonRow}>
+            <fieldset className="m-0 border-0 p-0">
+              <legend className={`${styles.meta} p-0`}>Days available</legend>
+              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
                 {days.map((d) => (
-                  <label key={d} className={styles.meta}>
-                    <input type="checkbox" name={`day_${d}`} /> {d}
+                  <label key={d} className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                    <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name={`day_${d}`} /> {d}
                   </label>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             <label>
               <div className={styles.meta}>Hours per week</div>
@@ -559,11 +559,11 @@ export default async function Page() {
             </label>
 
             <div className={styles.buttonRow}>
-              <label className={styles.meta}>
-                <input type="checkbox" name="remoteOk" defaultChecked /> Remote OK
+              <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="remoteOk" defaultChecked /> Remote OK
               </label>
-              <label className={styles.meta}>
-                <input type="checkbox" name="inPersonOk" /> In-person OK
+              <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                <input type="checkbox" className="h-[18px] w-[18px] accent-[var(--primary)]" name="inPersonOk" /> In-person OK
               </label>
             </div>
 

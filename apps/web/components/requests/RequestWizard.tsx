@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { AlertTriangle, Check, Lock } from "lucide-react";
-import { publishDraft, saveWizardStep } from "../../app/_requests/actions";
-import { Button, Card, Checkbox, Notice } from "../ui";
+import { Button, Card, Checkbox, Notice, SubmitButton } from "../ui";
 import { cn } from "../../lib/cn";
 import type { Category, OwnerRequest } from "../../lib/requests";
 import { COMMON_TIMEZONES, DAY_LABELS, WEEK_DAYS, describeRrule, formatInZone, isoToZonedLocal, rruleDays } from "../../lib/time";
@@ -68,18 +67,18 @@ function Nav({ step }: { step: number }) {
     <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
       <div>
         {step > 1 ? (
-          <Button type="submit" name="nav" value="back" variant="ghost">
+          <SubmitButton name="nav" value="back" variant="ghost">
             Back
-          </Button>
+          </SubmitButton>
         ) : null}
       </div>
       <div className="flex gap-2">
-        <Button type="submit" name="nav" value="save" variant="secondary">
+        <SubmitButton name="nav" value="save" variant="secondary">
           Save draft
-        </Button>
-        <Button type="submit" name="nav" value="next">
+        </SubmitButton>
+        <SubmitButton name="nav" value="next">
           Continue
-        </Button>
+        </SubmitButton>
       </div>
     </div>
   );
@@ -135,7 +134,7 @@ export default function RequestWizard({
               <strong>Not for urgent or life-threatening needs.</strong> If someone is in danger, call your local emergency number (911 in the US).
             </p>
           </div>
-          <form action={saveWizardStep} className="grid gap-5">
+          <form key="step-1" action="/api/requests/wizard" method="post" className="grid gap-5">
             <Hidden base={base} owner={owner} step={1} id={id} />
             <div className="grid gap-1.5">
               <label htmlFor="w-title" className={label}>
@@ -233,7 +232,7 @@ export default function RequestWizard({
       ) : null}
 
       {step === 2 && d ? (
-        <form action={saveWizardStep} className="grid gap-5">
+        <form key="step-2" action="/api/requests/wizard" method="post" className="grid gap-5">
           <Hidden base={base} owner={owner} step={2} id={id} />
           <fieldset className="m-0 grid gap-2 border-0 p-0">
             <legend className={cn(label, "mb-1.5 p-0")}>Schedule</legend>
@@ -308,7 +307,7 @@ export default function RequestWizard({
       ) : null}
 
       {step === 3 && d ? (
-        <form action={saveWizardStep} className="grid gap-5">
+        <form key="step-3" action="/api/requests/wizard" method="post" className="grid gap-5">
           <Hidden base={base} owner={owner} step={3} id={id} />
           <fieldset className="m-0 grid gap-2 border-0 p-0">
             <legend className={cn(label, "mb-1.5 p-0")}>Where does it happen?</legend>
@@ -354,7 +353,7 @@ export default function RequestWizard({
       ) : null}
 
       {step === 4 && d ? (
-        <form action={saveWizardStep} className="grid gap-5">
+        <form key="step-4" action="/api/requests/wizard" method="post" className="grid gap-5">
           <Hidden base={base} owner={owner} step={4} id={id} />
           <div className="grid gap-1.5 sm:max-w-xs">
             <label htmlFor="w-age" className={label}>
@@ -428,16 +427,17 @@ export default function RequestWizard({
           {cat?.is_sensitive ? (
             <Notice tone="info">This category is reviewed by our team before it goes live, usually within a day. Only verified volunteers will see it.</Notice>
           ) : null}
-          <form action={publishDraft} className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
+          <form action="/api/requests/wizard" method="post" className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
             <input type="hidden" name="base" value={base} />
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="detail" value={`${detailBase}/${id}`} />
+            <input type="hidden" name="intent" value="publish" />
             <Link href={`${base}?id=${id}&step=4`} className="text-sm font-medium text-primary">
               Back
             </Link>
-            <Button type="submit" disabled={d.publish_problems.length > 0 || d.review_status === "pending_review"}>
+            <SubmitButton disabled={d.publish_problems.length > 0 || d.review_status === "pending_review"}>
               {cat?.is_sensitive ? "Submit for review" : "Publish request"}
-            </Button>
+            </SubmitButton>
           </form>
         </div>
       ) : null}

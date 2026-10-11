@@ -7,3 +7,4 @@ export * from "./StatStrip";
 export * from "./Controls";
 export * from "./Table";
 export * from "./Overlay";
+export * from "./SubmitButton";

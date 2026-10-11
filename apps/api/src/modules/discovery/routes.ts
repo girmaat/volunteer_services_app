@@ -112,11 +112,15 @@ export async function sendDetail(res: import("express").Response, user: PolicyUs
   const accepted = application && ["accepted", "confirmed", "completed"].includes(String(application.status));
   const saved = user ? await pool.query("SELECT 1 FROM volunteer_saved_requests WHERE user_id = $1 AND request_id = $2", [user.id, id]) : null;
   const eligibility = user && can(user, "volunteer:act") && !application ? await applyEligibility(user, id) : null;
+  // Phone numbers, emails and links in the text stay masked until the volunteer is accepted (4.6).
+  const text = accepted
+    ? (await pool.query("SELECT description, accessibility_notes, equipment_notes FROM service_requests WHERE id = $1", [id])).rows[0]
+    : row;
   return res.json({
     ...present(row, viewer),
-    description: row.description,
-    accessibility_notes: row.accessibility_notes,
-    equipment_notes: row.equipment_notes,
+    description: text.description,
+    accessibility_notes: text.accessibility_notes,
+    equipment_notes: text.equipment_notes,
     min_age: row.min_age,
     requires_background_check: row.requires_background_check,
     requires_training: row.requires_training,

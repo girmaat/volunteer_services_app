@@ -94,10 +94,10 @@ export async function loadViewer(user: PolicyUser | null): Promise<Viewer> {
 
 /** Public, privacy-safe columns plus match components. $1..$11 are viewer params (see `viewerParams`). */
 const SELECT = `
-  r.id, r.title, LEFT(r.description, 280) AS summary, r.description, r.category, c.label AS category_label, r.mode,
+  r.id, r.title, LEFT(mask_contacts(r.description), 280) AS summary, mask_contacts(r.description) AS description, r.category, c.label AS category_label, r.mode,
   r.public_area, r.starts_at, r.ends_at, r.schedule_type, r.recurrence_rule, r.timezone, r.duration_minutes, r.apply_by,
   r.volunteers_needed, r.urgency, r.required_skills, r.nice_to_have_skills, r.min_age, r.requires_background_check,
-  r.requires_training, r.requires_waiver, r.requires_car, r.accessibility_notes, r.equipment_notes, r.is_sensitive,
+  r.requires_training, r.requires_waiver, r.requires_car, mask_contacts(r.accessibility_notes) AS accessibility_notes, mask_contacts(r.equipment_notes) AS equipment_notes, r.is_sensitive,
   r.status, r.published_at, r.updated_at,
   org.name AS organization_name, org.slug AS organization_slug,
   COALESCE(org.verification_status IN ('approved', 'verified'), FALSE) AS organization_verified,

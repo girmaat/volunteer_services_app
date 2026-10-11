@@ -130,6 +130,28 @@ describe("sensitive requests and location privacy", () => {
     expect((await (await as(EMAILS.volunteer)).get(`/v1/discovery/opportunities/${id}`)).body.exact_address).toBeNull();
   });
 
+  it("masks phone numbers and emails in the description until the volunteer is accepted", async () => {
+    await createUser({ email: "mask.vol@thankyou.test", roles: ["volunteer"] });
+    const r = await pool.query("SELECT id FROM service_requests WHERE title = 'Saturday distribution shift'");
+    const id = r.rows[0].id as string;
+    await pool.query("UPDATE service_requests SET description = description || ' Text me at 718-555-0142 or write to shift.lead@example.org.' WHERE id = $1", [id]);
+    try {
+      const pub = await anon().get(`/v1/discovery/opportunities?q=distribution&limit=50`);
+      expect(JSON.stringify(pub.body)).not.toMatch(/718-555-0142|shift\.lead@example\.org/);
+      const vol = await as("mask.vol@thankyou.test");
+      let d = await vol.get(`/v1/discovery/opportunities/${id}`);
+      expect(d.body.description).not.toMatch(/718-555-0142|shift\.lead@example\.org/);
+      const applied = await vol.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "Happy to help" });
+      const org = await as(EMAILS.orgAdmin);
+      await org.post("/v1/me/context", { context: "org:harbor-food-bank" });
+      await org.patch(`/v1/org/applications/${applied.body.applicationId}`, { status: "accepted" });
+      d = await vol.get(`/v1/discovery/opportunities/${id}`);
+      expect(d.body.description).toContain("718-555-0142");
+    } finally {
+      await pool.query("UPDATE service_requests SET description = regexp_replace(description, ' Text me at .*$', '') WHERE id = $1", [id]);
+    }
+  });
+
   it("never lists your own requests back to you", async () => {
     const api = await as(EMAILS.dual);
     const created = await api.post("/v1/requests", {

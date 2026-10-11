@@ -63,8 +63,27 @@ function shouldClearFlash(pathname: string) {
   );
 }
 
+/**
+ * Form posts to our own route handlers must come from our own pages. The session cookie is
+ * SameSite=Lax (so cross-site POSTs arrive without it); this Origin check is defence in depth.
+ */
+function crossSitePost(request: NextRequest) {
+  if (["GET", "HEAD", "OPTIONS"].includes(request.method)) return false;
+  if (!request.nextUrl.pathname.startsWith("/api/")) return false;
+  const origin = request.headers.get("origin");
+  if (!origin) return false; // same-origin form posts from older browsers may omit it
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  try {
+    return new URL(origin).host !== host;
+  } catch {
+    return true;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname || "/";
+
+  if (crossSitePost(request)) return new NextResponse("Cross-site request blocked", { status: 403 });
 
   // Flash cookie is a one-time message used by auth routes.
   // We clear it on the next navigation to an auth page so it doesn't persist.
