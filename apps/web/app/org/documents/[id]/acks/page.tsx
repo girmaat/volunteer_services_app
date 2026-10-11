@@ -1,3 +1,4 @@
+import { inOrg } from "../../../../../lib/access";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import styles from "../../../org.module.css";
@@ -31,7 +32,7 @@ export default async function Page(
   const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.role !== "org_admin") redirect("/dashboard");
+  if (!inOrg(user)) redirect("/dashboard");
   const ctx = await getOrgContext();
   if (!ctx) redirect("/org/signup");
   if (!ctx.org.onboarding_completed) redirect("/org/onboarding");

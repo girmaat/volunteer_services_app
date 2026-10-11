@@ -265,21 +265,8 @@ export function registerOrgTeamRoutes(app: Express) {
         return res.status(403).json({ message: "This invite was sent to a different email address." });
       }
 
-      // Ensure this user can become an org team member.
-      const u = await pool.query("SELECT id, role, requester_mode, account_type FROM users WHERE id=$1", [String((user as any).id)]);
-      if ((u.rowCount ?? 0) === 0) return res.status(401).json({ message: "Not authenticated" });
-      const ur = u.rows[0] as any;
-
-      const role = String(ur.role || "");
-      const requesterMode = String(ur.requester_mode || "");
-      const accountType = String(ur.account_type || "");
-
-      if (role === "volunteer" || accountType === "volunteer") {
-        return res.status(409).json({ message: "This invite requires an org-team account. Please sign in with an org-team account email." });
-      }
-      if (role === "requester" && requesterMode !== "organization") {
-        return res.status(409).json({ message: "This invite requires an org-team account. Please use a separate org-team account email." });
-      }
+      // One account, multiple roles: volunteers and requesters can also join an organization's team.
+      const hasMemberRoles = ((user as any).roles || []).length > 0;
 
       await pool.query("BEGIN");
       try {
@@ -313,8 +300,8 @@ export function registerOrgTeamRoutes(app: Express) {
           );
         }
 
-        // Convert to org team member (mutually exclusive from individual requester).
-        await pool.query(
+        // Accounts that only exist for the org become org-team accounts; others keep their roles.
+        if (!hasMemberRoles) await pool.query(
           `UPDATE users
              SET role='org_admin',
                  account_type='org_team_member',

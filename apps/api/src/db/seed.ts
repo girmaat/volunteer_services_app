@@ -29,17 +29,22 @@ type Persona = {
   inPersonOk?: boolean;
   hasCar?: boolean;
   radius?: number;
-  platformAdmin?: "super" | "admin";
+  platformAdmin?: "super" | "admin" | "moderator";
+  /** Member roles; defaults to `role` when it is volunteer/requester. */
+  roles?: ("volunteer" | "requester")[];
+  /** Identity checked by an admin (trust tier "trusted"). */
+  trusted?: boolean;
 };
 
 const PERSONAS: Persona[] = [
   { key: "admin", email: `admin@${DOMAIN}`, fullName: "Ada Admin", displayName: "Ada (Admin)", role: "volunteer", accountType: "volunteer", location: "Brooklyn, NY", lat: 40.6782, lng: -73.9442, platformAdmin: "super" },
   { key: "org_admin", email: `org.admin@${DOMAIN}`, fullName: "Olivia Ortiz", displayName: "Olivia", role: "org_admin", accountType: "org_team_member", location: "Queens, NY", lat: 40.7282, lng: -73.7949 },
   { key: "org_member", email: `org.member@${DOMAIN}`, fullName: "Marcus Lee", displayName: "Marcus", role: "org_admin", accountType: "org_team_member", location: "Queens, NY", lat: 40.7282, lng: -73.7949 },
-  { key: "vol_local", email: `volunteer.local@${DOMAIN}`, fullName: "Valerie Nguyen", displayName: "Valerie", role: "volunteer", accountType: "volunteer", location: "Jersey City, NJ", lat: 40.7178, lng: -74.0431, helpCategories: ["food", "seniors", "transport"], experienceTags: ["driving", "cooking", "lifting"], remoteOk: false, inPersonOk: true, hasCar: true, radius: 15 },
+  { key: "vol_local", email: `volunteer.local@${DOMAIN}`, fullName: "Valerie Nguyen", displayName: "Valerie", role: "volunteer", accountType: "volunteer", location: "Jersey City, NJ", lat: 40.7178, lng: -74.0431, helpCategories: ["food", "seniors", "transport"], experienceTags: ["driving", "cooking", "lifting"], remoteOk: false, inPersonOk: true, hasCar: true, radius: 15, trusted: true },
   { key: "vol_remote", email: `volunteer.remote@${DOMAIN}`, fullName: "Ravi Patel", displayName: "Ravi", role: "volunteer", accountType: "volunteer", location: "Hoboken, NJ", lat: 40.7433, lng: -74.0324, helpCategories: ["education", "tech", "translation"], experienceTags: ["tutoring", "spanish", "web design"], remoteOk: true, inPersonOk: false, hasCar: false, radius: 5 },
   { key: "requester", email: `requester@${DOMAIN}`, fullName: "Rose Martin", displayName: "Rose", role: "requester", accountType: "individual_requester", requesterMode: "individual", location: "Manhattan, NY", lat: 40.7831, lng: -73.9712 },
-  { key: "dual", email: `dual.role@${DOMAIN}`, fullName: "Diego Alvarez", displayName: "Diego", role: "volunteer", accountType: "volunteer", location: "Newark, NJ", lat: 40.7357, lng: -74.1724, helpCategories: ["community", "food"], experienceTags: ["event setup"], remoteOk: true, inPersonOk: true, hasCar: true, radius: 20 }
+  { key: "dual", email: `dual.role@${DOMAIN}`, fullName: "Diego Alvarez", displayName: "Diego", role: "volunteer", accountType: "volunteer", location: "Newark, NJ", lat: 40.7357, lng: -74.1724, helpCategories: ["community", "food"], experienceTags: ["event setup"], remoteOk: true, inPersonOk: true, hasCar: true, radius: 20, roles: ["volunteer", "requester"] },
+  { key: "moderator", email: `moderator@${DOMAIN}`, fullName: "Maya Moderator", displayName: "Maya (Moderator)", role: "volunteer", accountType: "volunteer", location: "Brooklyn, NY", lat: 40.6782, lng: -73.9442, platformAdmin: "moderator" }
 ];
 
 const ORGS = [
@@ -104,6 +109,13 @@ async function upsertUser(c: PoolClient, p: Persona, passwordHash: string): Prom
       [id, ["sat", "sun", "wed"], p.remoteOk ?? true, p.inPersonOk ?? true]
     );
   }
+  const roles = p.roles ?? (p.role === "volunteer" || p.role === "requester" ? [p.role] : []);
+  await c.query("DELETE FROM user_roles WHERE user_id = $1 AND NOT (role = ANY($2::text[]))", [id, roles]);
+  for (const r of roles) await c.query("INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING", [id, r]);
+  await c.query(
+    "UPDATE users SET verification_status = $2, verified_at = CASE WHEN $2 = 'approved' THEN COALESCE(verified_at, NOW()) ELSE NULL END WHERE id = $1",
+    [id, p.trusted ? "approved" : "not_required"]
+  );
   if (p.platformAdmin) {
     await c.query(
       `INSERT INTO platform_admins (user_id, role, notes) VALUES ($1, $2, 'seed')

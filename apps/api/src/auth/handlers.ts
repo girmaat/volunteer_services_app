@@ -7,7 +7,8 @@ import multer from "multer";
 import { z } from "zod";
 import { randomTokenUrlSafe, sha256 } from "./crypto";
 import { devEmailLink, sendEmail } from "./email";
-import { createSession, deleteSession, deleteAllSessionsForUser, requireUserBySession } from "./session";
+import { createSession, deleteSession, deleteAllSessionsForUser, requireUserBySession, setSessionContext } from "./session";
+import { availableContexts, homeFor, type PolicyUser } from "../lib/policy";
 import { recomputeOnboarding } from "./onboarding";
 import { ensureUserGeo } from "../geo";
 import { getAdminFlags } from "../admin/auth";
@@ -32,7 +33,19 @@ export async function me(pool: Pool, req: Request, res: Response) {
   if (!user) return res.status(401).json({ message: "Not authenticated" });
 
   const flags = await getAdminFlags(pool, user as any);
-  return res.json({ user: { ...(user as any), is_platform_admin: flags.isPlatformAdmin, is_super_admin: flags.isSuperAdmin, platform_admin_role: flags.platformAdminRole } });
+  const contexts = availableContexts(user as PolicyUser);
+  const active = user.active_context && (contexts as string[]).includes(user.active_context) ? user.active_context : null;
+  return res.json({
+    user: {
+      ...(user as any),
+      active_context: active,
+      contexts,
+      home: homeFor(active ?? (user.role === "org_admin" ? "org:" : user.role)),
+      is_platform_admin: flags.isPlatformAdmin,
+      is_super_admin: flags.isSuperAdmin,
+      platform_admin_role: flags.platformAdminRole
+    }
+  });
 }
 
 export async function signup(pool: Pool, req: Request, res: Response) {
@@ -408,6 +421,10 @@ export async function setRole(pool: Pool, req: Request, res: Response) {
     `UPDATE users SET role=$2, account_type=$3, verification_required=$4, verification_status=$5, updated_at=NOW() WHERE id=$1`,
     [user.id, role, accountType, verificationRequired, verificationStatus]
   );
+  // During first-time onboarding the choice can change; afterwards use POST /v1/me/roles to add a role.
+  if (!user.onboarding_completed) await pool.query("DELETE FROM user_roles WHERE user_id=$1 AND role<>$2", [user.id, role]);
+  await pool.query("INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING", [user.id, role]);
+  await setSessionContext(pool, token, role);
 
   await recomputeOnboarding(pool, user.id);
 

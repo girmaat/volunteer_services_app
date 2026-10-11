@@ -452,7 +452,7 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
         throw e;
       }
 
-      const ctx = await getOrgContextForUser(pool, String((ok.user as any).id));
+      const ctx = await getOrgContextForUser(pool, String((ok.user as any).id), ok.ctx.org.slug);
       return res.json({ org: ctx?.org ? { slug: ctx.org.slug } : { slug: newSlug } });
     })
   );
@@ -553,7 +553,7 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
         ]
       );
 
-      const ctx = await getOrgContextForUser(pool, String((ok.user as any).id));
+      const ctx = await getOrgContextForUser(pool, String((ok.user as any).id), ok.ctx.org.slug);
       return res.json(ctx);
     })
   );
@@ -596,7 +596,7 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
         [ok.ctx.org.slug, notes]
       );
 
-      const ctx = await getOrgContextForUser(pool, String((ok.user as any).id));
+      const ctx = await getOrgContextForUser(pool, String((ok.user as any).id), ok.ctx.org.slug);
       return res.json({ ok: true, org: ctx?.org ?? ok.ctx.org });
     })
   );

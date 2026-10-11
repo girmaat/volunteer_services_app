@@ -1,3 +1,4 @@
+import { can, type PolicyUser } from "../../lib/policy";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
@@ -43,7 +44,7 @@ app.get("/v1/shares/:token", async (req, res) => {
 
   if (visibility === "private") {
     const isOwner = Boolean(user) && String((user as any).id) === String(link.created_by_user_id);
-    const isAdmin = Boolean(user) && String((user as any).role || "") === "admin";
+    const isAdmin = can(user as PolicyUser | null, "platform:moderate");
     if (!isOwner && !isAdmin) {
       // Don't disclose existence for private shares.
       return res.status(404).json({ message: "Not found" });
@@ -273,7 +274,7 @@ app.post("/v1/shares/:token/revoke", async (req, res) => {
 
   const row = linkRes.rows[0] as any;
   const isOwner = String(row.created_by_user_id) === String(user.id);
-  const isAdmin = String((user as any).role || "") === "admin";
+  const isAdmin = can(user as PolicyUser, "platform:moderate");
 
   if (!isOwner && !isAdmin) return res.status(403).json({ message: "Forbidden" });
 

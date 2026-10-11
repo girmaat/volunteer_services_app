@@ -1,3 +1,4 @@
+import ProfileTabs from "../../../components/shell/ProfileTabs";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { backendFetch, getCurrentUser, getRequesterProfile, getMyShareModerationSummary } from "../../lib/backend";
@@ -58,7 +59,7 @@ function Stars({ rating }: { rating: number }) {
 
 export default async function Page(
   props: {
-    searchParams?: Promise<{ saved?: string; error?: string }>;
+    searchParams?: Promise<{ saved?: string; error?: string; setup?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -166,6 +167,7 @@ export default async function Page(
   return (
     <>
       <h1 className={styles.sectionTitle}>Profile</h1>
+      <ProfileTabs roles={user?.roles ?? []} setup={searchParams?.setup === "1"} role="requester" />
 
       {searchParams?.saved ? (
         <div className={`${styles.banner} ${styles.bannerSuccess}`.trim()}>

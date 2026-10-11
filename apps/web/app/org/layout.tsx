@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { getCurrentUser } from "../lib/backend";
+import { getCurrentUser, syncActiveContext } from "../lib/backend";
 import { getOrgContext } from "../lib/org";
 import AppShell from "../../components/shell/AppShell";
 import MarketingHeader from "../../components/shell/MarketingHeader";
@@ -59,8 +59,10 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
     </div>
   ) : null;
 
+  await syncActiveContext(user, `org:${orgCtx.org.slug}`);
+
   return (
-    <AppShell user={user} context="org" orgName={orgCtx.org.name} banner={banner}>
+    <AppShell user={user} context="org" orgName={orgCtx.org.name} orgSlug={orgCtx.org.slug} banner={banner}>
       <p className="m-0 mb-4 text-sm text-muted">
         {orgCtx.org.name} · {orgCtx.membership.role === "admin" ? "Admin" : orgCtx.membership.role === "manager" ? "Manager" : "Member"} · {verificationLabel}
       </p>

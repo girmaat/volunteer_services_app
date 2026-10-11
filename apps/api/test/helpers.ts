@@ -11,7 +11,8 @@ export const EMAILS = {
   volunteer: "volunteer.local@thankyou.test",
   remoteVolunteer: "volunteer.remote@thankyou.test",
   requester: "requester@thankyou.test",
-  dual: "dual.role@thankyou.test"
+  dual: "dual.role@thankyou.test",
+  moderator: "moderator@thankyou.test"
 } as const;
 
 let app: Express | null = null;
@@ -51,3 +52,24 @@ export async function userId(email: string): Promise<string> {
 }
 
 export { pool };
+
+let hashCache: string | null = null;
+/** Creates a fully onboarded user with the given member roles (and optional org membership). */
+export async function createUser(opts: { email: string; roles?: ("volunteer" | "requester")[]; org?: { slug: string; role: "admin" | "manager" | "member" }; trusted?: boolean }) {
+  const bcrypt = (await import("bcryptjs")).default;
+  hashCache ??= await bcrypt.hash(PASSWORD, 4);
+  const roles = opts.roles ?? [];
+  const legacy = roles[0] ?? (opts.org ? "org_admin" : null);
+  const u = await pool.query(
+    `INSERT INTO users (email, password_hash, email_verified_at, role, account_type, profile_completed, availability_completed, onboarding_completed, verification_status)
+     VALUES ($1, $2, NOW(), $3, $4, TRUE, TRUE, TRUE, $5)
+     ON CONFLICT (email) DO UPDATE SET updated_at = NOW() RETURNING id`,
+    [opts.email, hashCache, legacy, legacy === "requester" ? "individual_requester" : legacy === "org_admin" ? "org_team_member" : "volunteer", opts.trusted ? "approved" : "not_required"]
+  );
+  const id = String(u.rows[0].id);
+  await pool.query("INSERT INTO user_profiles (user_id, full_name, display_name, public_location) VALUES ($1, $2, $2, 'Jersey City, NJ') ON CONFLICT DO NOTHING", [id, opts.email.split("@")[0]]);
+  for (const r of roles) await pool.query("INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING", [id, r]);
+  if (opts.org)
+    await pool.query("INSERT INTO organization_members (org_slug, user_id, role, status, joined_at) VALUES ($1, $2, $3, 'active', NOW())", [opts.org.slug, id, opts.org.role]);
+  return id;
+}

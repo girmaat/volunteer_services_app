@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./settings.module.css";
 
-type Tab = { href: string; label: string; key: "overview" | "account" | "notifications" | "privacy" | "blocked" | "reports" };
+type Tab = { href: string; label: string; key: "overview" | "account" | "roles" | "notifications" | "privacy" | "blocked" | "reports" };
 
 export function SettingsNav() {
   const pathname = usePathname();
@@ -15,6 +15,7 @@ export function SettingsNav() {
     () => [
       { href: "/settings", label: "Overview", key: "overview" },
       { href: "/settings/account", label: "Account", key: "account" },
+      { href: "/settings/roles", label: "Roles", key: "roles" },
       { href: "/settings/notifications", label: "Notifications", key: "notifications" },
       { href: "/settings/privacy-safety", label: "Privacy & Safety", key: "privacy" },
       { href: "/settings/blocked-users", label: "Blocked users", key: "blocked" },

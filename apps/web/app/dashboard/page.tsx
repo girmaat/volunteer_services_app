@@ -52,7 +52,8 @@ export default async function Page() {
     redirect("/onboarding");
   }
 
-  // Everyone lands in their own area.
+  // Everyone lands in the area of their active context (see /v1/me/context).
+  if (user.active_context === "admin" && (user.is_platform_admin || user.platform_admin_role === "moderator")) redirect("/admin");
   if (user.role === "volunteer") redirect("/volunteer/dashboard");
   if (user.role === "requester") redirect("/requester/dashboard");
   if (user.is_platform_admin) redirect("/admin");

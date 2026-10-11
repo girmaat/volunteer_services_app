@@ -67,7 +67,10 @@ export const PUBLIC_ORG_PATHS = ["/org/signup", "/org/invite", "/org/enroll"];
 export const APP_AREAS = ["/volunteer", "/requester", "/org", "/settings", "/admin"];
 
 /** The default context for a signed-in user (used by shared areas such as Settings). */
-export function defaultContext(user: { role?: string | null; is_platform_admin?: boolean }): AppContext {
+export function defaultContext(user: { role?: string | null; active_context?: string | null; is_platform_admin?: boolean }): AppContext {
+  const ctx = user.active_context || "";
+  if (ctx.startsWith("org:")) return "org";
+  if (ctx === "volunteer" || ctx === "requester" || ctx === "admin") return ctx;
   if (user.role === "org_admin") return "org";
   if (user.role === "requester") return "requester";
   if (user.role === "volunteer") return "volunteer";

@@ -4,10 +4,8 @@ import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import Link from "next/link";
 import { ChevronDown, LifeBuoy, LogOut, Settings, UserRound } from "lucide-react";
 
-export type MenuContext = { href: string; label: string; current: boolean };
-
-/** Avatar menu: profile, settings, help, switch context, log out. */
-export default function UserMenu({ name, email, profileHref, contexts }: { name: string; email: string; profileHref: string; contexts: MenuContext[] }) {
+/** Avatar menu: profile, settings, help, log out. (Context switching lives at the top of the sidebar.) */
+export default function UserMenu({ name, email, profileHref }: { name: string; email: string; profileHref: string }) {
   const initials = name
     .split(/\s+/)
     .map((p) => p[0])
@@ -29,19 +27,6 @@ export default function UserMenu({ name, email, profileHref, contexts }: { name:
       </Dropdown.Trigger>
       <Dropdown.Portal>
         <Dropdown.Content side="top" align="start" sideOffset={6} className="z-50 min-w-[240px] rounded-md border border-line bg-surface p-1.5 shadow-pop">
-          {contexts.length > 1 ? (
-            <>
-              <Dropdown.Label className="px-2.5 pb-1 pt-1.5 text-xs text-muted">Switch to</Dropdown.Label>
-              {contexts.map((c) => (
-                <Dropdown.Item key={c.href} asChild className={item}>
-                  <Link href={c.href} aria-current={c.current ? "true" : undefined}>
-                    <span className={c.current ? "font-semibold" : ""}>{c.label}</span>
-                  </Link>
-                </Dropdown.Item>
-              ))}
-              <Dropdown.Separator className="my-1 h-px bg-line" />
-            </>
-          ) : null}
           <Dropdown.Item asChild className={item}>
             <Link href={profileHref}>
               <UserRound aria-hidden className="h-4 w-4" /> Profile

@@ -339,7 +339,7 @@ app.get("/v1/public/volunteers/:id", wrap(async (req, res) => {
     FROM users u
       LEFT JOIN user_profiles up ON up.user_id = u.id
       LEFT JOIN user_privacy_settings ups ON ups.user_id = u.id
-    WHERE u.id = $1 AND u.role = 'volunteer'
+    WHERE u.id = $1 AND EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role = 'volunteer')
     `,
     [volunteerId]
   );
@@ -486,7 +486,7 @@ app.get("/v1/public/requesters/:id", wrap(async (req, res) => {
     FROM users u
       LEFT JOIN user_profiles up ON up.user_id = u.id
       LEFT JOIN user_privacy_settings ups ON ups.user_id = u.id
-    WHERE u.id = $1 AND u.role = 'requester'
+    WHERE u.id = $1 AND EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role = 'requester')
     `,
     [requesterId]
   );

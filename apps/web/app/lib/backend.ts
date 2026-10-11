@@ -19,10 +19,19 @@ export type CurrentUser = {
   created_at: string;
   updated_at: string;
 
+  // One account, multiple roles (Phase 4.1)
+  roles?: ("volunteer" | "requester")[];
+  orgs?: { slug: string; name: string; role: "admin" | "manager" | "member" }[];
+  contexts?: string[];
+  active_context?: string | null;
+  home?: string;
+  trust_tier?: "unverified" | "basic" | "trusted";
+  platform_role?: "moderator" | "admin" | "super" | null;
+
   // Platform admin flags (present when returned from /v1/me)
   is_platform_admin?: boolean;
   is_super_admin?: boolean;
-  platform_admin_role?: "admin" | "super" | null;
+  platform_admin_role?: "moderator" | "admin" | "super" | null;
 
   // Trust & safety enforcement
   strike_count?: number;
@@ -276,4 +285,19 @@ export async function getMyShareModerationSummary(): Promise<ShareModerationSumm
 
   const data = (await res.json().catch(() => null)) as any;
   return (data as ShareModerationSummary) || null;
+}
+
+
+/**
+ * Keeps the session's active context in step with the area being viewed, so shared screens
+ * (settings, notifications) follow what the person is doing. Idempotent; failures are ignored.
+ */
+export async function syncActiveContext(user: CurrentUser, context: string) {
+  if (user.active_context === context) return;
+  if (user.contexts && !user.contexts.includes(context)) return;
+  await backendFetch("/v1/me/context", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ context })
+  }).catch(() => null);
 }

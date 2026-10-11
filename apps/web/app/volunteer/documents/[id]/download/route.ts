@@ -1,3 +1,4 @@
+import { hasRole } from "../../../../../lib/access";
 import { backendFetch, getCurrentUser } from "../../../../lib/backend";
 
 export const dynamic = "force-dynamic";
@@ -6,7 +7,7 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
   const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
-  if (user.role !== "volunteer") return new Response("Forbidden", { status: 403 });
+  if (!hasRole(user, "volunteer")) return new Response("Forbidden", { status: 403 });
 
   const url = new URL(req.url);
   const requestId = url.searchParams.get("requestId");

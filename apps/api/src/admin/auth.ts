@@ -23,7 +23,7 @@ export function isSuperAdminIdentity(email: string) {
   return false;
 }
 
-export async function getPlatformAdminRole(pool: Pool, userId: string): Promise<"admin" | "super" | null> {
+export async function getPlatformAdminRole(pool: Pool, userId: string): Promise<"moderator" | "admin" | "super" | null> {
   const r = await pool.query(
     `SELECT role
        FROM platform_admins
@@ -34,7 +34,7 @@ export async function getPlatformAdminRole(pool: Pool, userId: string): Promise<
   );
   if ((r.rowCount ?? 0) === 0) return null;
   const role = String((r.rows[0] as any)?.role || "").toLowerCase();
-  return role === "super" ? "super" : role === "admin" ? "admin" : null;
+  return role === "super" ? "super" : role === "admin" ? "admin" : role === "moderator" ? "moderator" : null;
 }
 
 function allowlistEmails() {
@@ -60,7 +60,13 @@ export async function getAdminFlags(pool: Pool, user: any) {
 
   const isSuperAdmin = superByIdentity || role === "super";
   const isPlatformAdmin = isSuperAdmin || role === "admin" || allowlisted;
-  return { isPlatformAdmin, isSuperAdmin, platformAdminRole: isSuperAdmin ? "super" : role || (allowlisted ? "admin" : null) };
+  const isModerator = isPlatformAdmin || role === "moderator";
+  return {
+    isPlatformAdmin,
+    isSuperAdmin,
+    isModerator,
+    platformAdminRole: isSuperAdmin ? "super" : isPlatformAdmin ? "admin" : role === "moderator" ? "moderator" : null
+  };
 }
 
 export async function requireAuthedUser(pool: Pool, req: Request, res: Response) {
@@ -91,6 +97,18 @@ export async function requirePlatformAdmin(pool: Pool, req: Request, res: Respon
 
   const flags = await getAdminFlags(pool, user as any);
   if (!flags.isPlatformAdmin) {
+    res.status(403).json({ message: "Forbidden" });
+    return null;
+  }
+  return { user, flags };
+}
+
+/** Moderation queues (reports, sensitive requests, disputes): moderators and admins. */
+export async function requireModerator(pool: Pool, req: Request, res: Response) {
+  const user = await requireAuthedUser(pool, req, res);
+  if (!user) return null;
+  const flags = await getAdminFlags(pool, user as any);
+  if (!flags.isModerator) {
     res.status(403).json({ message: "Forbidden" });
     return null;
   }

@@ -1,3 +1,4 @@
+import { hasRole } from "../../../lib/access";
 import styles from "./page.module.css";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -177,7 +178,7 @@ export default async function OpportunityDetailPage(
   }
 
   // Volunteers use the richer volunteer UI; requesters can apply here.
-  if (me.role === "volunteer") {
+  if (hasRole(me, "volunteer")) {
     redirect(`/volunteer/opportunities/${encodeURIComponent(id)}`);
   }
 

@@ -1,3 +1,4 @@
+import { inOrg } from "../../../../lib/access";
 import { backendFetch, getCurrentUser } from "../../../lib/backend";
 import { getOrgContext } from "../../../lib/org";
 import { Buffer } from "buffer";
@@ -62,7 +63,7 @@ function buildSimplePdf(title: string, lines: string[]): Uint8Array {
 export async function GET(req: Request) {
   const user = await getCurrentUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
-  if (user.role !== "org_admin") return new Response("Forbidden", { status: 403 });
+  if (!inOrg(user)) return new Response("Forbidden", { status: 403 });
 
   const ctx = await getOrgContext();
   if (!ctx) return new Response("Organization context required", { status: 403 });

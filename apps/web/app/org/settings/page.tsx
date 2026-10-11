@@ -1,3 +1,4 @@
+import { inOrg } from "../../../lib/access";
 import { revalidatePath } from "next/cache";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { getOrgContext } from "../../lib/org";
@@ -9,7 +10,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
   const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.role !== "org_admin") redirect("/dashboard");
+  if (!inOrg(user)) redirect("/dashboard");
 
   const ctx = await getOrgContext();
   if (!ctx) redirect("/org/signup");

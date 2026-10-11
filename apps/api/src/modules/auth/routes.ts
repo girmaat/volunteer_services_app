@@ -6,6 +6,9 @@ import { wrap } from "../../lib/http";
 import { authHeaderToken, requireAuthedUser } from "../../middleware/auth";
 import { getShareModerationSummaryForUser } from "../share/helpers";
 import * as authHandlers from "../../auth/handlers";
+import { z } from "zod";
+import { setSessionContext } from "../../auth/session";
+import { homeFor, isValidContext, type PolicyUser } from "../../lib/policy";
 
 const {
   signup,
@@ -47,6 +50,40 @@ app.post("/v1/auth/logout", wrap((req, res) => logout(pool, req, res)));
 app.get("/v1/me", wrap((req, res) => me(pool, req, res)));
 
 
+
+// Active context (volunteer | requester | org:<slug> | admin) for this session.
+app.post(
+  "/v1/me/context",
+  wrap(async (req, res) => {
+    const token = authHeaderToken(req);
+    const user = await requireAuthedUser(req, res);
+    if (!user || !token) return;
+    const parsed = z.object({ context: z.string().min(1).max(200) }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+    const ctx = parsed.data.context;
+    if (!isValidContext(user as PolicyUser, ctx)) return res.status(403).json({ message: "You don't have access to that context" });
+    await setSessionContext(pool, token, ctx);
+    return res.json({ active_context: ctx, home: homeFor(ctx) });
+  })
+);
+
+// Add a second role (volunteer or requester) to the signed-in account.
+app.post(
+  "/v1/me/roles",
+  wrap(async (req, res) => {
+    const token = authHeaderToken(req);
+    const user = await requireAuthedUser(req, res);
+    if (!user || !token) return;
+    const parsed = z.object({ role: z.enum(["volunteer", "requester"]) }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+    const role = parsed.data.role;
+    const added = await pool.query("INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING", [user.id, role]);
+    await setSessionContext(pool, token, role);
+    // Only the profile for the new role is missing; send the user there.
+    const next = role === "volunteer" ? "/volunteer/profile?setup=1" : "/requester/profile?setup=1";
+    return res.status(added.rowCount ? 201 : 200).json({ role, added: Boolean(added.rowCount), active_context: role, next });
+  })
+);
 
 app.get("/v1/me/moderation", async (req, res) => {
   const user = await requireAuthedUser(req, res);

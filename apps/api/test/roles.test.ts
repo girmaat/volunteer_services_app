@@ -1,0 +1,119 @@
+import { describe, expect, it } from "vitest";
+import { can, effectiveLegacyRole, availableContexts, type PolicyUser } from "../src/lib/policy";
+import { anon, as, createUser, EMAILS, PASSWORD } from "./helpers";
+
+describe("policy: can()", () => {
+  const base: PolicyUser = { id: "u1", roles: [], orgs: [] };
+  it("member roles", () => {
+    expect(can({ ...base, roles: ["volunteer"] }, "volunteer:act")).toBe(true);
+    expect(can({ ...base, roles: ["volunteer"] }, "requester:act")).toBe(false);
+    expect(can({ ...base, roles: ["volunteer", "requester"] }, "requester:act")).toBe(true);
+    expect(can(null, "volunteer:act")).toBe(false);
+  });
+  it("org roles", () => {
+    const u = { ...base, orgs: [{ slug: "a", name: "A", role: "member" as const }, { slug: "b", name: "B", role: "admin" as const }] };
+    expect(can(u, "org:act")).toBe(true);
+    expect(can(u, "org:admin", { orgSlug: "a" })).toBe(false);
+    expect(can(u, "org:admin", { orgSlug: "b" })).toBe(true);
+    expect(can({ ...u, active_context: "org:b" }, "org:manage")).toBe(true);
+    expect(can({ ...u, active_context: "org:a" }, "org:manage")).toBe(false);
+    expect(can(base, "org:act")).toBe(false);
+  });
+  it("platform roles are ranked", () => {
+    expect(can({ ...base, platform_role: "moderator" }, "platform:moderate")).toBe(true);
+    expect(can({ ...base, platform_role: "moderator" }, "platform:admin")).toBe(false);
+    expect(can({ ...base, platform_role: "admin" }, "platform:admin")).toBe(true);
+    expect(can({ ...base, platform_role: "admin" }, "platform:super")).toBe(false);
+    expect(can({ ...base, platform_role: "super" }, "platform:super")).toBe(true);
+  });
+  it("effective legacy role follows the active context", () => {
+    const dual = { ...base, role: "volunteer", roles: ["volunteer", "requester"] };
+    expect(effectiveLegacyRole(dual)).toBe("volunteer");
+    expect(effectiveLegacyRole({ ...dual, active_context: "requester" })).toBe("requester");
+    expect(effectiveLegacyRole({ ...dual, active_context: "org:nope" })).toBe("volunteer");
+    expect(availableContexts({ ...dual, orgs: [{ slug: "x", name: "X", role: "member" }], platform_role: "moderator" })).toEqual(["volunteer", "requester", "org:x", "admin"]);
+  });
+});
+
+describe("one account, multiple roles", () => {
+  it("the dual-role persona can use volunteer and requester areas", async () => {
+    const api = await as(EMAILS.dual);
+    const me = await api.get("/v1/me");
+    expect(me.body.user.roles).toEqual(["requester", "volunteer"]);
+    expect(me.body.user.contexts).toEqual(["volunteer", "requester"]);
+    expect((await api.get("/v1/volunteer/applications")).status).toBe(200);
+    expect((await api.get("/v1/requester/requests")).status).toBe(200);
+  });
+
+  it("single-role accounts are kept out of the other area", async () => {
+    expect((await (await as(EMAILS.volunteer)).get("/v1/requester/requests")).status).toBe(403);
+    expect((await (await as(EMAILS.requester)).get("/v1/volunteer/applications")).status).toBe(403);
+  });
+
+  it("switches context only to contexts the user has", async () => {
+    const api = await as(EMAILS.dual);
+    expect((await api.post("/v1/me/context", { context: "org:harbor-food-bank" })).status).toBe(403);
+    expect((await api.post("/v1/me/context", { context: "admin" })).status).toBe(403);
+    expect((await api.post("/v1/me/context", { context: "bogus" })).status).toBe(403);
+    const ok = await api.post("/v1/me/context", { context: "requester" });
+    expect(ok.status).toBe(200);
+    expect(ok.body.home).toBe("/requester/dashboard");
+    const me = await api.get("/v1/me");
+    expect(me.body.user.active_context).toBe("requester");
+    expect(me.body.user.role).toBe("requester");
+    await api.post("/v1/me/context", { context: "volunteer" });
+  });
+
+  it("context is per session", async () => {
+    const login = await anon().post("/v1/auth/login").send({ email: EMAILS.dual, password: PASSWORD });
+    const other = login.body.sessionToken as string;
+    const api = await as(EMAILS.dual);
+    await api.post("/v1/me/context", { context: "requester" });
+    const me2 = await anon().get("/v1/me").set("authorization", `Bearer ${other}`);
+    expect(me2.body.user.active_context).not.toBe("requester");
+    await api.post("/v1/me/context", { context: "volunteer" });
+  });
+
+  it("adds a role to an existing account", async () => {
+    await createUser({ email: "add.role@thankyou.test", roles: ["volunteer"] });
+    const api = await as("add.role@thankyou.test");
+    expect((await api.get("/v1/requester/requests")).status).toBe(403);
+    const add = await api.post("/v1/me/roles", { role: "requester" });
+    expect(add.status).toBe(201);
+    expect(add.body.next).toBe("/requester/profile?setup=1");
+    expect((await api.get("/v1/requester/requests")).status).toBe(200);
+    expect((await api.get("/v1/volunteer/applications")).status).toBe(200);
+    const again = await api.post("/v1/me/roles", { role: "requester" });
+    expect(again.status).toBe(200);
+    expect(again.body.added).toBe(false);
+    expect((await api.post("/v1/me/roles", { role: "org_admin" })).status).toBe(400);
+  });
+
+  it("an org team member who also volunteers can use both", async () => {
+    await createUser({ email: "org.vol@thankyou.test", roles: ["volunteer"], org: { slug: "harbor-food-bank", role: "member" } });
+    const api = await as("org.vol@thankyou.test");
+    expect((await api.get("/v1/org/me")).status).toBe(200);
+    expect((await api.get("/v1/volunteer/applications")).status).toBe(200);
+    const me = await api.get("/v1/me");
+    expect(me.body.user.contexts).toEqual(["volunteer", "org:harbor-food-bank"]);
+  });
+
+  it("the org admin persona picks the org from the session context", async () => {
+    const api = await as(EMAILS.orgAdmin);
+    const me = await api.get("/v1/me");
+    const orgs = me.body.user.orgs.map((o: { slug: string }) => o.slug).sort();
+    expect(orgs).toEqual(["bright-futures-tutoring", "harbor-food-bank"]);
+    await api.post("/v1/me/context", { context: "org:bright-futures-tutoring" });
+    expect((await api.get("/v1/org/me")).body.org.slug).toBe("bright-futures-tutoring");
+    await api.post("/v1/me/context", { context: "org:harbor-food-bank" });
+    expect((await api.get("/v1/org/me")).body.org.slug).toBe("harbor-food-bank");
+  });
+
+  it("moderators are platform moderators but not admins", async () => {
+    const api = await as(EMAILS.moderator);
+    const me = await api.get("/v1/me");
+    expect(me.body.user.platform_role).toBe("moderator");
+    expect(me.body.user.is_platform_admin).toBe(false);
+    expect(me.body.user.contexts).toContain("admin");
+  });
+});

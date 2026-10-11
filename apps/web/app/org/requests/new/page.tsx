@@ -1,3 +1,4 @@
+import { inOrg } from "../../../../lib/access";
 import { redirect } from "next/navigation";
 import { backendFetch, getCurrentUser } from "../../../lib/backend";
 import { getOrgContext } from "../../../lib/org";
@@ -10,7 +11,7 @@ async function createAction(formData: FormData) {
 
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.role !== "org_admin") redirect("/dashboard");
+  if (!inOrg(user)) redirect("/dashboard");
 
   const ctx = await getOrgContext();
   if (!ctx) redirect("/org/signup");
@@ -62,7 +63,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
   const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.role !== "org_admin") redirect("/dashboard");
+  if (!inOrg(user)) redirect("/dashboard");
 
   const ctx = await getOrgContext();
   if (!ctx) redirect("/org/signup");

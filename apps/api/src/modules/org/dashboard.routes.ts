@@ -10,19 +10,9 @@ export function registerOrgDashboardRoutes(app: Express) {
   app.get(
     "/v1/org/me",
     wrap(async (req: any, res: any) => {
-      const token = authHeaderToken(req);
-      if (!token) return res.status(401).json({ message: "Not authenticated" });
-
-      const user = await requireUserBySession(pool, token);
-      if (!user) return res.status(401).json({ message: "Not authenticated" });
-
-      if (String((user as any).role || "") !== "org_admin") {
-        return res.status(403).json({ message: "Forbidden" });
-      }
-
-      const ctx = await getOrgContextForUser(pool, String((user as any).id));
-      if (!ctx) return res.status(404).json({ message: "Organization membership not found" });
-      return res.json(ctx);
+      const ok = await requireOrg(pool, req, res);
+      if (!ok) return;
+      return res.json(ok.ctx);
     })
   );
 

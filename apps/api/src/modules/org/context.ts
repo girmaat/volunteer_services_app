@@ -1,3 +1,4 @@
+import { can, contextOrgSlug, type PolicyUser } from "../../lib/policy";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import multer from "multer";
 import type { Request, Response } from "express";
@@ -148,7 +149,7 @@ export type OrgContext = {
   };
 };
 
-export async function getOrgContextForUser(pool: Pool, userId: string): Promise<OrgContext | null> {
+export async function getOrgContextForUser(pool: Pool, userId: string, preferredSlug?: string | null): Promise<OrgContext | null> {
   const rows = await pool.query(
     `
     SELECT
@@ -158,10 +159,10 @@ export async function getOrgContextForUser(pool: Pool, userId: string): Promise<
     FROM organization_members m
     JOIN organizations o ON o.slug = m.org_slug
     WHERE m.user_id = $1 AND m.status = 'active'
-    ORDER BY o.updated_at DESC
+    ORDER BY (o.slug = $2) DESC, o.updated_at DESC
     LIMIT 1
     `,
-    [userId]
+    [userId, preferredSlug || ""]
   );
 
   if ((rows.rowCount ?? 0) === 0) return null;
@@ -206,12 +207,13 @@ export async function requireOrg(pool: Pool, req: Request, res: Response) {
     return null;
   }
 
-  if (String((user as any).role || "") !== "org_admin") {
+  if (!can(user as PolicyUser, "org:act")) {
     res.status(403).json({ message: "Forbidden" });
     return null;
   }
+  (user as any).role = "org_admin";
 
-  const ctx = await getOrgContextForUser(pool, String((user as any).id));
+  const ctx = await getOrgContextForUser(pool, String((user as any).id), contextOrgSlug((user as any).active_context));
   if (!ctx) {
     res.status(404).json({ message: "Organization membership not found" });
     return null;
