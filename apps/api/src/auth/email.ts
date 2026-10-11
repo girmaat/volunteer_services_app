@@ -6,6 +6,10 @@ type SendEmailArgs = {
   to: string;
   subject: string;
   text: string;
+  /** Optional HTML part (always send `text` too). */
+  html?: string;
+  /** Extra headers, e.g. List-Unsubscribe. */
+  headers?: Record<string, string>;
 };
 
 function isTruthy(v: string | undefined) {
@@ -29,7 +33,7 @@ function transportMode(): "smtp" | "log" | "disabled" {
   return isProduction() ? "smtp" : "log";
 }
 
-export async function sendEmail({ to, subject, text }: SendEmailArgs): Promise<{ delivery: EmailDelivery; error?: string }> {
+export async function sendEmail({ to, subject, text, html, headers }: SendEmailArgs): Promise<{ delivery: EmailDelivery; error?: string }> {
   const mode = transportMode();
 
   if (mode === "disabled") return { delivery: "disabled" };
@@ -60,7 +64,7 @@ export async function sendEmail({ to, subject, text }: SendEmailArgs): Promise<{
       secure: port === 465,
       auth: user ? { user, pass } : undefined
     });
-    await transporter.sendMail({ from, to, subject, text });
+    await transporter.sendMail({ from, to, subject, text, html, headers });
     return { delivery: "smtp" };
   } catch (e) {
     // eslint-disable-next-line no-console

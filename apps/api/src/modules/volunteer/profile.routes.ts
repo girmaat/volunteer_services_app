@@ -4,6 +4,7 @@ import { z } from "zod";
 import { setProfile } from "../../auth/handlers";
 import { requireVolunteerUser } from "../../middleware/auth";
 import { pool } from "../../lib/db";
+import { discoverableSql } from "../requests/lifecycle";
 import { wrap } from "../../lib/http";
 
 export function registerVolunteerProfileRoutes(app: Express) {
@@ -26,7 +27,7 @@ app.get(
        )
        SELECT
          (SELECT COUNT(*)::int FROM service_requests sr, a
-           WHERE sr.status = 'open'
+           WHERE ${discoverableSql("sr")} AND NOT sr.is_sensitive
              AND (sr.mode IS NULL
                   OR (a.remote_ok AND sr.mode IN ('remote','hybrid'))
                   OR (a.in_person_ok AND sr.mode IN ('in-person','hybrid')))) AS recommended,
@@ -62,12 +63,12 @@ app.get(
     if (!user) return;
 
     const prof = await pool.query(
-      "SELECT full_name, display_name, avatar_url, phone, public_location, location, bio, languages, interaction_styles, availability_windows, help_categories, has_car, can_lift_heavy, stairs_ok, pet_friendly, service_radius_miles, experience, experience_tags, need_categories, need_help_prompt, parking_available, elevator_available, stairs_present, pickup_vs_dropoff, time_flexibility, pets_at_home, smoke_free, accessibility_needs, meet_in_public_first, someone_else_present, mask_preferred, updated_at FROM user_profiles WHERE user_id = $1",
+      "SELECT full_name, display_name, avatar_url, phone, public_location, location, bio, languages, interaction_styles, availability_windows, help_categories, has_car, can_lift_heavy, stairs_ok, pet_friendly, service_radius_miles, experience, experience_tags, need_categories, need_help_prompt, parking_available, elevator_available, stairs_present, pickup_vs_dropoff, time_flexibility, pets_at_home, smoke_free, accessibility_needs, meet_in_public_first, someone_else_present, mask_preferred, birth_year, background_check_status, background_check_updated_at, updated_at FROM user_profiles WHERE user_id = $1",
       [user.id]
     );
 
     return res.json({
-      user: { id: user.id, email: user.email, role: user.role },
+      user: { id: user.id, email: user.email, role: user.role, trust_tier: user.trust_tier },
       profile: prof.rows[0] || null
     });
   })

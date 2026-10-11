@@ -65,6 +65,10 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     res.status(409).json(body("conflict", "That record already exists", undefined, requestId));
     return;
   }
+  if (pgCode === "23514") {
+    res.status(400).json(body("constraint_violation", "Some values don't fit together (for example an end time before the start)", undefined, requestId));
+    return;
+  }
   if (pgCode === "22P02" || pgCode === "22007" || pgCode === "22008") {
     res.status(400).json(body("invalid_value", "Invalid value in request", undefined, requestId));
     return;

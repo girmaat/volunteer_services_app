@@ -19,6 +19,11 @@ export type OrgContext = {
     verification_submission_notes: string | null;
     verification_notes: string | null;
     verified_at: string | null;
+    preferred_skills?: string[];
+    service_area?: string | null;
+    hours?: string | null;
+    contact_phone?: string | null;
+    preferred_contact_method?: string | null;
   };
   membership: {
     role: "admin" | "manager" | "member";

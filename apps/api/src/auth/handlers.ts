@@ -500,6 +500,7 @@ export async function setProfile(pool: Pool, req: Request, res: Response) {
     stairsOk: z.boolean().optional().nullable(),
     petFriendly: z.boolean().optional().nullable(),
     serviceRadiusMiles: z.number().int().positive().optional().nullable(),
+    birthYear: z.number().int().min(1900).max(new Date().getFullYear()).optional().nullable(),
     experience: z.string().optional().nullable(),
     experienceTags: z.array(z.string().min(1)).optional().nullable(),
 
@@ -584,6 +585,7 @@ export async function setProfile(pool: Pool, req: Request, res: Response) {
   if (has("stairsOk")) add("stairs_ok", d.stairsOk ?? null);
   if (has("petFriendly")) add("pet_friendly", d.petFriendly ?? null);
   if (has("serviceRadiusMiles")) add("service_radius_miles", d.serviceRadiusMiles ?? null);
+  if (has("birthYear")) add("birth_year", d.birthYear ?? null);
   if (has("experience")) add("experience", d.experience ?? null);
   if (has("experienceTags")) add("experience_tags", d.experienceTags ?? [], "text[]");
 

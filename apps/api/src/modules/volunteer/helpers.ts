@@ -1,4 +1,5 @@
 import { pool } from "../../lib/db";
+import { discoverableSql } from "../requests/lifecycle";
 
 // Volunteer area: opportunity discovery lists + detail (Step 3.2 / 3.3)
 
@@ -17,6 +18,9 @@ export type VolunteerOpportunityRow = {
   application_status: string | null;
 };
 
+/** Live requests a volunteer may see (sensitive ones only once Phase 4.4 discovery checks trust tier). */
+const LIVE = `${discoverableSql("o")} AND NOT o.is_sensitive`;
+
 export async function volunteerOpportunityRowsForUser(
   userId: string,
   whereSql: string,
@@ -26,10 +30,10 @@ export async function volunteerOpportunityRowsForUser(
   const w = whereSql.trim();
   const effectiveWhereSql =
     w === ""
-      ? "WHERE o.status = 'open'"
+      ? `WHERE ${LIVE}`
       : /^WHERE\b/i.test(w)
-        ? w.replace(/^WHERE\b/i, "WHERE o.status = 'open' AND")
-        : `WHERE o.status = 'open' AND (${w})`;
+        ? w.replace(/^WHERE\b/i, `WHERE ${LIVE} AND`)
+        : `WHERE ${LIVE} AND (${w})`;
 
   const rows = await pool.query(
     `

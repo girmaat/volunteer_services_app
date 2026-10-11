@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireRequesterUser } from "../../middleware/auth";
 import { updateApplicationDecision } from "./helpers";
 import { pool } from "../../lib/db";
+import { afterApplicationUpdate, FULL_MESSAGE } from "../requests/applications";
 import { wrap } from "../../lib/http";
 
 export function registerRequesterApplicationsRoutes(app: Express) {
@@ -66,6 +67,7 @@ app.post(
     if (result.kind === "conflict") {
       return res.status(409).json({ message: `Cannot accept an application in status '${result.status}'` });
     }
+    if (result.kind === "full") return res.status(409).json({ error: { code: "full", message: FULL_MESSAGE }, message: FULL_MESSAGE });
 
     return res.status(200).json({ id: applicationId, status: result.status });
   })
@@ -164,6 +166,7 @@ app.post(
       [applicationId, user.id]
     );
 
+    await afterApplicationUpdate(applicationId, "confirmed", String(user.id));
     return res.json({ ok: true, status: "confirmed", commitment_id: commitmentId });
   })
 );
@@ -211,6 +214,7 @@ app.post(
       [volunteerUserId, requestId]
     );
 
+    await afterApplicationUpdate(applicationId, "canceled", String(user.id));
     return res.json({ ok: true, status: "canceled" });
   })
 );
@@ -258,6 +262,7 @@ app.post(
       [volunteerUserId, requestId]
     );
 
+    await afterApplicationUpdate(applicationId, "completed", String(user.id));
     return res.json({ ok: true, status: "completed" });
   })
 );

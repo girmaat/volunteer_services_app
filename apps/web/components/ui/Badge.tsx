@@ -40,12 +40,20 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
   cancelled: { label: "Canceled", tone: "danger" },
   scheduled: { label: "Scheduled", tone: "primary" },
   filled: { label: "Filled", tone: "success" },
-  draft: { label: "Draft", tone: "neutral" }
+  draft: { label: "Draft", tone: "neutral" },
+  in_review: { label: "In review", tone: "warning" },
+  pending_review: { label: "In review", tone: "warning" }
 };
 
 /** One colour per request/application state, used everywhere a status is shown. */
-export function StatusPill({ status }: { status: string | null | undefined }) {
+const REQUEST_STATUS: Record<string, { label: string; tone: Tone }> = {
+  pending: { label: "Partly filled", tone: "primary" },
+  filled: { label: "Filled", tone: "success" },
+  paused: { label: "Paused", tone: "warning" }
+};
+
+export function StatusPill({ status, kind = "application" }: { status: string | null | undefined; kind?: "request" | "application" }) {
   const key = String(status || "").toLowerCase();
-  const s = STATUS[key] ?? { label: key ? key[0].toUpperCase() + key.slice(1) : "Unknown", tone: "neutral" as Tone };
+  const s = (kind === "request" ? REQUEST_STATUS[key] : undefined) ?? STATUS[key] ?? { label: key ? key[0].toUpperCase() + key.slice(1) : "Unknown", tone: "neutral" as Tone };
   return <Badge tone={s.tone}>{s.label}</Badge>;
 }

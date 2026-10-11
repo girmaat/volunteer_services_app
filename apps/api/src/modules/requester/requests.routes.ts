@@ -5,6 +5,7 @@ import { enqueue } from "../../jobs/queue";
 import { requireRequesterUser } from "../../middleware/auth";
 import { RequesterApplicationRow, RequesterRequestDetail, RequesterRequestRow, normalizeTags, parseOptionalDate } from "./helpers";
 import { pool } from "../../lib/db";
+import { applyLegacyStatus, createAndPublishLegacy } from "../requests/legacy";
 import { wrap } from "../../lib/http";
 
 export function registerRequesterRequestsRoutes(app: Express) {
@@ -43,7 +44,7 @@ app.get(
         GROUP BY request_id
       ) confs ON confs.request_id = r.id
       WHERE r.requester_user_id = $1
-        AND r.status IN ('open','paused')
+        AND r.status IN ('open','pending','filled','paused')
       ORDER BY r.updated_at DESC
       `,
       [user.id]
@@ -149,46 +150,17 @@ app.post(
     if (parsed.data.neededBy && !neededByIso) {
       return res.status(400).json({ message: "Invalid neededBy date" });
     }
-
-    const tags = parsed.data.tags ? normalizeTags(parsed.data.tags) : [];
-
-    const insert = await pool.query(
-      `
-      INSERT INTO service_requests (
-        requester_user_id,
-        requester_org_slug,
-        title,
-        description,
-        status,
-        location_text,
-        mode,
-        needed_by,
-        tags
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING id
-      `,
-      [
-        user.id,
-        parsed.data.requesterOrgSlug || null,
-        parsed.data.title,
-        parsed.data.description,
-        parsed.data.status || "open",
-        parsed.data.locationText || "",
-        parsed.data.mode || "remote",
-        neededByIso,
-        tags.length ? tags : null
-      ]
-    );
-
-    const requestId = insert.rows[0]?.id;
-
-    // Best-effort geocode for in-person/hybrid requests (powers Nearby).
-    if (requestId && String(parsed.data.mode || "remote") !== "remote" && String(parsed.data.locationText || "").trim()) {
-      // Geocode in the background; never block the response on a third-party API.
-      await enqueue("geocode.request", { requestId: String(requestId), locationText: String(parsed.data.locationText || "") });
-    }
-
+    const requestId = await createAndPublishLegacy({
+      userId: String(user.id),
+      orgSlug: null,
+      title: parsed.data.title,
+      description: parsed.data.description,
+      mode: parsed.data.mode || "remote",
+      area: parsed.data.locationText || "",
+      neededBy: neededByIso,
+      tags: parsed.data.tags ? normalizeTags(parsed.data.tags) : [],
+      status: parsed.data.status || "open"
+    });
     return res.status(201).json({ id: requestId });
   })
 );
@@ -237,13 +209,15 @@ app.put(
       SET
         title = $3,
         description = $4,
-        status = $5,
         location_text = $6,
+        public_area = NULLIF($6, ''),
         mode = $7,
         needed_by = $8,
+        starts_at = COALESCE($8, starts_at),
         tags = $9,
+        required_skills = COALESCE($9, '{}'),
         updated_at = NOW()
-      WHERE id = $1 AND requester_user_id = $2
+      WHERE id = $1 AND requester_user_id = $2 AND ($5::text IS NOT NULL)
       RETURNING
         id,
         requester_user_id,
@@ -272,6 +246,8 @@ app.put(
     );
 
     if (update.rowCount === 0) return res.status(404).json({ message: "Not found" });
+    const moved = await applyLegacyStatus(id, String(update.rows[0].status), parsed.data.status, String(user.id));
+    if (moved) update.rows[0].status = moved;
 
     // Best-effort geocode for in-person/hybrid requests (powers Nearby).
     if (String(parsed.data.mode || "remote") !== "remote" && String(parsed.data.locationText || "").trim()) {

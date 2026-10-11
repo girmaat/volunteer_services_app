@@ -142,6 +142,11 @@ export type OrgContext = {
     verification_submission_notes: string | null;
     verification_notes: string | null;
     verified_at: string | null;
+    preferred_skills: string[];
+    service_area: string | null;
+    hours: string | null;
+    contact_phone: string | null;
+    preferred_contact_method: string | null;
   };
   membership: {
     role: "admin" | "manager" | "member";
@@ -155,6 +160,7 @@ export async function getOrgContextForUser(pool: Pool, userId: string, preferred
     SELECT
       o.slug, o.name, o.summary, o.location, o.mission, o.website_url, o.contact_email, o.logo_url, o.onboarding_completed, o.updated_at,
       o.verification_required, o.verification_status, o.verification_submitted_at, o.verification_submission_notes, o.verification_notes, o.verified_at,
+      o.preferred_skills, o.service_area, o.hours, o.contact_phone, o.preferred_contact_method,
       m.role, m.status
     FROM organization_members m
     JOIN organizations o ON o.slug = m.org_slug
@@ -185,7 +191,12 @@ export async function getOrgContextForUser(pool: Pool, userId: string, preferred
       verification_submitted_at: r.verification_submitted_at ? String(r.verification_submitted_at) : null,
       verification_submission_notes: r.verification_submission_notes ? String(r.verification_submission_notes) : null,
       verification_notes: r.verification_notes ? String(r.verification_notes) : null,
-      verified_at: r.verified_at ? String(r.verified_at) : null
+      verified_at: r.verified_at ? String(r.verified_at) : null,
+      preferred_skills: Array.isArray(r.preferred_skills) ? r.preferred_skills : [],
+      service_area: r.service_area ?? null,
+      hours: r.hours ?? null,
+      contact_phone: r.contact_phone ?? null,
+      preferred_contact_method: r.preferred_contact_method ?? null
     },
     membership: {
       role: String(r.role) as any,

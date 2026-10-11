@@ -63,6 +63,9 @@ export default async function Page(
     payload.avatarUrl = avatarUrlRaw ? avatarUrlRaw : null;
     payload.publicLocation = publicLocationRaw ? publicLocationRaw : null;
 
+    const birthYearRaw = String(formData.get("birthYear") || "").trim();
+    payload.birthYear = /^\d{4}$/.test(birthYearRaw) ? Number(birthYearRaw) : null;
+
     const radiusNum = serviceRadiusMilesRaw ? Number(serviceRadiusMilesRaw) : NaN;
     payload.serviceRadiusMiles = Number.isFinite(radiusNum) ? Math.min(Math.max(Math.floor(radiusNum), 1), 200) : null;
 
@@ -233,6 +236,29 @@ export default async function Page(
                 Used for distance filtering in Nearby, and as a signal for Recommended when a location is available.
               </p>
             </label>
+
+            <label className={styles.label}>
+              Birth year (private)
+              <input
+                name="birthYear"
+                inputMode="numeric"
+                pattern="\d{4}"
+                className={styles.input}
+                defaultValue={(profile as any)?.birth_year ?? ""}
+                placeholder="1990"
+              />
+              <p className={styles.meta}>Only used to check minimum-age requirements. Never shown to anyone.</p>
+            </label>
+
+            <div className={styles.label}>
+              Background check
+              <p className={styles.meta}>
+                {({ cleared: "Cleared", pending: "In progress", expired: "Expired — contact support to renew", none: "Not on file" } as Record<string, string>)[
+                  String((profile as any)?.background_check_status || "none")
+                ]}
+                . Some opportunities (for example with children) need a cleared check; our team records it after reviewing your documents.
+              </p>
+            </div>
 
             <label className={styles.label}>
               Full name (private — not shown publicly)

@@ -201,7 +201,7 @@ export async function backfillRecentServiceRequestGeo(
     SELECT id, location_text
     FROM service_requests
     WHERE
-      status = 'open'
+      status IN ('open', 'pending', 'filled')
       AND COALESCE(mode, 'remote') <> 'remote'
       AND COALESCE(location_text, '') <> ''
       AND (location_lat IS NULL OR location_lng IS NULL)

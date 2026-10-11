@@ -2,6 +2,7 @@
 import type { Express } from "express";
 import { requireRequesterUser } from "../../middleware/auth";
 import { pool } from "../../lib/db";
+import { discoverableSql } from "../requests/lifecycle";
 import { wrap } from "../../lib/http";
 
 export function registerRequesterDashboardRoutes(app: Express) {
@@ -17,7 +18,7 @@ app.get(
     const statsRes = await pool.query(
       `SELECT
          (SELECT COUNT(*)::int FROM organizations) AS organizations,
-         (SELECT COUNT(*)::int FROM service_requests WHERE status = 'open') AS opportunities,
+         (SELECT COUNT(*)::int FROM service_requests r WHERE ${discoverableSql("r")}) AS opportunities,
          (SELECT COUNT(*)::int FROM public_pages) AS publicPages`
     );
 
@@ -45,7 +46,7 @@ app.get(
 
     const [activeRequestsRes, pendingApplicationsRes, upcomingRes, unreadThreadsRes] = await Promise.all([
       pool.query(
-        "SELECT COUNT(*)::int AS c FROM service_requests WHERE requester_user_id = $1 AND status IN ('open','paused')",
+        "SELECT COUNT(*)::int AS c FROM service_requests WHERE requester_user_id = $1 AND status IN ('open','pending','filled','paused')",
         [user.id]
       ),
       pool.query(

@@ -483,7 +483,15 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
         website_url: HttpUrl.optional().nullable(),
         contact_email: z.string().email().optional(),
         logo_url: HttpUrl.optional().nullable(),
-        onboarding_completed: z.boolean().optional()
+        onboarding_completed: z.boolean().optional(),
+        preferred_skills: z
+          .union([z.array(z.string()), z.string()])
+          .transform((v) => (Array.isArray(v) ? v : v.split(",")).map((x) => x.trim().toLowerCase()).filter(Boolean).slice(0, 30))
+          .optional(),
+        service_area: z.string().trim().max(200).optional().nullable(),
+        hours: z.string().trim().max(500).optional().nullable(),
+        contact_phone: z.string().trim().max(40).optional().nullable(),
+        preferred_contact_method: z.enum(["in_app", "email", "phone"]).optional().nullable()
       });
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
@@ -537,6 +545,11 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
           contact_email = COALESCE($7, contact_email),
           logo_url = COALESCE($8, logo_url),
           onboarding_completed = COALESCE($9, onboarding_completed),
+          preferred_skills = COALESCE($10, preferred_skills),
+          service_area = COALESCE($11, service_area),
+          hours = COALESCE($12, hours),
+          contact_phone = COALESCE($13, contact_phone),
+          preferred_contact_method = COALESCE($14, preferred_contact_method),
           updated_at = NOW()
         WHERE slug = $1
         `,
@@ -549,7 +562,12 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
           p.website_url ?? null,
           typeof p.contact_email === "string" ? p.contact_email : null,
           p.logo_url ?? null,
-          typeof p.onboarding_completed === "boolean" ? p.onboarding_completed : null
+          typeof p.onboarding_completed === "boolean" ? p.onboarding_completed : null,
+          p.preferred_skills ?? null,
+          p.service_area ?? null,
+          p.hours ?? null,
+          p.contact_phone ?? null,
+          p.preferred_contact_method ?? null
         ]
       );
 

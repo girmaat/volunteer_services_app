@@ -21,6 +21,10 @@ const EnvSchema = z
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
     CORS_ORIGIN: z.string().default("http://localhost:3002"),
     WEB_BASE_URL: HttpUrl.default("http://localhost:3002"),
+    /** Public URL of this API (used in List-Unsubscribe one-click links). */
+    API_PUBLIC_URL: HttpUrl.default("http://localhost:4000"),
+    /** HMAC secret for unsubscribe links; required in production. */
+    NOTIFICATION_SECRET: z.string().min(16).optional(),
     TRUST_PROXY: z.string().optional(),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).optional(),
     LOG_REQUESTS: bool(false),
@@ -40,6 +44,7 @@ const EnvSchema = z
       if (!env.WEB_BASE_URL.startsWith("https://")) {
         ctx.addIssue({ code: "custom", message: "WEB_BASE_URL must be https:// in production" });
       }
+      if (!env.NOTIFICATION_SECRET) ctx.addIssue({ code: "custom", message: "NOTIFICATION_SECRET (16+ chars) is required in production" });
       if (env.RATE_LIMIT_DISABLED) ctx.addIssue({ code: "custom", message: "RATE_LIMIT_DISABLED is not allowed in production" });
     }
   });

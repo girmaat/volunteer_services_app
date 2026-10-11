@@ -5,6 +5,10 @@ import { cachedUserGeo } from "../../lib/geoRuntime";
 import { requireVolunteerUser } from "../../middleware/auth";
 import { listVolunteerSavedOpportunities, volunteerOpportunityRowsForUser } from "./helpers";
 import { pool } from "../../lib/db";
+import { discoverableSql } from "../requests/lifecycle";
+import { applyEligibility } from "../requests/eligibility";
+import { enqueue } from "../../jobs/queue";
+import type { PolicyUser } from "../../lib/policy";
 import { wrap } from "../../lib/http";
 
 export function registerVolunteerOpportunitiesRoutes(app: Express) {
@@ -110,7 +114,7 @@ app.get(
           LIMIT 1
         ) a ON TRUE
         WHERE
-          o.status = 'open'
+          ${discoverableSql("o")} AND NOT o.is_sensitive
           AND COALESCE(o.mode, 'remote') = ANY($7::text[])
       )
       SELECT
@@ -196,7 +200,7 @@ app.get(
           LIMIT 1
         ) a ON TRUE
         WHERE
-          o.status = 'open'
+          ${discoverableSql("o")} AND NOT o.is_sensitive
           AND COALESCE(o.mode, 'remote') = ANY($6::text[])
       )
       SELECT
@@ -355,7 +359,7 @@ app.get(
         LIMIT 1
       ) a ON TRUE
       WHERE
-        o.status = 'open'
+        ${discoverableSql("o")} AND NOT o.is_sensitive
         AND COALESCE(o.mode, 'remote') IN ('in-person','hybrid')
         AND o.location_lat IS NOT NULL
         AND o.location_lng IS NOT NULL
@@ -493,15 +497,11 @@ app.post(
     if (!idParsed.success) return res.status(400).json({ message: "Invalid id" });
     const id = idParsed.data;
 
-    const reqRow = await pool.query(
-      "SELECT requester_user_id FROM service_requests WHERE id = $1 AND status = 'open'",
-      [id]
-    );
-    if (reqRow.rowCount === 0) return res.status(404).json({ message: "Opportunity not found" });
-
-    const ownerId = reqRow.rows[0]?.requester_user_id ? String(reqRow.rows[0].requester_user_id) : "";
-    if (ownerId && ownerId === String(user.id)) {
-      return res.status(403).json({ message: "You can't apply to your own request." });
+    const elig = await applyEligibility(user as PolicyUser, id);
+    if (!elig.eligible) {
+      const first = elig.problems[0];
+      const status = first.code === "not_found" || first.code === "not_open" ? 404 : first.code === "own_request" || first.code === "blocked" ? 403 : 422;
+      return res.status(status).json({ error: { code: first.code, message: first.message }, message: first.message, problems: elig.problems });
     }
 
     const schema = z.object({
@@ -518,10 +518,13 @@ app.post(
       return res.status(200).json({ applicationId: already.rows[0].id, status: already.rows[0].status });
     }
 
+    // A full request takes new applicants onto the waitlist; they move up automatically if a spot opens.
+    const initial = elig.status === "filled" ? "waitlisted" : "pending";
     const inserted = await pool.query(
-      "INSERT INTO request_applications (volunteer_user_id, request_id, status, message) VALUES ($1, $2, 'pending', $3) RETURNING id, status, created_at",
-      [user.id, id, parsed.data.message]
+      "INSERT INTO request_applications (volunteer_user_id, request_id, status, message) VALUES ($1, $2, $3, $4) RETURNING id, status, created_at",
+      [user.id, id, initial, parsed.data.message]
     );
+    await enqueue("notify.application_received", { applicationId: String(inserted.rows[0].id) });
 
     return res.status(201).json({
       applicationId: inserted.rows[0]?.id,

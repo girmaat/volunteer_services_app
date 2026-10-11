@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { getOrgContext } from "../../lib/org";
 import { redirect } from "next/navigation";
+import { Button, Card, Notice, PageHeader, VerifiedBadge } from "../../../components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,12 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
       mission: String(formData.get("mission") || "") || null,
       website_url: String(formData.get("website_url") || "") || null,
       contact_email: String(formData.get("contact_email") || "") || null,
-      logo_url: String(formData.get("logo_url") || "") || null
+      logo_url: String(formData.get("logo_url") || "") || null,
+      preferred_skills: String(formData.get("preferred_skills") || ""),
+      service_area: String(formData.get("service_area") || "") || null,
+      hours: String(formData.get("hours") || "") || null,
+      contact_phone: String(formData.get("contact_phone") || "") || null,
+      preferred_contact_method: String(formData.get("preferred_contact_method") || "") || null
     };
 
     const res = await backendFetch(`/v1/orgs/${encodeURIComponent(orgSlug)}`, {
@@ -104,134 +110,134 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
             ? "Required"
             : "Not verified";
 
+  const label = "grid gap-1.5 text-sm font-medium text-ink";
+  const input = "h-11 w-full rounded border border-line-strong bg-surface px-3 text-base font-normal";
+  const area = "min-h-[96px] w-full rounded border border-line-strong bg-surface px-3 py-2.5 text-base font-normal";
+  const hint = "text-xs font-normal text-muted";
+  const verified = status === "approved" || status === "verified";
+
   return (
-    <div style={{ display: "grid", gap: 14, maxWidth: 900 }}>
-      <header>
-        <h1 style={{ margin: 0 }}>Organization settings</h1>
-        <p style={{ marginTop: 6, color: "rgba(0,0,0,0.7)" }}>Manage your organization profile and verification.</p>
-      </header>
+    <div className="grid max-w-3xl gap-6">
+      <PageHeader title="Organization settings" description="Your public profile, how volunteers reach you, and verification." />
+      {saved ? <Notice tone="success">Saved.</Notice> : null}
+      {error ? <Notice tone="danger">Couldn&apos;t save changes: {error}</Notice> : null}
 
-      {saved ? (
-        <div style={{ border: "1px solid rgba(0,120,0,0.35)", background: "rgba(0,120,0,0.05)", borderRadius: 12, padding: 12 }}>
-          <strong>Saved.</strong>
-        </div>
-      ) : null}
-
-      {error ? (
-        <div style={{ border: "1px solid rgba(180,0,0,0.35)", background: "rgba(180,0,0,0.05)", borderRadius: 12, padding: 12 }}>
-          <strong>Couldn&apos;t save changes.</strong>
-          <div style={{ marginTop: 6 }}>{error}</div>
-        </div>
-      ) : null}
-
-      <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Profile</h2>
-
+      <Card>
+        <h2 className="m-0 mb-4 text-lg">Profile</h2>
         {!canEdit ? (
-          <p style={{ margin: 0, color: "rgba(0,0,0,0.7)" }}>Only org admins can edit organization settings.</p>
+          <p className="m-0 text-muted">Only organization admins can edit these settings.</p>
         ) : (
-          <form action={saveProfileAction} style={{ display: "grid", gap: 10 }}>
-            <label style={{ display: "grid", gap: 6 }}>
-              Display name
-              <input name="name" defaultValue={org.name} required style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }} />
+          <form action={saveProfileAction} className="grid gap-4">
+            <label className={label}>
+              Name
+              <input name="name" defaultValue={org.name} required className={input} />
             </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              Summary (one sentence)
-              <input name="summary" defaultValue={org.summary} required style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }} />
+            <label className={label}>
+              Summary <span className={hint}>One sentence shown in search results.</span>
+              <input name="summary" defaultValue={org.summary} required className={input} />
             </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              Location
-              <input name="location" defaultValue={org.location} required style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }} />
+            <label className={label}>
+              Mission <span className={hint}>(optional)</span>
+              <textarea name="mission" defaultValue={org.mission || ""} className={area} />
             </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              Mission (optional)
-              <textarea name="mission" defaultValue={org.mission || ""} rows={4} style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={label}>
+                City or region
+                <input name="location" defaultValue={org.location} required className={input} />
+              </label>
+              <label className={label}>
+                Service area <span className={hint}>Neighborhoods or &ldquo;Remote&rdquo;</span>
+                <input name="service_area" defaultValue={org.service_area || ""} placeholder="Queens and Brooklyn" className={input} />
+              </label>
+            </div>
+            <label className={label}>
+              Skills you often need <span className={hint}>Comma-separated; used to suggest your requests to volunteers.</span>
+              <input name="preferred_skills" defaultValue={(org.preferred_skills || []).join(", ")} placeholder="driving, spanish, food handling" className={input} />
             </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              Website URL (optional)
-              <input name="website_url" defaultValue={org.website_url || ""} style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }} />
+            <label className={label}>
+              Hours <span className={hint}>(optional)</span>
+              <input name="hours" defaultValue={org.hours || ""} placeholder="Tue–Sat, 9am–5pm" className={input} />
             </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              Contact email (optional)
-              <input name="contact_email" defaultValue={org.contact_email || ""} style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }} />
-            </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              Logo URL (optional)
-              <input name="logo_url" defaultValue={org.logo_url || ""} style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }} />
-            </label>
-
-            <button type="submit" style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)", background: "white", fontWeight: 800, width: 160 }}>
-              Save
-            </button>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={label}>
+                Website <span className={hint}>(optional)</span>
+                <input name="website_url" type="url" defaultValue={org.website_url || ""} className={input} />
+              </label>
+              <label className={label}>
+                Logo URL <span className={hint}>(optional)</span>
+                <input name="logo_url" type="url" defaultValue={org.logo_url || ""} className={input} />
+              </label>
+            </div>
+            <fieldset className="m-0 grid gap-3 rounded border border-line p-4">
+              <legend className="px-1 text-sm font-medium">Contact (never shown publicly)</legend>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className={label}>
+                  Contact email
+                  <input name="contact_email" type="email" defaultValue={org.contact_email || ""} className={input} />
+                </label>
+                <label className={label}>
+                  Phone <span className={hint}>(optional)</span>
+                  <input name="contact_phone" type="tel" defaultValue={org.contact_phone || ""} className={input} />
+                </label>
+              </div>
+              <label className={label}>
+                Volunteers should reach you by
+                <select name="preferred_contact_method" defaultValue={org.preferred_contact_method || "in_app"} className={input}>
+                  <option value="in_app">Messages in ThankYou</option>
+                  <option value="email">Email, after they&apos;re accepted</option>
+                  <option value="phone">Phone, after they&apos;re accepted</option>
+                </select>
+              </label>
+            </fieldset>
+            <div>
+              <Button type="submit">Save profile</Button>
+            </div>
           </form>
         )}
-      </section>
+      </Card>
 
-      <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Organization slug</h2>
-        <p style={{ marginTop: 6, color: "rgba(0,0,0,0.7)" }}>
-          Current slug: <code>{org.slug}</code>
-        </p>
-
-        {!canEdit ? (
-          <p style={{ margin: 0, color: "rgba(0,0,0,0.7)" }}>Only org admins can change the slug.</p>
-        ) : (
-          <form action={changeSlugAction} style={{ display: "grid", gap: 10, maxWidth: 420 }}>
-            <label style={{ display: "grid", gap: 6 }}>
-              New slug
-              <input name="new_slug" placeholder="e.g. community-food-bank" required style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }} />
-            </label>
-            <button type="submit" style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)", background: "white", fontWeight: 800, width: 220 }}>
-              Change slug
-            </button>
-          </form>
-        )}
-      </section>
-
-      <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h2 id="verification" style={{ marginTop: 0 }}>Verification</h2>
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ fontWeight: 800 }}>Status:</div>
-          <div style={{ padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(0,0,0,0.18)", fontSize: 12 }}>{statusLabel}</div>
-        </div>
-
+      <Card>
+        <h2 id="verification" className="m-0 mb-2 flex items-center gap-2 text-lg">
+          Verification {verified ? <VerifiedBadge /> : <span className="text-sm font-normal text-muted">· {statusLabel}</span>}
+        </h2>
+        <p className="m-0 text-sm text-muted">Verified organizations get a badge, rank higher, and can post in sensitive categories.</p>
         {org.verification_notes ? (
-          <div style={{ marginTop: 10, padding: 10, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", background: "rgba(0,0,0,0.02)" }}>
-            <div style={{ fontSize: 12, color: "rgba(0,0,0,0.7)" }}>Reviewer notes</div>
-            <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>{org.verification_notes}</div>
+          <div className="mt-3">
+            <Notice tone="info">Reviewer notes: {org.verification_notes}</Notice>
           </div>
         ) : null}
-
-        {!canEdit ? (
-          <p style={{ marginTop: 10, color: "rgba(0,0,0,0.7)" }}>Only org admins can submit verification.</p>
-        ) : status === "approved" || status === "verified" ? (
-          <p style={{ marginTop: 10, color: "rgba(0,0,0,0.7)" }}>Your organization is verified.</p>
-        ) : (
-          <form action={submitVerificationAction} style={{ display: "grid", gap: 10, marginTop: 10, maxWidth: 720 }}>
-            <label style={{ display: "grid", gap: 6 }}>
-              Submission notes (optional)
-              <textarea
-                name="submission_notes"
-                defaultValue={org.verification_submission_notes || ""}
-                rows={5}
-                placeholder="Add anything that helps verification (public website, EIN, contact person, etc.)"
-                style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }}
-              />
+        {!canEdit || verified ? null : (
+          <form action={submitVerificationAction} className="mt-4 grid gap-3">
+            <label className={label}>
+              Notes for the reviewer <span className={hint}>(public website, EIN, a contact person…)</span>
+              <textarea name="submission_notes" defaultValue={org.verification_submission_notes || ""} className={area} />
             </label>
-
-            <button type="submit" style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)", background: "white", fontWeight: 800, width: 220 }}>
-              Submit for verification
-            </button>
+            <div>
+              <Button type="submit" variant="secondary">
+                {status === "submitted" ? "Update submission" : "Submit for verification"}
+              </Button>
+            </div>
           </form>
         )}
-      </section>
+      </Card>
+
+      <Card>
+        <h2 className="m-0 mb-2 text-lg">Web address</h2>
+        <p className="m-0 text-sm text-muted">
+          Your public page is <code>/organizations/{org.slug}</code>. Changing it breaks links you&apos;ve already shared.
+        </p>
+        {canEdit ? (
+          <form action={changeSlugAction} className="mt-4 flex flex-wrap items-end gap-3">
+            <label className={label}>
+              New address
+              <input name="new_slug" placeholder="community-food-bank" required pattern="[a-z0-9-]{3,60}" className={input} />
+            </label>
+            <Button type="submit" variant="secondary">
+              Change address
+            </Button>
+          </form>
+        ) : null}
+      </Card>
     </div>
   );
 }

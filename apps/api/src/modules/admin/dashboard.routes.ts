@@ -19,7 +19,7 @@ export function registerAdminDashboardRoutes(app: Express) {
            (SELECT COUNT(*)::int FROM users WHERE created_at > NOW() - INTERVAL '7 days') AS users_new_7d,
            (SELECT COUNT(*)::int FROM organizations) AS orgs_total,
            (SELECT COUNT(*)::int FROM service_requests) AS requests_total,
-           (SELECT COUNT(*)::int FROM service_requests WHERE status = 'open') AS requests_open,
+           (SELECT COUNT(*)::int FROM service_requests WHERE status IN ('open','pending')) AS requests_open,
            (SELECT COUNT(*)::int FROM user_reports WHERE status IN ('submitted','in_review')) AS reports_open,
            (SELECT COUNT(*)::int FROM user_reports WHERE status = 'submitted') AS reports_submitted,
            (SELECT COUNT(*)::int FROM org_incident_reports WHERE status IN ('open','in_review')) AS incidents_open,

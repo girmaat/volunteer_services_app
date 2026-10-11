@@ -2,6 +2,8 @@
 import type { Express } from "express";
 import { z } from "zod";
 import { pool } from "../../lib/db";
+import { applyLegacyStatus, createAndPublishLegacy } from "../requests/legacy";
+import { transitionRequest, TransitionError } from "../requests/lifecycle";
 import { wrap } from "../../lib/http";
 import { requireAdminOrManager, requireOrg } from "./context";
 
@@ -110,28 +112,18 @@ export function registerOrgRequestsRoutes(app: Express) {
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
       const p = parsed.data;
-
-      const insert = await pool.query(
-        `
-        INSERT INTO service_requests
-          (requester_user_id, requester_org_slug, title, description, status, location_text, mode, needed_by, tags)
-        VALUES
-          ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9, '{}'::text[]))
-        RETURNING *
-        `,
-        [
-          String((ok.user as any).id),
-          ok.ctx.org.slug,
-          p.title,
-          p.description,
-          p.status ?? "open",
-          p.location_text ?? null,
-          p.mode ?? null,
-          p.needed_by ?? null,
-          p.tags ?? null
-        ]
-      );
-
+      const id = await createAndPublishLegacy({
+        userId: String((ok.user as any).id),
+        orgSlug: ok.ctx.org.slug,
+        title: p.title,
+        description: p.description,
+        mode: (p.mode ?? "remote") as "in-person" | "remote" | "hybrid",
+        area: p.location_text ?? "",
+        neededBy: p.needed_by ?? null,
+        tags: (p.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean),
+        status: p.status ?? "open"
+      });
+      const insert = await pool.query("SELECT * FROM service_requests WHERE id = $1", [id]);
       return res.status(201).json({ request: insert.rows[0] });
     })
   );
@@ -219,13 +211,14 @@ export function registerOrgRequestsRoutes(app: Express) {
         SET
           title = COALESCE($3, title),
           description = COALESCE($4, description),
-          status = COALESCE($5, status),
           location_text = COALESCE($6, location_text),
+          public_area = COALESCE(NULLIF($6, ''), public_area),
           mode = COALESCE($7, mode),
           needed_by = COALESCE($8::timestamptz, needed_by),
           tags = COALESCE($9, tags),
+          required_skills = COALESCE($9, required_skills),
           updated_at = NOW()
-        WHERE requester_org_slug=$1 AND id=$2
+        WHERE requester_org_slug=$1 AND id=$2 AND ($5::text IS NULL OR TRUE)
         RETURNING *
         `,
         [
@@ -242,6 +235,8 @@ export function registerOrgRequestsRoutes(app: Express) {
       );
 
       if ((update.rowCount ?? 0) === 0) return res.status(404).json({ message: "Not found" });
+      const moved = await applyLegacyStatus(params.data.id, String(update.rows[0].status), p.status, String((ok.user as any).id));
+      if (moved) update.rows[0].status = moved;
       return res.json(update.rows[0]);
     })
   );
@@ -257,11 +252,15 @@ export function registerOrgRequestsRoutes(app: Express) {
       const params = z.object({ id: z.string().uuid() }).safeParse(req.params);
       if (!params.success) return res.status(400).json({ message: "Invalid request id" });
 
-      const upd = await pool.query(
-        "UPDATE service_requests SET status='closed', updated_at=NOW() WHERE requester_org_slug=$1 AND id=$2 RETURNING id",
-        [ok.ctx.org.slug, params.data.id]
-      );
+      const upd = await pool.query("SELECT id, status FROM service_requests WHERE requester_org_slug=$1 AND id=$2", [ok.ctx.org.slug, params.data.id]);
       if ((upd.rowCount ?? 0) === 0) return res.status(404).json({ message: "Not found" });
+      const reason = typeof req.body?.reason === "string" && req.body.reason.trim() ? String(req.body.reason).slice(0, 500) : "Canceled by the organization";
+      try {
+        await transitionRequest(params.data.id, "cancel", { userId: String((ok.user as any).id), kind: "user" }, { reason });
+      } catch (e) {
+        if (e instanceof TransitionError) return res.status(e.status).json({ message: e.message });
+        throw e;
+      }
       return res.json({ ok: true });
     })
   );

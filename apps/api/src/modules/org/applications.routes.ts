@@ -3,6 +3,7 @@ import type { Express } from "express";
 import type { Application } from "express";
 import { z } from "zod";
 import { pool } from "../../lib/db";
+import { afterApplicationUpdate, applicationHasSlot, FULL_MESSAGE } from "../requests/applications";
 import { wrap } from "../../lib/http";
 import { requireAdminOrManager, requireOrg } from "./context";
 
@@ -236,6 +237,9 @@ export function registerOrgApplicationsRoutes(app: Express) {
           if (fromStatus === "waitlisted" && !allowedFromWaitlisted.has(toStatus)) {
             return res.status(409).json({ message: `Cannot change status from '${fromStatus}' to '${toStatus}'` });
           }
+          if (toStatus === "accepted" && !(await applicationHasSlot(params.data.id))) {
+            return res.status(409).json({ error: { code: "full", message: FULL_MESSAGE }, message: FULL_MESSAGE });
+          }
         }
       }
       
@@ -259,6 +263,7 @@ export function registerOrgApplicationsRoutes(app: Express) {
       );
 
       if ((upd.rowCount ?? 0) === 0) return res.status(404).json({ message: "Not found" });
+      if (p.status) await afterApplicationUpdate(params.data.id, p.status, String((ok.user as any).id));
       return res.json(upd.rows[0]);
     })
   );
@@ -341,6 +346,7 @@ export function registerOrgApplicationsRoutes(app: Express) {
         [params.data.id, String((ok.user as any).id), ok.ctx.org.slug]
       );
 
+      await afterApplicationUpdate(params.data.id, "confirmed", String((ok.user as any).id));
       return res.json({ ok: true, status: "confirmed", commitment_id: commitmentId });
     })
   );
@@ -397,6 +403,7 @@ export function registerOrgApplicationsRoutes(app: Express) {
         [volunteerUserId, requestId]
       );
 
+      await afterApplicationUpdate(params.data.id, "canceled", String((ok.user as any).id));
       return res.json({ ok: true, status: "canceled" });
     })
   );
@@ -451,6 +458,7 @@ export function registerOrgApplicationsRoutes(app: Express) {
         [volunteerUserId, requestId]
       );
 
+      await afterApplicationUpdate(params.data.id, "completed", String((ok.user as any).id));
       return res.json({ ok: true, status: "completed" });
     })
   );

@@ -28,7 +28,7 @@ export function registerOrgDashboardRoutes(app: Express) {
 
       const [openReq, pendingApps, members, unread, recentReq, recentApps] = await Promise.all([
         pool.query(
-          "SELECT COUNT(*)::int AS c FROM service_requests WHERE requester_org_slug = $1 AND status IN ('open','paused')",
+          "SELECT COUNT(*)::int AS c FROM service_requests WHERE requester_org_slug = $1 AND status IN ('open','pending','filled','paused')",
           [orgSlug]
         ),
         pool.query(

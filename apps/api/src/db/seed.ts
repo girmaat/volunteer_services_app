@@ -52,12 +52,45 @@ const ORGS = [
   { slug: "bright-futures-tutoring", name: "Bright Futures Tutoring", summary: "Free online tutoring for middle and high school students.", location: "Remote", mission: "Every student deserves a mentor.", website: "https://example.org/bright", verified: false }
 ];
 
-type Req = { title: string; description: string; mode: "in-person" | "remote" | "hybrid"; location: string | null; lat?: number; lng?: number; tags: string[]; daysOut: number; owner: "org" | "requester"; org?: string };
+type Req = {
+  title: string;
+  description: string;
+  mode: "in-person" | "remote" | "hybrid";
+  location: string | null;
+  lat?: number;
+  lng?: number;
+  tags: string[];
+  daysOut: number;
+  owner: "org" | "requester";
+  org?: string;
+  /** Phase 4.2 fields (defaults derived from tags). */
+  category?: string;
+  needed?: number;
+  nice?: string[];
+  address?: string;
+  recurring?: string;
+  requiresCar?: boolean;
+  status?: "open" | "draft";
+  review?: "approved" | "pending_review";
+};
+
+const TAG_CATEGORY: [string[], string][] = [
+  [["food"], "food"],
+  [["education", "tutoring", "reading", "math", "careers", "writing"], "tutoring"],
+  [["translation", "spanish"], "translation"],
+  [["transport", "driving"], "transport"],
+  [["tech", "web design", "data", "forms"], "tech"],
+  [["companionship"], "companionship"],
+  [["finance-literacy"], "financial"],
+  [["community", "event setup", "organizing", "outdoors"], "events"],
+  [["lifting", "seniors"], "errands"]
+];
+const categoryFor = (r: Req) => r.category ?? TAG_CATEGORY.find(([keys]) => r.tags.some((t) => keys.includes(t)))?.[1] ?? "other";
 
 const REQUESTS: Req[] = [
   { title: "Sort donations at the pantry", description: "Help sort and shelve canned goods before Saturday distribution. Closed-toe shoes required.", mode: "in-person", location: "Queens, NY", lat: 40.7282, lng: -73.7949, tags: ["food", "lifting"], daysOut: 3, owner: "org", org: "harbor-food-bank" },
-  { title: "Saturday distribution shift", description: "Greet families, hand out produce boxes and keep the line moving.", mode: "in-person", location: "Queens, NY", lat: 40.7282, lng: -73.7949, tags: ["food", "community"], daysOut: 5, owner: "org", org: "harbor-food-bank" },
-  { title: "Deliver meals to homebound seniors", description: "Drive a short route delivering hot meals. Car required.", mode: "in-person", location: "Astoria, NY", lat: 40.7644, lng: -73.9235, tags: ["food", "seniors", "driving"], daysOut: 2, owner: "org", org: "harbor-food-bank" },
+  { title: "Saturday distribution shift", description: "Greet families, hand out produce boxes and keep the line moving.", mode: "in-person", location: "Queens, NY", lat: 40.7282, lng: -73.7949, tags: ["food", "community"], daysOut: 5, owner: "org", org: "harbor-food-bank", needed: 6, nice: ["spanish"], address: "87-10 Queens Blvd, Elmhurst, NY" },
+  { title: "Deliver meals to homebound seniors", description: "Drive a short route delivering hot meals. Car required.", mode: "in-person", location: "Astoria, NY", lat: 40.7644, lng: -73.9235, tags: ["food", "seniors", "driving"], daysOut: 2, owner: "org", org: "harbor-food-bank", requiresCar: true, needed: 2 },
   { title: "Pantry inventory spreadsheet cleanup", description: "Tidy up our inventory spreadsheet and set up simple formulas.", mode: "remote", location: null, tags: ["tech", "data"], daysOut: 10, owner: "org", org: "harbor-food-bank" },
   { title: "Volunteer coordinator for holiday drive", description: "Help schedule volunteers for our holiday food drive (hybrid: 2 on-site evenings).", mode: "hybrid", location: "Queens, NY", lat: 40.7282, lng: -73.7949, tags: ["community", "organizing"], daysOut: 20, owner: "org", org: "harbor-food-bank" },
   { title: "Algebra tutoring (grade 8)", description: "Weekly 1-hour video sessions helping an 8th grader with algebra.", mode: "remote", location: null, tags: ["education", "tutoring", "math"], daysOut: 7, owner: "org", org: "bright-futures-tutoring" },
@@ -74,7 +107,10 @@ const REQUESTS: Req[] = [
   { title: "Translate a flyer to Spanish", description: "One-page event flyer needs a Spanish version.", mode: "remote", location: null, tags: ["translation", "spanish"], daysOut: 5, owner: "org", org: "harbor-food-bank" },
   { title: "Ride to a medical appointment", description: "Round-trip ride to a clinic appointment in Hoboken.", mode: "in-person", location: "Hoboken, NJ", lat: 40.7433, lng: -74.0324, tags: ["transport", "driving"], daysOut: 9, owner: "requester" },
   { title: "Event setup crew", description: "Set up tables and chairs for a neighborhood fundraiser.", mode: "in-person", location: "Newark, NJ", lat: 40.7357, lng: -74.1724, tags: ["community", "event setup", "lifting"], daysOut: 11, owner: "org", org: "harbor-food-bank" },
-  { title: "Mock job interview practice", description: "30-minute video mock interviews for teens applying to summer jobs.", mode: "remote", location: null, tags: ["education", "careers"], daysOut: 15, owner: "org", org: "bright-futures-tutoring" }
+  { title: "Mock job interview practice", description: "30-minute video mock interviews for teens applying to summer jobs.", mode: "remote", location: null, tags: ["education", "careers"], daysOut: 15, owner: "org", org: "bright-futures-tutoring" },
+  { title: "Weekly ESL conversation circle", description: "Lead a friendly 1-hour English conversation group for adult learners every Tuesday and Thursday evening.", mode: "remote", location: null, tags: ["education", "translation"], daysOut: 2, owner: "org", org: "bright-futures-tutoring", recurring: "FREQ=WEEKLY;BYDAY=TU,TH", needed: 3, nice: ["spanish"] },
+  { title: "Help hanging curtains and a shelf", description: "Two curtain rods and one shelf in my apartment. I have a drill and anchors.", mode: "in-person", location: "Upper West Side, Manhattan, NY", lat: 40.787, lng: -73.9754, tags: ["home repair"], daysOut: 6, owner: "requester", category: "home-access", address: "250 W 85th St, Apt 3F, New York, NY", review: "pending_review", status: "draft" },
+  { title: "Draft: garden cleanup (not published)", description: "Rake leaves in the shared backyard.", mode: "in-person", location: "Manhattan, NY", tags: ["outdoors"], daysOut: 12, owner: "requester", status: "draft" }
 ];
 
 async function upsertUser(c: PoolClient, p: Persona, passwordHash: string): Promise<string> {
@@ -171,11 +207,28 @@ async function main() {
     await c.query("DELETE FROM service_requests WHERE title = ANY($1::text[])", [REQUESTS.map((r) => r.title)]);
     for (const r of REQUESTS) {
       const owner = r.owner === "org" ? ids.org_admin : ids.requester;
+      const status = r.status ?? "open";
+      const ins = await c.query(
+        `INSERT INTO service_requests (requester_user_id, requester_org_slug, title, description, status, location_text, public_area, exact_address,
+                                       mode, needed_by, starts_at, schedule_type, recurrence_rule, timezone, duration_minutes, tags,
+                                       required_skills, nice_to_have_skills, category, volunteers_needed, requires_car, review_status,
+                                       published_at, location_lat, location_lng)
+         VALUES ($1, $2, $3, $4, $5, COALESCE($6, ''), $6, $7, $8,
+                 date_trunc('day', NOW()) + ($9 || ' days')::interval + INTERVAL '14 hours',
+                 date_trunc('day', NOW()) + ($9 || ' days')::interval + INTERVAL '14 hours',
+                 $10, $11, 'America/New_York', 120, $12, $12, $13, $14, $15, $16, $17,
+                 CASE WHEN $5 = 'open' THEN NOW() ELSE NULL END, $18, $19)
+         RETURNING id`,
+        [
+          owner, r.owner === "org" ? r.org : null, r.title, r.description, status, r.location, r.address ?? null, r.mode, String(r.daysOut),
+          r.recurring ? "recurring" : "one_time", r.recurring ?? null, r.tags, r.nice ?? [], categoryFor(r), r.needed ?? 1, r.requiresCar ?? false,
+          r.review ?? "approved", r.lat ?? null, r.lng ?? null
+        ]
+      );
+      await c.query("UPDATE service_requests s SET is_sensitive = rc.is_sensitive FROM request_categories rc WHERE rc.slug = s.category AND s.id = $1", [ins.rows[0].id]);
       await c.query(
-        `INSERT INTO service_requests (requester_user_id, requester_org_slug, title, description, status, location_text, mode,
-                                       needed_by, tags, location_lat, location_lng)
-         VALUES ($1,$2,$3,$4,'open',$5,$6, NOW() + ($7 || ' days')::interval, $8, $9, $10)`,
-        [owner, r.owner === "org" ? r.org : null, r.title, r.description, r.location, r.mode, String(r.daysOut), r.tags, r.lat ?? null, r.lng ?? null]
+        "INSERT INTO request_status_events (request_id, event, from_status, to_status, actor_kind, reason) VALUES ($1, 'seed', NULL, $2, 'system', 'Seed data')",
+        [ins.rows[0].id, status]
       );
     }
     await c.query("COMMIT");

@@ -1,4 +1,5 @@
 import { pool } from "../../lib/db";
+import { afterApplicationUpdate, applicationHasSlot } from "../requests/applications";
 
 // Requester area: service requests (Step 4.4 + Step 4.5)
 
@@ -95,11 +96,13 @@ export async function updateApplicationDecision(
   if (currentStatus !== "pending" && currentStatus !== "waitlisted") {
     return { kind: "conflict" as const, status: currentStatus };
   }
+  if (nextStatus === "accepted" && !(await applicationHasSlot(applicationId))) return { kind: "full" as const, status: currentStatus };
 
   const updated = await pool.query(
-    "UPDATE request_applications SET status = $2, updated_at = NOW() WHERE id = $1 RETURNING id, status, updated_at",
-    [applicationId, nextStatus]
+    "UPDATE request_applications SET status = $2, status_updated_at = NOW(), status_updated_by_user_id = $3, updated_at = NOW() WHERE id = $1 RETURNING id, status, updated_at",
+    [applicationId, nextStatus, requesterUserId]
   );
+  await afterApplicationUpdate(applicationId, nextStatus, requesterUserId);
 
   return { kind: "ok" as const, status: String(updated.rows[0]?.status || nextStatus) };
 }

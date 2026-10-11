@@ -7,6 +7,7 @@ import { sendEmail } from "../../auth/email";
 
 import { z } from "zod";
 import { pool } from "../../lib/db";
+import { discoverableSql } from "../requests/lifecycle";
 import { wrap } from "../../lib/http";
 import { parsePage, toPage } from "../../lib/pagination";
 import { derivePublicLocation, looksPreciseLocation, sanitizePublicDescription } from "../../lib/redaction";
@@ -164,8 +165,8 @@ app.get(
     const slug = String(req.params.slug || "").slice(0, 120);
     const rows = await pool.query(
       `SELECT o.slug, o.name, o.summary, o.location, o.mission, o.website_url, o.logo_url,
-              o.verification_status, o.verified_at, o.updated_at,
-              (SELECT COUNT(*)::int FROM service_requests r WHERE r.requester_org_slug = o.slug AND r.status = 'open') AS open_requests
+              o.verification_status, o.verified_at, o.updated_at, o.preferred_skills, o.service_area, o.hours, o.preferred_contact_method,
+              (SELECT COUNT(*)::int FROM service_requests r WHERE r.requester_org_slug = o.slug AND ${discoverableSql("r")} AND NOT r.is_sensitive) AS open_requests
          FROM organizations o
         WHERE o.slug = $1`,
       [slug]
@@ -185,6 +186,11 @@ app.get(
       verification_status: o.verification_status,
       verified_at: o.verified_at,
       open_requests: o.open_requests,
+      preferred_skills: o.preferred_skills ?? [],
+      service_area: o.service_area && !looksPreciseLocation(String(o.service_area)) ? o.service_area : null,
+      hours: o.hours ? sanitizePublicDescription(String(o.hours)) : null,
+      // Contact details are never public; volunteers reach organizations through the app.
+      contact: o.preferred_contact_method === "email" || o.preferred_contact_method === "phone" ? "after_acceptance" : "in_app",
       updated_at: o.updated_at
     });
   })
@@ -207,7 +213,7 @@ app.get(
               org.location AS org_location
          FROM service_requests r
          LEFT JOIN organizations org ON org.slug = r.requester_org_slug
-        WHERE r.status = 'open'
+        WHERE ${discoverableSql("r")} AND NOT r.is_sensitive
           AND ($1::text IS NULL OR r.requester_org_slug = $1)
           AND ($2::text IS NULL OR COALESCE(r.mode, 'remote') = $2)
           AND ($3::text = '' OR r.title ILIKE '%' || $3 || '%' OR r.description ILIKE '%' || $3 || '%')
@@ -249,7 +255,7 @@ app.get(
               org.location AS org_location
          FROM service_requests r
          LEFT JOIN organizations org ON org.slug = r.requester_org_slug
-        WHERE r.id = $1 AND r.status = 'open'`,
+        WHERE r.id = $1 AND ${discoverableSql("r")} AND NOT r.is_sensitive`,
       [idParsed.data]
     );
     if (rows.rowCount === 0) return res.status(404).json({ message: "Opportunity not found" });

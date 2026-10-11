@@ -5,6 +5,7 @@ import { contentDisposition } from "../../lib/http";
 import { requireVolunteerUser } from "../../middleware/auth";
 import { illustrateRows } from "./helpers";
 import { pool } from "../../lib/db";
+import { afterApplicationUpdate } from "../requests/applications";
 import { wrap } from "../../lib/http";
 
 export function registerVolunteerApplicationsRoutes(app: Express) {
@@ -160,6 +161,7 @@ app.post(
       [id]
     );
 
+    await afterApplicationUpdate(id, "withdrawn", String(user.id));
     return res.status(200).json({ id: updated.rows[0]?.id, status: updated.rows[0]?.status, updated_at: updated.rows[0]?.updated_at });
   })
 );
@@ -256,6 +258,7 @@ app.post(
       [user.id, requestId]
     );
 
+    await afterApplicationUpdate(id, "completed", String(user.id));
     return res.status(200).json({ ok: true, status: "completed" });
   })
 );

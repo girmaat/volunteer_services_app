@@ -22,10 +22,11 @@ describe("organization area", () => {
       title: "Org test: weekend pantry shift",
       description: "Help pack boxes for families on Saturday morning.",
       mode: "in-person",
-      locationText: "Queens, NY",
+      location_text: "Queens, NY",
       tags: ["food"]
     });
     expect([200, 201], JSON.stringify(res.body)).toContain(res.status);
+    expect(res.body.request.status).toBe("open");
     const me = await api.get("/v1/org/me");
     const pub = await anon().get(`/v1/public/opportunities?org=${me.body.org.slug}&q=pantry%20shift`);
     expect(pub.body.items.some((o: { title: string }) => o.title === "Org test: weekend pantry shift")).toBe(true);
