@@ -43,7 +43,7 @@ function tagFor(path: string) {
 
 const PUBLIC_PREFIXES = ["/v1/public/", "/v1/health", "/v1/platform/status", "/v1/auth/", "/v1/openapi.json", "/v1/docs", "/v1/orgs/enroll", "/v1/notifications/unsubscribe", "/v1/discovery/"];
 export const isPublicPath = (p: string) =>
-  PUBLIC_PREFIXES.some((x) => p.startsWith(x)) || /^\/v1\/shares?\/(resolve\/)?:token$/.test(p) || /^\/v1\/shares\/:token\/(events|report)$/.test(p) || p === "/v1/share/events" || p.startsWith("/v1/share/report/") || p.startsWith("/v1/share/resolve/");
+  PUBLIC_PREFIXES.some((x) => p.startsWith(x)) || /^\/v1\/shares?\/(resolve\/)?:token$/.test(p) || /^\/v1\/shares\/:token\/(events|report)$/.test(p);
 
 export function buildOpenApiDocument(app: Express) {
   const registry = new OpenAPIRegistry();

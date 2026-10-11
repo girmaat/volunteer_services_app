@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
 
-  const res = await fetch(`${API_BASE_URL_SERVER}/v1/share/links`, {
+  const res = await fetch(`${API_BASE_URL_SERVER}/v1/shares`, {
     method: "POST",
     headers: { ...headers, "content-type": "application/json" },
     body: JSON.stringify(body),

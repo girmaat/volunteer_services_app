@@ -15,3 +15,16 @@ describe("contentDisposition", () => {
     expect(contentDisposition(null)).toContain('filename="document"');
   });
 });
+
+describe("consistent error bodies", () => {
+  it("adds { error: { code, message } } to every error response", async () => {
+    const { as, EMAILS } = await import("./helpers");
+    const r = await (await as(EMAILS.volunteer)).get("/v1/volunteer/applications/not-a-uuid");
+    expect(r.status).toBe(400);
+    expect(r.body.error).toMatchObject({ code: "invalid_request" });
+    expect(typeof r.body.error.message).toBe("string");
+    expect(r.body.message).toBe(r.body.error.message);
+    const nf = await (await as(EMAILS.volunteer)).get("/v1/volunteer/applications/00000000-0000-4000-8000-000000000000");
+    expect(nf.body.error.code).toBe("not_found");
+  });
+});

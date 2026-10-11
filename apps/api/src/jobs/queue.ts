@@ -24,6 +24,7 @@ type JobMap = {
   "notify.message_received": { messageId: string };
   "reminders.attendance": Record<string, never>;
   "maintenance.hourly": Record<string, never>;
+  "badges.award": { userId: string };
 };
 export type JobName = keyof JobMap;
 
@@ -40,7 +41,8 @@ const handlers: { [K in JobName]: (data: JobMap[K]) => Promise<unknown> } = {
   "notify.review_requested": events.onReviewRequested,
   "notify.message_received": async (d) => extraHandlers["notify.message_received"]?.(d),
   "reminders.attendance": () => events.sendAttendanceReminders(),
-  "maintenance.hourly": async () => extraHandlers["maintenance.hourly"]?.({})
+  "maintenance.hourly": async () => extraHandlers["maintenance.hourly"]?.({}),
+  "badges.award": async (d) => extraHandlers["badges.award"]?.(d)
 };
 
 /** Handlers registered by modules that would otherwise import this file in a cycle (messaging, reviews). */

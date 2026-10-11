@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     ...(Number.isFinite(expiresInDays) && expiresInDays > 0 ? { expires_in_days: expiresInDays } : {})
   };
 
-  const upstream = await backendFetch("/v1/share/links", {
+  const upstream = await backendFetch("/v1/shares", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(payload),

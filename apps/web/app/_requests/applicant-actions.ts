@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { backendFetch } from "../lib/backend";
 import { zonedLocalToIso } from "../../lib/time";
+import { ReviewBody } from "@thankyou/contracts";
 
 const ok = (s: string) => /^[0-9a-f-]{36}$/i.test(s);
 const backOk = (b: string) => /^\/(requester|org)\/requests\/[0-9a-f-]{36}\/applications$|^\/volunteer\/applications\/[0-9a-f-]{36}$/.test(b);
@@ -30,10 +31,7 @@ export async function noShowAction(back: string, appId: string) {
 export async function reviewAction(back: string, appId: string, fd: FormData) {
   if (!ok(appId) || !backOk(back)) redirect("/dashboard");
   const n = (k: string) => (fd.get(k) ? Number(fd.get(k)) : null);
-  const r = await backendFetch("/v1/reviews", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
+  const body = ReviewBody.safeParse({
       applicationId: appId,
       overall: n("overall"),
       reliability: n("reliability"),
@@ -42,8 +40,9 @@ export async function reviewAction(back: string, appId: string, fd: FormData) {
       clarity: n("clarity"),
       comment: String(fd.get("comment") || "").trim() || null,
       wouldWorkAgain: fd.get("again") === "yes" ? true : fd.get("again") === "no" ? false : null
-    })
   });
+  if (!body.success) redirect(`${back}?error=${encodeURIComponent("Pick an overall rating from 1 to 5.")}#review-${appId}`);
+  const r = await backendFetch("/v1/reviews", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body.data) });
   redirect(`${back}?${r.ok ? "flash=reviewed" : `error=${encodeURIComponent(await msg(r))}`}#review-${appId}`);
 }
 

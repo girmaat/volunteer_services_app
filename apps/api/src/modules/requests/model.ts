@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { RequestFields, type RequestFieldsInput } from "@thankyou/contracts";
 import type { Pool } from "pg";
 import { pool as defaultPool } from "../../lib/db";
 import type { PolicyUser } from "../../lib/policy";
@@ -29,76 +29,8 @@ export async function getCategory(slug: string): Promise<Category | null> {
   return (r.rows[0] as Category) ?? null;
 }
 
-const skills = z
-  .union([z.array(z.string()), z.string()])
-  .transform((v) => (Array.isArray(v) ? v : v.split(",")))
-  .transform((arr) => Array.from(new Set(arr.map((s) => s.trim().toLowerCase()).filter(Boolean))).slice(0, 20))
-  .pipe(z.array(z.string().max(40)));
-
-const isoDate = z
-  .string()
-  .trim()
-  .transform((v, ctx) => {
-    if (!v) return null;
-    const d = new Date(v);
-    if (Number.isNaN(d.getTime())) {
-      ctx.addIssue({ code: "custom", message: "Invalid date" });
-      return z.NEVER;
-    }
-    return d.toISOString();
-  });
-
-/** RRULE subset we accept: weekly on given days, optional COUNT/UNTIL (validated loosely, stored verbatim). */
-const rrule = z
-  .string()
-  .trim()
-  .max(200)
-  .regex(/^FREQ=(DAILY|WEEKLY|MONTHLY)(;(INTERVAL=\d{1,2}|BYDAY=(MO|TU|WE|TH|FR|SA|SU)(,(MO|TU|WE|TH|FR|SA|SU))*|COUNT=\d{1,3}|UNTIL=\d{8}(T\d{6}Z)?))*$/, "Use a weekly/daily/monthly RRULE");
-
-const timezone = z
-  .string()
-  .trim()
-  .max(64)
-  .refine((tz) => {
-    try {
-      new Intl.DateTimeFormat("en-US", { timeZone: tz });
-      return true;
-    } catch {
-      return false;
-    }
-  }, "Unknown time zone");
-
-/** Every editable field. All optional so drafts can be saved one wizard step at a time. */
-export const RequestFields = z
-  .object({
-    title: z.string().trim().min(3).max(120),
-    description: z.string().trim().min(10).max(5000),
-    category: z.string().trim().min(1).max(40),
-    requiredSkills: skills,
-    niceToHaveSkills: skills,
-    volunteersNeeded: z.coerce.number().int().min(1).max(500),
-    urgency: z.enum(["low", "normal", "high"]),
-    scheduleType: z.enum(["one_time", "recurring", "flexible_window"]),
-    startsAt: isoDate.nullable(),
-    endsAt: isoDate.nullable(),
-    recurrenceRule: rrule.nullable().or(z.literal("").transform(() => null)),
-    timezone,
-    durationMinutes: z.coerce.number().int().min(15).max(24 * 60).nullable(),
-    applyBy: isoDate.nullable(),
-    mode: z.enum(["in-person", "remote", "hybrid"]),
-    publicArea: z.string().trim().max(120).nullable(),
-    exactAddress: z.string().trim().max(300).nullable(),
-    accessibilityNotes: z.string().trim().max(1000).nullable(),
-    minAge: z.coerce.number().int().min(13).max(99).nullable(),
-    requiresBackgroundCheck: z.coerce.boolean(),
-    requiresTraining: z.coerce.boolean(),
-    requiresWaiver: z.coerce.boolean(),
-    requiresCar: z.coerce.boolean(),
-    equipmentNotes: z.string().trim().max(1000).nullable()
-  })
-  .partial()
-  .strict();
-export type RequestFieldsInput = z.infer<typeof RequestFields>;
+// Field schema shared with the web app: packages/contracts/src/requests.ts
+export { RequestFields, type RequestFieldsInput };
 
 const COLUMN: Record<keyof RequestFieldsInput, string> = {
   title: "title",

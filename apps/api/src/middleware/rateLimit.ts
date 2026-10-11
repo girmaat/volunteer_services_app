@@ -25,14 +25,15 @@ const emailKey = (req: Request) => {
   return `email:${email || clientIp(req)}`;
 };
 
-export const authIpLimiter = rateLimit({ ...base, windowMs: 60_000, limit: 10 });
-export const authEmailLimiter = rateLimit({ ...base, windowMs: 15 * 60_000, limit: 10, keyGenerator: emailKey });
+/** Plan: 5 attempts a minute per IP and per email on login, signup and password reset. */
+export const authIpLimiter = rateLimit({ ...base, windowMs: 60_000, limit: 5 });
+export const authEmailLimiter = rateLimit({ ...base, windowMs: 60_000, limit: 5, keyGenerator: emailKey });
 
-/** General write limit per caller (bearer token if present, else IP). */
+/** General write limit: 60/min per signed-in user (session token), else per IP. */
 export const writeLimiter = rateLimit({
   ...base,
   windowMs: 60_000,
-  limit: 120,
+  limit: 60,
   skip: (req) => env.RATE_LIMIT_DISABLED || ["GET", "HEAD", "OPTIONS"].includes(req.method),
   keyGenerator: (req) => {
     const auth = req.header("authorization") || "";

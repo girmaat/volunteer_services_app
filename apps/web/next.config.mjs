@@ -20,7 +20,8 @@ const nextConfig = {
       { source: "/volunteer/messages", destination: "/inbox", permanent: true },
       { source: "/requester/messages", destination: "/inbox", permanent: true },
       { source: "/org/messages", destination: "/inbox", permanent: true },
-      { source: "/dashboard/home", destination: "/home", permanent: true }
+      { source: "/dashboard/home", destination: "/home", permanent: true },
+      { source: "/s/:token", destination: "/share/:token", permanent: true }
     ];
   },
 

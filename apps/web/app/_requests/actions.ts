@@ -3,6 +3,12 @@
 import { redirect } from "next/navigation";
 import { backendFetch } from "../lib/backend";
 import { zonedLocalToIso } from "../../lib/time";
+import { RequestFields } from "@thankyou/contracts";
+
+const LABELS: Record<string, string> = {
+  title: "Title", description: "Description", category: "Category", volunteersNeeded: "Volunteers needed", startsAt: "Start", endsAt: "End",
+  durationMinutes: "Duration", applyBy: "Apply by", publicArea: "Area", exactAddress: "Address", minAge: "Minimum age", timezone: "Time zone", recurrenceRule: "Repeat days"
+};
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const optStr = (fd: FormData, k: string) => (str(fd, k) ? str(fd, k) : null);
@@ -77,6 +83,14 @@ export async function saveWizardStep(fd: FormData) {
   if (!/^\/(requester|org)\/requests\/new$/.test(base)) redirect("/dashboard");
 
   const fields = fieldsForStep(step, fd);
+  // Same schema the API uses (packages/contracts), so errors show before a round-trip.
+  const check = RequestFields.safeParse(fields);
+  if (!check.success) {
+    const msg = Object.entries(check.error.flatten().fieldErrors)
+      .map(([k, v]) => `${LABELS[k] ?? k}: ${(v ?? []).join(", ")}`)
+      .join("; ");
+    redirect(`${base}?${new URLSearchParams({ ...(id ? { id } : {}), step: String(step), error: msg })}`);
+  }
   let res: Response;
   if (!id) {
     res = await backendFetch("/v1/requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ as: owner, ...fields }) });

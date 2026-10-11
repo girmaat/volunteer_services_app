@@ -1,6 +1,8 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
+import { errorShape } from "./middleware/errorShape";
 import crypto from "crypto";
 import pinoHttp from "pino-http";
 import { env } from "./lib/env";
@@ -24,6 +26,7 @@ import { registerMessagingRoutes } from "./modules/messaging/routes";
 import { onMessageReceived } from "./modules/messaging/jobs";
 import { registerJobHandler } from "./jobs/queue";
 import { runHourly, onHourly } from "./jobs/maintenance";
+import { awardBadges } from "./modules/volunteer/badges";
 import { registerReviewRoutes } from "./modules/reviews/routes";
 import { registerApplicantRoutes } from "./modules/requests/applicants";
 import { registerAccountRoutes } from "./modules/account/routes";
@@ -74,6 +77,9 @@ export function createApp(): Express {
     })
   );
   app.use(cors({ origin: env.CORS_ORIGIN.split(",").map((s) => s.trim()), credentials: false, maxAge: 600 }));
+  // gzip JSON responses; never the live inbox stream (it must flush each event).
+  app.use(compression({ filter: (req, res) => !req.path.endsWith("/inbox/stream") && compression.filter(req, res) }));
+  app.use(errorShape);
   app.use(express.json({ limit: "1mb" }));
 
   // Rate limits
@@ -96,6 +102,7 @@ export function createApp(): Express {
   registerMessagingRoutes(app);
   registerJobHandler("notify.message_received", onMessageReceived);
   registerJobHandler("maintenance.hourly", runHourly);
+  registerJobHandler("badges.award", awardBadges);
   registerReviewRoutes(app);
   registerApplicantRoutes(app);
   registerAccountRoutes(app);

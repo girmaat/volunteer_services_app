@@ -14,6 +14,8 @@ export async function afterApplicationUpdate(applicationId: string, status: stri
   if (status === "completed") {
     await pool.query("UPDATE request_applications SET completed_at = COALESCE(completed_at, NOW()) WHERE id = $1", [applicationId]);
     await enqueue("notify.review_requested", { applicationId });
+    const v = await pool.query("SELECT volunteer_user_id FROM request_applications WHERE id = $1", [applicationId]);
+    if (v.rows[0]) await enqueue("badges.award", { userId: String(v.rows[0].volunteer_user_id) });
   }
   await syncStaffing(requestId, { userId: actorUserId, kind: actorUserId ? "user" : "system" });
 }

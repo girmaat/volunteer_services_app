@@ -1,5 +1,6 @@
 import type { Express, Response } from "express";
 import { z } from "zod";
+import { ReviewBody } from "@thankyou/contracts";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import type { PolicyUser } from "../../lib/policy";
@@ -8,17 +9,7 @@ import { notify, requestOwnerIds } from "../notifications/service";
 import { afterApplicationUpdate } from "../requests/applications";
 import { loadApplication, recordCommitmentCancel, reliabilityOf, reviewsFor, ReviewError, sideFor, submitReview } from "./service";
 
-const star = z.coerce.number().int().min(1).max(5);
-export const ReviewBody = z.object({
-  applicationId: z.string().uuid(),
-  overall: star,
-  reliability: star.optional().nullable(),
-  communication: star.optional().nullable(),
-  clarity: star.optional().nullable(),
-  skill: star.optional().nullable(),
-  comment: z.string().trim().max(2000).optional().nullable(),
-  wouldWorkAgain: z.boolean().optional().nullable()
-});
+export { ReviewBody };
 
 function sendReviewError(res: Response, e: unknown) {
   if (e instanceof ReviewError) return res.status(e.status).json({ error: { code: e.code, message: e.message }, message: e.message });

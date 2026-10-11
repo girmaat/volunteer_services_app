@@ -4,6 +4,7 @@
 import type { Express, Request, Response } from "express";
 import multer from "multer";
 import { z } from "zod";
+import { ReportBody, SendMessageBody } from "@thankyou/contracts";
 import { pool } from "../../lib/db";
 import { contentDisposition, wrap } from "../../lib/http";
 import { can, type PolicyUser } from "../../lib/policy";
@@ -153,7 +154,7 @@ export function registerMessagingRoutes(app: Express) {
     wrap(async (req, res) => {
       const ok = await withConversation(req, res);
       if (!ok) return;
-      const p = z.object({ body: z.string().trim().min(1).max(5000) }).safeParse(req.body ?? {});
+      const p = SendMessageBody.safeParse(req.body ?? {});
       if (!p.success) return res.status(400).json({ message: "Write a message first", errors: p.error.flatten() });
       try {
         return res.status(201).json(await sendMessage(ok.user, ok.c, p.data.body));
@@ -245,13 +246,7 @@ export function registerMessagingRoutes(app: Express) {
     wrap(async (req, res) => {
       const ok = await withConversation(req, res);
       if (!ok) return;
-      const p = z
-        .object({
-          category: z.enum(["harassment", "scam", "safety", "spam", "inappropriate", "other"]),
-          details: z.string().trim().max(4000).optional(),
-          messageId: z.string().uuid().optional()
-        })
-        .safeParse(req.body ?? {});
+      const p = ReportBody.safeParse(req.body ?? {});
       if (!p.success) return res.status(400).json({ message: "Invalid payload", errors: p.error.flatten() });
       const other = sideOf(ok.user, ok.c) === "volunteer" ? ok.c.owner_user_id : ok.c.volunteer_user_id;
       const r = await pool.query(

@@ -18,10 +18,12 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
 
-  const res = await fetch(`${API_BASE_URL_SERVER}/v1/share/events`, {
+  const token = typeof body.token === "string" ? body.token : "";
+  if (!token) return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
+  const res = await fetch(`${API_BASE_URL_SERVER}/v1/shares/${encodeURIComponent(token)}/events`, {
     method: "POST",
     headers: { ...(headers || {}), "content-type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ event_type: body.event_type }),
     cache: "no-store"
   });
 

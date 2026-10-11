@@ -1,14 +1,8 @@
 import { reviewAction } from "../../app/_requests/applicant-actions";
 import { Button } from "../ui";
+import type { ReviewState } from "@thankyou/contracts";
 
-export type ReviewState = {
-  side: "volunteer" | "owner";
-  can_review: boolean;
-  mine: Record<string, unknown> | null;
-  theirs: { overall: number; reliability: number | null; communication: number | null; skill?: number | null; clarity?: number | null; comment: string | null; would_work_again: boolean | null } | null;
-  theirs_submitted: boolean;
-  reveal_at: string | null;
-};
+export type { ReviewState };
 
 function Stars({ name, label, required }: { name: string; label: string; required?: boolean }) {
   return (
