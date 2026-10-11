@@ -2,7 +2,8 @@
 import type { Express } from "express";
 import { z } from "zod";
 import { requirePlatformAdmin } from "../../admin/auth";
-import { pool } from "../../lib/db";
+import { migrationPool, pool } from "../../lib/db";
+import { pendingMigrations } from "../../db/migrator";
 import { wrap } from "../../lib/http";
 import { ensurePlatformSettingsRow, nowIso } from "./helpers";
 
@@ -15,7 +16,9 @@ export function registerAdminPlatformRoutes(app: Express) {
       const r = await requirePlatformAdmin(pool, req, res);
       if (!r) return;
 
-      const runMigrations = String(process.env.RUN_MIGRATIONS ?? "true").toLowerCase() !== "false";
+      // Migrations run with `pnpm db:migrate` (never at startup); report anything still pending.
+      const pending = await pendingMigrations(migrationPool).catch(() => [] as string[]);
+      const runMigrations = false;
       const expectedOwner = String(process.env.DB_SCHEMA_OWNER || "").trim() || null;
 
       const info = await pool.query(
@@ -40,6 +43,7 @@ export function registerAdminPlatformRoutes(app: Express) {
 
       return res.json({
         run_migrations: runMigrations,
+        pending_migrations: pending,
         db_user: (info.rows[0] as any)?.db_user || null,
         session_user: (info.rows[0] as any)?.session_user || null,
         database: (info.rows[0] as any)?.database || null,

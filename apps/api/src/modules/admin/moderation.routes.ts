@@ -409,7 +409,7 @@ return res.json({ reports: rows.rows, limit, offset });
       if ((upd.rowCount ?? 0) === 0) {
         const shareHas = await shareReportsHaveModerationCols(pool);
         if (!shareHas) {
-          return res.status(400).json({ message: "Share-link reports are visible, but can’t be updated because DB migrations are disabled (share_reports lacks moderation columns). Enable RUN_MIGRATIONS or run the migrations as the DB owner." });
+          return res.status(400).json({ message: "Share-link reports are visible, but can’t be updated because DB migrations are disabled (share_reports lacks moderation columns). Run `pnpm db:migrate`." });
         }
         const upd2 = await pool.query(`UPDATE share_reports SET ${sets.join(", ")} WHERE id = $1 RETURNING id`, params);
         if ((upd2.rowCount ?? 0) === 0) return res.status(404).json({ message: "Report not found" });
@@ -461,7 +461,7 @@ return res.json({ reports: rows.rows, limit, offset });
       if ((action === "warn" || action === "clear") && !linksHas) {
         return res.status(400).json({
           message:
-            "Share-link warning state requires newer sharing schema. Run backend/scripts/db/apply_sharing_schema.* as the DB owner, or enable RUN_MIGRATIONS."
+            "Share-link warning state requires newer sharing schema. Run `pnpm db:migrate`."
         });
       }
 
