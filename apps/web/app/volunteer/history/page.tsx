@@ -29,7 +29,7 @@ export default async function Page() {
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>History</h2>
+      <h1 className={styles.sectionTitle}>History</h1>
       <p className={styles.meta}>
         Signed in as <strong>{user?.email}</strong>.
       </p>
@@ -47,31 +47,31 @@ export default async function Page() {
 
       <div className={styles.grid}>
         <Link href="/volunteer/history/completed" className={styles.tile}>
-          <h3 className={styles.tileTitle}>Completed opportunities</h3>
+          <h2 className={styles.tileTitle}>Completed opportunities</h2>
           <div className={styles.tileNumber}>{summary.ok ? summary.data.completed_count : "—"}</div>
           <p className={styles.tileBody}>See everything you’ve completed.</p>
         </Link>
 
         <Link href="/volunteer/history/impact" className={styles.tile}>
-          <h3 className={styles.tileTitle}>Impact log</h3>
+          <h2 className={styles.tileTitle}>Impact log</h2>
           <div className={styles.tileNumber}>{summary.ok ? summary.data.impact_count : "—"}</div>
           <p className={styles.tileBody}>Notes and hours you’ve logged.</p>
         </Link>
 
         <Link href="/volunteer/history/hours" className={styles.tile}>
-          <h3 className={styles.tileTitle}>Hours</h3>
+          <h2 className={styles.tileTitle}>Hours</h2>
           <div className={styles.tileNumber}>{summary.ok ? Math.round(summary.data.total_hours * 100) / 100 : "—"}</div>
           <p className={styles.tileBody}>Totals and per-opportunity breakdown.</p>
         </Link>
 
         <Link href="/volunteer/history/tasks" className={styles.tile}>
-          <h3 className={styles.tileTitle}>Tasks</h3>
+          <h2 className={styles.tileTitle}>Tasks</h2>
           <div className={styles.tileNumber}>{summary.ok ? summary.data.tasks_count : "—"}</div>
           <p className={styles.tileBody}>Task entries you’ve recorded.</p>
         </Link>
 
         <Link href="/volunteer/history/outcomes" className={styles.tile}>
-          <h3 className={styles.tileTitle}>Outcomes</h3>
+          <h2 className={styles.tileTitle}>Outcomes</h2>
           <div className={styles.tileNumber}>{summary.ok ? summary.data.outcomes_count : "—"}</div>
           <p className={styles.tileBody}>Outcome statements and metrics.</p>
         </Link>

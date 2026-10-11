@@ -47,7 +47,7 @@ export default async function Page() {
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Badges & milestones</h2>
+      <h1 className={styles.sectionTitle}>Badges & milestones</h1>
       <HistoryTabs active="badges" />
 
       {!resp.ok && (

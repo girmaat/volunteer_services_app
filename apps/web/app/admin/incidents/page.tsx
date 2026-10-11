@@ -84,21 +84,21 @@ export default async function Page(
     <div className="adminGrid">
       <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
         <div>
-          <h2 style={{ margin: 0 }}>Incident review</h2>
+          <h1 style={{ margin: 0 }}>Incident review</h1>
           <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
             Review organization incident reports and record outcomes.
           </p>
         </div>
 
         <form method="get" action="/admin/incidents" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <select className="input" name="status" defaultValue={status || ""}>
+          <select className="input" name="status" aria-label="Status" defaultValue={status || ""}>
             <option value="">Any status</option>
             <option value="open">Open</option>
             <option value="in_review">In review</option>
             <option value="resolved">Resolved</option>
             <option value="closed">Closed</option>
           </select>
-          <select className="input" name="severity" defaultValue={severity || ""}>
+          <select className="input" name="severity" aria-label="Severity" defaultValue={severity || ""}>
             <option value="">Any severity</option>
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -152,14 +152,14 @@ export default async function Page(
             <div style={{ minWidth: 320 }}>
               <form action={updateIncident} style={{ display: "grid", gap: 8 }}>
                 <input type="hidden" name="id" value={i.id} />
-                <select className="input" name="status" defaultValue={i.status}>
+                <select className="input" name="status" aria-label="Status" defaultValue={i.status}>
                   <option value="open">Open</option>
                   <option value="in_review">In review</option>
                   <option value="resolved">Resolved</option>
                   <option value="closed">Closed</option>
                 </select>
-                <textarea className="input" name="internal_notes" defaultValue={i.internal_notes || ""} rows={3} placeholder="Internal notes" />
-                <textarea className="input" name="outcome" defaultValue={i.outcome || ""} rows={3} placeholder="Outcome / resolution" />
+                <textarea className="input" name="internal_notes" aria-label="Internal notes" defaultValue={i.internal_notes || ""} rows={3} placeholder="Internal notes" />
+                <textarea className="input" name="outcome" aria-label="Outcome" defaultValue={i.outcome || ""} rows={3} placeholder="Outcome / resolution" />
                 <button className="btn" type="submit">Update</button>
               </form>
             </div>

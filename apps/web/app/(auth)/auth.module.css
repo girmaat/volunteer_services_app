@@ -1,232 +1,119 @@
+/* Auth + onboarding surfaces. Flat, token-based (no gradients, no glass). */
 .page {
-  min-height: 100vh;
+  min-height: 60vh;
   display: flex;
-    flex-direction: column;
-align-items: center;
-  padding: 3rem 1.25rem;
-  background:
-    radial-gradient(900px 500px at 18% 12%, rgba(59, 130, 246, 0.20), transparent 55%),
-    radial-gradient(850px 520px at 82% 18%, rgba(16, 185, 129, 0.18), transparent 55%),
-    radial-gradient(900px 560px at 50% 92%, rgba(168, 85, 247, 0.12), transparent 55%),
-    linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0 3rem;
+  background: var(--paper);
 }
 
-.header {
-  text-align: center;
-  margin-bottom: 1.25rem;
-}
+.header { text-align: center; margin-bottom: 0.5rem; max-width: 34rem; }
 
 .title {
-  font-size: 1.0rem;
-  font-weight: 650;
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
   margin: 0 0 0.5rem 0;
-  color: #0f172a;
+  color: var(--ink);
   letter-spacing: -0.02em;
 }
 
-.subtitle {
-  margin: 0 auto;
-  max-width: 46rem;
-  color: #475569;
-  line-height: 1.55;
-}
+.subtitle { margin: 0 auto; max-width: 34rem; color: var(--muted); line-height: 1.55; }
 
-/* Primary container card */
 .card {
-  margin-top: 1.25rem;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 1rem;
-  padding: 1.25rem;
-  box-shadow:
-    0 20px 45px rgba(15, 23, 42, 0.10),
-    0 3px 12px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(10px);
-}
-
-.form {
-  display: grid;
-  gap: 0.9rem;
-}
-
-/* Make label stacks consistent everywhere (fixes tiny inputs on org signup) */
-.form label {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.meta {
-  color: #64748b;
-  font-size: 0.85rem;
-}
-
-.input,
-.textarea,
-.select {
   width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.55);
-  border-radius: 0.75rem;
-  padding: 0.7rem 0.85rem;
+  max-width: 30rem;
+  margin-top: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.75rem;
+}
+
+.form { display: grid; gap: 1rem; }
+.form label { display: grid; gap: 0.35rem; font-size: 0.9375rem; font-weight: 500; color: var(--ink); }
+.meta { color: var(--muted); font-size: 0.85rem; font-weight: 400; }
+
+.input, .textarea, .select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
   font-size: 1rem;
-  background: rgba(255, 255, 255, 0.92);
-  transition: box-shadow 140ms ease, border-color 140ms ease, transform 140ms ease;
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--surface);
 }
+.input:focus-visible, .textarea:focus-visible, .select:focus-visible {
+  outline: none; box-shadow: var(--focus);
+  
+  border-color: var(--primary);
+}
+.textarea { min-height: 120px; resize: vertical; }
 
-.input:focus,
-.textarea:focus,
-.select:focus {
-  outline: none;
-  border-color: rgba(59, 130, 246, 0.80);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
-}
-
-.textarea {
-  min-height: 120px;
-  resize: vertical;
-}
-
-.buttonRow {
-  display: flex;
-  gap: 0.8rem;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
+.buttonRow { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; justify-content: space-between; }
 
 .button {
-  border: 0;
-  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 55%, #7c3aed 100%);
-  color: white;
-  border-radius: 0.85rem;
-  padding: 0.72rem 1.05rem;
-  font-weight: 650;
+  min-height: 44px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
-  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
 }
+.button:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.button:disabled { opacity: 0.6; cursor: not-allowed; }
+.button:focus-visible { outline: none; box-shadow: var(--focus); }
+.secondary { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
+.secondary:hover { background: var(--paper); border-color: var(--ink); }
 
-.button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.32);
-  filter: brightness(1.02);
-}
-
-.button:active {
-  transform: translateY(0px);
-  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.22);
-}
-
-.secondary {
-  background: #111827;
-  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.22);
-}
-
-.error {
-  border: 1px solid rgba(239, 68, 68, 0.40);
-  background: rgba(254, 242, 242, 0.90);
-  color: #991b1b;
-  border-radius: 0.85rem;
-  padding: 0.85rem 0.95rem;
+.error, .success {
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
   font-size: 0.95rem;
   line-height: 1.45;
 }
+.error { border-color: #e7b3ae; background: var(--danger-tint); color: var(--danger); }
+.success { border-color: #b5d8c6; background: var(--success-tint); color: var(--success); }
 
-.success {
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  background: rgba(236, 253, 245, 0.92);
-  color: #065f46;
-  border-radius: 0.85rem;
-  padding: 0.85rem 0.95rem;
-  font-size: 0.95rem;
-  line-height: 1.45;
-}
-
-/* Generic two-column grid used by org signup */
-.grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 860px) {
-  .grid {
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-  }
-}
-
-/* Existing classes used elsewhere */
-.grid3 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.8rem;
-}
+.grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 860px) { .grid { grid-template-columns: 1fr 1fr; align-items: start; } }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8rem; }
 
 .roleCard {
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  border-radius: 0.9rem;
-  padding: 0.9rem;
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 1rem;
+  background: var(--surface);
   cursor: pointer;
 }
+.roleCard:hover { border-color: var(--primary); }
+.roleCard:has(input:checked) { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.roleTitle { font-weight: 600; margin: 0; }
+.roleBody { margin: 0.4rem 0 0 0; color: var(--muted); line-height: 1.45; font-size: 0.95rem; font-weight: 400; }
 
-.roleTitle {
-  font-weight: 650;
-  margin: 0;
-}
-
-.roleBody {
-  margin: 0.5rem 0 0 0;
-  color: #64748b;
-  line-height: 1.4;
-  font-size: 0.95rem;
-}
-
-.progress {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-}
-
+.progress { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .step {
-  border: 1px solid rgba(148, 163, 184, 0.55);
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
-  padding: 0.2rem 0.6rem;
+  padding: 0.2rem 0.7rem;
   font-size: 0.85rem;
-  color: #334155;
-  background: rgba(241, 245, 249, 0.9);
+  color: var(--muted);
+  background: var(--surface);
 }
+.stepActive { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-.stepActive {
-  background: #2563eb;
-  color: white;
-  border-color: #2563eb;
-}
+.footerLinks { margin-top: 1.25rem; color: var(--muted); font-size: 0.95rem; text-align: center; }
+.footerLinks a { color: var(--primary); font-weight: 600; }
+.footerLinks a:hover { text-decoration: underline; }
+.devNote { margin-top: 0.5rem; font-size: 0.9rem; color: var(--muted); }
+.devNote a { color: var(--primary); font-weight: 600; }
 
-.footerLinks {
-  margin-top: 0.75rem;
-  color: #64748b;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.footerLinks a {
-  color: #1d4ed8;
-  font-weight: 650;
-}
-
-.footerLinks a:hover {
-  text-decoration: underline;
-}
-
-.devNote {
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
-  color: #475569;
-}
-
-.devNote a {
-  color: #1d4ed8;
-  font-weight: 650;
-}
+/* Classes referenced by pages but previously undefined (design-system kit) */
+.label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.35rem; }

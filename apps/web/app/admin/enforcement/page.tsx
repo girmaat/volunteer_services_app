@@ -88,7 +88,7 @@ export default async function Page() {
     <div className="adminGrid">
       <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
         <div>
-          <h2 style={{ margin: 0 }}>Strike / ban management</h2>
+          <h1 style={{ margin: 0 }}>Strike / ban management</h1>
           <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
             Monitor active bans and strike activity, and audit recent enforcement actions.
             Unbanning restores access immediately; strike counts can be used to decide future actions.

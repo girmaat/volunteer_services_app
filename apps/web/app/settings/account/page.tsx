@@ -81,7 +81,7 @@ export default async function Page(
       {error ? (
         <div
           className={styles.tile}
-          style={{ borderColor: "var(--border)", background: "#fef2f2", marginTop: "0.9rem" } as any}
+          style={{ borderColor: "var(--border)", background: "var(--danger-tint)", marginTop: "0.9rem" } as any}
         >
           <strong>Could not update password.</strong>
           <div className={styles.small} style={{ marginTop: "0.35rem" } as any}>

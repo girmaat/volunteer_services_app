@@ -45,7 +45,7 @@ export default async function Page() {
             display: "block",
             padding: "1rem",
             borderRadius: 12,
-            border: "1px solid #e5e7eb",
+            border: "1px solid var(--line)",
             background: "#fff",
             color: "#111",
             textDecoration: "none"
@@ -61,7 +61,7 @@ export default async function Page() {
             display: "block",
             padding: "1rem",
             borderRadius: 12,
-            border: "1px solid #e5e7eb",
+            border: "1px solid var(--line)",
             background: "#fff",
             color: "#111",
             textDecoration: "none"

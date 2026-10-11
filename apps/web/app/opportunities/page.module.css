@@ -65,7 +65,7 @@
 .secondaryCta {
   border: 1px solid var(--border);
   background: #ffffff;
-  color: #111827;
+  color: var(--ink);
   border-radius: 0.8rem;
   padding: 0.75rem 1rem;
   font-weight: 650;
@@ -80,7 +80,7 @@
 }
 
 .textLink {
-  color: #111827;
+  color: var(--ink);
   text-decoration: none;
   font-weight: 650;
   border-bottom: 1px solid rgba(0,0,0,0.18);
@@ -159,7 +159,7 @@
 
 .previewBody {
   margin-top: 0.55rem;
-  color: #374151;
+  color: var(--ink);
   line-height: 1.55;
   position: relative;
   z-index: 1;
@@ -315,7 +315,7 @@
   background: #ffffff;
   padding: 0.9rem 1rem;
   margin: 1rem 0;
-  color: #7f1d1d;
+  color: var(--danger);
 }
 
 .opportunityGrid {
@@ -370,7 +370,7 @@
 .actionSecondary {
   border: 1px solid var(--border);
   background: #ffffff;
-  color: #111827;
+  color: var(--ink);
   border-radius: 0.75rem;
   padding: 0.55rem 0.85rem;
   font-weight: 650;
@@ -395,7 +395,7 @@
 
 .opportunityBody {
   margin-top: 0.55rem;
-  color: #374151;
+  color: var(--ink);
   line-height: 1.55;
 }
 

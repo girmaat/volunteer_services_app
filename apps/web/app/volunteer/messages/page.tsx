@@ -48,14 +48,14 @@ export default async function Page() {
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Messages</h2>
+      <h1 className={styles.sectionTitle}>Messages</h1>
       <p className={styles.meta}>
         Signed in as <strong>{user?.email}</strong>.
       </p>
 
       {inbox.length === 0 ? (
         <div className={styles.tile}>
-          <h3 className={styles.tileTitle}>Inbox</h3>
+          <h2 className={styles.tileTitle}>Inbox</h2>
           <p className={styles.tileBody}>No message threads yet.</p>
         </div>
       ) : (
@@ -64,7 +64,7 @@ export default async function Page() {
             <Link key={`${t.peer_id}-${t.request_id || "none"}-${t.application_id || "none"}`} className={styles.tileLink} href={threadHref(t)}>
               <div className={styles.tile}>
                 <div className={styles.row}>
-                  <h3 className={styles.tileTitle}>{t.peer_display_name || t.peer_email}</h3>
+                  <h2 className={styles.tileTitle}>{t.peer_display_name || t.peer_email}</h2>
                   <span className={styles.small}>{formatWhen(t.last_at)}</span>
                 </div>
                 {t.request_title ? <p className={styles.meta}>Regarding: {t.request_title}</p> : null}

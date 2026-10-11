@@ -257,7 +257,7 @@ export default async function Page(
     <div className="adminGrid">
       <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
         <div>
-          <h2 style={{ margin: 0 }}>User management</h2>
+          <h1 style={{ margin: 0 }}>User management</h1>
           <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
             Search users, filter/sort results, manage admin access, and apply strikes / bans.
           </p>
@@ -269,22 +269,22 @@ export default async function Page(
         </div>
 
         <form method="get" action="/admin/users" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <input className="input" name="q" placeholder="Search email or display name" defaultValue={q} style={{ width: 260 }} />
+          <input className="input" name="q" aria-label="Q" placeholder="Search email or display name" defaultValue={q} style={{ width: 260 }} />
 
-          <select className="input" name="admin_role" defaultValue={admin_role || ""}>
+          <select className="input" name="admin_role" aria-label="Admin role" defaultValue={admin_role || ""}>
             <option value="">Admin: Any</option>
             <option value="super">Admin: Super</option>
             <option value="admin">Admin: Admin</option>
             <option value="none">Admin: None</option>
           </select>
 
-          <select className="input" name="banned" defaultValue={banned || ""}>
+          <select className="input" name="banned" aria-label="Banned" defaultValue={banned || ""}>
             <option value="">Ban: Any</option>
             <option value="banned">Ban: Active</option>
             <option value="not_banned">Ban: Not banned</option>
           </select>
 
-          <select className="input" name="verification_status" defaultValue={verification_status || ""}>
+          <select className="input" name="verification_status" aria-label="Verification status" defaultValue={verification_status || ""}>
             <option value="">Verification: Any</option>
             <option value="submitted">Submitted</option>
             <option value="approved">Approved</option>
@@ -293,13 +293,13 @@ export default async function Page(
             <option value="not_required">Not required</option>
           </select>
 
-          <select className="input" name="onboarding" defaultValue={onboarding || ""}>
+          <select className="input" name="onboarding" aria-label="Onboarding" defaultValue={onboarding || ""}>
             <option value="">Onboarding: Any</option>
             <option value="complete">Complete</option>
             <option value="incomplete">Incomplete</option>
           </select>
 
-          <select className="input" name="sort" defaultValue={sort}>
+          <select className="input" name="sort" aria-label="Sort" defaultValue={sort}>
             <option value="created_at">Sort: Created</option>
             <option value="updated_at">Sort: Updated</option>
             <option value="email">Sort: Email</option>
@@ -310,7 +310,7 @@ export default async function Page(
             <option value="admin_role">Sort: Admin role</option>
           </select>
 
-          <select className="input" name="dir" defaultValue={dir}>
+          <select className="input" name="dir" aria-label="Dir" defaultValue={dir}>
             <option value="desc">↓ Desc</option>
             <option value="asc">↑ Asc</option>
           </select>
@@ -387,7 +387,7 @@ export default async function Page(
                     <div className="adminActions">
                       <form action={strikeAction}>
                         <input type="hidden" name="user_id" value={u.id} />
-                        <input className="input" name="reason" placeholder="Strike reason (optional)" />
+                        <input className="input" name="reason" aria-label="Reason" placeholder="Strike reason (optional)" />
                         <button className="btn" type="submit">Strike</button>
                       </form>
 
@@ -410,8 +410,8 @@ export default async function Page(
                       ) : (
                         <form action={banAction}>
                           <input type="hidden" name="user_id" value={u.id} />
-                          <input className="input" name="reason" placeholder="Ban reason (optional)" />
-                          <select className="input" name="days" defaultValue="7">
+                          <input className="input" name="reason" aria-label="Reason" placeholder="Ban reason (optional)" />
+                          <select className="input" name="days" aria-label="Days" defaultValue="7">
                             <option value="1">1 day</option>
                             <option value="7">7 days</option>
                             <option value="30">30 days</option>
@@ -473,7 +473,7 @@ export default async function Page(
                                 </div>
                                 <form action={deleteUserAction} style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
                                   <input type="hidden" name="user_id" value={u.id} />
-                                  <input className="input" name="confirm" placeholder="Type DELETE" />
+                                  <input className="input" name="confirm" aria-label="Confirm" placeholder="Type DELETE" />
                                   <button className="btn btnDanger" type="submit">Confirm</button>
                                 </form>
                               </div>

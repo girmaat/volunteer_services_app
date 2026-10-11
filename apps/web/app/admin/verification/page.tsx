@@ -87,7 +87,7 @@ export default async function Page(
   return (
     <div className="adminGrid">
       <header>
-        <h2 style={{ margin: 0 }}>Verification review</h2>
+        <h1 style={{ margin: 0 }}>Verification review</h1>
         <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
           Review identity and legitimacy submissions for users and organizations.
           Approving applies a Verified badge and trust indicators; rejecting keeps verification required and allows resubmission.
@@ -180,12 +180,12 @@ export default async function Page(
                     <div className="adminActions">
                       <form action={approveOrg}>
                         <input type="hidden" name="slug" value={o.slug} />
-                        <input className="input" name="notes" placeholder="Notes" style={{ width: 180 }} />
+                        <input className="input" name="notes" aria-label="Notes" placeholder="Notes" style={{ width: 180 }} />
                         <button className="btn" type="submit">Approve</button>
                       </form>
                       <form action={rejectOrg}>
                         <input type="hidden" name="slug" value={o.slug} />
-                        <input className="input" name="notes" placeholder="Notes" style={{ width: 180 }} />
+                        <input className="input" name="notes" aria-label="Notes" placeholder="Notes" style={{ width: 180 }} />
                         <button className="btn btnDanger" type="submit">Reject</button>
                       </form>
                       <a className="btn" href={`/organizations/${encodeURIComponent(o.slug)}`}>View</a>

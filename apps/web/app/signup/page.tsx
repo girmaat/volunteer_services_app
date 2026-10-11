@@ -3,6 +3,8 @@ import styles from "../(auth)/auth.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 import SignupForm, { type SignupState } from "./SignupForm";
 
+export const metadata = { title: "Create an account" };
+
 export const dynamic = "force-dynamic";
 
 type ActionIntent = "signup" | "resend";

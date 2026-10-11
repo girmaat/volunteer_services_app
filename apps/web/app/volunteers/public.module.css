@@ -22,7 +22,7 @@
   height: 58px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: #f3f4f6;
+  background: var(--muted-bg);
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -99,3 +99,19 @@
   text-decoration: none;
   color: inherit;
 }
+
+
+/* Classes referenced by pages but previously undefined (design-system kit) */
+.avatarFallback { width: 96px; height: 96px; border-radius: 999px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.75rem; }
+.avatarImg { width: 96px; height: 96px; border-radius: 999px; object-fit: cover; }
+.badge { display: inline-flex; align-items: center; padding: 0.1rem 0.6rem; border-radius: 999px; background: var(--muted-bg); font-size: 0.75rem; font-weight: 500; }
+.badges { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.bodyMuted { color: var(--muted); }
+.cardTitle { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; }
+.container { max-width: 960px; display: grid; gap: 1.25rem; }
+.hero { display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.heroBody { display: grid; gap: 0.35rem; }
+.list { display: grid; gap: 0.5rem; margin: 0; padding: 0; }
+.listLabel { color: var(--muted); font-size: 0.875rem; }
+.listValue { font-weight: 500; }
+.subtitle { color: var(--muted); margin: 0.35rem 0 0; }

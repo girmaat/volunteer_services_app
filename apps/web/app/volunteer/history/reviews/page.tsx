@@ -40,7 +40,7 @@ export default async function Page() {
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Reviews received</h2>
+      <h1 className={styles.sectionTitle}>Reviews received</h1>
       <HistoryTabs active="reviews" />
 
       {!resp.ok && (

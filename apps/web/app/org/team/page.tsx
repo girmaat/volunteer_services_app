@@ -149,7 +149,7 @@ export default async function Page(
   return (
     <div style={{ display: "grid", gap: 14 }}>
       <header>
-        <h2 style={{ margin: 0 }}>Team</h2>
+        <h1 style={{ margin: 0 }}>Team</h1>
         <p style={{ marginTop: 6, color: "rgba(0,0,0,0.7)" }}>
           Add teammates to help manage requests and messages. Invited members must accept the email invite before they can access the org area.
         </p>
@@ -175,7 +175,7 @@ export default async function Page(
       ) : null}
 
       <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h3 style={{ marginTop: 0 }}>Invite a teammate</h3>
+        <h2 style={{ marginTop: 0 }}>Invite a teammate</h2>
 
         {!canManage ? (
           <p style={{ margin: 0, color: "rgba(0,0,0,0.7)" }}>Only org admins and managers can invite teammates.</p>
@@ -188,7 +188,7 @@ export default async function Page(
 
             <label style={{ display: "grid", gap: 6 }}>
               Role
-              <select name="role" defaultValue="member" style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }}>
+              <select name="role" aria-label="Role" defaultValue="member" style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }}>
                 <option value="member">Member</option>
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
@@ -203,7 +203,7 @@ export default async function Page(
       </section>
 
       <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h3 style={{ marginTop: 0 }}>Active members</h3>
+        <h2 style={{ marginTop: 0 }}>Active members</h2>
         {active.length === 0 ? (
           <p style={{ margin: 0, color: "rgba(0,0,0,0.7)" }}>No active members found.</p>
         ) : (
@@ -221,7 +221,7 @@ export default async function Page(
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                   <form action={updateRoleAction} style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input type="hidden" name="user_id" value={m.user_id || ""} />
-                    <select name="role" defaultValue={m.role} disabled={!canManage} style={{ padding: 8, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }}>
+                    <select name="role" aria-label="Role" defaultValue={m.role} disabled={!canManage} style={{ padding: 8, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }}>
                       <option value="member">Member</option>
                       <option value="manager">Manager</option>
                       <option value="admin">Admin</option>
@@ -247,7 +247,7 @@ export default async function Page(
       </section>
 
       <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h3 style={{ marginTop: 0 }}>Pending invites</h3>
+        <h2 style={{ marginTop: 0 }}>Pending invites</h2>
         {invited.length === 0 ? (
           <p style={{ margin: 0, color: "rgba(0,0,0,0.7)" }}>No pending invites.</p>
         ) : (

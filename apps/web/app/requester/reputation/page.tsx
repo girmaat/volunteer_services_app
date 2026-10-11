@@ -26,7 +26,7 @@ export default async function Page() {
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Reputation</h2>
+      <h1 className={styles.sectionTitle}>Reputation</h1>
       <p className={styles.meta}>See the reviews you’ve received as a requester and the reviews you’ve given to volunteers.</p>
 
       <ReputationTabs active="overview" />

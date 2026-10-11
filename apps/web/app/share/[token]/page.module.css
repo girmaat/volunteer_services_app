@@ -165,7 +165,7 @@
 }
 
 .modalClose:hover {
-  background: #eef2ff;
+  background: var(--primary-tint);
 }
 
 .modalClose:disabled {
@@ -231,7 +231,7 @@
 .modalClose:focus,
 .modalPrimary:focus,
 .modalSecondary:focus {
-  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
   outline-offset: 2px;
 }
 
@@ -287,13 +287,13 @@
 .modalSuccess {
   border: 1px solid rgba(34, 197, 94, 0.35);
   background: rgba(34, 197, 94, 0.12);
-  color: #065f46;
+  color: var(--success);
 }
 
 .modalError {
   border: 1px solid rgba(244, 63, 94, 0.35);
   background: rgba(244, 63, 94, 0.12);
-  color: #9f1239;
+  color: var(--danger);
 }
 
 
@@ -320,3 +320,11 @@
   font-size: 12px;
   margin-left: 8px;
 }
+
+
+/* Classes referenced by pages but previously undefined (design-system kit) */
+.cardBody { margin: 0.4rem 0 0; color: var(--ink); }
+.cardTitle { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; }
+.ctaDisabled { display: inline-flex; align-items: center; height: 2.5rem; padding: 0 1rem; border-radius: 8px; border: 1px solid var(--line); color: var(--muted); cursor: not-allowed; }
+.kicker { color: var(--muted); font-size: 0.875rem; font-weight: 500; }
+.secondary { display: inline-flex; align-items: center; justify-content: center; height: 2.5rem; padding: 0 1rem; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-weight: 500; text-decoration: none; }

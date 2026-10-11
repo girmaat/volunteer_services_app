@@ -53,7 +53,7 @@ export default async function Page() {
 
   return (
     <div>
-      <h2>Org inbox</h2>
+      <h1>Org inbox</h1>
 
       {threads.length === 0 ? (
         <p>No messages yet.</p>

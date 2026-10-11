@@ -208,7 +208,7 @@ export default async function VolunteerApplicationDetailPage(
     <div className={styles.page}>
       <div className={styles.headerRow}>
         <div>
-          <h2 className={styles.sectionTitle}>Application</h2>
+          <h1 className={styles.sectionTitle}>Application</h1>
           <p className={styles.meta}>
             Status: <span className={styles.statusPill}>{app.status}</span> · Submitted:{" "}
             {new Date(app.created_at).toLocaleString()} · Updated: {new Date(app.updated_at).toLocaleString()}
@@ -246,7 +246,7 @@ export default async function VolunteerApplicationDetailPage(
       </div>
 
       <div className={styles.sectionCard}>
-        <h3 className={styles.sectionTitle}>Status timeline</h3>
+        <h2 className={styles.sectionTitle}>Status timeline</h2>
         <ol className={styles.timeline}>
           {timeline.map((s) => (
             <li key={s.key} className={styles[`timeline_${s.state}` as any]}>
@@ -258,7 +258,7 @@ export default async function VolunteerApplicationDetailPage(
       </div>
 
       <div className={styles.sectionCard}>
-        <h3 className={styles.sectionTitle}>Actions</h3>
+        <h2 className={styles.sectionTitle}>Actions</h2>
 
         {app.status === "pending" ? (
           <form action={withdrawApplication} className={styles.inlineForm}>
@@ -325,7 +325,7 @@ export default async function VolunteerApplicationDetailPage(
 
             {app.status === "completed" ? (
         <div className={styles.sectionCard}>
-          <h3 className={styles.sectionTitle}>Review this requester</h3>
+          <h2 className={styles.sectionTitle}>Review this requester</h2>
           <p className={styles.meta} style={{ marginTop: "0.35rem" } as any}>
             Your feedback helps build trust for future volunteers.
           </p>
@@ -383,7 +383,7 @@ export default async function VolunteerApplicationDetailPage(
 
 {app.message ? (
         <div className={styles.sectionCard}>
-          <h3 className={styles.sectionTitle}>Your message</h3>
+          <h2 className={styles.sectionTitle}>Your message</h2>
           <p className={styles.tileBody}>{app.message}</p>
         </div>
       ) : null}

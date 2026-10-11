@@ -91,16 +91,16 @@ export default async function Page(
     <div className="adminGrid">
       <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
         <div>
-          <h2 style={{ margin: 0 }}>Organization management</h2>
+          <h1 style={{ margin: 0 }}>Organization management</h1>
           <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
             Review organizations and manage verification requirements.
           </p>
         </div>
 
         <form method="get" action="/admin/organizations" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <input className="input" name="q" placeholder="Search slug, name, or contact email" defaultValue={q} style={{ width: 260 }} />
+          <input className="input" name="q" aria-label="Q" placeholder="Search slug, name, or contact email" defaultValue={q} style={{ width: 260 }} />
 
-          <select className="input" name="status" defaultValue={status} style={{ width: 180 }}>
+          <select className="input" name="status" aria-label="Status" defaultValue={status} style={{ width: 180 }}>
             <option value="all">All statuses</option>
             <option value="needs_review">Needs review</option>
             <option value="approved">Approved</option>
@@ -110,13 +110,13 @@ export default async function Page(
             <option value="not_required">Not required</option>
           </select>
 
-          <select className="input" name="required" defaultValue={required} style={{ width: 160 }}>
+          <select className="input" name="required" aria-label="Required" defaultValue={required} style={{ width: 160 }}>
             <option value="">Verification required?</option>
             <option value="1">Required = Yes</option>
             <option value="0">Required = No</option>
           </select>
 
-          <select className="input" name="sort" defaultValue={sort} style={{ width: 200 }}>
+          <select className="input" name="sort" aria-label="Sort" defaultValue={sort} style={{ width: 200 }}>
             <option value="updated_at">Sort: Last update</option>
             <option value="name">Sort: Name</option>
             <option value="members_count">Sort: Members</option>
@@ -124,7 +124,7 @@ export default async function Page(
             <option value="verification_submitted_at">Sort: Submitted date</option>
           </select>
 
-          <select className="input" name="dir" defaultValue={dir} style={{ width: 120 }}>
+          <select className="input" name="dir" aria-label="Dir" defaultValue={dir} style={{ width: 120 }}>
             <option value="desc">Desc</option>
             <option value="asc">Asc</option>
           </select>

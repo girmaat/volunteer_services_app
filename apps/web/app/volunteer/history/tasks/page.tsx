@@ -69,11 +69,11 @@ export default async function Page() {
   const [tasks, apps] = await Promise.all([getTasks(), getApplicationsForPicker()]);
   return (
     <>
-      <h2 className={styles.sectionTitle}>Tasks</h2>
+      <h1 className={styles.sectionTitle}>Tasks</h1>
       <HistoryTabs active="tasks" />
 
       <div className={styles.card}>
-        <h3 className={styles.cardTitle}>Add task</h3>
+        <h2 className={styles.cardTitle}>Add task</h2>
         <form action={addTask} className={styles.form}>
           <label className={styles.label}>
             Application

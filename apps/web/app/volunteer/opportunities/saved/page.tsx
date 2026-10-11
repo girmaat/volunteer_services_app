@@ -36,7 +36,7 @@ export default async function Page() {
     <div>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>Saved opportunities</h2>
+          <h1 className={styles.sectionTitle}>Saved opportunities</h1>
           <p className={styles.meta}>Opportunities you’ve saved (DB-backed).</p>
         </div>
         <div className={styles.small}>{error ? "—" : opportunities.length} total</div>

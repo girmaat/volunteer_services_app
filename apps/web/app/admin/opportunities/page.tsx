@@ -61,13 +61,13 @@ export default async function Page(
     <div className="adminGrid">
       <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
         <div>
-          <h2 style={{ margin: 0 }}>Opportunity management</h2>
+          <h1 style={{ margin: 0 }}>Opportunity management</h1>
           <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>Moderate service requests (visibility + status).</p>
         </div>
 
         <form method="get" action="/admin/opportunities" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <input className="input" name="q" placeholder="Search title / description" defaultValue={q} style={{ width: 240 }} />
-          <select className="input" name="status" defaultValue={status || ""}>
+          <input className="input" name="q" aria-label="Q" placeholder="Search title / description" defaultValue={q} style={{ width: 240 }} />
+          <select className="input" name="status" aria-label="Status" defaultValue={status || ""}>
             <option value="">Any status</option>
             <option value="open">Open</option>
             <option value="paused">Paused</option>
@@ -118,7 +118,7 @@ export default async function Page(
                   <div className="adminActions">
                     <form action={updateStatus}>
                       <input type="hidden" name="id" value={r.id} />
-                      <select className="input" name="status" defaultValue={r.status}>
+                      <select className="input" name="status" aria-label="Status" defaultValue={r.status}>
                         <option value="open">Open</option>
                         <option value="paused">Paused</option>
                         <option value="closed">Closed</option>

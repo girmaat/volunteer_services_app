@@ -2,9 +2,41 @@ import styles from "./page.module.css";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getPublicOpportunity } from "../../../lib/public-api";
+import type { Metadata } from "next";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await props.params;
+  const o = await getPublicOpportunity(decodeURIComponent(id));
+  if (!o) return { title: "Opportunity not found", robots: { index: false } };
+  const where = o.mode === "remote" ? "Remote" : o.location;
+  return {
+    title: o.title,
+    description: `${where} · ${o.summary}`.slice(0, 160),
+    openGraph: { title: o.title, description: o.summary.slice(0, 200), type: "article" },
+    alternates: { canonical: `/opportunities/${o.id}` }
+  };
+}
+
+/** schema.org JobPosting with employmentType VOLUNTEER (supported by search engines). */
+function jsonLd(o: NonNullable<Awaited<ReturnType<typeof getPublicOpportunity>>>) {
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title: o.title,
+    description: o.summary,
+    employmentType: "VOLUNTEER",
+    datePosted: o.updated_at,
+    ...(o.needed_by ? { validThrough: o.needed_by } : {}),
+    hiringOrganization: { "@type": "Organization", name: o.organization_name || "ThankYou community member" },
+    ...(o.mode === "remote"
+      ? { jobLocationType: "TELECOMMUTE", applicantLocationRequirements: { "@type": "Country", name: "US" } }
+      : { jobLocation: { "@type": "Place", address: { "@type": "PostalAddress", addressLocality: o.location } } })
+  };
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
 
 type OpportunityDetail = {
   id: string;
@@ -113,6 +145,7 @@ export default async function OpportunityDetailPage(
     if (!pub) notFound();
     return (
       <section className={styles.page}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(pub) }} />
         <header className={styles.header}>
           <div>
             <div className={styles.kicker}>Volunteer Opportunity</div>

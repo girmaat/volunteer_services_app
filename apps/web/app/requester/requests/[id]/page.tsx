@@ -65,7 +65,7 @@ export default async function Page(
     <div>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>{request.title}</h2>
+          <h1 className={styles.sectionTitle}>{request.title}</h1>
           <p className={styles.meta}>
             <span className={styles.badge}>{statusLabel(request.status)}</span>{" "}
             · {modeLabel(request.mode)}

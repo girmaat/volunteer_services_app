@@ -39,14 +39,14 @@ export default async function Page() {
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Calendar</h2>
+      <h1 className={styles.sectionTitle}>Calendar</h1>
       <p className={styles.meta}>
         Signed in as <strong>{user?.email}</strong>.
       </p>
 
       {commitments.length === 0 ? (
         <div className={styles.tile}>
-          <h3 className={styles.tileTitle}>Upcoming</h3>
+          <h2 className={styles.tileTitle}>Upcoming</h2>
           <p className={styles.tileBody}>No upcoming commitments yet.</p>
         </div>
       ) : (
@@ -54,7 +54,7 @@ export default async function Page() {
           {commitments.map((c) => (
             <div key={c.id} className={styles.tile}>
               <div className={styles.row}>
-                <h3 className={styles.tileTitle}>{c.title || "Commitment"}</h3>
+                <h2 className={styles.tileTitle}>{c.title || "Commitment"}</h2>
                 <span className={styles.small}>{new Date(c.start_at).toLocaleString()}</span>
               </div>
               <p className={styles.meta}>

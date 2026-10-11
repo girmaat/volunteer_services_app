@@ -48,7 +48,7 @@
 }
 
 .meta {
-  color: #6b7280;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
@@ -98,8 +98,8 @@
   border-radius: 999px;
   padding: 0.15rem 0.55rem;
   font-size: 0.8rem;
-  color: #374151;
-  background: #f3f4f6;
+  color: var(--ink);
+  background: var(--muted-bg);
 }
 /* Rich text rendering for seeded public pages (headings, lists, paragraphs) */
 .content h2 {

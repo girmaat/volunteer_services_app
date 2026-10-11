@@ -40,7 +40,7 @@ export default async function OrgRequestsPage() {
     <div className={styles.contentNarrow}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
         <div>
-          <h2 style={{ margin: 0 }}>Org requests</h2>
+          <h1 style={{ margin: 0 }}>Org requests</h1>
           <p className={styles.muted} style={{ margin: "6px 0 0 0" }}>
             Create and manage requests posted on behalf of your organization.
             <span style={{ marginLeft: 8, fontSize: 13, color: "rgba(0,0,0,0.65)" }}>

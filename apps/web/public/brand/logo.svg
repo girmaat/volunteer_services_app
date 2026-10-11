@@ -1,40 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="920" height="220" viewBox="0 0 920 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ThankYou logo">
-  <title>ThankYou</title>
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2563eb"/>
-      <stop offset="1" stop-color="#1d4ed8"/>
-    </linearGradient>
-  </defs>
-
-  <g transform="translate(20,20)">
-    <circle cx="90" cy="90" r="90" fill="url(#g)"/>
-    <path d="M90 165
-             C90 165 34 128 34 90
-             C34 66 52 48 74 53
-             C82 55 88 60 90 64
-             C92 60 98 55 106 53
-             C128 48 146 66 146 90
-             C146 128 90 165 90 165Z"
-          fill="#ffffff" opacity="0.95"/>
-    <path d="M52 118
-             C64 130 79 140 90 148
-             C101 140 116 130 128 118
-             C117 112 106 108 95 105
-             C92 104 88 104 85 105
-             C74 108 63 112 52 118Z"
-          fill="#ffffff" opacity="0.22"/>
+<svg width="220" height="48" viewBox="0 0 220 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ThankYou">
+  <g transform="translate(0,2) scale(0.69)">
+    <path d="M14 6h36a8 8 0 0 1 8 8v28a8 8 0 0 1-8 8H30l-12 9v-9h-4a8 8 0 0 1-8-8V14a8 8 0 0 1 8-8z" fill="#0f6e66"/>
+    <path d="M32 41s-11-6.6-11-13.4c0-3.6 2.8-6.1 6-6.1 2.2 0 3.9 1.2 5 2.8 1.1-1.6 2.8-2.8 5-2.8 3.2 0 6 2.5 6 6.1C43 34.4 32 41 32 41z" fill="#fff"/>
+    <circle cx="49" cy="15" r="5" fill="#f2b630"/>
   </g>
-
-  <g transform="translate(220,82)">
-    <text x="0" y="0" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
-          font-size="78" font-weight="800" fill="#111827" letter-spacing="-0.5">
-      ThankYou
-    </text>
-    <text x="4" y="46" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
-          font-size="22" font-weight="600" fill="#4b5563">
-      Volunteer service marketplace
-    </text>
-  </g>
+  <text x="52" y="32" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="24" font-weight="700" fill="#17242f" letter-spacing="-0.5">ThankYou</text>
 </svg>

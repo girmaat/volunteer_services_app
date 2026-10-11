@@ -106,7 +106,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
   return (
     <div style={{ display: "grid", gap: 14, maxWidth: 900 }}>
       <header>
-        <h2 style={{ margin: 0 }}>Organization settings</h2>
+        <h1 style={{ margin: 0 }}>Organization settings</h1>
         <p style={{ marginTop: 6, color: "rgba(0,0,0,0.7)" }}>Manage your organization profile and verification.</p>
       </header>
 
@@ -124,7 +124,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
       ) : null}
 
       <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h3 style={{ marginTop: 0 }}>Profile</h3>
+        <h2 style={{ marginTop: 0 }}>Profile</h2>
 
         {!canEdit ? (
           <p style={{ margin: 0, color: "rgba(0,0,0,0.7)" }}>Only org admins can edit organization settings.</p>
@@ -173,7 +173,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
       </section>
 
       <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h3 style={{ marginTop: 0 }}>Organization slug</h3>
+        <h2 style={{ marginTop: 0 }}>Organization slug</h2>
         <p style={{ marginTop: 6, color: "rgba(0,0,0,0.7)" }}>
           Current slug: <code>{org.slug}</code>
         </p>
@@ -194,7 +194,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
       </section>
 
       <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h3 id="verification" style={{ marginTop: 0 }}>Verification</h3>
+        <h2 id="verification" style={{ marginTop: 0 }}>Verification</h2>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <div style={{ fontWeight: 800 }}>Status:</div>

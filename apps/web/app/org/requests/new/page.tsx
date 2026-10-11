@@ -72,7 +72,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
     <section className={styles.page}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <h2 className={styles.title}>Create request</h2>
+          <h1 className={styles.title}>Create request</h1>
           <p className={styles.subtitle}>Post a new request on behalf of your organization.</p>
         </div>
 

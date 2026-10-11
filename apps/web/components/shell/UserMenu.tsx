@@ -1,0 +1,72 @@
+"use client";
+
+import * as Dropdown from "@radix-ui/react-dropdown-menu";
+import Link from "next/link";
+import { ChevronDown, LifeBuoy, LogOut, Settings, UserRound } from "lucide-react";
+
+export type MenuContext = { href: string; label: string; current: boolean };
+
+/** Avatar menu: profile, settings, help, switch context, log out. */
+export default function UserMenu({ name, email, profileHref, contexts }: { name: string; email: string; profileHref: string; contexts: MenuContext[] }) {
+  const initials = name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const item = "flex cursor-pointer items-center gap-2.5 rounded px-2.5 py-2 text-sm text-ink outline-none data-[highlighted]:bg-primary-tint data-[highlighted]:text-primary";
+  return (
+    <Dropdown.Root>
+      <Dropdown.Trigger className="flex w-full items-center gap-2.5 rounded border border-transparent bg-transparent px-2 py-2 text-left hover:bg-[var(--muted-bg)]" aria-label="Account menu">
+        <span aria-hidden className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-ink">
+          {initials || "?"}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium">{name}</span>
+          <span className="block truncate text-xs text-muted">{email}</span>
+        </span>
+        <ChevronDown aria-hidden className="h-4 w-4 text-muted" />
+      </Dropdown.Trigger>
+      <Dropdown.Portal>
+        <Dropdown.Content side="top" align="start" sideOffset={6} className="z-50 min-w-[240px] rounded-md border border-line bg-surface p-1.5 shadow-pop">
+          {contexts.length > 1 ? (
+            <>
+              <Dropdown.Label className="px-2.5 pb-1 pt-1.5 text-xs text-muted">Switch to</Dropdown.Label>
+              {contexts.map((c) => (
+                <Dropdown.Item key={c.href} asChild className={item}>
+                  <Link href={c.href} aria-current={c.current ? "true" : undefined}>
+                    <span className={c.current ? "font-semibold" : ""}>{c.label}</span>
+                  </Link>
+                </Dropdown.Item>
+              ))}
+              <Dropdown.Separator className="my-1 h-px bg-line" />
+            </>
+          ) : null}
+          <Dropdown.Item asChild className={item}>
+            <Link href={profileHref}>
+              <UserRound aria-hidden className="h-4 w-4" /> Profile
+            </Link>
+          </Dropdown.Item>
+          <Dropdown.Item asChild className={item}>
+            <Link href="/settings">
+              <Settings aria-hidden className="h-4 w-4" /> Settings
+            </Link>
+          </Dropdown.Item>
+          <Dropdown.Item asChild className={item}>
+            <Link href="/help">
+              <LifeBuoy aria-hidden className="h-4 w-4" /> Help
+            </Link>
+          </Dropdown.Item>
+          <Dropdown.Separator className="my-1 h-px bg-line" />
+          <form action="/api/auth/logout" method="post">
+            <Dropdown.Item asChild className={item}>
+              <button type="submit" className="w-full border-0 bg-transparent text-left">
+                <LogOut aria-hidden className="h-4 w-4" /> Log out
+              </button>
+            </Dropdown.Item>
+          </form>
+        </Dropdown.Content>
+      </Dropdown.Portal>
+    </Dropdown.Root>
+  );
+}

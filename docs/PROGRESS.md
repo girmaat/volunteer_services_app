@@ -89,3 +89,35 @@ accept → message → complete → review loop, blocking, feeds, org decisions,
 
 **Still open for Phase 4:** volunteer/peer emails are visible to requesters and orgs before acceptance
 (spec: reveal after match), messaging has no masking or expiry.
+
+## Phase 3 — Design system, navigation and redesign (2026-10-11)
+
+**Brand and tokens** — deep teal primary (`#0f6e66`), sunflower (`#f2b630`) reserved for focus, active and
+verified states, warm neutrals (ink `#17242f`, paper `#fafaf8`, lines `#e3e1dc`/`#cfccc5`). Plus Jakarta Sans for
+headings, Inter for body, both self-hosted (no request to Google at build or run time). New logo: a speech-bubble
+heart with a sunflower dot. No gradients, glass or decorative shadows anywhere; the old auth gradient is gone.
+Tailwind 3.4 maps every utility to the CSS variables (preflight off so existing CSS modules keep working);
+legacy variable names (`--bg`, `--accent`, `--card` …) alias the new tokens so un-restyled pages inherit the look.
+
+**Components** (`components/ui`) — Button/ButtonLink, Input/Textarea/Select/Field, Card, PageHeader, EmptyState,
+Notice, Badge, VerifiedBadge, StatusPill (one colour per status everywhere), LinkTabs, StatStrip.
+Radix primitives for the user menu and dialogs; lucide icons.
+
+**Navigation** — one model (`components/shell/nav.ts`) drives everything:
+- Public pages: marketing header (Opportunities, Organizations, How it works, Log in, Sign up) and a four-column footer.
+- Signed-in areas: an app shell with a left sidebar on desktop and a bottom tab bar on mobile; the user menu holds
+  profile, settings, context switching and log out. Five old nav components retired.
+- `/dashboard` is now only a router to the right home; old entry URLs (`/volunteer`, `/requester`, `/org`,
+  `/org/enroll`, `/volunteer/saved` …) are permanent redirects.
+
+**Redesigned screens** — home (search + "Open right now" board), opportunity browse (filter rail + rows),
+organizations list/detail, volunteer/requester/org dashboards, org applicants (status filters, accept / waitlist /
+decline in place), volunteer applications (active / past), login, signup, password reset, onboarding.
+
+**SEO and metadata** — per-page titles/descriptions, `sitemap.xml`, `robots.txt` (no indexing unless
+`NEXT_PUBLIC_ALLOW_INDEXING=true`), schema.org `JobPosting` (VOLUNTEER) on opportunity pages, security headers.
+
+**Accessibility** — axe-core (WCAG 2.1 A/AA + best practice) on 30 key pages across all roles: 0 serious or
+critical issues remaining. Fixed: every app page now has an `h1` and no skipped heading levels (70 files);
+labelled every admin filter/control; stat panels use list semantics; landmarks are uniquely labelled;
+skip link; 44 px touch targets; visible sunflower focus ring. Mobile checked at 390 px.

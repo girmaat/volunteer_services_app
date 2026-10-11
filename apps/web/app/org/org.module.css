@@ -148,3 +148,46 @@
   text-decoration: underline;
   color: inherit;
 }
+
+
+/* Classes referenced by pages but previously undefined (design-system kit) */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.25rem; }
+.meta { color: var(--muted); font-size: 0.875rem; }
+.primaryButton { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; height: 2.5rem; padding: 0 1rem; border-radius: 8px; border: 1px solid var(--primary); background: var(--primary); color: var(--primary-ink); font-weight: 500; font-size: 0.875rem; cursor: pointer; text-decoration: none; }
+.primaryButton:hover { background: var(--primary-hover); color: var(--primary-ink); }
+.primaryButton:disabled { opacity: 0.55; cursor: not-allowed; }
+.smallLink { display: inline-flex; align-items: center; color: var(--primary); font-weight: 500; font-size: 0.875rem; text-decoration: none; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.table th, .table td { text-align: left; padding: 0.6rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.table th { color: var(--muted); font-weight: 500; font-size: 0.8125rem; }
+
+.textarea { width: 100%; min-height: 110px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 0.6rem 0.75rem; background: var(--surface); font: inherit; }
+
+.bannerBody { margin: 0.25rem 0 0; color: var(--ink); }
+.bannerError { border: 1px solid var(--danger); background: var(--danger-tint); border-radius: var(--radius); padding: 0.85rem 1rem; margin: 0 0 1rem; }
+.bannerTitle { margin: 0; font-weight: 600; }
+.contentNarrow { max-width: 960px; display: grid; gap: 1.25rem; }
+.help { color: var(--muted); font-size: 0.875rem; margin: 0.25rem 0 0; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.filterBar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; margin: 0 0 1rem; }
+.headerRow { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-start; justify-content: space-between; }
+.pill { display: inline-flex; align-items: center; height: 2rem; padding: 0 0.8rem; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--muted); font-size: 0.875rem; text-decoration: none; cursor: pointer; }
+.pill:hover { color: var(--ink); border-color: var(--ink); }
+.pillActive { border-color: var(--ink); background: var(--ink); color: #fff; }
+.pillRow { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.primaryButtonLink { display: inline-flex; align-items: center; justify-content: center; height: 2.5rem; padding: 0 1rem; border-radius: 8px; border: 1px solid var(--primary); background: var(--primary); color: var(--primary-ink); font-weight: 500; font-size: 0.875rem; text-decoration: none; }
+.primaryButtonLink:hover { background: var(--primary-hover); color: var(--primary-ink); }
+.searchWrap { display: flex; gap: 0.5rem; align-items: center; }
+.stack { display: grid; gap: 1rem; }
+
+.grid2 { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.headerRowSmall { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: space-between; }
+.secondaryLink { color: var(--primary); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+.tile { border: 1px solid var(--line); border-radius: var(--radius); padding: 0.85rem 1rem; background: var(--surface); }
+.tileGrid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.tileLabel { color: var(--muted); font-size: 0.8125rem; }
+.tileValue { font-weight: 600; margin-top: 0.15rem; }
+
+.secondaryButton { display: inline-flex; align-items: center; justify-content: center; height: 2.5rem; padding: 0 1rem; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-weight: 500; font-size: 0.875rem; cursor: pointer; text-decoration: none; }
+.secondaryButton:hover { border-color: var(--ink); }

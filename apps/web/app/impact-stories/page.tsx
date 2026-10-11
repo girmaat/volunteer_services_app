@@ -3,6 +3,8 @@ import styles from "./page.module.css";
 import Link from "next/link";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
+export const metadata = { title: "Impact stories" };
+
 export const revalidate = 300;
 
 type Story = {

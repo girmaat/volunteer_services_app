@@ -69,7 +69,7 @@ export default async function Page() {
     <div>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>Recommended opportunities</h2>
+          <h1 className={styles.sectionTitle}>Recommended opportunities</h1>
           <p className={styles.meta}>
             Personalized ranking using your interests (tags), experience text similarity, and distance when available
             {label ? ` (within ~${radiusMiles} mi of ${label})` : ""}.

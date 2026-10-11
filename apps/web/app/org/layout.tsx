@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { getCurrentUser } from "../lib/backend";
 import { getOrgContext } from "../lib/org";
-import OrgNav from "./_components/OrgNav";
-import styles from "./org.module.css";
+import AppShell from "../../components/shell/AppShell";
+import MarketingHeader from "../../components/shell/MarketingHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +13,12 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
   // Public org routes (e.g., /org/signup) should be reachable while logged out.
   if (!user) {
     return (
-      <section className={styles.page}>
-        <main className={styles.mainFull}>{children}</main>
-      </section>
+      <>
+        <MarketingHeader />
+        <main id="main" className="mx-auto max-w-content px-5 py-8">
+          {children}
+        </main>
+      </>
     );
   }
 
@@ -24,9 +27,12 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
   const orgCtx = await getOrgContext();
   if (!orgCtx) {
     return (
-      <section className={styles.page}>
-        <main className={styles.mainFull}>{children}</main>
-      </section>
+      <>
+        <MarketingHeader />
+        <main id="main" className="mx-auto max-w-content px-5 py-8">
+          {children}
+        </main>
+      </>
     );
   }
 
@@ -42,40 +48,23 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
           ? verificationStatus
           : "Unverified";
 
+  const needsVerification = verificationRequired && verificationStatus !== "approved" && verificationStatus !== "verified";
+  const banner = needsVerification ? (
+    <div className="border-b border-line bg-warning-tint px-4 py-3 text-sm sm:px-6 lg:px-10" role="note">
+      <strong>Verification required.</strong> Submit your organization&apos;s details in{" "}
+      <Link className="font-medium text-primary underline" href="/org/settings#verification">
+        Organization settings
+      </Link>
+      . A platform admin reviews them before your requests are marked verified.
+    </div>
+  ) : null;
+
   return (
-    <section className={styles.page}>
-      <div className={styles.container}>
-        <header className={styles.header}>
-          <div className={styles.headerCard}>
-            <div className={styles.headerTop}>
-              <div className={styles.orgTitleWrap}>
-                <h1 className={styles.orgName}>{orgCtx.org.name}</h1>
-                <p className={styles.orgMeta}>
-                  {orgCtx.org.location} · <span className={styles.badge}>{orgCtx.membership.role}</span> ·{" "}
-                  <span className={styles.badge}>{verificationLabel}</span>
-                </p>
-              </div>
-
-                            {verificationRequired && verificationStatus !== "approved" && verificationStatus !== "verified" ? (
-                <div className={styles.verificationCallout} role="note">
-                  <div className={styles.verificationCalloutTitle}>Verification required</div>
-                  <div className={styles.verificationCalloutBody}>
-                    Submit your organization&apos;s verification details in{" "}
-                    <Link className={styles.verificationLink} href="/org/settings#verification">
-                      Organization settings
-                    </Link>
-                    . After you submit, a platform admin will review and update your status.
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            <OrgNav />
-          </div>
-        </header>
-
-        <main className={styles.main}>{children}</main>
-      </div>
-    </section>
+    <AppShell user={user} context="org" orgName={orgCtx.org.name} banner={banner}>
+      <p className="m-0 mb-4 text-sm text-muted">
+        {orgCtx.org.name} · {orgCtx.membership.role === "admin" ? "Admin" : orgCtx.membership.role === "manager" ? "Manager" : "Member"} · {verificationLabel}
+      </p>
+      {children}
+    </AppShell>
   );
 }

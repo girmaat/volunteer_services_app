@@ -119,7 +119,7 @@ export default async function Page(
     <div>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>{opportunity.title}</h2>
+          <h1 className={styles.sectionTitle}>{opportunity.title}</h1>
           <p className={styles.meta}>
             {opportunity.organization_name ? `${opportunity.organization_name} · ` : ""}
             {modeLabel(opportunity.mode)} · {opportunity.location}
@@ -215,7 +215,7 @@ export default async function Page(
       </div>
 
       <div style={{ marginTop: "1.25rem" } as any}>
-        <h3 id="apply" className={styles.sectionTitle}>Apply</h3>
+        <h2 id="apply" className={styles.sectionTitle}>Apply</h2>
 
         {isOwn ? (
           <div className={`${styles.banner} ${styles.bannerInfo}`.trim()} role="status">

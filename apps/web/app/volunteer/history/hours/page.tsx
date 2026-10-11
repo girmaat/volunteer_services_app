@@ -23,7 +23,7 @@ export default async function Page() {
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Hours</h2>
+      <h1 className={styles.sectionTitle}>Hours</h1>
       <HistoryTabs active="hours" />
 
       {me?.id ? (

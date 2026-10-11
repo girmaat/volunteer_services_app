@@ -167,7 +167,7 @@ export default async function Page(
     <div className="adminGrid">
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
         <div>
-          <h2 style={{ margin: 0 }}>Report details</h2>
+          <h1 style={{ margin: 0 }}>Report details</h1>
           <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>Review the report, update status, and apply moderation actions.</p>
         </div>
         <Link className="btn" href="/admin/reports">Back to reports</Link>
@@ -264,7 +264,7 @@ export default async function Page(
 	              <form action={updateReport} style={{ marginTop: 10, display: "grid", gap: 10 }}>
 	                <label style={{ display: "grid", gap: 6 }}>
 	                  <span className="muted" style={{ fontSize: 12 }}>Status</span>
-	                  <select name="status" defaultValue={report.status || "submitted"} className="input">
+	                  <select name="status" aria-label="Status" defaultValue={report.status || "submitted"} className="input">
 	                    <option value="submitted">submitted</option>
 	                    <option value="in_review">in_review</option>
 	                    <option value="resolved">resolved</option>
@@ -274,7 +274,7 @@ export default async function Page(
 
 	                <label style={{ display: "grid", gap: 6 }}>
 	                  <span className="muted" style={{ fontSize: 12 }}>Admin notes</span>
-	                  <textarea name="admin_notes" defaultValue={report.admin_notes || ""} className="textarea" rows={4} placeholder="Notes for other moderators (not visible to users)" />
+	                  <textarea name="admin_notes" aria-label="Admin notes" defaultValue={report.admin_notes || ""} className="textarea" rows={4} placeholder="Notes for other moderators (not visible to users)" />
 	                </label>
 
 	                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -299,7 +299,7 @@ export default async function Page(
                   <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Adds a strike and displays a warning on their profile.</div>
                   <label style={{ display: "grid", gap: 6, marginTop: 10 }}>
                     <span className="muted" style={{ fontSize: 12 }}>Reason</span>
-                    <input name="reason" className="input" defaultValue="Report violation" />
+                    <input name="reason" aria-label="Reason" className="input" defaultValue="Report violation" />
                   </label>
                   <button className="btn btnSoft" type="submit" style={{ marginTop: 10 }}>Apply strike</button>
                 </form>
@@ -311,11 +311,11 @@ export default async function Page(
                   <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                     <label style={{ display: "grid", gap: 6, flex: 1, minWidth: 120 }}>
                       <span className="muted" style={{ fontSize: 12 }}>Days</span>
-                      <input name="days" className="input" type="number" min={1} max={365} defaultValue={7} />
+                      <input name="days" aria-label="Days" className="input" type="number" min={1} max={365} defaultValue={7} />
                     </label>
                     <label style={{ display: "grid", gap: 6, flex: 2, minWidth: 160 }}>
                       <span className="muted" style={{ fontSize: 12 }}>Reason</span>
-                      <input name="reason" className="input" defaultValue="Report violation" />
+                      <input name="reason" aria-label="Reason" className="input" defaultValue="Report violation" />
                     </label>
                   </div>
                   <button className="btn btnDanger" type="submit" style={{ marginTop: 10 }}>Ban user</button>
@@ -334,7 +334,7 @@ export default async function Page(
               <form action={moderateShareLink} style={{ marginTop: 12, display: "grid", gap: 10 }}>
                 <label style={{ display: "grid", gap: 6 }}>
                   <span className="muted" style={{ fontSize: 12 }}>Moderator notes</span>
-                  <textarea name="admin_notes" className="textarea" rows={3} placeholder="Optional notes (stored with the report)" />
+                  <textarea name="admin_notes" aria-label="Admin notes" className="textarea" rows={3} placeholder="Optional notes (stored with the report)" />
                 </label>
 
                 <div className="adminActions">

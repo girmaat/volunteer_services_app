@@ -59,7 +59,7 @@ export default async function OrgRosterPage(
   return (
     <div className={styles.mainFull}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h2>Volunteer roster</h2>
+        <h1>Volunteer roster</h1>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <Link className={styles.badge} href={`/org/roster/export?${exportQs.toString()}`}>
             Export CSV

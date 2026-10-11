@@ -1,138 +1,103 @@
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   ThankYou design tokens
+   Calm, legible, trustworthy. Deep teal for actions, sunflower only for
+   focus / active / verified, warm neutral lines. No gradients, few shadows.
+   ========================================================================== */
 :root {
-  --bg: #f9fafb;
-  --text: #111827;
-  --muted: #4b5563;
-  --border: #e5e7eb;
-  --accent: #2563eb;
-  --brand: var(--accent);
-  --background: var(--bg);
-  --accent-foreground: #ffffff;
-  --danger: #dc2626;
-  --card: #ffffff;
+  --ink: #17242f;
+  --paper: #fafaf8;
+  --surface: #ffffff;
+  --line: #e3e1dc;
+  --line-strong: #cfccc5;
+  --muted: #5a6772;
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --primary: #0f6e66;
+  --primary-hover: #0b5a53;
+  --primary-tint: #e4f1ef;
+  --primary-ink: #ffffff;
+
+  --sun: #f2b630;
+  --sun-tint: #fdf3d8;
+
+  --danger: #b4361f;
+  --danger-tint: #fbebe7;
+  --warning: #8a5300;
+  --warning-tint: #fdf1de;
+  --success: #1f7a4d;
+  --success-tint: #e5f4ec;
+
+  --radius: 10px;
+  --focus: 0 0 0 3px var(--surface), 0 0 0 5px var(--sun);
+
+  /* Legacy aliases used by existing CSS modules */
+  --bg: var(--paper);
+  --background: var(--paper);
+  --text: var(--ink);
+  --border: var(--line);
+  --border-color: var(--line);
+  --card: var(--surface);
+  --card-bg: var(--surface);
+  --muted-bg: #f2f1ed;
+  --accent: var(--primary);
+  --brand: var(--primary);
+  --accent-foreground: var(--primary-ink);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-jakarta), var(--font-sans);
 }
 
-html, body {
-  margin: 0;
-  padding: 0;
+/* ---- Base (Tailwind preflight is off; keep this small and explicit) ---- */
+*, *::before, *::after { box-sizing: border-box; border-width: 0; border-style: solid; border-color: var(--line); }
+/* Unclassed form controls (older pages) keep a visible, consistent outline after the border reset above. */
+input:not([class]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select:not([class]), textarea:not([class]) {
+  border: 1px solid var(--line-strong); border-radius: 8px; padding: 0.5rem 0.65rem; background: var(--surface);
+}
+button:not([class]) { border: 1px solid var(--line-strong); border-radius: 8px; padding: 0.45rem 0.9rem; background: var(--surface); cursor: pointer; }
+hr { border-top-width: 1px; margin: 1.5rem 0; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { margin: 0; padding: 0; }
+body {
   font-family: var(--font-sans);
-  background: var(--bg);
-  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
-
+h1, h2, h3, h4 { font-family: var(--font-display); color: var(--ink); line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+p { max-width: 75ch; }
 a { color: inherit; text-decoration: none; }
+a:hover { color: var(--primary); }
+img, svg { max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+::selection { background: var(--sun-tint); }
 
-main { min-height: 70vh; }
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 6px; }
 
-.siteHeader {
-  background: #fff;
-  border-bottom: 1px solid var(--border);
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
-.headerInner {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0.9rem 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
+/* Legacy page labels ("kicker") were all caps; keep them quiet and sentence case. */
+[class*="kicker"] { text-transform: none !important; letter-spacing: 0 !important; }
 
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  font-weight: 900;
-  letter-spacing: 0.2px;
-  color: var(--text);
-}
+/* Skip link */
+.skipLink { position: absolute; left: 12px; top: -48px; z-index: 100; background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 8px; }
+.skipLink:focus { top: 12px; color: #fff; }
 
-.brand:hover {
-  text-decoration: underline;
-}
-
-.brandMark {
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-}
-
-.brandMark img {
-  width: 28px;
-  height: 28px;
-  display: block;
-}
-
-.brandText {
-  color: var(--text);
-}
-
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.1rem;
-  font-size: 0.95rem;
-}
-
-.navLink {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-  line-height: 1.2;
-  border: 1px solid transparent;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
-}
-
-.navLink:focus-visible {
-  outline: 2px solid rgba(37, 99, 235, 0.55);
-  outline-offset: 2px;
-}
-
-.navLink:hover {
-  background: rgba(37, 99, 235, 0.08);
-  border-color: rgba(37, 99, 235, 0.18);
-}
-
-.navLinkActive {
-  background: rgba(37, 99, 235, 0.16);
-  border-color: rgba(37, 99, 235, 0.35);
-  color: var(--accent);
-  font-weight: 650;
-}
-
-.navLinkActive:hover {
-  background: rgba(37, 99, 235, 0.2);
-  border-color: rgba(37, 99, 235, 0.42);
-}
-.siteFooter {
-  margin-top: 3rem;
-  background: #fff;
-  border-top: 1px solid var(--border);
-}
-
-.footerInner {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1.25rem;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.9rem;
-}
-
-.footerLinks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.9rem;
-}
+/* Loading skeletons (loading.tsx) */
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skeletonPage { max-width: 1080px; padding: 1.5rem 0; display: grid; gap: 0.9rem; }
+.skeletonLine, .skeletonCard { background: linear-gradient(90deg, #eeede9 25%, #f6f5f2 37%, #eeede9 63%); background-size: 400% 100%; animation: skeletonPulse 1.4s ease infinite; border-radius: 8px; }
+.skeletonLine { height: 14px; width: 40%; }
+.skeletonTitle { height: 28px; width: 30%; }
+.skeletonGrid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); margin-top: 0.5rem; }
+.skeletonCard { height: 120px; }
+@keyframes skeletonPulse { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 
 /* Org / Personal context switcher */
 .contextSwitch {
@@ -210,12 +175,12 @@ main { min-height: 70vh; }
 }
 
 .adminNav a:hover {
-  background: rgba(37, 99, 235, 0.08);
+  background: var(--primary-tint);
   color: var(--text);
 }
 
 .adminNav .active {
-  background: rgba(37, 99, 235, 0.14);
+  background: var(--primary-tint);
   color: var(--text);
   font-weight: 700;
 }
@@ -311,7 +276,7 @@ main { min-height: 70vh; }
   padding: 0.45rem 0.65rem;
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,0.18);
-  background: #fff;
+  background: var(--surface);
   font-weight: 700;
   cursor: pointer;
 }
@@ -323,20 +288,20 @@ main { min-height: 70vh; }
 }
 
 .btnDanger { border-color: rgba(180,0,0,0.28); background: rgba(180,0,0,0.05); }
-.btnSoft { background: rgba(37, 99, 235, 0.08); border-color: rgba(37, 99, 235, 0.25); }
+.btnSoft { background: var(--primary-tint); border-color: color-mix(in srgb, var(--primary) 30%, transparent); }
 
 .input {
   padding: 0.45rem 0.6rem;
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,0.18);
-  background: #fff;
+  background: var(--surface);
 }
 
 .textarea {
   padding: 0.55rem 0.6rem;
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,0.18);
-  background: #fff;
+  background: var(--surface);
   resize: vertical;
   font-family: inherit;
 }
@@ -388,17 +353,4 @@ main { min-height: 70vh; }
   gap: 0.6rem;
   margin-top: 1rem;
 }
-/* Log out is a POST form styled like a nav link */
-.navForm { display: inline; margin: 0; }
-.navButton { background: none; border: 0; font: inherit; cursor: pointer; }
 
-/* Loading skeletons (loading.tsx) */
-.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.skeletonPage { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem; display: grid; gap: 0.9rem; }
-.skeletonLine, .skeletonCard { background: linear-gradient(90deg, #eceae7 25%, #f5f4f2 37%, #eceae7 63%); background-size: 400% 100%; animation: skeletonPulse 1.4s ease infinite; border-radius: 8px; }
-.skeletonLine { height: 14px; width: 40%; }
-.skeletonTitle { height: 28px; width: 30%; }
-.skeletonGrid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); margin-top: 0.5rem; }
-.skeletonCard { height: 120px; }
-@keyframes skeletonPulse { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
-@media (prefers-reduced-motion: reduce) { .skeletonLine, .skeletonCard { animation: none; } }

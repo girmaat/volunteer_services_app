@@ -36,7 +36,7 @@ export default async function Page() {
     <div>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>Remote opportunities</h2>
+          <h1 className={styles.sectionTitle}>Remote opportunities</h1>
           <p className={styles.meta}>Remote and hybrid opportunities (DB-backed).</p>
         </div>
         <div className={styles.small}>{error ? "—" : opportunities.length} total</div>

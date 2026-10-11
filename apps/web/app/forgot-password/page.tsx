@@ -5,6 +5,8 @@ import { API_BASE_URL_SERVER } from "@thankyou/config";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
+export const metadata = { title: "Reset your password" };
+
 export const dynamic = "force-dynamic";
 
 async function forgotAction(formData: FormData) {

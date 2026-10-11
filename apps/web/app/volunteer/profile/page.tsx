@@ -91,7 +91,7 @@ export default async function Page(
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Profile</h2>
+      <h1 className={styles.sectionTitle}>Profile</h1>
 
       {searchParams?.saved ? (
         <div className={`${styles.banner} ${styles.bannerSuccess}`}>
@@ -153,7 +153,7 @@ export default async function Page(
 
       <div className={styles.grid}>
         <div className={styles.tile}>
-          <h3 className={styles.tileTitle}>Account</h3>
+          <h2 className={styles.tileTitle}>Account</h2>
           <p className={styles.meta}>
             <strong>Email:</strong> {user.email}
           </p>
@@ -166,7 +166,7 @@ export default async function Page(
         </div>
 
         <div className={styles.tile}>
-          <h3 className={styles.tileTitle}>Onboarding</h3>
+          <h2 className={styles.tileTitle}>Onboarding</h2>
           <div className={styles.badges}>
             <span className={styles.badge}>Profile: {user.profile_completed ? "Complete" : "Incomplete"}</span>
             <span className={styles.badge}>Availability: {user.availability_completed ? "Complete" : "Incomplete"}</span>
@@ -181,7 +181,7 @@ export default async function Page(
         </div>
 
         <div className={styles.tile} style={{ gridColumn: "1 / -1" } as any}>
-          <h3 className={styles.tileTitle}>Edit profile</h3>
+          <h2 className={styles.tileTitle}>Edit profile</h2>
           <p className={styles.meta}>Update your public-safe details. Changes persist on refresh.</p>
 
           <form action={saveProfile} className={styles.form}>

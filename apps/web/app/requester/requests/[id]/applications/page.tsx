@@ -272,7 +272,7 @@ export default async function Page(
     <>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>Applicants</h2>
+          <h1 className={styles.sectionTitle}>Applicants</h1>
           <p className={styles.meta}>
             Volunteers who applied to <strong>{request.title}</strong>.
           </p>
@@ -322,9 +322,9 @@ export default async function Page(
             <div key={a.id} className={styles.tile}>
               <div className={styles.row}>
                 <div>
-                  <h3 className={styles.tileTitle} style={{ margin: 0 } as any}>
+                  <h2 className={styles.tileTitle} style={{ margin: 0 } as any}>
                     {name}
-                  </h3>
+                  </h2>
                   <p className={styles.meta} style={{ marginTop: "0.35rem" } as any}>
                     <Link href={`/volunteers/${a.volunteer_user_id}`}>View profile</Link>
                   </p>

@@ -2,6 +2,8 @@ import styles from "./page.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 import PublicPageBody from "../_components/PublicPageBody";
 
+export const metadata = { title: "About ThankYou" };
+
 export const revalidate = 300;
 
 type PublicPage = {

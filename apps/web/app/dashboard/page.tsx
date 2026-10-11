@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { backendFetch, getCurrentUser } from "../lib/backend";
-import styles from "./dashboard.module.css";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -14,24 +12,7 @@ type OrgMeResponse = {
 export default async function Page() {
   const user = await getCurrentUser();
 
-  if (!user) {
-    return (
-      <main className={styles.page}>
-        <section className={styles.hero}>
-          <h1 className={styles.title}>Welcome</h1>
-          <p className={styles.lead}>Please sign in to access your dashboard.</p>
-          <div className={styles.actions}>
-            <Link className={styles.primaryAction} href="/login">
-              Log in
-            </Link>
-            <Link className={styles.secondaryAction} href="/signup">
-              Sign up
-            </Link>
-          </div>
-        </section>
-      </main>
-    );
-  }
+  if (!user) redirect("/login?next=/dashboard");
 
   const accountType = String((user as any).account_type || "");
   const requesterMode = String((user as any).requester_mode || "");
@@ -71,37 +52,9 @@ export default async function Page() {
     redirect("/onboarding");
   }
 
-  return (
-    <main className={styles.page}>
-      <section className={styles.hero}>
-        <h1 className={styles.title}>Dashboard</h1>
-        <p className={styles.lead}>
-          Signed in as <strong>{user.email}</strong>.
-        </p>
-      </section>
-
-      <section className={styles.grid}>
-        {user.role === "volunteer" ? (
-          <Link className={styles.card} href="/volunteer">
-            <h2 className={styles.cardTitle}>Volunteer</h2>
-            <p className={styles.cardBody}>Browse opportunities, track commitments, and manage your profile.</p>
-          </Link>
-        ) : null}
-
-        {user.role === "requester" ? (
-          <Link className={styles.card} href="/requester/dashboard">
-            <h2 className={styles.cardTitle}>Requests</h2>
-            <p className={styles.cardBody}>Create and manage requests, view applications, and message volunteers.</p>
-          </Link>
-        ) : null}
-
-        <Link className={styles.card} href="/settings">Saved fields
-          <h2 className={styles.cardTitle}>Settings</h2>
-          <p className={styles.cardBody}>Account settings, notifications, privacy & safety, blocks, and reports.</p>
-        </Link>
-      </section>
-    </main>
-  );
+  // Everyone lands in their own area.
+  if (user.role === "volunteer") redirect("/volunteer/dashboard");
+  if (user.role === "requester") redirect("/requester/dashboard");
+  if (user.is_platform_admin) redirect("/admin");
+  redirect("/settings");
 }
-
-

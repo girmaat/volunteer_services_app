@@ -106,7 +106,7 @@ export default async function Page(
     <>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>Requests</h2>
+          <h1 className={styles.sectionTitle}>Requests</h1>
           <p className={styles.meta}>
             Create requests for help and track volunteers.
             {hasSignedIn ? (
@@ -141,7 +141,7 @@ export default async function Page(
 
       {tab === "new" ? (
         <div className={styles.card}>
-          <h3 className={styles.sectionTitle}>Create a new request</h3>
+          <h2 className={styles.sectionTitle}>Create a new request</h2>
           <p className={styles.meta}>
             Share what you need help with, where it is, and when. Volunteers will be able to apply and message you.
           </p>
@@ -161,7 +161,7 @@ export default async function Page(
         <>
           <div className={styles.row} style={{ marginTop: "0.8rem" } as any}>
             <div>
-              <h3 className={styles.sectionTitle}>My Active Requests</h3>
+              <h2 className={styles.sectionTitle}>My Active Requests</h2>
               <p className={styles.meta}>Requests you’ve created that volunteers can apply to.</p>
             </div>
           </div>
@@ -185,9 +185,9 @@ export default async function Page(
               <Link key={r.id} className={styles.tileLink} href={`/requester/requests/${r.id}`}>
                 <div className={styles.tile}>
                   <div className={styles.row}>
-                    <h4 className={styles.tileTitle} style={{ margin: 0 } as any}>
+                    <h3 className={styles.tileTitle} style={{ margin: 0 } as any}>
                       {r.title}
-                    </h4>
+                    </h3>
                     <span className={`${styles.badge} ${statusClass(r.status)}`.trim()}>{statusLabel(r.status)}</span>
                   </div>
 
@@ -213,7 +213,7 @@ export default async function Page(
         <>
           <div className={styles.row} style={{ marginTop: "0.8rem" } as any}>
             <div>
-              <h3 className={styles.sectionTitle}>All My Requests</h3>
+              <h2 className={styles.sectionTitle}>All My Requests</h2>
               <p className={styles.meta}>Every request you’ve created (including closed).</p>
             </div>
           </div>
@@ -237,9 +237,9 @@ export default async function Page(
               <Link key={r.id} className={styles.tileLink} href={`/requester/requests/${r.id}`}>
                 <div className={styles.tile}>
                   <div className={styles.row}>
-                    <h4 className={styles.tileTitle} style={{ margin: 0 } as any}>
+                    <h3 className={styles.tileTitle} style={{ margin: 0 } as any}>
                       {r.title}
-                    </h4>
+                    </h3>
                     <span className={`${styles.badge} ${statusClass(r.status)}`.trim()}>{statusLabel(r.status)}</span>
                   </div>
 

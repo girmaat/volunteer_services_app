@@ -73,7 +73,7 @@ export default async function Page() {
   const [me, impact, apps] = await Promise.all([getCurrentUser(), getImpact(), getApplicationsForPicker()]);
   return (
     <>
-      <h2 className={styles.sectionTitle}>Impact log</h2>
+      <h1 className={styles.sectionTitle}>Impact log</h1>
       <HistoryTabs active="impact" />
 
       {me?.id ? (
@@ -83,7 +83,7 @@ export default async function Page() {
       ) : null}
 
       <div className={styles.card}>
-        <h3 className={styles.cardTitle}>Log impact</h3>
+        <h2 className={styles.cardTitle}>Log impact</h2>
         <form action={addImpact} className={styles.form}>
           <label className={styles.label}>
             Application

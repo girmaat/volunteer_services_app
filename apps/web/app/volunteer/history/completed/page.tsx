@@ -32,7 +32,7 @@ export default async function Page() {
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Completed opportunities</h2>
+      <h1 className={styles.sectionTitle}>Completed opportunities</h1>
       <HistoryTabs active="completed" />
 
       {!data.ok && (

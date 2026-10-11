@@ -31,9 +31,9 @@
 
 .error {
   margin: 0 0 12px;
-  color: #b91c1c;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  color: var(--danger);
+  background: var(--danger-tint);
+  border: 1px solid var(--danger-tint);
   padding: 0.65rem 0.8rem;
   border-radius: 0.9rem;
 }

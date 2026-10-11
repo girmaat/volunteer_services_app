@@ -134,7 +134,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   return (
     <div className={styles.mainFull}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h2>Applications</h2>
+        <h1>Applications</h1>
         <Link href={`/org/requests/${params.id}`}>Back to request</Link>
       </div>
 

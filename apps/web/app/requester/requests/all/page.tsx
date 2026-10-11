@@ -46,7 +46,7 @@ export default async function Page() {
     <>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>All Requests</h2>
+          <h1 className={styles.sectionTitle}>All Requests</h1>
           <p className={styles.meta}>
             Every request you’ve created (including closed).
             {user?.email ? (
@@ -79,9 +79,9 @@ export default async function Page() {
           <Link key={r.id} className={styles.tileLink} href={`/requester/requests/${r.id}`}>
             <div className={styles.tile}>
               <div className={styles.row}>
-                <h3 className={styles.tileTitle} style={{ margin: 0 } as any}>
+                <h2 className={styles.tileTitle} style={{ margin: 0 } as any}>
                   {r.title}
-                </h3>
+                </h2>
                 <span className={styles.badge}>{statusLabel(r.status)}</span>
               </div>
 

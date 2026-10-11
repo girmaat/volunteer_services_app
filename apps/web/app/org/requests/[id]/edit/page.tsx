@@ -67,7 +67,7 @@ export default async function Page(
 
   return (
     <div>
-      <h2>Edit request</h2>
+      <h1>Edit request</h1>
       {searchParams?.error ? <p style={{ color: "crimson" }}>{searchParams.error}</p> : null}
 
       <form action={saveAction.bind(null, params.id)} style={{ display: "grid", gap: 12, maxWidth: 720 }}>

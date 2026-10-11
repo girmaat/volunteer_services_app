@@ -103,7 +103,7 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
   return (
     <div className="adminGrid">
       <header>
-        <h2 style={{ margin: 0 }}>Admin dashboard</h2>
+        <h1 style={{ margin: 0 }}>Admin dashboard</h1>
         <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>Platform health + moderation queues.</p>
       </header>
 
@@ -159,7 +159,7 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
         >
           <fieldset disabled={maintenanceFormDisabled} style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 10 }}>
             <label className="switchRow">
-              <input type="checkbox" name="enabled" defaultChecked={settings.maintenance.enabled} />
+              <input type="checkbox" name="enabled" aria-label="Enabled" defaultChecked={settings.maintenance.enabled} />
               <span>
                 <div style={{ fontWeight: 800 }}>Enable maintenance mode</div>
                 <div className="muted" style={{ fontSize: 12 }}>Redirect visitors to a maintenance notice.</div>
@@ -170,7 +170,7 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
               <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>Maintenance message (optional)</div>
               <textarea
                 className="textarea"
-                name="message"
+                name="message" aria-label="Message"
                 rows={3}
                 placeholder="Example: We’re upgrading the platform. Please check back soon."
                 defaultValue={settings.maintenance.message || ""}

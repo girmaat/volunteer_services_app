@@ -71,7 +71,7 @@ export default async function Page(
     <div className="adminGrid">
       <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
         <div>
-          <h2 style={{ margin: 0 }}>User verification</h2>
+          <h1 style={{ margin: 0 }}>User verification</h1>
           <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
             Review submitted identity documents.
           </p>
@@ -132,11 +132,11 @@ export default async function Page(
         <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Your notes are stored on the user record.</div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10, alignItems: "flex-start" }}>
           <form action={approve} style={{ display: "grid", gap: 8, minWidth: 320 }}>
-            <textarea className="input" name="notes" rows={3} placeholder="Approval notes (optional)" />
+            <textarea className="input" name="notes" aria-label="Notes" rows={3} placeholder="Approval notes (optional)" />
             <button className="btn" type="submit">Approve</button>
           </form>
           <form action={reject} style={{ display: "grid", gap: 8, minWidth: 320 }}>
-            <textarea className="input" name="notes" rows={3} placeholder="Rejection reason / next steps" />
+            <textarea className="input" name="notes" aria-label="Notes" rows={3} placeholder="Rejection reason / next steps" />
             <button className="btn btnDanger" type="submit">Reject</button>
           </form>
         </div>

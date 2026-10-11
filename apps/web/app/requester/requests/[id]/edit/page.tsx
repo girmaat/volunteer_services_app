@@ -90,7 +90,7 @@ export default async function Page(
     <>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>Edit request</h2>
+          <h1 className={styles.sectionTitle}>Edit request</h1>
           <p className={styles.meta}>Update fields and save to refresh the request detail view.</p>
         </div>
         <Link className={styles.navLink} href={`/requester/requests/${id}`}>

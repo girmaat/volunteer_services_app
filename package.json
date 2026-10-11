@@ -21,6 +21,7 @@
     "db:setup": "pnpm --filter @thankyou/api db:setup"
   },
   "devDependencies": {
+    "@playwright/test": "1.56.1",
     "prettier": "^3.6.2"
   },
   "pnpm": {

@@ -51,7 +51,7 @@ export default async function Page(
   if (state.kind === "blocked") {
     return (
       <>
-        <h2 className={styles.sectionTitle}>Conversation unavailable</h2>
+        <h1 className={styles.sectionTitle}>Conversation unavailable</h1>
         <p className={styles.meta}>
           This conversation is unavailable because one of you has blocked the other.
         </p>

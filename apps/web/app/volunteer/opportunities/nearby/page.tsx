@@ -56,7 +56,7 @@ export default async function Page(
     <div>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>Nearby opportunities</h2>
+          <h1 className={styles.sectionTitle}>Nearby opportunities</h1>
           <p className={styles.meta}>
             {locationMissing
               ? "Set a public location in your profile to see truly nearby opportunities."

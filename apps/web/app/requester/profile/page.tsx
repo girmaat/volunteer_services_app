@@ -165,7 +165,7 @@ export default async function Page(
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Profile</h2>
+      <h1 className={styles.sectionTitle}>Profile</h1>
 
       {searchParams?.saved ? (
         <div className={`${styles.banner} ${styles.bannerSuccess}`.trim()}>
@@ -235,7 +235,7 @@ export default async function Page(
 
       <div className={styles.grid}>
         <div className={styles.tile}>
-          <h3 className={styles.tileTitle}>Trust signals</h3>
+          <h2 className={styles.tileTitle}>Trust signals</h2>
           <p className={styles.tileBody}>
             Completed commitments: <strong>{trust?.completed_commitments_count ?? 0}</strong>
             <br />
@@ -249,7 +249,7 @@ export default async function Page(
 
         <Link className={styles.tileLink} href="/requester/reputation">
           <div className={styles.tile}>
-            <h3 className={styles.tileTitle}>Reputation</h3>
+            <h2 className={styles.tileTitle}>Reputation</h2>
             <p className={styles.tileBody}>
               {rep ? (
                 <>
@@ -266,7 +266,7 @@ export default async function Page(
         </Link>
 
         <div className={styles.tile}>
-          <h3 className={styles.tileTitle}>Account</h3>
+          <h2 className={styles.tileTitle}>Account</h2>
           <p className={styles.tileBody}>
             Email: <strong>{user.email}</strong>
             <br />
@@ -275,7 +275,7 @@ export default async function Page(
         </div>
 
         <div className={styles.tile} style={{ gridColumn: "1 / -1" } as any}>
-          <h3 className={styles.tileTitle}>Edit profile</h3>
+          <h2 className={styles.tileTitle}>Edit profile</h2>
           <p className={styles.meta}>
             Public profile details are shown to volunteers before you chat. Keep it coarse (city/neighborhood only).
           </p>

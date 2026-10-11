@@ -55,7 +55,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <div className={styles.stack}>
       <div className={styles.headerRow}>
         <div>
-          <h2 style={{ margin: 0 }}>{r.title}</h2>
+          <h1 style={{ margin: 0 }}>{r.title}</h1>
           <p className={styles.meta} style={{ marginTop: 6, marginBottom: 0 }}>
             Status: <strong>{r.status}</strong> · Updated {formatDate(r.updated_at)}
           </p>
@@ -71,7 +71,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       </div>
 
       <div className={styles.card}>
-        <h3 style={{ marginTop: 0 }}>Details</h3>
+        <h2 style={{ marginTop: 0 }}>Details</h2>
         <p style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{r.description}</p>
 
         <div className={styles.grid2} style={{ marginTop: 12 }}>
@@ -96,7 +96,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
       <div className={styles.card}>
         <div className={styles.headerRowSmall}>
-          <h3 style={{ margin: 0 }}>Manage</h3>
+          <h2 style={{ margin: 0 }}>Manage</h2>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <Link className={styles.smallLink} href={`/org/requests/${r.id}/documents`}>
               Documents

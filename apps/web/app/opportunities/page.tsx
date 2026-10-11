@@ -1,9 +1,11 @@
-import styles from "./page.module.css";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../lib/backend";
-import { listPublicOpportunities, modeLabel } from "../../lib/public-api";
+import { listPublicOpportunities } from "../../lib/public-api";
+import OpportunityRow from "../../components/opportunities/OpportunityRow";
+import { buttonClass } from "../../components/ui/Button";
+import { EmptyState, Notice } from "../../components/ui/Card";
 
 export const metadata: Metadata = {
   title: "Volunteer opportunities",
@@ -17,7 +19,7 @@ function one(v: string | string[] | undefined) {
 }
 
 const MODES = [
-  { value: "", label: "All" },
+  { value: "", label: "Anywhere" },
   { value: "in-person", label: "In person" },
   { value: "remote", label: "Remote" },
   { value: "hybrid", label: "Hybrid" }
@@ -34,106 +36,94 @@ export default async function Page(props: { searchParams?: Promise<SearchParams>
   const q = one(sp.q).slice(0, 100);
   const org = one(sp.org);
   const cursor = one(sp.cursor);
-  const list = await listPublicOpportunities({ limit: 24, mode, q, org, cursor });
+  const list = await listPublicOpportunities({ limit: 20, mode, q, org, cursor });
 
   const hrefWith = (patch: Record<string, string>) => {
     const u = new URLSearchParams();
-    const merged = { mode, q, org, ...patch };
-    for (const [k, v] of Object.entries(merged)) if (v) u.set(k, v);
+    for (const [k, v] of Object.entries({ mode, q, org, ...patch })) if (v) u.set(k, v);
     const s = u.toString();
     return s ? `/opportunities?${s}` : "/opportunities";
   };
+  const filtered = Boolean(q || mode || org);
 
   return (
-    <section className={styles.page}>
-      <header className={styles.authedHeader}>
+    <div className="grid gap-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className={styles.kicker}>Volunteer opportunities</div>
-          <h1 className={styles.authedTitle}>Find meaningful ways to help</h1>
-          <p className={styles.subtitle}>
+          <h1 className="m-0 text-2xl sm:text-3xl">Volunteer opportunities</h1>
+          <p className="m-0 mt-2 max-w-[60ch] text-muted">
             Exact addresses and contact details are shared only after an application is accepted.
           </p>
         </div>
         {!me ? (
-          <div className={styles.authedActions}>
-            <Link className={styles.primaryCta} href="/signup">
-              Create account
-            </Link>
-            <Link className={styles.secondaryCta} href="/login">
-              Sign in
-            </Link>
-          </div>
+          <Link className={buttonClass("primary", "md")} href="/signup">
+            Create an account to apply
+          </Link>
         ) : null}
       </header>
 
-      <form className={styles.noteBox} action="/opportunities" method="get" role="search">
-        <label>
-          <span className={styles.noteTitle}>Search</span>{" "}
-          <input name="q" defaultValue={q} placeholder="e.g. tutoring, food bank" aria-label="Search opportunities" />
-        </label>{" "}
-        {org ? <input type="hidden" name="org" value={org} /> : null}
-        <select name="mode" defaultValue={mode} aria-label="Service mode">
-          {MODES.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.label}
-            </option>
-          ))}
-        </select>{" "}
-        <button type="submit" className={styles.smallCta}>
-          Apply filters
-        </button>
-      </form>
-
-      {list.error ? (
-        <div className={styles.errorBox} role="alert">
-          Opportunities are unavailable right now. Please try again shortly.
-        </div>
-      ) : null}
-
-      {!list.error && list.items.length === 0 ? (
-        <div className={styles.noteBox}>
-          <div className={styles.noteTitle}>No opportunities match</div>
-          <div className={styles.noteBody}>
-            Try a different search, or <Link href="/opportunities">clear the filters</Link>.
+      <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
+        <form action="/opportunities" method="get" role="search" className="grid content-start gap-5 lg:sticky lg:top-24">
+          <div className="grid gap-1.5">
+            <label htmlFor="opp-q" className="text-sm font-medium">
+              Search
+            </label>
+            <input id="opp-q" name="q" defaultValue={q} placeholder="Tutoring, food bank…" className="h-11 rounded border border-line-strong bg-surface px-3" />
           </div>
-        </div>
-      ) : null}
+          {org ? <input type="hidden" name="org" value={org} /> : null}
+          <fieldset className="m-0 grid gap-2 border-0 p-0">
+            <legend className="mb-1.5 p-0 text-sm font-medium">Where</legend>
+            {MODES.map((m) => (
+              <label key={m.value} className="flex cursor-pointer items-center gap-2 text-sm">
+                <input type="radio" name="mode" value={m.value} defaultChecked={mode === m.value} className="h-4 w-4 accent-[var(--primary)]" />
+                {m.label}
+              </label>
+            ))}
+          </fieldset>
+          <div className="flex gap-2">
+            <button type="submit" className={buttonClass("primary", "md", "flex-1")}>
+              Show results
+            </button>
+            {filtered ? (
+              <Link href="/opportunities" className={buttonClass("ghost", "md")}>
+                Clear
+              </Link>
+            ) : null}
+          </div>
+        </form>
 
-      <div className={styles.opportunityGrid} aria-label="Open opportunities">
-        {list.items.map((o) => {
-          const href = `/opportunities/${encodeURIComponent(o.id)}`;
-          return (
-            <article key={o.id} className={styles.opportunityCard}>
-              <div className={styles.opportunityTop}>
-                <Link href={href} className={styles.opportunityTitleLink}>
-                  <h2 className={styles.opportunityTitle}>{o.title}</h2>
+        <section aria-labelledby="opp-results" aria-live="polite">
+          <h2 id="opp-results" className="sr-only">
+            Open opportunities
+          </h2>
+          {list.error ? <Notice tone="danger">Opportunities are unavailable right now. Try again in a moment.</Notice> : null}
+          {!list.error && list.items.length === 0 ? (
+            <EmptyState
+              title="Nothing matches yet"
+              body="Try a broader search or a different location."
+              action={
+                <Link className={buttonClass("secondary", "md")} href="/opportunities">
+                  Clear filters
                 </Link>
-                <div className={styles.opportunityMeta}>
-                  {modeLabel(o.mode)} · {o.location}
-                  {o.organization_name ? ` · ${o.organization_name}${o.organization_verified ? " (verified)" : ""}` : ""}
-                </div>
-              </div>
-              <div className={styles.opportunityBody}>{o.summary}</div>
-              <div className={styles.opportunityFoot}>
-                {o.needed_by ? `Needed by ${new Date(o.needed_by).toLocaleDateString()}` : "Flexible timing"}
-              </div>
-              <div className={styles.opportunityActions}>
-                <Link className={styles.actionPrimary} href={href}>
-                  View details
-                </Link>
-              </div>
-            </article>
-          );
-        })}
+              }
+            />
+          ) : null}
+          {list.items.length ? (
+            <ul className="m-0 border-t border-line p-0">
+              {list.items.map((o) => (
+                <OpportunityRow key={o.id} o={o} href={`/opportunities/${o.id}`} />
+              ))}
+            </ul>
+          ) : null}
+          {list.nextCursor ? (
+            <div className="mt-6">
+              <Link className={buttonClass("secondary", "md")} href={hrefWith({ cursor: list.nextCursor })}>
+                Show more
+              </Link>
+            </div>
+          ) : null}
+        </section>
       </div>
-
-      {list.nextCursor ? (
-        <p>
-          <Link className={styles.secondaryCta} href={hrefWith({ cursor: list.nextCursor })}>
-            More opportunities →
-          </Link>
-        </p>
-      ) : null}
-    </section>
+    </div>
   );
 }

@@ -64,7 +64,7 @@
 }
 
 .meta {
-  color: #6b7280;
+  color: var(--muted);
   font-size: 0.9rem;
   margin-top: 0.35rem;
   line-height: 1.4;
@@ -109,8 +109,8 @@
   border-radius: 999px;
   padding: 0.15rem 0.55rem;
   font-size: 0.8rem;
-  color: #374151;
-  background: #f3f4f6;
+  color: var(--ink);
+  background: var(--muted-bg);
 }
 
 .tileLink {
@@ -181,27 +181,27 @@
   border-radius: 0.9rem;
   padding: 0.85rem 1rem;
   margin-bottom: 0.9rem;
-  background: #f9fafb;
+  background: var(--muted-bg);
 }
 
 .bannerSuccess {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
+  background: var(--success-tint);
+  border-color: var(--success-tint);
 }
 
 .bannerWarning {
-  background: #fffbeb;
-  border-color: #fde68a;
+  background: var(--warning-tint);
+  border-color: var(--warning-tint);
 }
 
 .bannerError {
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: var(--danger-tint);
+  border-color: var(--danger-tint);
 }
 
 .bannerInfo {
-  background: #eff6ff;
-  border-color: #bfdbfe;
+  background: var(--primary-tint);
+  border-color: var(--primary-tint);
 }
 
 .bannerTitle {
@@ -229,8 +229,8 @@
 }
 
 .buttonDanger {
-  background: #fee2e2;
-  border-color: #fecaca;
+  background: var(--danger-tint);
+  border-color: var(--danger-tint);
 }
 
 
@@ -275,7 +275,7 @@
   height: 54px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: #f3f4f6;
+  background: var(--muted-bg);
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -284,7 +284,7 @@
 .avatarText {
   font-weight: 900;
   letter-spacing: 0.02em;
-  color: #111827;
+  color: var(--ink);
 }
 
 .profileHeaderBody {
@@ -301,7 +301,7 @@
   display: grid;
   gap: 0.35rem;
   font-size: 0.9rem;
-  color: #374151;
+  color: var(--ink);
 }
 
 .input {
@@ -383,8 +383,8 @@
 }
 
 .iconButtonDanger {
-  background: #fee2e2;
-  border-color: #fecaca;
+  background: var(--danger-tint);
+  border-color: var(--danger-tint);
 }
 
 .pill {
@@ -392,8 +392,8 @@
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: #eff6ff;
-  border-color: #bfdbfe;
+  background: var(--primary-tint);
+  border-color: var(--primary-tint);
   font-size: 0.75rem;
   font-weight: 900;
   margin-right: 0.35rem;
@@ -423,3 +423,19 @@
 
 
 
+
+
+/* Classes referenced by pages but previously undefined (design-system kit) */
+.actionLink { color: var(--primary); font-weight: 500; font-size: 0.875rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+
+.rowTitleLink { color: var(--ink); font-weight: 600; text-decoration: none; }
+
+.field { display: grid; gap: 0.35rem; }
+.formGrid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.headerRow { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-start; justify-content: space-between; }
+.stack { display: grid; gap: 1rem; }
+.statusPill { display: inline-flex; align-items: center; padding: 0.15rem 0.65rem; border-radius: 999px; background: var(--primary-tint); color: var(--primary); font-size: 0.8125rem; font-weight: 600; text-transform: capitalize; }
+.timeline { display: grid; gap: 0.6rem; margin: 0; padding: 0; list-style: none; }
+.timelineDot { width: 10px; height: 10px; border-radius: 999px; background: var(--primary); display: inline-block; margin-right: 0.5rem; }
+.timelineLabel { font-size: 0.875rem; }

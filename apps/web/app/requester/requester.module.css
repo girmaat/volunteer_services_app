@@ -53,7 +53,7 @@
 }
 
 .meta {
-  color: #6b7280;
+  color: var(--muted);
   font-size: 0.9rem;
   margin-top: 0.35rem;
   line-height: 1.4;
@@ -98,8 +98,8 @@
   border-radius: 999px;
   padding: 0.15rem 0.55rem;
   font-size: 0.8rem;
-  color: #374151;
-  background: #f3f4f6;
+  color: var(--ink);
+  background: var(--muted-bg);
 }
 
 .tileLink {
@@ -195,22 +195,22 @@
   border-radius: 0.9rem;
   padding: 0.85rem 1rem;
   margin-bottom: 0.9rem;
-  background: #f9fafb;
+  background: var(--muted-bg);
 }
 
 .bannerSuccess {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
+  background: var(--success-tint);
+  border-color: var(--success-tint);
 }
 
 .bannerWarning {
-  background: #fffbeb;
-  border-color: #fde68a;
+  background: var(--warning-tint);
+  border-color: var(--warning-tint);
 }
 
 .bannerError {
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: var(--danger-tint);
+  border-color: var(--danger-tint);
 }
 
 .bannerTitle {
@@ -238,46 +238,46 @@
 }
 
 .buttonDanger {
-  background: #fee2e2;
-  border-color: #fecaca;
+  background: var(--danger-tint);
+  border-color: var(--danger-tint);
 }
 
 /* Status pill variants (used in My Active Requests) */
 .statusOpen {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #166534;
+  background: var(--success-tint);
+  border-color: var(--success-tint);
+  color: var(--success);
 }
 
 .statusPaused {
-  background: #fffbeb;
-  border-color: #fde68a;
-  color: #92400e;
+  background: var(--warning-tint);
+  border-color: var(--warning-tint);
+  color: var(--warning);
 }
 
 .statusClosed {
-  background: #f3f4f6;
-  border-color: #e5e7eb;
-  color: #374151;
+  background: var(--muted-bg);
+  border-color: var(--line);
+  color: var(--ink);
 }
 
 /* Application status pill variants (used in Applicants list) */
 .appStatusPending {
-  background: #fffbeb;
-  border-color: #fde68a;
-  color: #92400e;
+  background: var(--warning-tint);
+  border-color: var(--warning-tint);
+  color: var(--warning);
 }
 
 .appStatusAccepted {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #166534;
+  background: var(--success-tint);
+  border-color: var(--success-tint);
+  color: var(--success);
 }
 
 .appStatusRejected {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #991b1b;
+  background: var(--danger-tint);
+  border-color: var(--danger-tint);
+  color: var(--danger);
 }
 
 
@@ -294,7 +294,7 @@
   height: 54px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: #f3f4f6;
+  background: var(--muted-bg);
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -303,7 +303,7 @@
 .avatarText {
   font-weight: 900;
   letter-spacing: 0.02em;
-  color: #111827;
+  color: var(--ink);
 }
 
 .profileHeaderBody {
@@ -321,7 +321,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
-  color: #374151;
+  color: var(--ink);
 }
 
 .select {

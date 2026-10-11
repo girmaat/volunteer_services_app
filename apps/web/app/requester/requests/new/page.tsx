@@ -54,7 +54,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
     <>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>New request</h2>
+          <h1 className={styles.sectionTitle}>New request</h1>
           <p className={styles.meta}>Create a request that volunteers can discover and apply to.</p>
           <p className={styles.meta}>
             Signed in as <strong>{user?.email}</strong>.

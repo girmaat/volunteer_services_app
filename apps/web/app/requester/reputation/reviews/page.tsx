@@ -33,7 +33,7 @@ export default async function Page() {
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Reviews received</h2>
+      <h1 className={styles.sectionTitle}>Reviews received</h1>
       <p className={styles.meta}>
         <Stars rating={data.average_rating} /> {data.average_rating.toFixed(1)} · {data.count} total
       </p>

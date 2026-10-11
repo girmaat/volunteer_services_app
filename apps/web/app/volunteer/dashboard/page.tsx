@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
-import styles from "../volunteer.module.css";
+import { PageHeader, StatStrip, EmptyState, ButtonLink, Notice } from "../../../components/ui";
+import OpportunityRow, { type OpportunitySummary } from "../../../components/opportunities/OpportunityRow";
 
 export const dynamic = "force-dynamic";
 
@@ -12,68 +13,62 @@ type DashboardCounts = {
   upcomingCommitments: number;
 };
 
-async function getCounts(): Promise<DashboardCounts> {
-  const res = await backendFetch("/v1/volunteer/dashboard", { method: "GET" });
-  if (!res.ok) {
-    throw new Error("Failed to load volunteer dashboard counts");
-  }
-  return (await res.json()) as DashboardCounts;
-}
-
 export default async function Page() {
   const user = await getCurrentUser();
-  const counts = await getCounts();
+  const [countsRes, recRes] = await Promise.all([
+    backendFetch("/v1/volunteer/dashboard"),
+    backendFetch("/v1/volunteer/opportunities/recommended")
+  ]);
+  const counts = countsRes.ok ? ((await countsRes.json()) as DashboardCounts) : null;
+  const recs = recRes.ok ? ((await recRes.json()) as OpportunitySummary[]).slice(0, 4) : [];
+  const name = user?.email?.split("@")[0] ?? "there";
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Overview</h2>
-      <p className={styles.meta}>
-        Signed in as <strong>{user?.email}</strong>.
-      </p>
+      <PageHeader
+        title={`Hi, ${name}`}
+        description="Here's what's happening with your volunteering."
+        actions={<ButtonLink href="/volunteer/opportunities/recommended">Find opportunities</ButtonLink>}
+      />
 
-      <div className={styles.grid}>
-        <Link className={styles.tileLink} href="/volunteer/opportunities/recommended">
-          <div className={styles.tile}>
-            <h3 className={styles.tileTitle}>Recommended opportunities</h3>
-            <div className={styles.tileNumber}>{counts.recommendedOpportunities}</div>
-            <p className={styles.tileBody}>Browse opportunities that match your availability.</p>
-          </div>
-        </Link>
+      {counts ? (
+        <StatStrip
+          stats={[
+            { label: "Applications in progress", value: counts.applicationsNeedingAction, href: "/volunteer/applications" },
+            { label: "Upcoming", value: counts.upcomingCommitments, href: "/volunteer/calendar", hint: "confirmed shifts" },
+            { label: "Unread messages", value: counts.unreadMessages, href: "/volunteer/messages", attention: counts.unreadMessages > 0 },
+            { label: "Saved", value: counts.savedOpportunities, href: "/volunteer/opportunities/saved" }
+          ]}
+        />
+      ) : (
+        <Notice tone="danger">Your dashboard numbers couldn&apos;t load. Refresh to try again.</Notice>
+      )}
 
-        <Link className={styles.tileLink} href="/volunteer/opportunities/saved">
-          <div className={styles.tile}>
-            <h3 className={styles.tileTitle}>Saved opportunities</h3>
-            <div className={styles.tileNumber}>{counts.savedOpportunities}</div>
-            <p className={styles.tileBody}>Quickly return to the opportunities you bookmarked.</p>
+      <section aria-labelledby="picked" className="mt-10">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 id="picked" className="m-0 text-lg">
+            Picked for you
+          </h2>
+          <Link href="/volunteer/opportunities/recommended" className="text-sm font-medium text-primary">
+            See all {counts ? counts.recommendedOpportunities : ""}
+          </Link>
+        </div>
+        {recs.length ? (
+          <ul className="m-0 mt-2 border-t border-line p-0">
+            {recs.map((o) => (
+              <OpportunityRow key={o.id} o={o} href={`/volunteer/opportunities/${o.id}`} />
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-4">
+            <EmptyState
+              title="No matches yet"
+              body="Add skills and the causes you care about to your profile and we'll suggest opportunities."
+              action={<ButtonLink href="/volunteer/profile" variant="secondary">Update your profile</ButtonLink>}
+            />
           </div>
-        </Link>
-
-        <Link className={styles.tileLink} href="/volunteer/applications">
-          <div className={styles.tile}>
-            <h3 className={styles.tileTitle}>Applications</h3>
-            <div className={styles.tileNumber}>{counts.applicationsNeedingAction}</div>
-            <p className={styles.tileBody}>View all your applications and their statuses.</p>
-          </div>
-        </Link>
-
-        <Link className={styles.tileLink} href="/volunteer/messages">
-          <div className={styles.tile}>
-            <h3 className={styles.tileTitle}>Unread messages</h3>
-            <div className={styles.tileNumber}>{counts.unreadMessages}</div>
-            <p className={styles.tileBody}>Check your inbox for updates and coordination.</p>
-          </div>
-        </Link>
-
-        <Link className={styles.tileLink} href="/volunteer/calendar">
-          <div className={styles.tile}>
-            <h3 className={styles.tileTitle}>Upcoming commitments</h3>
-            <div className={styles.tileNumber}>{counts.upcomingCommitments}</div>
-            <p className={styles.tileBody}>See what’s coming up next on your calendar.</p>
-          </div>
-        </Link>
-      </div>
+        )}
+      </section>
     </>
   );
 }
-
-

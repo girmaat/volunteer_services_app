@@ -41,7 +41,7 @@ export default async function Page() {
 
   return (
     <>
-      <h2 className={styles.sectionTitle}>Reviews given</h2>
+      <h1 className={styles.sectionTitle}>Reviews given</h1>
 
       <ReputationTabs active="given" />
 

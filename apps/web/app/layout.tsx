@@ -1,53 +1,33 @@
 import "./globals.css";
-import Link from "next/link";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import localFont from "next/font/local";
-import SiteNav from "./_components/SiteNav";
+import SiteChrome from "../components/shell/SiteChrome";
+import MarketingFooter from "../components/shell/MarketingFooter";
 
 const inter = localFont({ src: "./fonts/Inter-Variable.woff2", variable: "--font-inter", display: "swap", weight: "100 900" });
-const jakarta = localFont({
-  src: "./fonts/PlusJakartaSans-Variable.woff2",
-  variable: "--font-jakarta",
-  display: "swap",
-  weight: "200 800"
-});
+const jakarta = localFont({ src: "./fonts/PlusJakartaSans-Variable.woff2", variable: "--font-jakarta", display: "swap", weight: "200 800" });
 
-export const metadata = {
-  title: "ThankYou",
-  description: "A volunteer service marketplace for nonprofits and individuals.",
-  icons: { icon: "/brand/favicon.svg" }
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3002";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: { default: "ThankYou — volunteer with neighbors and nonprofits", template: "%s · ThankYou" },
+  description: "Find in-person and remote volunteer opportunities, ask neighbors for help, and track the difference you make.",
+  icons: { icon: "/brand/favicon.svg" },
+  openGraph: { type: "website", siteName: "ThankYou", images: ["/brand/logo.svg"] }
 };
+
+export const viewport: Viewport = { themeColor: "#0f6e66", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${jakarta.variable}`}>
       <body>
-        <header className="siteHeader">
-          <div className="headerInner">
-            <Link className="brand" href="/" aria-label="ThankYou">
-              <span className="brandMark" aria-hidden="true">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/logo-mark.svg" alt="" width={28} height={28} />
-              </span>
-              <span className="brandText">ThankYou</span>
-            </Link>
-            <SiteNav />
-          </div>
-        </header>
-
-        <main>{children}</main>
-
-        <footer className="siteFooter">
-          <div className="footerInner">
-            <div>© ThankYou</div>
-            <div className="footerLinks">
-              <Link href="/trust-safety">Trust & Safety</Link>
-              <Link href="/code-of-conduct">Code of Conduct</Link>
-              <Link href="/terms">Terms</Link>
-              <Link href="/privacy">Privacy</Link>
-            </div>
-          </div>
-        </footer>
+        <a className="skipLink" href="#main">
+          Skip to content
+        </a>
+        <SiteChrome footer={<MarketingFooter />}>{children}</SiteChrome>
       </body>
     </html>
   );

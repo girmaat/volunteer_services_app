@@ -42,7 +42,7 @@ export default async function Page() {
     <>
       <div className={styles.row}>
         <div>
-          <h2 className={styles.sectionTitle}>Applications</h2>
+          <h1 className={styles.sectionTitle}>Applications</h1>
           <p className={styles.meta}>
             Pending volunteer applications across your requests. Signed in as <strong>{user?.email}</strong>.
           </p>
@@ -67,7 +67,7 @@ export default async function Page() {
           <Link key={a.application_id} className={styles.tileLink} href={`/requester/requests/${a.request_id}/applications`}>
             <div className={styles.tile}>
               <div className={styles.row}>
-                <h3 className={styles.tileTitle}>{a.volunteer_display_name || a.volunteer_email}</h3>
+                <h2 className={styles.tileTitle}>{a.volunteer_display_name || a.volunteer_email}</h2>
                 <span className={styles.small}>{formatWhen(a.created_at)}</span>
               </div>
 

@@ -182,14 +182,14 @@ export default async function Page(
     <div className="adminGrid">
       <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
         <div>
-          <h2 style={{ margin: 0 }}>Reports queue</h2>
+          <h1 style={{ margin: 0 }}>Reports queue</h1>
           <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
             Review user-submitted reports and take action.
           </p>
         </div>
 
         <form method="get" action="/admin/reports" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <select className="input" name="status" defaultValue={status || ""}>
+          <select className="input" name="status" aria-label="Status" defaultValue={status || ""}>
             <option value="">All</option>
             <option value="submitted">Submitted</option>
             <option value="in_review">In review</option>
@@ -280,7 +280,7 @@ export default async function Page(
                     <div className={styles.actionsPanel}>
                       <form action={updateReport} className={styles.formGrid}>
                       <input type="hidden" name="id" value={r.id} />
-                      <select className="input" name="status" defaultValue={r.status}>
+                      <select className="input" name="status" aria-label="Status" defaultValue={r.status}>
                         <option value="submitted">Submitted</option>
                         <option value="in_review">In review</option>
                         <option value="resolved">Resolved</option>
@@ -288,7 +288,7 @@ export default async function Page(
                       </select>
                       <textarea
                         className="input"
-                        name="admin_notes"
+                        name="admin_notes" aria-label="Admin notes"
                         defaultValue={r.admin_notes || ""}
                         rows={3}
                         placeholder="Admin notes"
@@ -360,7 +360,7 @@ export default async function Page(
                           <form action={banUser}>
                             <input type="hidden" name="user_id" value={r.target_user_id} />
                             <input type="hidden" name="reason" value={`Report: ${r.category}`} />
-                            <select className="input" name="days" defaultValue="7">
+                            <select className="input" name="days" aria-label="Days" defaultValue="7">
                               <option value="1">1d</option>
                               <option value="7">7d</option>
                               <option value="30">30d</option>

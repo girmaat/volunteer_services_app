@@ -2,6 +2,8 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import styles from "../(auth)/auth.module.css";
 
+export const metadata = { title: "Log in" };
+
 export const dynamic = "force-dynamic";
 
 type SearchParams = {

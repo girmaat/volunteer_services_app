@@ -128,9 +128,9 @@ export default async function Page(
           <div
             style={{
               padding: "0.6rem 0.75rem",
-              border: "1px solid #e5e7eb",
+              border: "1px solid var(--line)",
               borderRadius: 10,
-              background: "#f9fafb",
+              background: "var(--muted-bg)",
               color: "#111",
               fontSize: 13,
               marginBottom: 12

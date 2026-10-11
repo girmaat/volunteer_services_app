@@ -23,7 +23,7 @@ export default async function Page(props: { searchParams?: Promise<{ token?: str
   if (!token) {
     return (
       <div style={{ maxWidth: 720 }}>
-        <h2>Organization invite</h2>
+        <h1>Organization invite</h1>
         <p>Missing invite token.</p>
       </div>
     );
