@@ -5,6 +5,7 @@ import { setProfile } from "../../auth/handlers";
 import { requireRequesterUser } from "../../middleware/auth";
 import { illustrateRows } from "../volunteer/helpers";
 import { pool } from "../../lib/db";
+import { requesterReputation } from "./dashboard.routes";
 import { wrap } from "../../lib/http";
 
 export function registerRequesterProfileRoutes(app: Express) {
@@ -150,25 +151,7 @@ app.post(
 app.get("/v1/requester/reputation/summary", wrap(async (req, res) => {
   const user = await requireRequesterUser(req, res);
   if (!user) return;
-
-  const received = await pool.query(
-    `SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count
-     FROM visible_requester_reviews
-     WHERE requester_user_id = $1`,
-    [user.id]
-  );
-
-  const given = await pool.query(
-    `SELECT COUNT(*) AS count
-     FROM visible_volunteer_reviews
-     WHERE reviewer_user_id = $1`,
-    [user.id]
-  );
-
-  return res.json({
-    received: { average_rating: Number(received.rows[0]?.avg_rating || 0), count: Number(received.rows[0]?.count || 0) },
-    given: { count: Number(given.rows[0]?.count || 0) }
-  });
+  return res.json(await requesterReputation(user.id));
 }));
 
 

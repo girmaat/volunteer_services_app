@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import { backendFetch } from "../../app/lib/backend";
+import { getCurrentUser } from "../../app/lib/backend";
 
 /** Bell with the unread count; links to the notification list. */
 export default async function NotificationBell() {
-  const r = await backendFetch("/v1/notifications/unread-count").catch(() => null);
-  const n = r && r.ok ? Number(((await r.json()) as { unread_count?: number }).unread_count ?? 0) : 0;
+  // Read from the cached /v1/me response, so the bell costs no extra backend call.
+  const n = Number((await getCurrentUser())?.unread_notifications ?? 0);
   return (
     <Link
       href="/settings/notifications#recent"

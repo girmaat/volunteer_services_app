@@ -5,91 +5,8 @@ import { pool } from "../../lib/db";
 import { discoverableSql } from "../requests/lifecycle";
 import { wrap } from "../../lib/http";
 
-export function registerRequesterDashboardRoutes(app: Express) {
-
-
-// Requester area: home scaffold + access control (Step 4.1)
-app.get(
-  "/v1/requester/home",
-  wrap(async (req, res) => {
-    const user = await requireRequesterUser(req, res);
-    if (!user) return;
-
-    const statsRes = await pool.query(
-      `SELECT
-         (SELECT COUNT(*)::int FROM organizations) AS organizations,
-         (SELECT COUNT(*)::int FROM service_requests r WHERE ${discoverableSql("r")}) AS opportunities,
-         (SELECT COUNT(*)::int FROM public_pages) AS publicPages`
-    );
-
-    const howRes = await pool.query(
-      "SELECT slug, title, body, updated_at FROM public_pages WHERE slug = $1",
-      ["how-it-works"]
-    );
-
-    return res.json({
-      user: { id: user.id, email: user.email, role: user.role },
-      counts: statsRes.rows[0] || { organizations: 0, opportunities: 0, publicPages: 0 },
-      howItWorks: howRes.rows[0] || null
-    });
-  })
-);
-
-
-
-// Requester area: dashboard summary (Step 4.2)
-app.get(
-  "/v1/requester/dashboard",
-  wrap(async (req, res) => {
-    const user = await requireRequesterUser(req, res);
-    if (!user) return;
-
-    const [activeRequestsRes, pendingApplicationsRes, upcomingRes, unreadThreadsRes] = await Promise.all([
-      pool.query(
-        "SELECT COUNT(*)::int AS c FROM service_requests WHERE requester_user_id = $1 AND status IN ('open','pending','filled','paused')",
-        [user.id]
-      ),
-      pool.query(
-        `SELECT COUNT(*)::int AS c
-           FROM request_applications a
-           JOIN service_requests r ON r.id = a.request_id
-          WHERE r.requester_user_id = $1 AND a.status = 'pending'`,
-        [user.id]
-      ),
-      pool.query(
-        `SELECT COUNT(*)::int AS c
-           FROM request_commitments c
-           JOIN service_requests r ON r.id = c.request_id
-          WHERE r.requester_user_id = $1
-            AND c.status IN ('scheduled','confirmed')
-            AND c.start_at > NOW()`,
-        [user.id]
-      ),
-      pool.query(
-        "SELECT COUNT(DISTINCT sender_user_id)::int AS c FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL AND status = 'sent'",
-        [user.id]
-      )
-    ]);
-
-    return res.json({
-      activeRequests: activeRequestsRes.rows[0]?.c ?? 0,
-      pendingApplications: pendingApplicationsRes.rows[0]?.c ?? 0,
-      upcoming: upcomingRes.rows[0]?.c ?? 0,
-      unreadThreads: unreadThreadsRes.rows[0]?.c ?? 0
-    });
-  })
-);
-
-
-
-
-// Requester area: quick access activity (new applications + recent messages)
-app.get(
-  "/v1/requester/activity",
-  wrap(async (req, res) => {
-    const user = await requireRequesterUser(req, res);
-    if (!user) return;
-
+/** Recent applications and threads for a requester's dashboard. */
+export async function requesterActivity(user: { id: string }) {
     const recentApplicationsRes = await pool.query(
       `
       SELECT
@@ -176,10 +93,111 @@ app.get(
       [user.id]
     );
 
+    return { recentApplications: recentApplicationsRes.rows, recentThreads: recentThreadsRes.rows };
+}
+
+/** Reviews received as a requester and given to volunteers. */
+export async function requesterReputation(userId: string) {
+  const r = await pool.query(
+    `SELECT (SELECT COALESCE(AVG(rating), 0) FROM visible_requester_reviews WHERE requester_user_id = $1) AS avg_rating,
+            (SELECT COUNT(*)::int FROM visible_requester_reviews WHERE requester_user_id = $1) AS received,
+            (SELECT COUNT(*)::int FROM visible_volunteer_reviews WHERE reviewer_user_id = $1) AS given`,
+    [userId]
+  );
+  const row = r.rows[0] ?? {};
+  return { received: { average_rating: Number(row.avg_rating || 0), count: Number(row.received || 0) }, given: { count: Number(row.given || 0) } };
+}
+
+export function registerRequesterDashboardRoutes(app: Express) {
+
+
+// Requester area: home scaffold + access control (Step 4.1)
+app.get(
+  "/v1/requester/home",
+  wrap(async (req, res) => {
+    const user = await requireRequesterUser(req, res);
+    if (!user) return;
+
+    const statsRes = await pool.query(
+      `SELECT
+         (SELECT COUNT(*)::int FROM organizations) AS organizations,
+         (SELECT COUNT(*)::int FROM service_requests r WHERE ${discoverableSql("r")}) AS opportunities,
+         (SELECT COUNT(*)::int FROM public_pages) AS publicPages`
+    );
+
+    const howRes = await pool.query(
+      "SELECT slug, title, body, updated_at FROM public_pages WHERE slug = $1",
+      ["how-it-works"]
+    );
+
     return res.json({
-      recentApplications: recentApplicationsRes.rows,
-      recentThreads: recentThreadsRes.rows
+      user: { id: user.id, email: user.email, role: user.role },
+      counts: statsRes.rows[0] || { organizations: 0, opportunities: 0, publicPages: 0 },
+      howItWorks: howRes.rows[0] || null
     });
+  })
+);
+
+
+
+// Requester area: dashboard summary (Step 4.2)
+app.get(
+  "/v1/requester/dashboard",
+  wrap(async (req, res) => {
+    const user = await requireRequesterUser(req, res);
+    if (!user) return;
+
+    const [activeRequestsRes, pendingApplicationsRes, upcomingRes, unreadThreadsRes, activity, reputation] = await Promise.all([
+      pool.query(
+        "SELECT COUNT(*)::int AS c FROM service_requests WHERE requester_user_id = $1 AND status IN ('open','pending','filled','paused')",
+        [user.id]
+      ),
+      pool.query(
+        `SELECT COUNT(*)::int AS c
+           FROM request_applications a
+           JOIN service_requests r ON r.id = a.request_id
+          WHERE r.requester_user_id = $1 AND a.status = 'pending'`,
+        [user.id]
+      ),
+      pool.query(
+        `SELECT COUNT(*)::int AS c
+           FROM request_commitments c
+           JOIN service_requests r ON r.id = c.request_id
+          WHERE r.requester_user_id = $1
+            AND c.status IN ('scheduled','confirmed')
+            AND c.start_at > NOW()`,
+        [user.id]
+      ),
+      pool.query(
+        "SELECT COUNT(DISTINCT sender_user_id)::int AS c FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL AND status = 'sent'",
+        [user.id]
+      ),
+      requesterActivity(user),
+      requesterReputation(user.id)
+    ]);
+
+    return res.json({
+      activeRequests: activeRequestsRes.rows[0]?.c ?? 0,
+      pendingApplications: pendingApplicationsRes.rows[0]?.c ?? 0,
+      upcoming: upcomingRes.rows[0]?.c ?? 0,
+      unreadThreads: unreadThreadsRes.rows[0]?.c ?? 0,
+      // Activity and reputation ride along so the dashboard page needs one backend call.
+      activity,
+      reputation
+    });
+  })
+);
+
+
+
+
+// Requester area: quick access activity (new applications + recent messages)
+app.get(
+  "/v1/requester/activity",
+  wrap(async (req, res) => {
+    const user = await requireRequesterUser(req, res);
+    if (!user) return;
+    return res.json(await requesterActivity(user));
   })
 );
 }

@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { backendFetch } from "./backend";
+import { backendFetch, getCurrentUser } from "./backend";
 
 export type OrgContext = {
   org: {
@@ -32,6 +32,9 @@ export type OrgContext = {
 };
 
 async function loadOrgContext(): Promise<OrgContext | null> {
+  // /v1/me (cached per request) already carries the org context for org members.
+  const me = (await getCurrentUser()) as { org_context?: OrgContext | null } | null;
+  if (me && me.org_context !== undefined) return me.org_context;
   const res = await backendFetch("/v1/org/me", { method: "GET" });
   if (!res.ok) return null;
   return (await res.json()) as OrgContext;

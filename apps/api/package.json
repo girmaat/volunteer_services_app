@@ -14,6 +14,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:reset": "tsx src/db/migrate-cli.ts reset && tsx src/db/seed.ts",
     "db:create": "tsx src/db/create-db.ts",
+    "perf:check": "tsx src/db/perf-check.ts",
     "db:setup": "tsx src/db/create-db.ts && tsx src/db/migrate-cli.ts up && tsx src/db/seed.ts",
     "db:migrate:prod": "node dist/migrate-cli.js up"
   },

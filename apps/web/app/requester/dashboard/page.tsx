@@ -47,26 +47,11 @@ type ReputationSummary = {
   given: { count: number };
 };
 
-async function getActivity(): Promise<RequesterActivity> {
-  const res = await backendFetch("/v1/requester/activity", { method: "GET" });
-  if (!res.ok) {
-    throw new Error("Failed to load requester activity");
-  }
-  return (await res.json()) as RequesterActivity;
-}
-
-async function getCounts(): Promise<RequesterDashboardCounts> {
+/** One backend call: counters, recent activity and reputation come back together. */
+async function getDashboard() {
   const res = await backendFetch("/v1/requester/dashboard", { method: "GET" });
-  if (!res.ok) {
-    throw new Error("Failed to load requester dashboard counts");
-  }
-  return (await res.json()) as RequesterDashboardCounts;
-}
-
-async function getReputationSummary(): Promise<ReputationSummary | null> {
-  const res = await backendFetch("/v1/requester/reputation/summary", { method: "GET" });
-  if (!res.ok) return null;
-  return (await res.json()) as ReputationSummary;
+  if (!res.ok) throw new Error("Failed to load requester dashboard");
+  return (await res.json()) as RequesterDashboardCounts & { activity?: RequesterActivity; reputation?: ReputationSummary };
 }
 
 function threadHref(t: RecentThread) {
@@ -80,7 +65,9 @@ function relTime(iso: string) {
 
 export default async function Page() {
   const user = await getCurrentUser();
-  const [counts, activity, rep] = await Promise.all([getCounts(), getActivity(), getReputationSummary()]);
+  const counts = await getDashboard();
+  const activity = counts.activity;
+  const rep = counts.reputation ?? null;
   const recentApps = activity?.recentApplications || [];
   const recentThreads = activity?.recentThreads || [];
   const name = user?.email?.split("@")[0] ?? "there";

@@ -8,7 +8,8 @@ import { z } from "zod";
 import { randomTokenUrlSafe, sha256 } from "./crypto";
 import { devEmailLink, sendEmail } from "./email";
 import { createSession, deleteSession, deleteAllSessionsForUser, requireUserBySession, setSessionContext } from "./session";
-import { availableContexts, homeFor, type PolicyUser } from "../lib/policy";
+import { availableContexts, can, contextOrgSlug, homeFor, type PolicyUser } from "../lib/policy";
+import { getOrgContextForUser } from "../modules/org/context";
 import { recomputeOnboarding } from "./onboarding";
 import { ensureUserGeo } from "../geo";
 import { getAdminFlags } from "../admin/auth";
@@ -32,7 +33,14 @@ export async function me(pool: Pool, req: Request, res: Response) {
   const user = await requireUserBySession(pool, token);
   if (!user) return res.status(401).json({ message: "Not authenticated" });
 
-  const flags = await getAdminFlags(pool, user as any);
+  const [flags, unread, orgContext] = await Promise.all([
+    getAdminFlags(pool, user as any),
+    pool.query("SELECT COUNT(*)::int AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL", [user.id]).catch(() => ({ rows: [{ n: 0 }] })),
+    // Org members get their org context here too, so org pages don't need a second call to /v1/org/me.
+    can(user as PolicyUser, "org:act")
+      ? getOrgContextForUser(pool, String(user.id), contextOrgSlug((user as any).active_context)).catch(() => null)
+      : Promise.resolve(null)
+  ]);
   const contexts = availableContexts(user as PolicyUser);
   const active = user.active_context && (contexts as string[]).includes(user.active_context) ? user.active_context : null;
   return res.json({
@@ -43,7 +51,10 @@ export async function me(pool: Pool, req: Request, res: Response) {
       home: homeFor(active ?? (user.role === "org_admin" ? "org:" : user.role)),
       is_platform_admin: flags.isPlatformAdmin,
       is_super_admin: flags.isSuperAdmin,
-      platform_admin_role: flags.platformAdminRole
+      platform_admin_role: flags.platformAdminRole,
+      // Saves the shell a separate /v1/notifications/unread-count call on every page.
+      unread_notifications: Number(unread.rows[0]?.n ?? 0),
+      org_context: orgContext
     }
   });
 }

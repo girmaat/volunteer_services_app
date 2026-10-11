@@ -14,17 +14,9 @@ import { enqueue } from "../../jobs/queue";
 import type { PolicyUser } from "../../lib/policy";
 import { wrap } from "../../lib/http";
 
-export function registerVolunteerOpportunitiesRoutes(app: Express) {
-
-
-
-app.get(
-  "/v1/volunteer/opportunities/recommended",
-  wrap(async (req, res) => {
-    const user = await requireVolunteerUser(req, res);
-    if (!user) return;
-
-    try {
+/** Ranked recommendations for a volunteer. Shared by the list endpoint and the dashboard (one round-trip). */
+export async function recommendedFor(user: { id: string }): Promise<{ rows: any[]; radius: number; label: string }> {
+  try {
 
     // Profile signals (tags + freeform experience) feed a simple, deterministic recommender.
     const profile = await pool.query(
@@ -246,7 +238,7 @@ app.get(
       const textSim = Number(r.text_sim || 0);
       if (textSim >= 0.25 && experience) reasons.push("Similar to your experience");
       const d = Number(r.distance_miles);
-      if (Number.isFinite(d) && d <= radius) reasons.push(`Close by: ${d.toFixed(1)} mi`);
+      if (Number.isFinite(d) && d <= radius) reasons.push(`Close by: about ${Math.max(1, Math.round(d))} mi`);
       if (!reasons.length) reasons.push("Based on your profile");
 
       return {
@@ -257,16 +249,27 @@ app.get(
       };
     });
 
+    return { rows: out, radius, label };
+  } catch (e: any) {
+    console.error("recommendedFor failed", e);
+    const rows = await volunteerOpportunityRowsForUser(user.id, "", [], "o.updated_at DESC").catch(() => []);
+    return { rows: rows as any[], radius: 25, label: "" };
+  }
+}
+
+export function registerVolunteerOpportunitiesRoutes(app: Express) {
+
+
+
+app.get(
+  "/v1/volunteer/opportunities/recommended",
+  wrap(async (req, res) => {
+    const user = await requireVolunteerUser(req, res);
+    if (!user) return;
+    const { rows, radius, label } = await recommendedFor(user);
     res.setHeader("x-volunteer-radius-miles", String(radius));
     res.setHeader("x-volunteer-location-label", label);
-
-    return res.json(out);
-    } catch (e: any) {
-      console.error("/v1/volunteer/opportunities/recommended failed", e);
-      const rows = await volunteerOpportunityRowsForUser(user.id, "", [], "o.updated_at DESC").catch(() => []);
-      res.setHeader("x-volunteer-recommended-fallback", "1");
-      return res.json(rows);
-    }
+    return res.json(rows);
   })
 );
 

@@ -5,6 +5,7 @@ import { setProfile } from "../../auth/handlers";
 import { requireVolunteerUser } from "../../middleware/auth";
 import { pool } from "../../lib/db";
 import { discoverableSql } from "../requests/lifecycle";
+import { recommendedFor } from "./opportunities.routes";
 import { wrap } from "../../lib/http";
 
 export function registerVolunteerProfileRoutes(app: Express) {
@@ -20,7 +21,7 @@ app.get(
     if (!user) return;
 
     // One round-trip for all dashboard counters (previously 6 sequential queries).
-    const r = await pool.query(
+    const [r, rec] = await Promise.all([pool.query(
       `WITH a AS (
          SELECT COALESCE(remote_ok, TRUE) AS remote_ok, COALESCE(in_person_ok, TRUE) AS in_person_ok
            FROM (SELECT 1) x LEFT JOIN user_availability ua ON ua.user_id = $1
@@ -38,7 +39,7 @@ app.get(
          (SELECT COUNT(*)::int FROM request_commitments
            WHERE volunteer_user_id = $1 AND start_at > NOW() AND status IN ('scheduled','confirmed')) AS upcoming`,
       [user.id]
-    );
+    ), recommendedFor(user)]);
     const c = r.rows[0] as Record<string, number>;
 
     return res.json({
@@ -46,7 +47,11 @@ app.get(
       savedOpportunities: c.saved ?? 0,
       applicationsNeedingAction: c.applications ?? 0,
       unreadMessages: c.unread ?? 0,
-      upcomingCommitments: c.upcoming ?? 0
+      upcomingCommitments: c.upcoming ?? 0,
+      // Top picks travel with the counters so the dashboard is a single backend call.
+      recommended: rec.rows.slice(0, 6),
+      recommendedRadiusMiles: rec.radius,
+      recommendedLocationLabel: rec.label
     });
   })
 );

@@ -11,16 +11,15 @@ type DashboardCounts = {
   applicationsNeedingAction: number;
   unreadMessages: number;
   upcomingCommitments: number;
+  recommended?: OpportunitySummary[];
 };
 
 export default async function Page() {
   const user = await getCurrentUser();
-  const [countsRes, recRes] = await Promise.all([
-    backendFetch("/v1/volunteer/dashboard"),
-    backendFetch("/v1/volunteer/opportunities/recommended")
-  ]);
+  // One backend call: counters and top recommendations come back together (/v1/me is cached per request).
+  const countsRes = await backendFetch("/v1/volunteer/dashboard");
   const counts = countsRes.ok ? ((await countsRes.json()) as DashboardCounts) : null;
-  const recs = recRes.ok ? ((await recRes.json()) as OpportunitySummary[]).slice(0, 4) : [];
+  const recs = (counts?.recommended ?? []).slice(0, 4);
   const name = user?.email?.split("@")[0] ?? "there";
 
   return (
