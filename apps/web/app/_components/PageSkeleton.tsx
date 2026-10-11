@@ -4,7 +4,7 @@ export default function PageSkeleton({ label = "Loading" }: { label?: string }) 
     <div className="skeletonPage" role="status" aria-live="polite" aria-busy="true">
       <span className="srOnly">{label}…</span>
       <div className="skeletonLine skeletonTitle" />
-      <div className="skeletonLine" style={{ width: "60%" }} />
+      <div className="skeletonLine w-[60%]" />
       <div className="skeletonGrid">
         <div className="skeletonCard" />
         <div className="skeletonCard" />

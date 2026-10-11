@@ -31,7 +31,7 @@ export default async function Page() {
 
       <ReputationTabs active="overview" />
 
-      <div className={styles.grid} style={{ marginTop: "0.9rem" } as any}>
+      <div className={`${styles.grid} mt-3.5`}>
         <Link className={styles.tileLink} href="/requester/reputation/reviews">
           <div className={styles.tile}>
             <div className={styles.tileTitle}>Reviews received</div>

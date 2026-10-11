@@ -2,7 +2,7 @@ import Link from "next/link";
 import { MessageSquare, ShieldCheck } from "lucide-react";
 import { backendFetch } from "../../app/lib/backend";
 import { applicantAction, noShowAction } from "../../app/_requests/applicant-actions";
-import { Button, EmptyState, Notice, PageHeader, StatusPill, VerifiedBadge } from "../ui";
+import { Button, EmptyState, Notice, PageHeader, StatusPill, Toast, VerifiedBadge } from "../ui";
 import ReviewPanel, { type ReviewState } from "../reviews/ReviewPanel";
 import { formatInZone, isoToZonedLocal } from "../../lib/time";
 
@@ -75,11 +75,7 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
         title="Applicants"
         description={`${accepted} of ${data.request.volunteers_needed} spots filled. Contact details unlock when you accept someone.`}
       />
-      {flash && FLASH[flash] ? (
-        <div className="mb-4">
-          <Notice tone="success">{FLASH[flash]}</Notice>
-        </div>
-      ) : null}
+      {flash && FLASH[flash] ? <Toast message={FLASH[flash]} /> : null}
       {error ? (
         <div className="mb-4">
           <Notice tone="danger">{error}</Notice>

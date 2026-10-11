@@ -44,14 +44,14 @@ export default async function Page(
 
   return (
     <div className={styles.mainFull}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Acknowledgements</h1>
+      <div className="flex justify-between items-baseline gap-3 flex-wrap">
+        <h1 className="m-0">Acknowledgements</h1>
         <Link className={styles.smallLink} href={`/org/requests/${requestId}/documents`}>
           Back to request docs
         </Link>
       </div>
 
-      <div className={styles.card} style={{ marginTop: 12 }}>
+      <div className={`${styles.card} mt-3`}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -72,7 +72,7 @@ export default async function Page(
                 <tr key={r.id}>
                   <td>{new Date(r.acknowledged_at).toLocaleString()}</td>
                   <td>{r.volunteer_display_name || r.volunteer_email || r.volunteer_user_id}</td>
-                  <td className={styles.muted} style={{ fontSize: 12 }}>
+                  <td className={`${styles.muted} text-xs`}>
                     {r.volunteer_user_id}
                   </td>
                 </tr>

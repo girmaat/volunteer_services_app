@@ -148,86 +148,86 @@ export default async function Page(
   const devInviteUrl = searchParams?.devInviteUrl ? decodeURIComponent(String(searchParams.devInviteUrl)) : "";
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
+    <div className="grid gap-3.5">
       <header>
-        <h1 style={{ margin: 0 }}>Team</h1>
-        <p style={{ marginTop: 6, color: "rgba(0,0,0,0.7)" }}>
+        <h1 className="m-0">Team</h1>
+        <p className="mt-1.5 text-muted">
           Add teammates to help manage requests and messages. Invited members must accept the email invite before they can access the org area.
         </p>
       </header>
 
       {error ? (
-        <div style={{ border: "1px solid rgba(180,0,0,0.35)", background: "rgba(180,0,0,0.05)", borderRadius: 12, padding: 12 }}>
+        <div className="border border-danger bg-danger-tint rounded-lg p-3">
           <strong>Couldn&apos;t complete that action.</strong>
-          <div style={{ marginTop: 6 }}>{error}</div>
+          <div className="mt-1.5">{error}</div>
         </div>
       ) : null}
 
       {showSent ? (
-        <div style={{ border: "1px solid rgba(0,120,0,0.35)", background: "rgba(0,120,0,0.05)", borderRadius: 12, padding: 12 }}>
+        <div className="border border-success bg-success-tint rounded-lg p-3">
           <strong>Invite sent.</strong>
           {devInviteUrl ? (
-            <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.7)" }}>Local dev link (SMTP not configured):</div>
-              <code style={{ display: "block", marginTop: 6, wordBreak: "break-all" }}>{devInviteUrl}</code>
+            <div className="mt-2">
+              <div className="text-xs text-muted">Local dev link (SMTP not configured):</div>
+              <code className="block mt-1.5 break-all">{devInviteUrl}</code>
             </div>
           ) : null}
         </div>
       ) : null}
 
-      <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Invite a teammate</h2>
+      <section className="border border-line rounded-lg p-3.5">
+        <h2 className="mt-0">Invite a teammate</h2>
 
         {!canManage ? (
-          <p style={{ margin: 0, color: "rgba(0,0,0,0.7)" }}>Only org admins and managers can invite teammates.</p>
+          <p className="m-0 text-muted">Only org admins and managers can invite teammates.</p>
         ) : (
-          <form action={inviteMemberAction} style={{ display: "grid", gap: 10, maxWidth: 520 }}>
-            <label style={{ display: "grid", gap: 6 }}>
+          <form className="grid gap-2.5 max-w-[520px]" action={inviteMemberAction}>
+            <label className="grid gap-1.5">
               Email
-              <input name="email" type="email" required style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }} />
+              <input className="p-2.5 rounded-md border border-line" name="email" type="email" required />
             </label>
 
-            <label style={{ display: "grid", gap: 6 }}>
+            <label className="grid gap-1.5">
               Role
-              <select name="role" aria-label="Role" defaultValue="member" style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }}>
+              <select className="p-2.5 rounded-md border border-line" name="role" aria-label="Role" defaultValue="member">
                 <option value="member">Member</option>
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
               </select>
             </label>
 
-            <button type="submit" style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)", background: "white", fontWeight: 700 }}>
+            <button className="py-2.5 px-3 rounded-md border border-line bg-surface font-bold" type="submit">
               Send invite
             </button>
           </form>
         )}
       </section>
 
-      <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Active members</h2>
+      <section className="border border-line rounded-lg p-3.5">
+        <h2 className="mt-0">Active members</h2>
         {active.length === 0 ? (
-          <p style={{ margin: 0, color: "rgba(0,0,0,0.7)" }}>No active members found.</p>
+          <p className="m-0 text-muted">No active members found.</p>
         ) : (
-          <div style={{ display: "grid", gap: 10 }}>
+          <div className="grid gap-2.5">
             {active.map((m) => (
-              <div key={m.member_id} style={{ display: "grid", gap: 6, padding: 12, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
+              <div className="grid gap-1.5 p-3 rounded-lg border border-line" key={m.member_id}>
+                <div className="flex justify-between gap-3 items-baseline flex-wrap">
                   <div>
-                    <div style={{ fontWeight: 700 }}>{m.full_name || m.email}</div>
-                    <div style={{ fontSize: 12, color: "rgba(0,0,0,0.65)" }}>{m.email}</div>
+                    <div className="font-bold">{m.full_name || m.email}</div>
+                    <div className="text-xs text-muted">{m.email}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: "rgba(0,0,0,0.65)" }}>Status: Active</div>
+                  <div className="text-xs text-muted">Status: Active</div>
                 </div>
 
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                  <form action={updateRoleAction} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div className="flex gap-2.5 flex-wrap items-center">
+                  <form className="flex gap-2 items-center" action={updateRoleAction}>
                     <input type="hidden" name="user_id" value={m.user_id || ""} />
-                    <select name="role" aria-label="Role" defaultValue={m.role} disabled={!canManage} style={{ padding: 8, borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)" }}>
+                    <select className="p-2 rounded-md border border-line" name="role" aria-label="Role" defaultValue={m.role} disabled={!canManage}>
                       <option value="member">Member</option>
                       <option value="manager">Manager</option>
                       <option value="admin">Admin</option>
                     </select>
-                    <button type="submit" disabled={!canManage} style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)", background: "white" }}>
+                    <button className="py-2 px-2.5 rounded-md border border-line bg-surface" type="submit" disabled={!canManage}>
                       Update
                     </button>
                   </form>
@@ -235,7 +235,7 @@ export default async function Page(
                   {data.membership.role === "admin" && m.email !== user.email ? (
                     <form action={removeMemberAction}>
                       <input type="hidden" name="user_id" value={m.user_id || ""} />
-                      <button type="submit" style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(180,0,0,0.35)", background: "rgba(180,0,0,0.05)" }}>
+                      <button className="py-2 px-2.5 rounded-md border border-danger bg-danger-tint" type="submit">
                         Remove
                       </button>
                     </form>
@@ -247,33 +247,33 @@ export default async function Page(
         )}
       </section>
 
-      <section style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Pending invites</h2>
+      <section className="border border-line rounded-lg p-3.5">
+        <h2 className="mt-0">Pending invites</h2>
         {invited.length === 0 ? (
-          <p style={{ margin: 0, color: "rgba(0,0,0,0.7)" }}>No pending invites.</p>
+          <p className="m-0 text-muted">No pending invites.</p>
         ) : (
-          <div style={{ display: "grid", gap: 10 }}>
+          <div className="grid gap-2.5">
             {invited.map((m) => (
-              <div key={m.member_id} style={{ display: "grid", gap: 6, padding: 12, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
+              <div className="grid gap-1.5 p-3 rounded-lg border border-line" key={m.member_id}>
+                <div className="flex justify-between gap-3 items-baseline flex-wrap">
                   <div>
-                    <div style={{ fontWeight: 700 }}>{m.email}</div>
-                    <div style={{ fontSize: 12, color: "rgba(0,0,0,0.65)" }}>Role: {m.role}</div>
+                    <div className="font-bold">{m.email}</div>
+                    <div className="text-xs text-muted">Role: {m.role}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: "rgba(0,0,0,0.65)" }}>Status: Invited</div>
+                  <div className="text-xs text-muted">Status: Invited</div>
                 </div>
 
                 {canManage ? (
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <div className="flex gap-2.5 flex-wrap">
                     <form action={resendInviteAction}>
                       <input type="hidden" name="member_id" value={m.member_id} />
-                      <button type="submit" style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.25)", background: "white" }}>
+                      <button className="py-2 px-2.5 rounded-md border border-line bg-surface" type="submit">
                         Resend
                       </button>
                     </form>
                     <form action={cancelInviteAction}>
                       <input type="hidden" name="member_id" value={m.member_id} />
-                      <button type="submit" style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(180,0,0,0.35)", background: "rgba(180,0,0,0.05)" }}>
+                      <button className="py-2 px-2.5 rounded-md border border-danger bg-danger-tint" type="submit">
                         Cancel
                       </button>
                     </form>

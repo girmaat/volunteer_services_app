@@ -58,7 +58,7 @@ export default async function Page() {
             <div className={styles.row}>
               <div>
                 <div className={styles.meta}>Average rating</div>
-                <div style={{ fontSize: "1.6rem", fontWeight: 800 }}>
+                <div className="text-xl font-extrabold">
                   <Stars rating={resp.data.average_rating} /> {resp.data.average_rating.toFixed(1)}
                 </div>
               </div>
@@ -76,7 +76,7 @@ export default async function Page() {
                 <div key={r.id} className={styles.card}>
                   <div className={styles.row}>
                     <div>
-                      <div style={{ fontWeight: 800 }}>
+                      <div className="font-extrabold">
                         <Stars rating={r.rating} /> {r.rating}/5
                       </div>
                       <div className={styles.meta}>
@@ -102,8 +102,8 @@ export default async function Page() {
                   </div>
 
                   {r.strengths && (
-                    <div style={{ marginTop: "0.75rem" }}>
-                      <div className={styles.meta} style={{ fontWeight: 700 }}>
+                    <div className="mt-3">
+                      <div className={`${styles.meta} font-bold`}>
                         What went well
                       </div>
                       <p className={styles.cardBody}>{r.strengths}</p>
@@ -111,8 +111,8 @@ export default async function Page() {
                   )}
 
                   {r.improvements && (
-                    <div style={{ marginTop: "0.75rem" }}>
-                      <div className={styles.meta} style={{ fontWeight: 700 }}>
+                    <div className="mt-3">
+                      <div className={`${styles.meta} font-bold`}>
                         Could improve
                       </div>
                       <p className={styles.cardBody}>{r.improvements}</p>
@@ -120,7 +120,7 @@ export default async function Page() {
                   )}
 
                   {r.would_work_again !== null && (
-                    <div className={styles.badges} style={{ marginTop: "0.75rem" }}>
+                    <div className={`${styles.badges} mt-3`}>
                       <span className={styles.badge}>{r.would_work_again ? "Would work again" : "Would not work again"}</span>
                     </div>
                   )}

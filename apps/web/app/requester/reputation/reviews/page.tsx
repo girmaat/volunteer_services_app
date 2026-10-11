@@ -45,10 +45,10 @@ export default async function Page() {
           <p className={styles.meta}>No reviews yet. Once volunteers mark engagements completed, they can leave feedback here.</p>
         </div>
       ) : (
-        <div style={{ marginTop: "0.75rem" } as any}>
+        <div className="mt-3">
           {data.reviews.map((r) => (
             <div key={r.id} className={styles.sectionCard}>
-              <div style={{ fontWeight: 800 }}>
+              <div className="font-extrabold">
                 <Stars rating={r.rating} /> {r.rating}/5
               </div>
               <p className={styles.meta}>
@@ -57,29 +57,29 @@ export default async function Page() {
               </p>
 
               {r.strengths ? (
-                <div style={{ marginTop: "0.5rem" } as any}>
-                  <div className={styles.meta} style={{ fontWeight: 700 } as any}>
+                <div className="mt-2">
+                  <div className={`${styles.meta} font-bold`}>
                     What went well
                   </div>
-                  <p className={styles.meta} style={{ marginTop: "0.2rem" } as any}>
+                  <p className={`${styles.meta} mt-1`}>
                     {r.strengths}
                   </p>
                 </div>
               ) : null}
 
               {r.improvements ? (
-                <div style={{ marginTop: "0.5rem" } as any}>
-                  <div className={styles.meta} style={{ fontWeight: 700 } as any}>
+                <div className="mt-2">
+                  <div className={`${styles.meta} font-bold`}>
                     What could be better
                   </div>
-                  <p className={styles.meta} style={{ marginTop: "0.2rem" } as any}>
+                  <p className={`${styles.meta} mt-1`}>
                     {r.improvements}
                   </p>
                 </div>
               ) : null}
 
               {typeof r.would_work_again === "boolean" ? (
-                <p className={styles.meta} style={{ marginTop: "0.45rem" } as any}>
+                <p className={`${styles.meta} mt-2`}>
                   Would work again: <strong>{r.would_work_again ? "Yes" : "No"}</strong>
                 </p>
               ) : null}

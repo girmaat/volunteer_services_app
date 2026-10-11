@@ -74,6 +74,9 @@ a { color: inherit; text-decoration: none; }
 a:hover { color: var(--primary); }
 img, svg { max-width: 100%; }
 button, input, select, textarea { font: inherit; color: inherit; }
+/* Zero-specificity defaults so any utility class wins: controls sit on the surface colour, not the UA grey. */
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) { background-color: var(--surface); }
+:where(button) { cursor: pointer; }
 ::selection { background: var(--sun-tint); }
 
 :focus-visible { outline: none; box-shadow: var(--focus); border-radius: 6px; }

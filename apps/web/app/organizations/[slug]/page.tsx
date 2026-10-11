@@ -13,7 +13,12 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const { slug } = await props.params;
   const org = await getPublicOrganization(slug);
   if (!org) return { title: "Organization not found" };
-  return { title: org.name, description: org.summary.slice(0, 160) };
+  return {
+    title: org.name,
+    description: org.summary.slice(0, 160),
+    alternates: { canonical: `/organizations/${org.slug}` },
+    openGraph: { title: org.name, description: org.summary.slice(0, 200), type: "profile" }
+  };
 }
 
 export default async function Page(props: Props) {

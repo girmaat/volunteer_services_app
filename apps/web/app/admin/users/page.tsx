@@ -1,3 +1,4 @@
+import { Pagination } from "../../../components/ui/Table";
 import { setBackgroundCheck, shadowBan } from "../_actions";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { redirect } from "next/navigation";
@@ -119,8 +120,10 @@ export default async function Page(
     sort,
     dir
   };
+  const PAGE_SIZE = 50;
+  const page = Math.max(1, Number(asString(searchParams?.page)) || 1);
 
-  const { data, error: loadError } = await loadUsers(query);
+  const { data, error: loadError } = await loadUsers({ ...query, limit: String(PAGE_SIZE), offset: String((page - 1) * PAGE_SIZE) });
   const users = data?.users || [];
   const total = data?.total ?? 0;
 
@@ -256,21 +259,21 @@ export default async function Page(
 
   return (
     <div className="adminGrid">
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+      <header className="flex justify-between gap-3 flex-wrap items-baseline">
         <div>
-          <h1 style={{ margin: 0 }}>User management</h1>
-          <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+          <h1 className="m-0">User management</h1>
+          <p className="muted mt-1.5 mb-0">
             Search users, filter/sort results, manage admin access, and apply strikes / bans.
           </p>
           {typeof total === "number" ? (
-            <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-              Showing {users.length} of {total} matching users.
+            <div className="muted text-xs mt-1.5">
+              Showing {users.length ? (page - 1) * PAGE_SIZE + 1 : 0}–{(page - 1) * PAGE_SIZE + users.length} of {total} matching users.
             </div>
           ) : null}
         </div>
 
-        <form method="get" action="/admin/users" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <input className="input" name="q" aria-label="Q" placeholder="Search email or display name" defaultValue={q} style={{ width: 260 }} />
+        <form className="flex gap-2 items-center flex-wrap justify-end" method="get" action="/admin/users">
+          <input className="input w-[260px]" name="q" aria-label="Q" placeholder="Search email or display name" defaultValue={q} />
 
           <select className="input" name="admin_role" aria-label="Admin role" defaultValue={admin_role || ""}>
             <option value="">Admin: Any</option>
@@ -322,16 +325,16 @@ export default async function Page(
       </header>
 
       {flash ? (
-        <div className="adminCard" style={{ borderColor: flash.type === "error" ? "rgba(220,40,40,0.35)" : "rgba(34,197,94,0.35)", background: flash.type === "error" ? "rgba(220,40,40,0.06)" : "rgba(34,197,94,0.06)" }}>
+        <div className={`adminCard ${flash.type === "error" ? "border-danger bg-danger-tint" : "border-success bg-success-tint"}`} role={flash.type === "error" ? "alert" : "status"}>
           <strong>{flash.type === "error" ? "Action failed" : "Success"}</strong>
-          <div className="muted" style={{ marginTop: 6 }}>{flash.message}</div>
+          <div className="muted mt-1.5">{flash.message}</div>
         </div>
       ) : null}
 
       {loadError ? (
-        <div className="adminCard" style={{ borderColor: "rgba(220,40,40,0.35)", background: "rgba(220,40,40,0.06)" }}>
+        <div className="adminCard border-danger bg-danger-tint">
           <strong>Failed to load users</strong>
-          <div className="muted" style={{ marginTop: 6 }}>{loadError}</div>
+          <div className="muted mt-1.5">{loadError}</div>
         </div>
       ) : null}
 
@@ -351,7 +354,7 @@ export default async function Page(
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={5} className="muted" style={{ padding: 18 }}>
+                <td colSpan={5} className="muted p-4">
                   No users match the current filters.
                 </td>
               </tr>
@@ -374,16 +377,16 @@ export default async function Page(
               return (
                 <tr key={u.id}>
                   <td>
-                    <div style={{ fontWeight: 800 }}>{u.display_name || u.email}</div>
-                    <div className="muted" style={{ fontSize: 12 }}>{u.email}</div>
-                    <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{new Date(u.created_at).toLocaleDateString()}</div>
+                    <div className="font-extrabold">{u.display_name || u.email}</div>
+                    <div className="muted text-xs">{u.email}</div>
+                    <div className="muted text-xs mt-1">{new Date(u.created_at).toLocaleDateString()}</div>
                   </td>
-                  <td className="muted" style={{ fontSize: 12 }}>
+                  <td className="muted text-xs">
                     {u.account_type || u.role || "—"}
                     {u.requester_mode ? ` · ${u.requester_mode}` : ""}
                   </td>
                   <td>{badgeForUser(u)}</td>
-                  <td className="muted" style={{ fontSize: 12 }}>{u.platform_admin_role || "—"}</td>
+                  <td className="muted text-xs">{u.platform_admin_role || "—"}</td>
                   <td>
                     <div className="adminActions">
                       <form action={strikeAction}>
@@ -395,7 +398,7 @@ export default async function Page(
                       <form action={clearStrikesAction}>
                         <input type="hidden" name="user_id" value={u.id} />
                         {clearStrikesDisabled ? (
-                          <span title={clearStrikesReason} style={{ display: "inline-block" }}>
+                          <span className="inline-block" title={clearStrikesReason}>
                             <button className="btn" type="submit" disabled>Clear strikes</button>
                           </span>
                         ) : (
@@ -444,7 +447,7 @@ export default async function Page(
                             <input type="hidden" name="user_id" value={u.id} />
                             <input type="hidden" name="role" value="admin" />
                             {grantAdminDisabled ? (
-                              <span title={grantAdminReason} style={{ display: "inline-block" }}>
+                              <span className="inline-block" title={grantAdminReason}>
                                 <button className="btn" type="submit" disabled>Grant admin</button>
                               </span>
                             ) : (
@@ -456,7 +459,7 @@ export default async function Page(
                             <input type="hidden" name="user_id" value={u.id} />
                             <input type="hidden" name="role" value="super" />
                             {grantSuperDisabled ? (
-                              <span title={grantSuperReason} style={{ display: "inline-block" }}>
+                              <span className="inline-block" title={grantSuperReason}>
                                 <button className="btn btnSoft" type="submit" disabled>Grant super</button>
                               </span>
                             ) : (
@@ -467,7 +470,7 @@ export default async function Page(
                           <form action={revokeAdminAction}>
                             <input type="hidden" name="user_id" value={u.id} />
                             {revokeDisabled ? (
-                              <span title={revokeReason} style={{ display: "inline-block" }}>
+                              <span className="inline-block" title={revokeReason}>
                                 <button className="btn" type="submit" disabled>Revoke admin</button>
                               </span>
                             ) : (
@@ -477,18 +480,18 @@ export default async function Page(
 
                           {/* Hard delete: super admins only; requires typing DELETE to confirm (no JS) */}
                           {isSelf ? (
-                            <span title="You cannot delete yourself" style={{ display: "inline-block" }}>
+                            <span className="inline-block" title="You cannot delete yourself">
                               <button className="btn" type="button" disabled>Delete</button>
                             </span>
                           ) : (
-                            <details style={{ display: "inline-block" }}>
-                              <summary className="btn btnDanger" style={{ listStyle: "none", cursor: "pointer" }}>Delete</summary>
-                              <div className="adminCard" style={{ marginTop: 8, padding: 12, minWidth: 320 }}>
-                                <div style={{ fontWeight: 800 }}>Delete user</div>
-                                <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                            <details className="inline-block">
+                              <summary className="btn btnDanger list-none cursor-pointer">Delete</summary>
+                              <div className="adminCard mt-2 p-3 min-w-[320px]">
+                                <div className="font-extrabold">Delete user</div>
+                                <div className="muted text-xs mt-1.5">
                                   This permanently deletes the user and cascades to related records. Type <strong>DELETE</strong> to confirm.
                                 </div>
-                                <form action={deleteUserAction} style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
+                                <form className="flex gap-2 items-center mt-2.5" action={deleteUserAction}>
                                   <input type="hidden" name="user_id" value={u.id} />
                                   <input className="input" name="confirm" aria-label="Confirm" placeholder="Type DELETE" />
                                   <button className="btn btnDanger" type="submit">Confirm</button>
@@ -506,6 +509,7 @@ export default async function Page(
           </tbody>
         </table>
       </div>
+      <Pagination basePath="/admin/users" params={query} page={page} hasNext={page * PAGE_SIZE < total} total={total} pageSize={PAGE_SIZE} />
     </div>
   );
 }

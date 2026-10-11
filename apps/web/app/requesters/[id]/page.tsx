@@ -244,21 +244,21 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           </div>
         </section>
 
-        <section className={styles.card} style={{ marginTop: "0.9rem" } as any}>
+        <section className={`${styles.card} mt-3.5`}>
           <h2 className={styles.cardTitle}>Reviews (as requester)</h2>
           <p className={styles.meta}>
             <Stars rating={avgRating} /> {avgRating.toFixed(1)} · {reviewCount} total
           </p>
 
           {reviewCount === 0 ? (
-            <p className={styles.meta} style={{ marginTop: "0.6rem" } as any}>
+            <p className={`${styles.meta} mt-2.5`}>
               No reviews yet.
             </p>
           ) : (
-            <div style={{ marginTop: "0.8rem" } as any}>
+            <div className="mt-3">
               {recent.map((r) => (
-                <div key={r.id} className={styles.tile} style={{ marginTop: "0.6rem" } as any}>
-                  <div style={{ fontWeight: 800 } as any}>
+                <div key={r.id} className={`${styles.tile} mt-2.5`}>
+                  <div className="font-extrabold">
                     <Stars rating={r.rating} /> {r.rating}/5
                   </div>
                   <p className={styles.meta}>
@@ -267,22 +267,22 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                   </p>
 
                   {r.strengths ? (
-                    <div style={{ marginTop: "0.5rem" } as any}>
-                      <div className={styles.meta} style={{ fontWeight: 700 } as any}>
+                    <div className="mt-2">
+                      <div className={`${styles.meta} font-bold`}>
                         What went well
                       </div>
-                      <p className={styles.meta} style={{ marginTop: "0.2rem" } as any}>
+                      <p className={`${styles.meta} mt-1`}>
                         {r.strengths}
                       </p>
                     </div>
                   ) : null}
 
                   {r.improvements ? (
-                    <div style={{ marginTop: "0.5rem" } as any}>
-                      <div className={styles.meta} style={{ fontWeight: 700 } as any}>
+                    <div className="mt-2">
+                      <div className={`${styles.meta} font-bold`}>
                         What could be better
                       </div>
-                      <p className={styles.meta} style={{ marginTop: "0.2rem" } as any}>
+                      <p className={`${styles.meta} mt-1`}>
                         {r.improvements}
                       </p>
                     </div>

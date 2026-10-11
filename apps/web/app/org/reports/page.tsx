@@ -124,9 +124,9 @@ export default async function Page(
 
   return (
     <div className={styles.mainFull}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Reports</h1>
-        <div style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
+      <div className="flex justify-between items-baseline gap-3 flex-wrap">
+        <h1 className="m-0">Reports</h1>
+        <div className="flex gap-3 items-baseline flex-wrap">
           <Link className={styles.smallLink} href={impactCsv}>
             Impact CSV
           </Link>
@@ -142,7 +142,7 @@ export default async function Page(
         </div>
       </div>
 
-      <form className={styles.card} style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 10, alignItems: "end" }}>
+      <form className={`${styles.card} mt-3 grid grid-cols-[1fr_1fr_1fr_auto] gap-2.5 items-end`}>
         <div>
           <label className={styles.label}>From</label>
           <input className={styles.input} type="date" name="from" defaultValue={from} />
@@ -173,10 +173,10 @@ export default async function Page(
         </div>
       </form>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12, marginTop: 12 }}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3 mt-3">
         <div className={styles.card}>
           <div className={styles.meta}>Requests</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{num(impact.requests?.total)}</div>
+          <div className="text-2xl font-bold">{num(impact.requests?.total)}</div>
           <div className={styles.meta}>
             Open: {num(impact.requests?.open)} · Paused: {num(impact.requests?.paused)} · Closed: {num(impact.requests?.closed)}
           </div>
@@ -184,7 +184,7 @@ export default async function Page(
 
         <div className={styles.card}>
           <div className={styles.meta}>Applications</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{num(impact.applications?.total)}</div>
+          <div className="text-2xl font-bold">{num(impact.applications?.total)}</div>
           <div className={styles.meta}>
             Pending: {num(impact.applications?.pending)} · Accepted: {num(impact.applications?.accepted)} · Waitlisted:{" "}
             {num(impact.applications?.waitlisted)} · Confirmed: {num(impact.applications?.confirmed)} · Completed:{" "}
@@ -194,7 +194,7 @@ export default async function Page(
 
         <div className={styles.card}>
           <div className={styles.meta}>Outcomes (from attendance logs)</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{fmt(impact.outcomes?.total_hours)} hrs</div>
+          <div className="text-2xl font-bold">{fmt(impact.outcomes?.total_hours)} hrs</div>
           <div className={styles.meta}>
             Unique volunteers: {num(impact.outcomes?.unique_volunteers)} · Completed engagements: {num(impact.outcomes?.completed_engagements)}
           </div>
@@ -207,8 +207,8 @@ export default async function Page(
         </div>
       </div>
 
-      <div className={styles.card} style={{ marginTop: 12 }}>
-        <h2 style={{ marginTop: 0 }}>Top opportunities by hours</h2>
+      <div className={`${styles.card} mt-3`}>
+        <h2 className="mt-0">Top opportunities by hours</h2>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -241,9 +241,9 @@ export default async function Page(
         </table>
       </div>
 
-      <div className={styles.card} style={{ marginTop: 12 }}>
-        <h2 style={{ marginTop: 0 }}>Volunteer hours summary</h2>
-        <div className={styles.meta} style={{ marginBottom: 8 }}>
+      <div className={`${styles.card} mt-3`}>
+        <h2 className="mt-0">Volunteer hours summary</h2>
+        <div className={`${styles.meta} mb-2`}>
           Total hours in range: {fmt(hours.total_hours)}
         </div>
         <table className={styles.table}>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import styles from "../(auth)/auth.module.css";
 
-export const metadata = { title: "Log in" };
+export const metadata = { title: "Log in", alternates: { canonical: "/login" } };
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +62,7 @@ export default async function Page(props: { searchParams?: Promise<SearchParams>
         </form>
 
         {showVerifyHelp ? (
-          <div style={{ marginTop: 12 }}>
+          <div className="mt-3">
             <div className={styles.meta}>
               Your email isn&apos;t verified yet. Please verify your email before logging in.
             </div>

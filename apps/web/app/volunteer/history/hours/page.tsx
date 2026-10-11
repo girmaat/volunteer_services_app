@@ -27,7 +27,7 @@ export default async function Page() {
       <HistoryTabs active="hours" />
 
       {me?.id ? (
-        <div className={styles.actionsRow} style={{ marginTop: "0.5rem" } as any}>
+        <div className={`${styles.actionsRow} mt-2`}>
           <ShareButton target={{ type: "volunteer", ref: me.id, title: "My volunteer profile" }} label="Share impact" className={styles.button} />
         </div>
       ) : null}

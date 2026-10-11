@@ -9,7 +9,8 @@ import { buttonClass } from "../components/ui/Button";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: { absolute: "ThankYou — volunteer with neighbors and nonprofits" }
+  title: { absolute: "ThankYou — volunteer with neighbors and nonprofits" },
+  alternates: { canonical: "/" }
 };
 
 const AUDIENCES = [

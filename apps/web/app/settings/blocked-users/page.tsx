@@ -92,7 +92,7 @@ export default async function Page() {
 
       <form action={blockUser}>
         <div className={styles.row}>
-          <label className={styles.label} style={{ flex: 1 }}>
+          <label className={`${styles.label} flex-1`}>
             Select from recent people
             <select name="blocked_user_id" className={styles.select} defaultValue="">
               <option value="">— Select —</option>
@@ -104,7 +104,7 @@ export default async function Page() {
             </select>
           </label>
 
-          <label className={styles.label} style={{ flex: 1 }}>
+          <label className={`${styles.label} flex-1`}>
             Or block by email
             <input name="email" className={styles.input} placeholder="name@example.com" />
           </label>
@@ -115,7 +115,7 @@ export default async function Page() {
           <textarea name="reason" className={styles.textarea} placeholder="Add a note for yourself (optional)" />
         </label>
 
-        <div className={styles.row} style={{ marginTop: "0.75rem" }}>
+        <div className={`${styles.row} mt-3`}>
           <button className={styles.button} type="submit">
             Block user
           </button>
@@ -143,7 +143,7 @@ export default async function Page() {
                 {b.reason ? <span className={styles.badge}>Note: {b.reason}</span> : null}
               </div>
 
-              <form action={unblockUser} style={{ marginTop: "0.75rem" }}>
+              <form className="mt-3" action={unblockUser}>
                 <input type="hidden" name="blocked_user_id" value={b.blocked_user_id} />
                 <button className={styles.buttonSecondary} type="submit">
                   Unblock

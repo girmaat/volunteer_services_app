@@ -77,7 +77,7 @@ export default async function Page() {
       <HistoryTabs active="impact" />
 
       {me?.id ? (
-        <div className={styles.actionsRow} style={{ marginTop: "0.5rem" } as any}>
+        <div className={`${styles.actionsRow} mt-2`}>
           <ShareButton target={{ type: "volunteer", ref: me.id, title: "My volunteer profile" }} label="Share impact" className={styles.button} />
         </div>
       ) : null}
@@ -98,11 +98,11 @@ export default async function Page() {
           </label>
 
           <div className={styles.row}>
-            <label className={styles.label} style={{ flex: 1 }}>
+            <label className={`${styles.label} flex-1`}>
               Date
               <input name="impact_date" type="date" className={styles.input} required />
             </label>
-            <label className={styles.label} style={{ flex: 1 }}>
+            <label className={`${styles.label} flex-1`}>
               Hours
               <input name="hours" type="number" min="0" step="0.25" className={styles.input} defaultValue="1" />
             </label>

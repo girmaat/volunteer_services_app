@@ -87,41 +87,41 @@ export default async function Page(
   return (
     <div className="adminGrid">
       <header>
-        <h1 style={{ margin: 0 }}>Verification review</h1>
-        <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+        <h1 className="m-0">Verification review</h1>
+        <p className="muted mt-1.5 mb-0">
           Review identity and legitimacy submissions for users and organizations.
           Approving applies a Verified badge and trust indicators; rejecting keeps verification required and allows resubmission.
         </p>
       </header>
 
-      <div className="adminCard" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="adminCard flex gap-2.5 flex-wrap items-center">
         <Link className="btn" href="/admin/verification?tab=users">Users</Link>
         <Link className="btn" href="/admin/verification?tab=organizations">Organizations</Link>
-        <span className="muted" style={{ fontSize: 12 }}>
+        <span className="muted text-xs">
           {tab === "users" ? "User verification queue" : "Organization verification queue"}
         </span>
       </div>
 
       {ok ? (
-        <div className="adminCard" style={{ borderColor: "rgba(0,120,0,0.25)", background: "rgba(0,120,0,0.05)" }}>
+        <div className="adminCard border-success bg-success-tint">
           <strong>Saved.</strong>
         </div>
       ) : null}
       {error ? (
-        <div className="adminCard" style={{ borderColor: "rgba(180,0,0,0.25)", background: "rgba(180,0,0,0.05)" }}>
+        <div className="adminCard border-danger bg-danger-tint">
           <strong>Couldn&apos;t complete that action.</strong>
-          <div style={{ marginTop: 6 }}>{error}</div>
+          <div className="mt-1.5">{error}</div>
         </div>
       ) : null}
 
       {tab === "users" ? (
         <div className="adminCard">
           {users.length === 0 ? (
-            <div className="muted" style={{ fontSize: 13 }}>
+            <div className="muted text-xs">
               No user verification submissions are waiting in the queue.
             </div>
           ) : null}
-          <table className="table" style={{ marginTop: users.length === 0 ? 10 : undefined }}>
+          <table className={`table ${users.length === 0 ? "mt-2.5" : ""}`}>
             <thead>
               <tr>
                 <th>User</th>
@@ -135,12 +135,12 @@ export default async function Page(
               {users.map((u) => (
                 <tr key={u.id}>
                   <td>
-                    <div style={{ fontWeight: 900 }}>{u.display_name || u.email}</div>
-                    <div className="muted" style={{ fontSize: 12 }}>{u.email}</div>
+                    <div className="font-black">{u.display_name || u.email}</div>
+                    <div className="muted text-xs">{u.email}</div>
                   </td>
-                  <td className="muted" style={{ fontSize: 12 }}>{u.verification_status}</td>
-                  <td className="muted" style={{ fontSize: 12 }}>{u.docs_count}</td>
-                  <td className="muted" style={{ fontSize: 12 }}>{u.verification_submitted_at ? new Date(u.verification_submitted_at).toLocaleString() : "—"}</td>
+                  <td className="muted text-xs">{u.verification_status}</td>
+                  <td className="muted text-xs">{u.docs_count}</td>
+                  <td className="muted text-xs">{u.verification_submitted_at ? new Date(u.verification_submitted_at).toLocaleString() : "—"}</td>
                   <td>
                     <Link className="btn" href={`/admin/verification/users/${encodeURIComponent(u.id)}`}>Review</Link>
                   </td>
@@ -154,7 +154,7 @@ export default async function Page(
       {tab === "organizations" ? (
         <div className="adminCard">
           {orgs.length === 0 ? (
-            <div className="muted" style={{ fontSize: 13 }}>
+            <div className="muted text-xs">
               No organization verification submissions are waiting in the queue.
             </div>
           ) : null}
@@ -171,21 +171,21 @@ export default async function Page(
               {orgs.map((o) => (
                 <tr key={o.slug}>
                   <td>
-                    <div style={{ fontWeight: 900 }}>{o.name}</div>
-                    <div className="muted" style={{ fontSize: 12 }}>slug: <code>{o.slug}</code>{o.location ? ` · ${o.location}` : ""}</div>
+                    <div className="font-black">{o.name}</div>
+                    <div className="muted text-xs">slug: <code>{o.slug}</code>{o.location ? ` · ${o.location}` : ""}</div>
                   </td>
-                  <td className="muted" style={{ fontSize: 12 }}>{o.verification_status}</td>
-                  <td className="muted" style={{ fontSize: 12 }}>{o.verification_submitted_at ? new Date(o.verification_submitted_at).toLocaleString() : "—"}</td>
+                  <td className="muted text-xs">{o.verification_status}</td>
+                  <td className="muted text-xs">{o.verification_submitted_at ? new Date(o.verification_submitted_at).toLocaleString() : "—"}</td>
                   <td>
                     <div className="adminActions">
                       <form action={approveOrg}>
                         <input type="hidden" name="slug" value={o.slug} />
-                        <input className="input" name="notes" aria-label="Notes" placeholder="Notes" style={{ width: 180 }} />
+                        <input className="input w-[180px]" name="notes" aria-label="Notes" placeholder="Notes" />
                         <button className="btn" type="submit">Approve</button>
                       </form>
                       <form action={rejectOrg}>
                         <input type="hidden" name="slug" value={o.slug} />
-                        <input className="input" name="notes" aria-label="Notes" placeholder="Notes" style={{ width: 180 }} />
+                        <input className="input w-[180px]" name="notes" aria-label="Notes" placeholder="Notes" />
                         <button className="btn btnDanger" type="submit">Reject</button>
                       </form>
                       <a className="btn" href={`/organizations/${encodeURIComponent(o.slug)}`}>View</a>

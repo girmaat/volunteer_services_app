@@ -59,9 +59,9 @@ export default async function OrgRosterPage(
 
   return (
     <div className={styles.mainFull}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+      <div className="flex justify-between items-baseline gap-3 flex-wrap">
         <h1>Volunteer roster</h1>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div className="flex gap-3 flex-wrap">
           <Link className={styles.badge} href={`/org/roster/export?${exportQs.toString()}`}>
             Export CSV
           </Link>
@@ -71,9 +71,9 @@ export default async function OrgRosterPage(
         </div>
       </div>
 
-      <form method="GET" style={{ display: "flex", gap: 10, alignItems: "end", flexWrap: "wrap", marginTop: 12, marginBottom: 12 }}>
-        <label style={{ display: "grid", gap: 4 }}>
-          <span style={{ fontSize: 12, opacity: 0.75 }}>Status</span>
+      <form className="flex gap-2.5 items-end flex-wrap mt-3 mb-3" method="GET">
+        <label className="grid gap-1">
+          <span className="text-xs opacity-75">Status</span>
           <select name="status" defaultValue={status}>
             <option value="active">Active (accepted/confirmed)</option>
             <option value="waitlisted">Waitlisted</option>
@@ -82,13 +82,13 @@ export default async function OrgRosterPage(
           </select>
         </label>
 
-        <label style={{ display: "grid", gap: 4, minWidth: 180 }}>
-          <span style={{ fontSize: 12, opacity: 0.75 }}>Search</span>
+        <label className="grid gap-1 min-w-[180px]">
+          <span className="text-xs opacity-75">Search</span>
           <input name="search" defaultValue={search} placeholder="Name or email" />
         </label>
 
-        <label style={{ display: "grid", gap: 4, minWidth: 240 }}>
-          <span style={{ fontSize: 12, opacity: 0.75 }}>Request ID (optional)</span>
+        <label className="grid gap-1 min-w-[240px]">
+          <span className="text-xs opacity-75">Request ID (optional)</span>
           <input name="requestId" defaultValue={requestId} placeholder="UUID" />
         </label>
 
@@ -104,24 +104,24 @@ export default async function OrgRosterPage(
       {rows.length === 0 ? (
         <p>No volunteers match these filters.</p>
       ) : (
-        <ul style={{ display: "grid", gap: 10, paddingLeft: 18 }}>
+        <ul className="grid gap-2.5 pl-4">
           {rows.map((r) => {
             const name = r.volunteer_display_name || r.volunteer_email;
             const titles = (r.request_titles || []).slice(0, 3);
             return (
-              <li key={r.volunteer_user_id} style={{ padding: 10, border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
+              <li className="p-2.5 border border-line rounded-md" key={r.volunteer_user_id}>
+                <div className="flex justify-between gap-3 items-baseline flex-wrap">
                   <div>
                     <strong>{name}</strong>{" "}
-                    <span style={{ opacity: 0.75 }}>
+                    <span className="opacity-75">
                       · {r.active_count} active · {r.waitlisted_count} waitlisted · {r.completed_count} completed
                     </span>
                     {r.volunteer_public_location ? (
-                      <div style={{ marginTop: 4, opacity: 0.75 }}>{r.volunteer_public_location}</div>
+                      <div className="mt-1 opacity-75">{r.volunteer_public_location}</div>
                     ) : null}
                   </div>
 
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <div className="flex gap-2.5 flex-wrap">
                     <Link className={styles.badge} href={`/inbox`}>
                       Message
                     </Link>
@@ -129,14 +129,14 @@ export default async function OrgRosterPage(
                 </div>
 
                 {titles.length > 0 ? (
-                  <div style={{ marginTop: 8, opacity: 0.8 }}>
+                  <div className="mt-2 opacity-80">
                     Recent requests: {titles.join(" · ")}
                     {(r.request_titles || []).length > titles.length ? " …" : ""}
                   </div>
                 ) : null}
 
                 {r.last_activity_at ? (
-                  <div style={{ marginTop: 8, opacity: 0.75 }}>Last activity: {new Date(r.last_activity_at).toLocaleString()}</div>
+                  <div className="mt-2 opacity-75">Last activity: {new Date(r.last_activity_at).toLocaleString()}</div>
                 ) : null}
               </li>
             );

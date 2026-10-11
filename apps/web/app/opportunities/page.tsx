@@ -9,7 +9,8 @@ import { buttonClass } from "../../components/ui/Button";
 
 export const metadata: Metadata = {
   title: "Volunteer opportunities",
-  description: "Browse in-person, remote and hybrid volunteer opportunities from verified organizations and neighbors."
+  description: "Browse in-person, remote and hybrid volunteer opportunities from verified organizations and neighbors.",
+  alternates: { canonical: "/opportunities" }
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;

@@ -48,6 +48,7 @@ export type ConversationListItem = {
   request_id: string | null;
   request_title: string | null;
   with_name: string;
+  with_avatar_url?: string | null;
   as: "volunteer" | "owner";
   application_status: string | null;
   contacts_unlocked: boolean;

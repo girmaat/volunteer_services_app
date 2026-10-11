@@ -180,15 +180,15 @@ export default async function Page(
 
   return (
     <div className="adminGrid">
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+      <header className="flex justify-between gap-3 flex-wrap items-baseline">
         <div>
-          <h1 style={{ margin: 0 }}>Reports queue</h1>
-          <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+          <h1 className="m-0">Reports queue</h1>
+          <p className="muted mt-1.5 mb-0">
             Review user-submitted reports and take action.
           </p>
         </div>
 
-        <form method="get" action="/admin/reports" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <form className="flex gap-2 items-center" method="get" action="/admin/reports">
           <select className="input" name="status" aria-label="Status" defaultValue={status || ""}>
             <option value="">All</option>
             <option value="submitted">Submitted</option>
@@ -203,24 +203,24 @@ export default async function Page(
       </header>
 
       {ok ? (
-        <div className="adminCard" style={{ borderColor: "rgba(0,120,0,0.25)", background: "rgba(0,120,0,0.05)" }}>
+        <div className="adminCard border-success bg-success-tint">
           <strong>Saved.</strong>
         </div>
       ) : null}
 
       {loadError ? (
-        <div className="adminCard" style={{ border: "1px solid rgba(220, 53, 69, .35)" }}>
-          <div style={{ fontWeight: 900 }}>Could not load reports</div>
-          <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+        <div className="adminCard border border-danger">
+          <div className="font-black">Could not load reports</div>
+          <div className="muted text-xs mt-1.5">
             {loadError}
           </div>
         </div>
       ) : null}
 
       {error ? (
-        <div className="adminCard" style={{ borderColor: "rgba(180,0,0,0.25)", background: "rgba(180,0,0,0.05)" }}>
+        <div className="adminCard border-danger bg-danger-tint">
           <strong>Couldn&apos;t complete that action.</strong>
-          <div style={{ marginTop: 6 }}>{error}</div>
+          <div className="mt-1.5">{error}</div>
         </div>
       ) : null}
 
@@ -299,11 +299,11 @@ export default async function Page(
                       </form>
 
                       {r.source === "share_report" ? (
-                      <div style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
-                        <div className="muted" style={{ fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
+                      <div className="border-t border-line pt-2.5">
+                        <div className="muted text-xs font-extrabold mb-2">
                           Share-link moderation
                         </div>
-                        <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
+                        <div className="muted text-xs mb-2">
                           Policy: The platform shows a warning after the first report and auto-blocks at{' '}
                           <strong>3 distinct reports in 24h</strong> (or <strong>2</strong> for scam/phishing).
                         </div>
@@ -345,8 +345,8 @@ export default async function Page(
                     ) : null}
 
                     {r.target_user_id ? (
-                      <div style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
-                        <div className="muted" style={{ fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
+                      <div className="border-t border-line pt-2.5">
+                        <div className="muted text-xs font-extrabold mb-2">
                           Enforcement
                         </div>
                         <div className="adminActions">

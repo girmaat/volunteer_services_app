@@ -1,7 +1,7 @@
 import styles from "./page.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const metadata = { title: "Terms of service" };
+export const metadata = { title: "Terms of service", alternates: { canonical: "/terms" } };
 
 export const revalidate = 300;
 

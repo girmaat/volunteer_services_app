@@ -59,7 +59,7 @@ export default async function Page(
           <div className={styles.success}>
             If an account exists for that email, a reset link has been sent.
             {resetUrl ? (
-              <div className={styles.meta} style={{ marginTop: 12 }}>
+              <div className={`${styles.meta} mt-3`}>
                 Development only — reset link: <a href={resetUrl}>{resetUrl}</a>
               </div>
             ) : null}

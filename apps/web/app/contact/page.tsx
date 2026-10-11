@@ -2,7 +2,7 @@ import { forwardHeaders } from "../../lib/forward";
 import styles from "./page.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const metadata = { title: "Contact us" };
+export const metadata = { title: "Contact us", alternates: { canonical: "/contact" } };
 
 export const revalidate = 300;
 

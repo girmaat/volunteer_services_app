@@ -73,14 +73,14 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   return (
     <div className={styles.mainFull}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Incident</h1>
+      <div className="flex justify-between items-baseline gap-3 flex-wrap">
+        <h1 className="m-0">Incident</h1>
         <Link className={styles.smallLink} href="/org/incidents">
           Back to incidents
         </Link>
       </div>
 
-      <div className={styles.card} style={{ marginTop: 12 }}>
+      <div className={`${styles.card} mt-3`}>
         <div className={styles.meta}>
           <div>Created: {new Date(incident.created_at).toLocaleString()}</div>
           <div>Updated: {new Date(incident.updated_at).toLocaleString()}</div>
@@ -92,7 +92,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           {incident.volunteer_user_id ? <div>Volunteer: {incident.volunteer_display_name || incident.volunteer_email || incident.volunteer_user_id}</div> : null}
         </div>
 
-        <form action={updateIncident} style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <form className="mt-3 grid grid-cols-2 gap-3" action={updateIncident}>
           <input type="hidden" name="id" value={incident.id} />
 
           <div>
@@ -115,22 +115,22 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
             </select>
           </div>
 
-          <div style={{ gridColumn: "1 / -1" }}>
+          <div className="col-span-full">
             <label className={styles.label}>Title</label>
             <input className={styles.input} name="title" defaultValue={incident.title} required minLength={2} />
           </div>
 
-          <div style={{ gridColumn: "1 / -1" }}>
+          <div className="col-span-full">
             <label className={styles.label}>Description</label>
             <textarea className={styles.textarea} name="description" defaultValue={incident.description} rows={6} required minLength={5} />
           </div>
 
-          <div style={{ gridColumn: "1 / -1" }}>
+          <div className="col-span-full">
             <label className={styles.label}>Internal notes (org-only)</label>
             <textarea className={styles.textarea} name="internal_notes" defaultValue={incident.internal_notes || ""} rows={5} />
           </div>
 
-          <div style={{ gridColumn: "1 / -1" }}>
+          <div className="col-span-full">
             <label className={styles.label}>Outcome</label>
             <textarea className={styles.textarea} name="outcome" defaultValue={incident.outcome || ""} rows={4} />
           </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "../../lib/cn";
+import { Avatar } from "../ui/Controls";
 import type { ConversationListItem } from "../../lib/inbox/types";
 
 const when = (iso: string | null) => {
@@ -18,8 +19,10 @@ export default function ConversationList({ items, activeId }: { items: Conversat
           <Link
             href={`/inbox/${c.id}`}
             aria-current={c.id === activeId ? "page" : undefined}
-            className={cn("block px-3 py-3 text-ink no-underline hover:bg-[var(--muted-bg)] hover:text-ink", c.id === activeId && "bg-primary-tint")}
+            className={cn("flex gap-3 px-3 py-3 text-ink no-underline hover:bg-[var(--muted-bg)] hover:text-ink", c.id === activeId && "bg-primary-tint")}
           >
+            <Avatar name={c.with_name || "?"} src={c.with_avatar_url} size={36} className="mt-0.5" />
+            <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
               <span className={cn("truncate", c.unread ? "font-semibold" : "font-medium")}>{c.with_name}</span>
               <span className="shrink-0 text-xs text-muted">{when(c.last_message_at)}</span>
@@ -35,6 +38,7 @@ export default function ConversationList({ items, activeId }: { items: Conversat
               ) : null}
               {c.status !== "active" ? <span className="ml-auto shrink-0 text-xs">{c.status === "ended" ? "Ended" : "Archived"}</span> : null}
             </p>
+            </div>
           </Link>
         </li>
       ))}

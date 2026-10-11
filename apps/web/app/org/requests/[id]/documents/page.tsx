@@ -65,18 +65,18 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   return (
     <div className={styles.mainFull}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Documents</h1>
+      <div className="flex justify-between items-baseline gap-3 flex-wrap">
+        <h1 className="m-0">Documents</h1>
         <Link className={styles.smallLink} href={`/org/requests/${params.id}`}>
           Back to request
         </Link>
       </div>
 
-      <p className={styles.meta} style={{ marginTop: 8 }}>
+      <p className={`${styles.meta} mt-2`}>
         Request: <strong>{request.title}</strong>
       </p>
 
-      <div className={styles.card} style={{ marginTop: 12 }}>
+      <div className={`${styles.card} mt-3`}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -109,7 +109,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                   <td>{d.require_ack ? "Yes" : "No"}</td>
                   <td>{d.ack_count ?? 0}</td>
                   <td>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                    <div className="flex gap-2.5 flex-wrap items-center">
                       <Link className={styles.smallLink} href={`/org/documents/${d.id}/download`}>
                         Download
                       </Link>

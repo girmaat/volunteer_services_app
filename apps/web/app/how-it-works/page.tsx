@@ -1,7 +1,7 @@
 import styles from "./page.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const metadata = { title: "How it works" };
+export const metadata = { title: "How it works", alternates: { canonical: "/how-it-works" } };
 
 export const revalidate = 300;
 

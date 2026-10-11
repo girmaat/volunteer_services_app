@@ -85,9 +85,9 @@ export default async function Page(
 
   return (
     <div className={styles.mainFull}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Attendance</h1>
-        <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+      <div className="flex justify-between items-baseline gap-3 flex-wrap">
+        <h1 className="m-0">Attendance</h1>
+        <div className="flex gap-3 items-baseline">
           <span className={styles.meta}>Open check-ins: {openCount}</span>
           <span className={styles.meta}>Total hours: {totalHours}</span>
           <Link className={styles.smallLink} href={`/org/attendance/export?${exportQs.toString()}`}>
@@ -96,7 +96,7 @@ export default async function Page(
         </div>
       </div>
 
-      <form className={styles.card} style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr auto", gap: 10, alignItems: "end" }}>
+      <form className={`${styles.card} mt-3 grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-2.5 items-end`}>
         <div>
           <label className={styles.label}>Request</label>
           <select className={styles.select} name="requestId" defaultValue={requestId}>
@@ -140,7 +140,7 @@ export default async function Page(
         </div>
       </form>
 
-      <div className={styles.card} style={{ marginTop: 12 }}>
+      <div className={`${styles.card} mt-3`}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -166,9 +166,9 @@ export default async function Page(
                     <Link href={`/org/requests/${r.request_id}`}>{r.request_title}</Link>
                   </td>
                   <td>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div className="flex flex-col">
                       <span>{r.volunteer_display_name || r.volunteer_email || r.volunteer_user_id}</span>
-                      <span className={styles.muted} style={{ fontSize: 12 }}>
+                      <span className={`${styles.muted} text-xs`}>
                         {r.volunteer_user_id}
                       </span>
                     </div>
@@ -176,7 +176,7 @@ export default async function Page(
                   <td>{new Date(r.check_in_at).toLocaleString()}</td>
                   <td>{r.check_out_at ? new Date(r.check_out_at).toLocaleString() : <span className={styles.badge}>OPEN</span>}</td>
                   <td>{typeof r.hours === "number" ? r.hours.toFixed(2) : ""}</td>
-                  <td style={{ maxWidth: 320 }}>{r.notes || ""}</td>
+                  <td className="max-w-[320px]">{r.notes || ""}</td>
                 </tr>
               ))
             )}

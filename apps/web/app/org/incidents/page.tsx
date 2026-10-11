@@ -70,7 +70,7 @@ async function createIncident(formData: FormData) {
 }
 
 function sevBadge(sev: string) {
-  if (sev === "critical") return <span className={styles.badge} style={{ borderColor: "var(--danger)" }}>CRITICAL</span>;
+  if (sev === "critical") return <span className={`${styles.badge} border-danger`}>CRITICAL</span>;
   if (sev === "high") return <span className={styles.badge}>HIGH</span>;
   if (sev === "medium") return <span className={styles.badge}>MED</span>;
   return <span className={styles.badge}>LOW</span>;
@@ -96,15 +96,15 @@ export default async function Page(
 
   return (
     <div className={styles.mainFull}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Incidents</h1>
+      <div className="flex justify-between items-baseline gap-3 flex-wrap">
+        <h1 className="m-0">Incidents</h1>
         <span className={styles.meta}>Total: {incidents.length}</span>
       </div>
 
-      <div className={styles.card} style={{ marginTop: 12 }}>
-        <h2 style={{ marginTop: 0 }}>Create incident report</h2>
-        <form action={createIncident} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <div style={{ gridColumn: "1 / -1" }}>
+      <div className={`${styles.card} mt-3`}>
+        <h2 className="mt-0">Create incident report</h2>
+        <form className="grid grid-cols-2 gap-3" action={createIncident}>
+          <div className="col-span-full">
             <label className={styles.label}>Request (optional)</label>
             <select className={styles.select} name="request_id" defaultValue="">
               <option value="">(none)</option>
@@ -131,7 +131,7 @@ export default async function Page(
             <input className={styles.input} name="title" placeholder="Short summary" required minLength={2} />
           </div>
 
-          <div style={{ gridColumn: "1 / -1" }}>
+          <div className="col-span-full">
             <label className={styles.label}>Description</label>
             <textarea className={styles.textarea} name="description" placeholder="What happened?" required minLength={5} rows={5} />
           </div>
@@ -144,7 +144,7 @@ export default async function Page(
         </form>
       </div>
 
-      <form className={styles.card} style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr 1fr 2fr auto", gap: 10, alignItems: "end" }}>
+      <form className={`${styles.card} mt-3 grid grid-cols-[1fr_1fr_1fr_2fr_auto] gap-2.5 items-end`}>
         <div>
           <label className={styles.label}>Status</label>
           <select className={styles.select} name="status" defaultValue={status}>
@@ -191,7 +191,7 @@ export default async function Page(
         </div>
       </form>
 
-      <div className={styles.card} style={{ marginTop: 12 }}>
+      <div className={`${styles.card} mt-3`}>
         <table className={styles.table}>
           <thead>
             <tr>

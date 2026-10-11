@@ -76,62 +76,59 @@ export default async function Page(
         </div>
       ) : null}
 
-      <form action={saveSettings} style={{ marginTop: "0.75rem" } as any}>
+      <form className="mt-3" action={saveSettings}>
         <div className={styles.tile}>
           <h3 className={styles.tileTitle}>Public profile visibility</h3>
           <p className={styles.tileBody}>
             When off, your public profile link will show as unavailable to others.
           </p>
 
-          <label className={styles.label} style={{ display: "flex", alignItems: "center", gap: "0.6rem" } as any}>
+          <label className={`${styles.label} flex items-center gap-2.5`}>
             <input type="checkbox" name="public_profile_visible" defaultChecked={!!settings.public_profile_visible} />
             Public profile is visible
           </label>
 
-          <p className={styles.small} style={{ marginTop: "0.5rem" } as any}>
+          <p className={`${styles.small} mt-2`}>
             Your public profile link:{" "}
             <code>{user.role === "volunteer" ? `/volunteers/${user.id}` : user.role === "requester" ? `/requesters/${user.id}` : ""}</code>
           </p>
         </div>
 
-        <div className={styles.tile} style={{ marginTop: "0.9rem" } as any}>
+        <div className={`${styles.tile} mt-3.5`}>
           <h3 className={styles.tileTitle}>Messaging permissions</h3>
           <p className={styles.tileBody}>
             Choose who can send you direct messages. This is enforced at the API level.
           </p>
 
-          <div className={styles.row} style={{ marginTop: "0.6rem" } as any}>
-            <label className={styles.label} style={{ fontWeight: 600 } as any}>
-              <input
+          <div className={`${styles.row} mt-2.5`}>
+            <label className={`${styles.label} font-semibold`}>
+              <input className="mr-1.5"
                 type="radio"
                 name="messaging_permission"
                 value="anyone"
-                defaultChecked={settings.messaging_permission === "anyone"}
-                style={{ marginRight: "0.4rem" } as any}
+                defaultChecked={settings.messaging_permission === "anyone"} 
               />
               Anyone
               <div className={styles.small}>Any logged-in user can message you (unless blocked).</div>
             </label>
 
-            <label className={styles.label} style={{ fontWeight: 600 } as any}>
-              <input
+            <label className={`${styles.label} font-semibold`}>
+              <input className="mr-1.5"
                 type="radio"
                 name="messaging_permission"
                 value="verified_only"
-                defaultChecked={settings.messaging_permission === "verified_only"}
-                style={{ marginRight: "0.4rem" } as any}
+                defaultChecked={settings.messaging_permission === "verified_only"} 
               />
               Verified users only
               <div className={styles.small}>Only users with a verified email can message you.</div>
             </label>
 
-            <label className={styles.label} style={{ fontWeight: 600 } as any}>
-              <input
+            <label className={`${styles.label} font-semibold`}>
+              <input className="mr-1.5"
                 type="radio"
                 name="messaging_permission"
                 value="no_one"
-                defaultChecked={settings.messaging_permission === "no_one"}
-                style={{ marginRight: "0.4rem" } as any}
+                defaultChecked={settings.messaging_permission === "no_one"} 
               />
               No one
               <div className={styles.small}>No one can start or continue a conversation with you.</div>
@@ -139,7 +136,7 @@ export default async function Page(
           </div>
         </div>
 
-        <div className={styles.row} style={{ marginTop: "0.9rem" } as any}>
+        <div className={`${styles.row} mt-3.5`}>
           <button className={styles.button} type="submit">
             Save changes
           </button>

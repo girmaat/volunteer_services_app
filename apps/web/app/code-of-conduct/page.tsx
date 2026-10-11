@@ -1,7 +1,7 @@
 import styles from "./page.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const metadata = { title: "Code of conduct" };
+export const metadata = { title: "Code of conduct", alternates: { canonical: "/code-of-conduct" } };
 
 export const revalidate = 300;
 

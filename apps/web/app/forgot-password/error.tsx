@@ -13,7 +13,7 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
 
       <div className={styles.card}>
         <div className={styles.error}>{error.message}</div>
-        <div className={styles.buttonRow} style={{ marginTop: "0.8rem" }}>
+        <div className={`${styles.buttonRow} mt-3`}>
           <button className={styles.button} onClick={() => reset()}>Try again</button>
           <Link className={styles.meta} href="/forgot-password">Back</Link>
         </div>

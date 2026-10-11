@@ -85,7 +85,7 @@ export default async function Page() {
                 <div key={b.id} className={styles.card}>
                   <div className={styles.row}>
                     <div>
-                      <div style={{ fontWeight: 800 }}>{b.title}</div>
+                      <div className="font-extrabold">{b.title}</div>
                       <div className={styles.meta}>{b.description}</div>
                     </div>
                     <div className={styles.badges}>
@@ -94,7 +94,7 @@ export default async function Page() {
                     </div>
                   </div>
 
-                  <div className={styles.meta} style={{ marginTop: "0.75rem" }}>
+                  <div className={`${styles.meta} mt-3`}>
                     {b.earned_at ? `Earned on ${new Date(b.earned_at).toLocaleDateString()}` : formatProgress(b)}
                   </div>
                 </div>

@@ -69,10 +69,10 @@ export default async function Page(
 
   return (
     <div className="adminGrid">
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+      <header className="flex justify-between gap-3 flex-wrap items-baseline">
         <div>
-          <h1 style={{ margin: 0 }}>User verification</h1>
-          <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+          <h1 className="m-0">User verification</h1>
+          <p className="muted mt-1.5 mb-0">
             Review submitted identity documents.
           </p>
         </div>
@@ -80,29 +80,29 @@ export default async function Page(
       </header>
 
       {ok ? (
-        <div className="adminCard" style={{ borderColor: "rgba(0,120,0,0.25)", background: "rgba(0,120,0,0.05)" }}>
+        <div className="adminCard border-success bg-success-tint">
           <strong>Saved.</strong>
         </div>
       ) : null}
       {error ? (
-        <div className="adminCard" style={{ borderColor: "rgba(180,0,0,0.25)", background: "rgba(180,0,0,0.05)" }}>
+        <div className="adminCard border-danger bg-danger-tint">
           <strong>Couldn&apos;t complete that action.</strong>
-          <div style={{ marginTop: 6 }}>{error}</div>
+          <div className="mt-1.5">{error}</div>
         </div>
       ) : null}
 
       <div className="adminCard">
-        <div style={{ fontWeight: 900 }}>{user.display_name || user.email}</div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{user.email}</div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Status: {user.verification_status}</div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Submitted: {user.verification_submitted_at ? new Date(user.verification_submitted_at).toLocaleString() : "—"}</div>
-        {user.verification_notes ? <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>Last notes: {user.verification_notes}</div> : null}
+        <div className="font-black">{user.display_name || user.email}</div>
+        <div className="muted text-xs mt-1">{user.email}</div>
+        <div className="muted text-xs mt-1">Status: {user.verification_status}</div>
+        <div className="muted text-xs mt-1">Submitted: {user.verification_submitted_at ? new Date(user.verification_submitted_at).toLocaleString() : "—"}</div>
+        {user.verification_notes ? <div className="muted text-xs mt-2">Last notes: {user.verification_notes}</div> : null}
       </div>
 
       <div className="adminCard">
-        <div style={{ fontWeight: 900 }}>Documents</div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{docs.length} uploaded</div>
-        <table className="table" style={{ marginTop: 10 }}>
+        <div className="font-black">Documents</div>
+        <div className="muted text-xs mt-1">{docs.length} uploaded</div>
+        <table className="table mt-2.5">
           <thead>
             <tr>
               <th>File</th>
@@ -114,10 +114,10 @@ export default async function Page(
             {docs.map((d) => (
               <tr key={d.id}>
                 <td>
-                  <div style={{ fontWeight: 800 }}>{d.file_name}</div>
-                  <div className="muted" style={{ fontSize: 12 }}>{d.mime_type}</div>
+                  <div className="font-extrabold">{d.file_name}</div>
+                  <div className="muted text-xs">{d.mime_type}</div>
                 </td>
-                <td className="muted" style={{ fontSize: 12 }}>{new Date(d.uploaded_at).toLocaleString()}</td>
+                <td className="muted text-xs">{new Date(d.uploaded_at).toLocaleString()}</td>
                 <td>
                   <a className="btn" href={`/admin/verification/documents/${encodeURIComponent(d.id)}/download`}>Download</a>
                 </td>
@@ -128,14 +128,14 @@ export default async function Page(
       </div>
 
       <div className="adminCard">
-        <div style={{ fontWeight: 900 }}>Decision</div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Your notes are stored on the user record.</div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10, alignItems: "flex-start" }}>
-          <form action={approve} style={{ display: "grid", gap: 8, minWidth: 320 }}>
+        <div className="font-black">Decision</div>
+        <div className="muted text-xs mt-1">Your notes are stored on the user record.</div>
+        <div className="flex gap-2.5 flex-wrap mt-2.5 items-start">
+          <form className="grid gap-2 min-w-[320px]" action={approve}>
             <textarea className="input" name="notes" aria-label="Notes" rows={3} placeholder="Approval notes (optional)" />
             <button className="btn" type="submit">Approve</button>
           </form>
-          <form action={reject} style={{ display: "grid", gap: 8, minWidth: 320 }}>
+          <form className="grid gap-2 min-w-[320px]" action={reject}>
             <textarea className="input" name="notes" aria-label="Notes" rows={3} placeholder="Rejection reason / next steps" />
             <button className="btn btnDanger" type="submit">Reject</button>
           </form>

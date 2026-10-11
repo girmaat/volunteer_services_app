@@ -2,7 +2,7 @@ import styles from "./page.module.css";
 import Link from "next/link";
 import { listPublicOpportunities } from "../../lib/public-api";
 
-export const metadata = { title: "Ideas for helping" };
+export const metadata = { title: "Ideas for helping", alternates: { canonical: "/examples" } };
 
 export const revalidate = 60;
 

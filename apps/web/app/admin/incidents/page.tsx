@@ -82,15 +82,15 @@ export default async function Page(
 
   return (
     <div className="adminGrid">
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+      <header className="flex justify-between gap-3 flex-wrap items-baseline">
         <div>
-          <h1 style={{ margin: 0 }}>Incident review</h1>
-          <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+          <h1 className="m-0">Incident review</h1>
+          <p className="muted mt-1.5 mb-0">
             Review organization incident reports and record outcomes.
           </p>
         </div>
 
-        <form method="get" action="/admin/incidents" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <form className="flex gap-2 items-center flex-wrap" method="get" action="/admin/incidents">
           <select className="input" name="status" aria-label="Status" defaultValue={status || ""}>
             <option value="">Any status</option>
             <option value="open">Open</option>
@@ -110,21 +110,21 @@ export default async function Page(
       </header>
 
       {ok ? (
-        <div className="adminCard" style={{ borderColor: "rgba(0,120,0,0.25)", background: "rgba(0,120,0,0.05)" }}>
+        <div className="adminCard border-success bg-success-tint">
           <strong>Saved.</strong>
         </div>
       ) : null}
       {error ? (
-        <div className="adminCard" style={{ borderColor: "rgba(180,0,0,0.25)", background: "rgba(180,0,0,0.05)" }}>
+        <div className="adminCard border-danger bg-danger-tint">
           <strong>Couldn&apos;t complete that action.</strong>
-          <div style={{ marginTop: 6 }}>{error}</div>
+          <div className="mt-1.5">{error}</div>
         </div>
       ) : null}
 
       {rows.length === 0 ? (
         <div className="adminCard">
-          <div style={{ fontWeight: 900 }}>No incident reports found</div>
-          <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+          <div className="font-black">No incident reports found</div>
+          <p className="muted mt-1.5 mb-0">
             There are no incidents matching your current filters.
             {status || severity ? " Try clearing filters to see everything." : ""}
           </p>
@@ -133,24 +133,24 @@ export default async function Page(
 
       {rows.map((i) => (
         <div key={i.id} className="adminCard">
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <div style={{ minWidth: 360, flex: 1 }}>
-              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                <div style={{ fontWeight: 900 }}>{i.title}</div>
+          <div className="flex justify-between gap-3 flex-wrap">
+            <div className="min-w-[360px] flex-1">
+              <div className="flex gap-2.5 items-center flex-wrap">
+                <div className="font-black">{i.title}</div>
                 {sevBadge(i.severity)}
                 <span className="badge">{i.status}</span>
               </div>
-              <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+              <div className="muted text-xs mt-1.5">
                 Org: <strong>{i.org_name || i.org_slug}</strong>
                 {i.request_title ? ` · Request: ${i.request_title}` : ""}
                 {i.volunteer_email ? ` · Volunteer: ${i.volunteer_email}` : ""}
               </div>
-              <div style={{ marginTop: 10, whiteSpace: "pre-wrap" }}>{i.description}</div>
-              <div className="muted" style={{ fontSize: 12, marginTop: 10 }}>{new Date(i.created_at).toLocaleString()}</div>
+              <div className="mt-2.5 whitespace-pre-wrap">{i.description}</div>
+              <div className="muted text-xs mt-2.5">{new Date(i.created_at).toLocaleString()}</div>
             </div>
 
-            <div style={{ minWidth: 320 }}>
-              <form action={updateIncident} style={{ display: "grid", gap: 8 }}>
+            <div className="min-w-[320px]">
+              <form className="grid gap-2" action={updateIncident}>
                 <input type="hidden" name="id" value={i.id} />
                 <select className="input" name="status" aria-label="Status" defaultValue={i.status}>
                   <option value="open">Open</option>

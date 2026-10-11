@@ -15,7 +15,9 @@ export const metadata: Metadata = {
   title: { default: "ThankYou — volunteer with neighbors and nonprofits", template: "%s · ThankYou" },
   description: "Find in-person and remote volunteer opportunities, ask neighbors for help, and track the difference you make.",
   icons: { icon: "/brand/favicon.svg" },
-  openGraph: { type: "website", siteName: "ThankYou", images: ["/brand/logo.svg"] }
+  // The default share image is app/opengraph-image.tsx (PNG, 1200×630).
+  openGraph: { type: "website", siteName: "ThankYou" },
+  twitter: { card: "summary_large_image" }
 };
 
 export const viewport: Viewport = { themeColor: "#0f6e66", width: "device-width", initialScale: 1 };

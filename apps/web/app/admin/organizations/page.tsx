@@ -89,18 +89,18 @@ export default async function Page(
 
   return (
     <div className="adminGrid">
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+      <header className="flex justify-between gap-3 flex-wrap items-baseline">
         <div>
-          <h1 style={{ margin: 0 }}>Organization management</h1>
-          <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+          <h1 className="m-0">Organization management</h1>
+          <p className="muted mt-1.5 mb-0">
             Review organizations and manage verification requirements.
           </p>
         </div>
 
-        <form method="get" action="/admin/organizations" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <input className="input" name="q" aria-label="Q" placeholder="Search slug, name, or contact email" defaultValue={q} style={{ width: 260 }} />
+        <form className="flex gap-2 items-center flex-wrap" method="get" action="/admin/organizations">
+          <input className="input w-[260px]" name="q" aria-label="Q" placeholder="Search slug, name, or contact email" defaultValue={q} />
 
-          <select className="input" name="status" aria-label="Status" defaultValue={status} style={{ width: 180 }}>
+          <select className="input w-[180px]" name="status" aria-label="Status" defaultValue={status}>
             <option value="all">All statuses</option>
             <option value="needs_review">Needs review</option>
             <option value="approved">Approved</option>
@@ -110,13 +110,13 @@ export default async function Page(
             <option value="not_required">Not required</option>
           </select>
 
-          <select className="input" name="required" aria-label="Required" defaultValue={required} style={{ width: 160 }}>
+          <select className="input w-[160px]" name="required" aria-label="Required" defaultValue={required}>
             <option value="">Verification required?</option>
             <option value="1">Required = Yes</option>
             <option value="0">Required = No</option>
           </select>
 
-          <select className="input" name="sort" aria-label="Sort" defaultValue={sort} style={{ width: 200 }}>
+          <select className="input w-[200px]" name="sort" aria-label="Sort" defaultValue={sort}>
             <option value="updated_at">Sort: Last update</option>
             <option value="name">Sort: Name</option>
             <option value="members_count">Sort: Members</option>
@@ -124,7 +124,7 @@ export default async function Page(
             <option value="verification_submitted_at">Sort: Submitted date</option>
           </select>
 
-          <select className="input" name="dir" aria-label="Dir" defaultValue={dir} style={{ width: 120 }}>
+          <select className="input w-[120px]" name="dir" aria-label="Dir" defaultValue={dir}>
             <option value="desc">Desc</option>
             <option value="asc">Asc</option>
           </select>
@@ -135,14 +135,14 @@ export default async function Page(
       </header>
 
       {ok ? (
-        <div className="adminCard" style={{ borderColor: "rgba(0,120,0,0.25)", background: "rgba(0,120,0,0.05)" }}>
+        <div className="adminCard border-success bg-success-tint">
           <strong>Saved.</strong>
         </div>
       ) : null}
       {error ? (
-        <div className="adminCard" style={{ borderColor: "rgba(180,0,0,0.25)", background: "rgba(180,0,0,0.05)" }}>
+        <div className="adminCard border-danger bg-danger-tint">
           <strong>Couldn&apos;t complete that action.</strong>
-          <div style={{ marginTop: 6 }}>{error}</div>
+          <div className="mt-1.5">{error}</div>
         </div>
       ) : null}
 
@@ -161,16 +161,16 @@ export default async function Page(
             {orgs.map((o) => (
               <tr key={o.slug}>
                 <td>
-                  <div style={{ fontWeight: 900 }}>{o.name}</div>
-                  <div className="muted" style={{ fontSize: 12 }}>slug: <code>{o.slug}</code></div>
-                  <div className="muted" style={{ fontSize: 12 }}>{o.contact_email || "No contact email"}</div>
+                  <div className="font-black">{o.name}</div>
+                  <div className="muted text-xs">slug: <code>{o.slug}</code></div>
+                  <div className="muted text-xs">{o.contact_email || "No contact email"}</div>
                 </td>
-                <td className="muted" style={{ fontSize: 12 }}>{o.members_count}</td>
+                <td className="muted text-xs">{o.members_count}</td>
                 <td>
                   {orgBadge(o)}
-                  {o.verification_submitted_at ? <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Submitted {new Date(o.verification_submitted_at).toLocaleDateString()}</div> : null}
+                  {o.verification_submitted_at ? <div className="muted text-xs mt-1">Submitted {new Date(o.verification_submitted_at).toLocaleDateString()}</div> : null}
                 </td>
-                <td className="muted" style={{ fontSize: 12 }}>{new Date(o.updated_at).toLocaleString()}</td>
+                <td className="muted text-xs">{new Date(o.updated_at).toLocaleString()}</td>
                 <td>
                   <div className="adminActions">
                     <form action={toggleVerificationRequired}>

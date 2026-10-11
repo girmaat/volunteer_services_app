@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SlidersHorizontal } from "lucide-react";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 import { backendFetch } from "../../app/lib/backend";
 import OpportunityRow, { type OpportunitySummary } from "./OpportunityRow";
@@ -100,6 +101,10 @@ export default async function FindOpportunities({
     return s ? `${basePath}?${s}` : basePath;
   };
   const filtered = Boolean(q || category || mode || verified || org || radius || when);
+  const activeFilters = [category, mode, verified ? "1" : "", radius, when].filter(Boolean).length;
+  // Phones: the extra filters fold behind a "Filters" link so results come first. It's a link
+  // (?filters=open), not a script toggle, so it works without JavaScript.
+  const filtersOpen = one(sp.filters) === "open";
   const viewerTz = data?.viewer?.timezone ?? null;
 
   return (
@@ -113,6 +118,17 @@ export default async function FindOpportunities({
             </label>
             <input id="opp-q" name="q" defaultValue={q} placeholder="Tutoring, food bank…" className="h-11 rounded border border-line-strong bg-surface px-3" />
           </div>
+          <Link
+            href={filtersOpen ? keep({}) : keep({ filters: "open" })}
+            className={buttonClass("secondary", "md", "lg:hidden")}
+            aria-expanded={filtersOpen}
+            aria-controls="opp-filters"
+            scroll={false}
+          >
+            <SlidersHorizontal aria-hidden className="h-4 w-4" />
+            {filtersOpen ? "Hide filters" : activeFilters ? `Filters (${activeFilters})` : "Filters"}
+          </Link>
+          <div id="opp-filters" className={filtersOpen ? "grid gap-5" : "hidden gap-5 lg:grid"}>
           <div className="grid gap-1.5">
             <label htmlFor="opp-cat" className="text-sm font-medium">
               Category
@@ -166,6 +182,7 @@ export default async function FindOpportunities({
             <input type="checkbox" name="verified" value="1" defaultChecked={verified} className="h-4 w-4 accent-[var(--primary)]" />
             Verified organizations only
           </label>
+          </div>
           {org ? <input type="hidden" name="org" value={org} /> : null}
           <div className="flex gap-2">
             <button type="submit" className={buttonClass("primary", "md", "flex-1")}>

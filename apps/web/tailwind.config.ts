@@ -14,6 +14,7 @@ const config: Config = {
         ink: "var(--ink)",
         paper: "var(--paper)",
         surface: "var(--surface)",
+        wash: "var(--muted-bg)",
         line: { DEFAULT: "var(--line)", strong: "var(--line-strong)" },
         muted: "var(--muted)",
         primary: { DEFAULT: "var(--primary)", hover: "var(--primary-hover)", tint: "var(--primary-tint)", ink: "var(--primary-ink)" },

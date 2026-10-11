@@ -102,11 +102,11 @@ export default async function Page() {
           </label>
 
           <div className={styles.row}>
-            <label className={styles.label} style={{ flex: 1 }}>
+            <label className={`${styles.label} flex-1`}>
               Quantity (optional)
               <input name="quantity" type="number" step="0.01" className={styles.input} />
             </label>
-            <label className={styles.label} style={{ flex: 1 }}>
+            <label className={`${styles.label} flex-1`}>
               Unit (optional)
               <input name="unit" className={styles.input} placeholder="documents, hours, people…" />
             </label>

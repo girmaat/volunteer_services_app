@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Lock } from "lucide-react";
 import { requestAction, deleteDraft } from "../../app/_requests/actions";
-import { Button, ButtonLink, Card, Notice, PageHeader, StatusPill } from "../ui";
+import { Button, ButtonLink, Card, Notice, PageHeader, StatusPill, Toast } from "../ui";
 import { STATUS_HELP, type Category, type OwnerRequest } from "../../lib/requests";
 import { describeRrule, formatInZone } from "../../lib/time";
 
@@ -77,11 +77,7 @@ export default function OwnerRequestView({
           </>
         }
       />
-      {flash && FLASH[flash] ? (
-        <div className="mb-5">
-          <Notice tone="success">{FLASH[flash]}</Notice>
-        </div>
-      ) : null}
+      {flash && FLASH[flash] ? <Toast message={FLASH[flash]} /> : null}
       {error ? (
         <div className="mb-5">
           <Notice tone="danger">{error}</Notice>

@@ -63,8 +63,8 @@ async function fetchJson<T>(path: string): Promise<FetchResult<T>> {
 function Stat({ label, value }: { label: string; value: any }) {
   return (
     <div className="adminCard">
-      <div className="muted" style={{ fontSize: 12 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 900, marginTop: 6 }}>{String(value ?? "—")}</div>
+      <div className="muted text-xs">{label}</div>
+      <div className="text-xl font-black mt-1.5">{String(value ?? "—")}</div>
     </div>
   );
 }
@@ -106,23 +106,23 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
   return (
     <div className="adminGrid">
       <header>
-        <h1 style={{ margin: 0 }}>Admin dashboard</h1>
-        <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>Platform health + moderation queues.</p>
+        <h1 className="m-0">Admin dashboard</h1>
+        <p className="muted mt-1.5 mb-0">Platform health + moderation queues.</p>
       </header>
 
       {loadErrors.length ? (
-        <div className="adminCard" style={{ border: "1px solid rgba(220, 53, 69, .35)" }}>
-          <div style={{ fontWeight: 900 }}>Admin data unavailable</div>
-          <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+        <div className="adminCard border border-danger">
+          <div className="font-black">Admin data unavailable</div>
+          <div className="muted text-xs mt-1.5">
             Some admin endpoints failed to load: {loadErrors.join(", ")}. This page is still usable, but data may be incomplete.
           </div>
         </div>
       ) : null}
 
       <div className="adminCard">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 }}>
+        <div className="flex justify-between items-baseline flex-wrap gap-2.5">
           <div>
-            <div style={{ fontWeight: 900, display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="font-black flex items-center gap-2.5">
               Maintenance mode
               {settings.maintenance.enabled ? (
                 <span className="badge badgeBad">Enabled</span>
@@ -130,7 +130,7 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
                 <span className="badge badgeOk">Disabled</span>
               )}
             </div>
-            <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+            <div className="muted text-xs mt-1">
               When enabled, all non-admin users are redirected to <code>/maintenance</code>.
               {settings.maintenance.updated_at ? ` Last updated: ${new Date(settings.maintenance.updated_at).toLocaleString()}.` : ""}
             </div>
@@ -140,7 +140,7 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
           {searchParams?.error ? <span className="badge badgeBad">{searchParams.error}</span> : null}
         </div>
 
-        <form
+        <form className="mt-3 grid gap-2.5"
           action={async (formData: FormData) => {
             "use server";
             const enabled = formData.get("enabled") === "on";
@@ -157,20 +157,19 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
             }
             revalidatePath("/admin");
             redirect("/admin?ok=maintenance");
-          }}
-          style={{ marginTop: 12, display: "grid", gap: 10 }}
+          }} 
         >
-          <fieldset disabled={maintenanceFormDisabled} style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 10 }}>
+          <fieldset className="border-0 p-0 m-0 grid gap-2.5" disabled={maintenanceFormDisabled}>
             <label className="switchRow">
               <input type="checkbox" name="enabled" aria-label="Enabled" defaultChecked={settings.maintenance.enabled} />
               <span>
-                <div style={{ fontWeight: 800 }}>Enable maintenance mode</div>
-                <div className="muted" style={{ fontSize: 12 }}>Redirect visitors to a maintenance notice.</div>
+                <div className="font-extrabold">Enable maintenance mode</div>
+                <div className="muted text-xs">Redirect visitors to a maintenance notice.</div>
               </span>
             </label>
 
-            <div style={{ display: "grid", gap: 6 }}>
-              <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>Maintenance message (optional)</div>
+            <div className="grid gap-1.5">
+              <div className="muted text-xs font-bold">Maintenance message (optional)</div>
               <textarea
                 className="textarea"
                 name="message" aria-label="Message"
@@ -196,7 +195,7 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
                 }}>Disable now</button>
               ) : null}
               {maintenanceFormDisabled ? (
-                <span className="muted" style={{ fontSize: 12, alignSelf: "center" }}>Maintenance controls unavailable until platform settings load.</span>
+                <span className="muted text-xs self-center">Maintenance controls unavailable until platform settings load.</span>
               ) : null}
             </div>
           </fieldset>
@@ -204,9 +203,9 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
       </div>
 
       <div className="adminCard">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 }}>
+        <div className="flex justify-between items-baseline flex-wrap gap-2.5">
           <div>
-            <div style={{ fontWeight: 900, display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="font-black flex items-center gap-2.5">
               Database &amp; migrations
               {dbStatus.owner_mismatches?.length ? (
                 <span className="badge badgeBad">Ownership mismatch</span>
@@ -214,7 +213,7 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
                 <span className="badge badgeOk">OK</span>
               )}
             </div>
-            <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+            <div className="muted text-xs mt-1">
               Runtime DB user: <code>{dbStatus.db_user || "—"}</code>. Pending migrations:{" "}
               {(dbStatus as any).pending_migrations?.length ? <span className="badge badgeBad">{(dbStatus as any).pending_migrations.join(", ")}</span> : <span className="badge badgeOk">none</span>}.
               {dbStatus.expected_owner ? (
@@ -226,11 +225,11 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
         </div>
 
         {dbStatus.owner_mismatches?.length ? (
-          <div style={{ marginTop: 10 }}>
-            <div className="muted" style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
+          <div className="mt-2.5">
+            <div className="muted text-xs font-extrabold mb-1.5">
               The backend role can’t run schema updates unless it owns the tables. Fix by reassigning ownership to the schema owner (see backend/scripts/db/README.md).
             </div>
-            <table className="table" style={{ width: "100%" }}>
+            <table className="table w-full">
               <thead>
                 <tr>
                   <th>Table</th>
@@ -268,32 +267,32 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
       </div>
 
       <div className="adminCard">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+        <div className="flex justify-between items-baseline flex-wrap gap-2">
           <div>
-            <div style={{ fontWeight: 900 }}>Recent users</div>
-            <div className="muted" style={{ fontSize: 12, marginTop: 3 }}>Last 8 signups</div>
+            <div className="font-black">Recent users</div>
+            <div className="muted text-xs mt-0.5">Last 8 signups</div>
           </div>
           <a className="btn" href="/admin/users">Open users</a>
         </div>
 
-        <div style={{ marginTop: 10 }}>
-          <table className="table" style={{ width: "100%" }}>
+        <div className="mt-2.5">
+          <table className="table w-full">
             <thead>
               <tr>
                 <th>Email</th>
-                <th className="muted" style={{ fontSize: 12 }}>Created</th>
-                <th style={{ width: 1 }}></th>
+                <th className="muted text-xs">Created</th>
+                <th className="w-[1px]"></th>
               </tr>
             </thead>
             <tbody>
               {dash.recent_users?.map((u) => (
                 <tr key={u.id}>
                   <td><code>{u.email}</code></td>
-                  <td className="muted" style={{ fontSize: 12 }}>{new Date(u.created_at).toLocaleString()}</td>
+                  <td className="muted text-xs">{new Date(u.created_at).toLocaleString()}</td>
                 </tr>
               ))}
               {!dash.recent_users?.length ? (
-                <tr><td colSpan={2} className="muted" style={{ fontSize: 12 }}>No recent users.</td></tr>
+                <tr><td colSpan={2} className="muted text-xs">No recent users.</td></tr>
               ) : null}
             </tbody>
           </table>
@@ -301,23 +300,23 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
       </div>
 
       <div className="adminCard">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+        <div className="flex justify-between items-baseline flex-wrap gap-2">
           <div>
-            <div style={{ fontWeight: 900 }}>Recent reports</div>
-            <div className="muted" style={{ fontSize: 12, marginTop: 3 }}>Last 8 reports</div>
+            <div className="font-black">Recent reports</div>
+            <div className="muted text-xs mt-0.5">Last 8 reports</div>
           </div>
           <Link className="btn" href="/admin/reports">Open reports</Link>
         </div>
 
-        <div style={{ marginTop: 10 }}>
-          <table className="table" style={{ width: "100%" }}>
+        <div className="mt-2.5">
+          <table className="table w-full">
             <thead>
               <tr>
                 <th>Category</th>
                 <th>Source</th>
                 <th>Status</th>
-                <th className="muted" style={{ fontSize: 12 }}>Created</th>
-                <th style={{ width: 1 }}></th>
+                <th className="muted text-xs">Created</th>
+                <th className="w-[1px]"></th>
               </tr>
             </thead>
             <tbody>
@@ -326,12 +325,11 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
                   <td><code>{r.category}</code></td>
                   <td><span className="badge">{r.source === "share_report" ? "Share link" : "In-app"}</span></td>
                   <td><span className={`badge ${r.status === "submitted" ? "badgeWarn" : r.status === "in_review" ? "badgeWarn" : r.status === "resolved" ? "badgeOk" : "badge"}`}>{r.status}</span></td>
-                  <td className="muted" style={{ fontSize: 12 }}>{new Date(r.created_at).toLocaleString()}</td>
-                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  <td className="muted text-xs">{new Date(r.created_at).toLocaleString()}</td>
+                  <td className="text-right whitespace-nowrap">
                     <a
-                      className="btn"
-                      href={`/admin/reports/${encodeURIComponent(r.id)}`}
-                      style={{ padding: '0.32rem 0.55rem', borderRadius: 999, fontSize: 12 }}
+                      className="btn py-1.5 px-2 rounded-full text-xs"
+                      href={`/admin/reports/${encodeURIComponent(r.id)}`} 
                     >
                       Details
                     </a>
@@ -339,14 +337,14 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
                 </tr>
               ))}
               {!dash.recent_reports?.length ? (
-                <tr><td colSpan={5} className="muted" style={{ fontSize: 12 }}>No recent reports.</td></tr>
+                <tr><td colSpan={5} className="muted text-xs">No recent reports.</td></tr>
               ) : null}
             </tbody>
           </table>
         </div>
       </div>
 
-      <div className="muted" style={{ fontSize: 12, marginTop: 10 }}>
+      <div className="muted text-xs mt-2.5">
         Generated at: {new Date(dash.generated_at).toLocaleString()}
       </div>
     </div>

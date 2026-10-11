@@ -22,7 +22,7 @@ export default async function Page(props: { searchParams?: Promise<{ token?: str
   const token = String(searchParams?.token || "").trim();
   if (!token) {
     return (
-      <div style={{ maxWidth: 720 }}>
+      <div className="max-w-[720px]">
         <h1>Organization invite</h1>
         <p>Missing invite token.</p>
       </div>
@@ -53,10 +53,10 @@ export default async function Page(props: { searchParams?: Promise<{ token?: str
   const error = searchParams?.error ? decodeURIComponent(String(searchParams.error)) : "";
 
   return (
-    <div style={{ maxWidth: 720, display: "grid", gap: 12 }}>
+    <div className="max-w-[720px] grid gap-3">
       <header>
-        <h2 style={{ margin: 0 }}>Organization invite</h2>
-        <p style={{ marginTop: 6, color: "rgba(0,0,0,0.7)" }}>
+        <h2 className="m-0">Organization invite</h2>
+        <p className="mt-1.5 text-muted">
           {invite ? (
             <>
               You&apos;ve been invited to join <strong>{invite.org.name}</strong> as a <strong>{invite.role}</strong>.
@@ -68,8 +68,8 @@ export default async function Page(props: { searchParams?: Promise<{ token?: str
       </header>
 
       {invite ? (
-        <div style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 12 }}>
-          <div style={{ fontSize: 13, color: "rgba(0,0,0,0.75)" }}>
+        <div className="border border-line rounded-lg p-3">
+          <div className="text-xs text-muted">
             {invite.invited_email ? (
               <>
                 Sent to: <strong>{invite.invited_email}</strong>
@@ -77,7 +77,7 @@ export default async function Page(props: { searchParams?: Promise<{ token?: str
             ) : null}
           </div>
           {invite.expires_at ? (
-            <div style={{ marginTop: 6, fontSize: 12, color: "rgba(0,0,0,0.6)" }}>
+            <div className="mt-1.5 text-xs text-muted">
               Expires: {new Date(invite.expires_at).toLocaleString()}
             </div>
           ) : null}
@@ -85,32 +85,25 @@ export default async function Page(props: { searchParams?: Promise<{ token?: str
       ) : null}
 
       {error ? (
-        <div style={{ border: "1px solid rgba(180,0,0,0.35)", background: "rgba(180,0,0,0.05)", borderRadius: 12, padding: 12 }}>
+        <div className="border border-danger bg-danger-tint rounded-lg p-3">
           <strong>Couldn&apos;t accept invite.</strong>
-          <div style={{ marginTop: 6 }}>{error}</div>
+          <div className="mt-1.5">{error}</div>
         </div>
       ) : null}
 
       {!invite ? null : !user ? (
-        <div style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: 12 }}>
-          <p style={{ margin: 0 }}>Please log in (or create an account) using the invited email address, then return to this link.</p>
-          <div style={{ marginTop: 10 }}>
-            <a href="/login" style={{ fontWeight: 700 }}>
+        <div className="border border-line rounded-lg p-3">
+          <p className="m-0">Please log in (or create an account) using the invited email address, then return to this link.</p>
+          <div className="mt-2.5">
+            <a className="font-bold" href="/login">
               Go to login
             </a>
           </div>
         </div>
       ) : (
         <form action={acceptInviteAction}>
-          <button
-            type="submit"
-            style={{
-              padding: "10px 14px",
-              borderRadius: 10,
-              border: "1px solid rgba(0,0,0,0.25)",
-              background: "white",
-              fontWeight: 800
-            }}
+          <button className="py-2.5 px-3.5 rounded-md border border-line bg-surface font-extrabold"
+            type="submit" 
           >
             Accept invite
           </button>

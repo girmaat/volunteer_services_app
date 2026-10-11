@@ -93,6 +93,7 @@ export async function listConversations(user: PolicyUser, scope: ListScope) {
     `SELECT c.id, c.kind, c.status, c.request_id, c.org_slug, c.volunteer_user_id, c.owner_user_id, c.last_message_at, c.created_at,
             a.status AS application_status, r.title AS request_title,
             vp.display_name AS volunteer_name, op.display_name AS owner_name, o.name AS org_name,
+            vp.avatar_url AS volunteer_avatar, op.avatar_url AS owner_avatar, o.logo_url AS org_logo,
             (SELECT body FROM direct_messages m WHERE m.conversation_id = c.id AND (m.status = 'sent' OR m.sender_user_id = $1)
               ORDER BY m.created_at DESC LIMIT 1) AS last_body,
             (SELECT COUNT(*)::int FROM direct_messages m WHERE m.conversation_id = c.id AND m.status = 'sent' AND m.sender_user_id <> $1
@@ -120,6 +121,7 @@ export async function listConversations(user: PolicyUser, scope: ListScope) {
       request_title: row.request_title,
       // The other party, as you see them.
       with_name: iAmVolunteer ? row.org_name || row.owner_name || "Organizer" : row.volunteer_name || "Volunteer",
+      with_avatar_url: (iAmVolunteer ? (row.org_slug ? row.org_logo : row.owner_avatar) : row.volunteer_avatar) || null,
       as: iAmVolunteer ? "volunteer" : "owner",
       application_status: row.application_status,
       contacts_unlocked: unlocked,

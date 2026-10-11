@@ -179,13 +179,13 @@ export default async function Page(
           </div>
 
           {!user.onboarding_completed ? (
-            <p className={styles.meta} style={{ marginTop: "0.75rem" } as any}>
+            <p className={`${styles.meta} mt-3`}>
               <Link href="/onboarding">Continue onboarding</Link>
             </p>
           ) : null}
         </div>
 
-        <div className={styles.tile} style={{ gridColumn: "1 / -1" } as any}>
+        <div className={`${styles.tile} col-span-full`}>
           <h2 className={styles.tileTitle}>Edit profile</h2>
           <p className={styles.meta}>Update your public-safe details. Changes persist on refresh.</p>
 

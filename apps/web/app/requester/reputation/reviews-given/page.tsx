@@ -47,8 +47,8 @@ export default async function Page() {
 
       {!resp.ok && (
         <div className={styles.sectionCard}>
-          <p style={{ fontWeight: 800, margin: 0 }}>Could not load reviews.</p>
-          <p className={styles.meta} style={{ marginTop: "0.35rem" } as any}>
+          <p className="font-extrabold m-0">Could not load reviews.</p>
+          <p className={`${styles.meta} mt-1.5`}>
             Backend responded with {resp.status}. {resp.message}
           </p>
         </div>
@@ -65,10 +65,10 @@ export default async function Page() {
               </p>
             </div>
           ) : (
-            <div style={{ marginTop: "0.75rem" } as any}>
+            <div className="mt-3">
               {resp.data.reviews.map((r) => (
                 <div key={r.id} className={styles.sectionCard}>
-                  <div style={{ fontWeight: 800 }}>
+                  <div className="font-extrabold">
                     <Stars rating={r.rating} /> {r.rating}/5
                   </div>
                   <p className={styles.meta}>
@@ -77,13 +77,13 @@ export default async function Page() {
                   </p>
 
                   {r.strengths ? (
-                    <p className={styles.meta} style={{ marginTop: "0.45rem" } as any}>
+                    <p className={`${styles.meta} mt-2`}>
                       {r.strengths}
                     </p>
                   ) : null}
 
                   {r.improvements ? (
-                    <p className={styles.meta} style={{ marginTop: "0.45rem" } as any}>
+                    <p className={`${styles.meta} mt-2`}>
                       <strong>Could be better:</strong> {r.improvements}
                     </p>
                   ) : null}

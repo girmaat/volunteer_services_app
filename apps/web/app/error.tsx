@@ -29,7 +29,7 @@ export default function GlobalError({
         </div>
 
         {error?.digest ? (
-          <p className="muted" style={{ fontSize: 12, marginTop: 12 }}>
+          <p className="muted text-xs mt-3">
             Error ID: <code>{error.digest}</code>
           </p>
         ) : null}

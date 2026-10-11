@@ -92,14 +92,14 @@ export default async function Page() {
 
   return (
     <div className={styles.mainFull}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Docs</h1>
+      <div className="flex justify-between items-baseline gap-3 flex-wrap">
+        <h1 className="m-0">Docs</h1>
         <span className={styles.meta}>Upload waivers and training docs, then assign them to requests.</span>
       </div>
 
-      <div className={styles.card} style={{ marginTop: 12 }}>
-        <h2 style={{ marginTop: 0 }}>Upload document</h2>
-        <form action={uploadDocument} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div className={`${styles.card} mt-3`}>
+        <h2 className="mt-0">Upload document</h2>
+        <form className="grid grid-cols-2 gap-3" action={uploadDocument}>
           <div>
             <label className={styles.label}>Type</label>
             <select className={styles.select} name="doc_type" defaultValue="waiver">
@@ -113,22 +113,22 @@ export default async function Page() {
             <input className={styles.input} type="file" name="file" accept="application/pdf,image/png,image/jpeg" required />
           </div>
 
-          <div style={{ gridColumn: "1 / -1" }}>
+          <div className="col-span-full">
             <label className={styles.label}>Title</label>
             <input className={styles.input} name="title" placeholder="e.g., Volunteer Waiver" required minLength={2} />
           </div>
 
-          <div style={{ gridColumn: "1 / -1" }}>
+          <div className="col-span-full">
             <label className={styles.label}>Description (optional)</label>
             <textarea className={styles.textarea} name="description" rows={3} />
           </div>
 
-          <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
-            <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div className="flex gap-4 items-center">
+            <label className="flex gap-2 items-center">
               <input type="checkbox" name="require_ack" defaultChecked />
               Require acknowledgement
             </label>
-            <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <label className="flex gap-2 items-center">
               <input type="checkbox" name="active" defaultChecked />
               Active
             </label>
@@ -142,7 +142,7 @@ export default async function Page() {
         </form>
       </div>
 
-      <div className={styles.card} style={{ marginTop: 12 }}>
+      <div className={`${styles.card} mt-3`}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -169,7 +169,7 @@ export default async function Page() {
                     <span className={styles.badge}>{d.doc_type}</span>
                   </td>
                   <td>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div className="flex flex-col">
                       <strong>{d.title}</strong>
                       {d.description ? <span className={styles.muted}>{d.description}</span> : null}
                     </div>
@@ -179,11 +179,11 @@ export default async function Page() {
                   <td>{d.active ? "Yes" : "No"}</td>
                   <td>{d.assignment_count ?? 0}</td>
                   <td>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                    <div className="flex gap-2.5 flex-wrap items-center">
                       <Link className={styles.smallLink} href={`/org/documents/${d.id}/download`}>
                         Download
                       </Link>
-                      <form action={assignDocument} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <form className="flex gap-2 items-center" action={assignDocument}>
                         <input type="hidden" name="docId" value={d.id} />
                         <select className={styles.select} name="request_id" defaultValue="">
                           <option value="">Assign org-wide</option>
@@ -205,7 +205,7 @@ export default async function Page() {
           </tbody>
         </table>
 
-        <p className={styles.muted} style={{ marginTop: 12 }}>
+        <p className={`${styles.muted} mt-3`}>
           Tip: to see acknowledgement lists for a specific request, open the request and use the “Documents” tab.
         </p>
       </div>

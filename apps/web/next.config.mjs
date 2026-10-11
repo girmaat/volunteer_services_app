@@ -21,7 +21,9 @@ const nextConfig = {
       { source: "/requester/messages", destination: "/inbox", permanent: true },
       { source: "/org/messages", destination: "/inbox", permanent: true },
       { source: "/dashboard/home", destination: "/home", permanent: true },
-      { source: "/s/:token", destination: "/share/:token", permanent: true }
+      { source: "/s/:token", destination: "/share/:token", permanent: true },
+      { source: "/requester/organizations", destination: "/organizations", permanent: true },
+      { source: "/requester/organizations/:id", destination: "/organizations", permanent: true }
     ];
   },
 

@@ -55,11 +55,11 @@ export default function SignupForm({ action }: { action: ServerAction }) {
           </div>
 
           {verifyUrl ? (
-            <div className={styles.meta} style={{ marginTop: 12, overflowWrap: "anywhere" }}>
+            <div className={`${styles.meta} mt-3 [overflow-wrap:anywhere]`}>
               Development only — verification link: <a href={verifyUrl}>{verifyUrl}</a>
             </div>
           ) : (
-            <div className={styles.meta} style={{ marginTop: 12 }}>
+            <div className={`${styles.meta} mt-3`}>
               Didn&apos;t get it? Check spam, or use <strong>Resend verification</strong>.
             </div>
           )}

@@ -1,7 +1,7 @@
 import styles from "./page.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const metadata = { title: "Trust export  safety" };
+export const metadata = { title: "Trust export  safety", alternates: { canonical: "/trust-safety" } };
 
 export const revalidate = 300;
 

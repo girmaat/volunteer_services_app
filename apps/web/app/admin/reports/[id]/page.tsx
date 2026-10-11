@@ -165,105 +165,105 @@ export default async function Page(
 
   return (
     <div className="adminGrid">
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+      <header className="flex justify-between items-baseline gap-3 flex-wrap">
         <div>
-          <h1 style={{ margin: 0 }}>Report details</h1>
-          <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>Review the report, update status, and apply moderation actions.</p>
+          <h1 className="m-0">Report details</h1>
+          <p className="muted mt-1.5 mb-0">Review the report, update status, and apply moderation actions.</p>
         </div>
         <Link className="btn" href="/admin/reports">Back to reports</Link>
       </header>
 
       {loaded.error ? (
-        <div className="adminCard" style={{ border: "1px solid rgba(220, 53, 69, .35)" }}>
-          <div style={{ fontWeight: 900 }}>Could not load report</div>
-          <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>{loaded.error}</div>
+        <div className="adminCard border border-danger">
+          <div className="font-black">Could not load report</div>
+          <div className="muted text-xs mt-1.5">{loaded.error}</div>
         </div>
       ) : null}
 
       {error ? (
-        <div className="adminCard" style={{ border: "1px solid rgba(220, 53, 69, .35)" }}>
-          <div style={{ fontWeight: 900 }}>Action failed</div>
-          <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>{error}</div>
+        <div className="adminCard border border-danger">
+          <div className="font-black">Action failed</div>
+          <div className="muted text-xs mt-1.5">{error}</div>
         </div>
       ) : null}
 
       {ok ? (
-        <div className="adminCard" style={{ border: "1px solid rgba(0, 120, 0, .25)" }}>
-          <div style={{ fontWeight: 900 }}>Saved</div>
-          <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>Your changes were applied.</div>
+        <div className="adminCard border border-success">
+          <div className="font-black">Saved</div>
+          <div className="muted text-xs mt-1.5">Your changes were applied.</div>
         </div>
       ) : null}
 
       {report ? (
         <>
           <div className="adminCard">
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div className="flex justify-between gap-3 flex-wrap">
               <div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <div className="flex gap-2 flex-wrap items-center">
                   {sourceBadge(report.source)}
                   {statusBadge(report.status)}
                   {report.source === "share_report" ? linkStateBadge(report) : null}
                 </div>
-                <div style={{ fontWeight: 900, marginTop: 10 }}><code>{report.category}</code></div>
-                <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>Created: {new Date(report.created_at).toLocaleString()}</div>
+                <div className="font-black mt-2.5"><code>{report.category}</code></div>
+                <div className="muted text-xs mt-1.5">Created: {new Date(report.created_at).toLocaleString()}</div>
               </div>
-              <div style={{ minWidth: 280, maxWidth: 520, flex: 1 }}>
-                <div className="muted" style={{ fontSize: 12 }}>Reporter</div>
-                <div style={{ fontWeight: 700, marginTop: 4 }}><code>{report.reporter_email}</code></div>
-                <div className="muted" style={{ fontSize: 12, marginTop: 10 }}>Target</div>
-                <div style={{ fontWeight: 700, marginTop: 4 }}><code>{report.target_email || "—"}</code></div>
+              <div className="min-w-[280px] max-w-[520px] flex-1">
+                <div className="muted text-xs">Reporter</div>
+                <div className="font-bold mt-1"><code>{report.reporter_email}</code></div>
+                <div className="muted text-xs mt-2.5">Target</div>
+                <div className="font-bold mt-1"><code>{report.target_email || "—"}</code></div>
                 {report.target_request_title ? (
-                  <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>Context: {report.target_request_title}</div>
+                  <div className="muted text-xs mt-1.5">Context: {report.target_request_title}</div>
                 ) : null}
               </div>
             </div>
 
-            <div style={{ marginTop: 14 }}>
-              <div className="muted" style={{ fontSize: 12 }}>Report details</div>
-              <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>{report.details || <span className="muted">(none)</span>}</div>
+            <div className="mt-3.5">
+              <div className="muted text-xs">Report details</div>
+              <div className="mt-1.5 whitespace-pre-wrap">{report.details || <span className="muted">(none)</span>}</div>
             </div>
 
             {report.source === "share_report" ? (
-              <div style={{ marginTop: 14 }}>
-                <div className="muted" style={{ fontSize: 12 }}>Share link</div>
-                <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
-                  <div><span className="muted" style={{ fontSize: 12 }}>Token:</span> <code>{report.share_token || "—"}</code></div>
-                  <div><span className="muted" style={{ fontSize: 12 }}>Destination:</span> <code>{report.share_destination_path || "—"}</code></div>
-                  <div><span className="muted" style={{ fontSize: 12 }}>Type:</span> <code>{report.share_type || "—"}</code></div>
-                  <div><span className="muted" style={{ fontSize: 12 }}>Reports:</span> <strong>{Number(report.share_report_count || 0)}</strong> (distinct 24h: <strong>{Number(report.share_distinct_24h || 0)}</strong>)</div>
+              <div className="mt-3.5">
+                <div className="muted text-xs">Share link</div>
+                <div className="grid gap-1.5 mt-1.5">
+                  <div><span className="muted text-xs">Token:</span> <code>{report.share_token || "—"}</code></div>
+                  <div><span className="muted text-xs">Destination:</span> <code>{report.share_destination_path || "—"}</code></div>
+                  <div><span className="muted text-xs">Type:</span> <code>{report.share_type || "—"}</code></div>
+                  <div><span className="muted text-xs">Reports:</span> <strong>{Number(report.share_report_count || 0)}</strong> (distinct 24h: <strong>{Number(report.share_distinct_24h || 0)}</strong>)</div>
                 </div>
               </div>
             ) : null}
           </div>
 
 	          {report.source === "share_report" && !canUpdateShareReport ? (
-	            <div className="adminCard" style={{ border: "1px solid rgba(255, 193, 7, .35)" }}>
-	              <div style={{ fontWeight: 900 }}>Update status</div>
-	              <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+	            <div className="adminCard border border-warning">
+	              <div className="font-black">Update status</div>
+	              <div className="muted text-xs mt-2">
 	                This environment can <strong>view</strong> share-link reports, but can’t update their status/notes because your database
 	                hasn’t applied the sharing moderation columns yet.
 	              </div>
-	              <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
-	                <div className="muted" style={{ fontSize: 12 }}>
+	              <div className="mt-2.5 grid gap-1.5">
+	                <div className="muted text-xs">
 	                  To enable status updates, run the sharing schema upgrade as the DB owner:
 	                </div>
-	                <div className="muted" style={{ fontSize: 12 }}>
+	                <div className="muted text-xs">
 	                  <code>backend/scripts/db/apply_sharing_schema.sql</code>
 	                </div>
-	                <div className="muted" style={{ fontSize: 12 }}>
+	                <div className="muted text-xs">
 	                  Or set <code>RUN_MIGRATIONS=1</code> and restart the backend.
 	                </div>
 	              </div>
-	              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 12 }}>
+	              <div className="flex gap-2.5 flex-wrap items-center mt-3">
 	                <Link className="btn" href="/admin/reports">Back to queue</Link>
 	              </div>
 	            </div>
 	          ) : (
 	            <div className="adminCard">
-	              <div style={{ fontWeight: 900 }}>Update status</div>
-	              <form action={updateReport} style={{ marginTop: 10, display: "grid", gap: 10 }}>
-	                <label style={{ display: "grid", gap: 6 }}>
-	                  <span className="muted" style={{ fontSize: 12 }}>Status</span>
+	              <div className="font-black">Update status</div>
+	              <form className="mt-2.5 grid gap-2.5" action={updateReport}>
+	                <label className="grid gap-1.5">
+	                  <span className="muted text-xs">Status</span>
 	                  <select name="status" aria-label="Status" defaultValue={report.status || "submitted"} className="input">
 	                    <option value="submitted">submitted</option>
 	                    <option value="in_review">in_review</option>
@@ -272,12 +272,12 @@ export default async function Page(
 	                  </select>
 	                </label>
 
-	                <label style={{ display: "grid", gap: 6 }}>
-	                  <span className="muted" style={{ fontSize: 12 }}>Admin notes</span>
+	                <label className="grid gap-1.5">
+	                  <span className="muted text-xs">Admin notes</span>
 	                  <textarea name="admin_notes" aria-label="Admin notes" defaultValue={report.admin_notes || ""} className="textarea" rows={4} placeholder="Notes for other moderators (not visible to users)" />
 	                </label>
 
-	                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+	                <div className="flex gap-2.5 flex-wrap items-center">
 	                  <button className="btn btnSoft" type="submit">Save</button>
 	                  <Link className="btn" href="/admin/reports">Back to queue</Link>
 	                </div>
@@ -287,38 +287,38 @@ export default async function Page(
 
           {report.target_user_id ? (
             <div className="adminCard">
-              <div style={{ fontWeight: 900 }}>User enforcement</div>
-              <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+              <div className="font-black">User enforcement</div>
+              <div className="muted text-xs mt-1.5">
                 These actions affect the user who created the reported content (share link owner or in-app target).
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginTop: 12 }}>
-                <form action={strikeUser} className="adminCard" style={{ padding: 12 }}>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3 mt-3">
+                <form action={strikeUser} className="adminCard p-3">
                   <input type="hidden" name="user_id" value={report.target_user_id} />
-                  <div style={{ fontWeight: 800 }}>Strike user</div>
-                  <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Adds a strike and displays a warning on their profile.</div>
-                  <label style={{ display: "grid", gap: 6, marginTop: 10 }}>
-                    <span className="muted" style={{ fontSize: 12 }}>Reason</span>
+                  <div className="font-extrabold">Strike user</div>
+                  <div className="muted text-xs mt-1">Adds a strike and displays a warning on their profile.</div>
+                  <label className="grid gap-1.5 mt-2.5">
+                    <span className="muted text-xs">Reason</span>
                     <input name="reason" aria-label="Reason" className="input" defaultValue="Report violation" />
                   </label>
-                  <button className="btn btnSoft" type="submit" style={{ marginTop: 10 }}>Apply strike</button>
+                  <button className="btn btnSoft mt-2.5" type="submit">Apply strike</button>
                 </form>
 
-                <form action={banUser} className="adminCard" style={{ padding: 12 }}>
+                <form action={banUser} className="adminCard p-3">
                   <input type="hidden" name="user_id" value={report.target_user_id} />
-                  <div style={{ fontWeight: 800 }}>Temporary ban</div>
-                  <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Prevents sign-in until the ban expires.</div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-                    <label style={{ display: "grid", gap: 6, flex: 1, minWidth: 120 }}>
-                      <span className="muted" style={{ fontSize: 12 }}>Days</span>
+                  <div className="font-extrabold">Temporary ban</div>
+                  <div className="muted text-xs mt-1">Prevents sign-in until the ban expires.</div>
+                  <div className="flex gap-2 mt-2.5 flex-wrap">
+                    <label className="grid gap-1.5 flex-1 min-w-[120px]">
+                      <span className="muted text-xs">Days</span>
                       <input name="days" aria-label="Days" className="input" type="number" min={1} max={365} defaultValue={7} />
                     </label>
-                    <label style={{ display: "grid", gap: 6, flex: 2, minWidth: 160 }}>
-                      <span className="muted" style={{ fontSize: 12 }}>Reason</span>
+                    <label className="grid gap-1.5 flex-[2] min-w-[160px]">
+                      <span className="muted text-xs">Reason</span>
                       <input name="reason" aria-label="Reason" className="input" defaultValue="Report violation" />
                     </label>
                   </div>
-                  <button className="btn btnDanger" type="submit" style={{ marginTop: 10 }}>Ban user</button>
+                  <button className="btn btnDanger mt-2.5" type="submit">Ban user</button>
                 </form>
               </div>
             </div>
@@ -326,14 +326,14 @@ export default async function Page(
 
           {report.source === "share_report" ? (
             <div className="adminCard">
-              <div style={{ fontWeight: 900 }}>Share-link moderation</div>
-              <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+              <div className="font-black">Share-link moderation</div>
+              <div className="muted text-xs mt-1.5">
                 Policy: 1) first report → warn the owner, 2) repeated or high-signal reports → block the link, 3) unblock/clear when resolved.
               </div>
 
-              <form action={moderateShareLink} style={{ marginTop: 12, display: "grid", gap: 10 }}>
-                <label style={{ display: "grid", gap: 6 }}>
-                  <span className="muted" style={{ fontSize: 12 }}>Moderator notes</span>
+              <form className="mt-3 grid gap-2.5" action={moderateShareLink}>
+                <label className="grid gap-1.5">
+                  <span className="muted text-xs">Moderator notes</span>
                   <textarea name="admin_notes" aria-label="Admin notes" className="textarea" rows={3} placeholder="Optional notes (stored with the report)" />
                 </label>
 
@@ -348,7 +348,7 @@ export default async function Page(
                   </button>
                 </div>
                 {!canSetShareWarning ? (
-                  <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                  <div className="muted text-xs mt-1.5">
                     “Warn” and “Clear” require the newer sharing schema columns on <code>share_links</code>. You can still Block/Unblock.
                   </div>
                 ) : null}

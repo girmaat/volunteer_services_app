@@ -276,11 +276,11 @@ export default async function Page() {
         </div>
 
         {profile ? (
-          <div style={{ margin: "0.75rem 0 1rem" } as any}>
+          <div className="mt-3 mr-0 mb-4 ml-0">
             <div className={styles.meta}><strong>Profile snapshot</strong></div>
             <div className={styles.meta}>
               {profile.display_name ? <span><strong>Public name:</strong> {profile.display_name}</span> : null}
-              {profile.public_location ? <span style={{ marginLeft: "0.75rem" } as any}><strong>Location:</strong> {profile.public_location}</span> : null}
+              {profile.public_location ? <span className="ml-3"><strong>Location:</strong> {profile.public_location}</span> : null}
             </div>
             {profile.languages?.length ? (
               <div className={styles.meta}><strong>Languages:</strong> {profile.languages.join(", ")}</div>
@@ -367,7 +367,7 @@ export default async function Page() {
 
             {role === "volunteer" ? (
               <>
-                <div className={styles.meta} style={{ marginTop: "0.5rem" } as any}>
+                <div className={`${styles.meta} mt-2`}>
                   Volunteer details
                 </div>
 
@@ -438,7 +438,7 @@ export default async function Page() {
 
             {isIndividualRequester ? (
               <>
-                <div className={styles.meta} style={{ marginTop: "0.5rem" } as any}>
+                <div className={`${styles.meta} mt-2`}>
                   Requester details
                 </div>
 
@@ -599,7 +599,7 @@ export default async function Page() {
         {step === "done" ? (
           <div className={styles.success}>
             Onboarding complete.
-            <div className={styles.buttonRow} style={{ marginTop: "0.8rem" } as any}>
+            <div className={`${styles.buttonRow} mt-3`}>
               <a className={styles.button} href="/dashboard">Go to dashboard</a>
             </div>
           </div>

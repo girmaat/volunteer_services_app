@@ -4,3 +4,6 @@ export * from "./Card";
 export * from "./Badge";
 export * from "./Tabs";
 export * from "./StatStrip";
+export * from "./Controls";
+export * from "./Table";
+export * from "./Overlay";

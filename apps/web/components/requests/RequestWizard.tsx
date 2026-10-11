@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, Check, Lock } from "lucide-react";
 import { publishDraft, saveWizardStep } from "../../app/_requests/actions";
-import { Button, Card, Notice } from "../ui";
+import { Button, Card, Checkbox, Notice } from "../ui";
 import { cn } from "../../lib/cn";
 import type { Category, OwnerRequest } from "../../lib/requests";
 import { COMMON_TIMEZONES, DAY_LABELS, WEEK_DAYS, describeRrule, formatInZone, isoToZonedLocal, rruleDays } from "../../lib/time";
@@ -370,10 +370,7 @@ export default function RequestWizard({
               ["requiresTraining", "Complete training first", d.requires_training],
               ["requiresWaiver", "Sign a waiver", d.requires_waiver]
             ].map(([n, l, v]) => (
-              <label key={String(n)} className="flex items-center gap-2.5 text-sm">
-                <input type="checkbox" name={String(n)} defaultChecked={Boolean(v)} className="h-4 w-4 accent-[var(--primary)]" />
-                {String(l)}
-              </label>
+              <Checkbox key={String(n)} id={`w-${String(n)}`} name={String(n)} defaultChecked={Boolean(v)} label={String(l)} />
             ))}
           </fieldset>
           <div className="grid gap-1.5">

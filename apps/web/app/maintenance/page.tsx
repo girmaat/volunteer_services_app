@@ -33,7 +33,7 @@ export default async function MaintenancePage() {
           <>
             <h1 className="edgeTitle">We&apos;ll be right back</h1>
             <p className="edgeSubtitle">{message}</p>
-            <p className="muted" style={{ fontSize: 12, marginTop: 12 }}>
+            <p className="muted text-xs mt-3">
               Last update: {status?.maintenance?.updated_at ? new Date(status.maintenance.updated_at).toLocaleString() : "—"}
             </p>
           </>

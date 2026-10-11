@@ -88,11 +88,11 @@ export default async function Page() {
           </label>
 
           <div className={styles.row}>
-            <label className={styles.label} style={{ flex: 1 }}>
+            <label className={`${styles.label} flex-1`}>
               Date
               <input name="task_date" type="date" className={styles.input} required />
             </label>
-            <label className={styles.label} style={{ flex: 1 }}>
+            <label className={`${styles.label} flex-1`}>
               Duration (hours)
               <input name="duration_hours" type="number" min="0" step="0.25" className={styles.input} defaultValue="1" />
             </label>

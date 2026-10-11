@@ -104,7 +104,7 @@ export default async function Page() {
 
       <form action={fileReport}>
         <div className={styles.row}>
-          <label className={styles.label} style={{ flex: 1 }}>
+          <label className={`${styles.label} flex-1`}>
             Target type
             <select name="target_type" className={styles.select} defaultValue="user">
               <option value="user">User</option>
@@ -113,7 +113,7 @@ export default async function Page() {
             </select>
           </label>
 
-          <label className={styles.label} style={{ flex: 1 }}>
+          <label className={`${styles.label} flex-1`}>
             Category
             <select name="category" className={styles.select} defaultValue="safety">
               <option value="harassment">Harassment</option>
@@ -128,7 +128,7 @@ export default async function Page() {
         </div>
 
         <div className={styles.row}>
-          <label className={styles.label} style={{ flex: 1 }}>
+          <label className={`${styles.label} flex-1`}>
             User (if reporting a user)
             <select name="target_user_id" className={styles.select} defaultValue="">
               <option value="">— Select —</option>
@@ -140,7 +140,7 @@ export default async function Page() {
             </select>
           </label>
 
-          <label className={styles.label} style={{ flex: 1 }}>
+          <label className={`${styles.label} flex-1`}>
             Request (if reporting a request)
             <select name="target_request_id" className={styles.select} defaultValue="">
               <option value="">— Select —</option>
@@ -162,7 +162,7 @@ export default async function Page() {
           />
         </label>
 
-        <div className={styles.row} style={{ marginTop: "0.75rem" }}>
+        <div className={`${styles.row} mt-3`}>
           <button className={styles.button} type="submit">
             File report
           </button>

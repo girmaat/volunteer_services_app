@@ -86,10 +86,10 @@ export default async function Page() {
 
   return (
     <div className="adminGrid">
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+      <header className="flex justify-between gap-3 flex-wrap items-baseline">
         <div>
-          <h1 style={{ margin: 0 }}>Strike / ban management</h1>
-          <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+          <h1 className="m-0">Strike / ban management</h1>
+          <p className="muted mt-1.5 mb-0">
             Monitor active bans and strike activity, and audit recent enforcement actions.
             Unbanning restores access immediately; strike counts can be used to decide future actions.
           </p>
@@ -98,28 +98,28 @@ export default async function Page() {
       </header>
 
       {loadError ? (
-        <div className="adminCard" style={{ borderColor: "rgba(180,120,0,0.25)", background: "rgba(180,120,0,0.05)" }}>
+        <div className="adminCard border-warning bg-warning-tint">
           <strong>Some enforcement data could not be loaded.</strong>
-          <div style={{ marginTop: 6 }}>{loadError}</div>
+          <div className="mt-1.5">{loadError}</div>
         </div>
       ) : null}
 
       {flash?.kind === "ok" ? (
-        <div className="adminCard" style={{ borderColor: "rgba(0,120,0,0.25)", background: "rgba(0,120,0,0.05)" }}>
+        <div className="adminCard border-success bg-success-tint">
           <strong>Saved.</strong>
         </div>
       ) : null}
       {flash?.kind === "error" ? (
-        <div className="adminCard" style={{ borderColor: "rgba(180,0,0,0.25)", background: "rgba(180,0,0,0.05)" }}>
+        <div className="adminCard border-danger bg-danger-tint">
           <strong>Couldn&apos;t complete that action.</strong>
-          <div style={{ marginTop: 6 }}>{flash.message}</div>
+          <div className="mt-1.5">{flash.message}</div>
         </div>
       ) : null}
 
       <div className="adminCard">
-        <div style={{ fontWeight: 900 }}>Active bans</div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{banned.length} currently banned</div>
-        <table className="table" style={{ marginTop: 10 }}>
+        <div className="font-black">Active bans</div>
+        <div className="muted text-xs mt-1">{banned.length} currently banned</div>
+        <table className="table mt-2.5">
           <thead>
             <tr>
               <th>User</th>
@@ -132,11 +132,11 @@ export default async function Page() {
             {banned.map((u) => (
               <tr key={u.id}>
                 <td>
-                  <div style={{ fontWeight: 900 }}>{u.display_name || u.email}</div>
-                  <div className="muted" style={{ fontSize: 12 }}>{u.email} · strikes {u.strike_count}</div>
+                  <div className="font-black">{u.display_name || u.email}</div>
+                  <div className="muted text-xs">{u.email} · strikes {u.strike_count}</div>
                 </td>
-                <td className="muted" style={{ fontSize: 12 }}>{new Date(u.banned_until).toLocaleString()}</td>
-                <td className="muted" style={{ fontSize: 12 }}>{u.banned_reason || "—"}</td>
+                <td className="muted text-xs">{new Date(u.banned_until).toLocaleString()}</td>
+                <td className="muted text-xs">{u.banned_reason || "—"}</td>
                 <td>
                   <form action={unban}>
                     <input type="hidden" name="user_id" value={u.id} />
@@ -150,9 +150,9 @@ export default async function Page() {
       </div>
 
       <div className="adminCard">
-        <div style={{ fontWeight: 900 }}>Recent enforcement actions</div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Last 50 actions</div>
-        <table className="table" style={{ marginTop: 10 }}>
+        <div className="font-black">Recent enforcement actions</div>
+        <div className="muted text-xs mt-1">Last 50 actions</div>
+        <table className="table mt-2.5">
           <thead>
             <tr>
               <th>When</th>
@@ -165,11 +165,11 @@ export default async function Page() {
           <tbody>
             {actions.map((a) => (
               <tr key={a.id}>
-                <td className="muted" style={{ fontSize: 12 }}>{new Date(a.created_at).toLocaleString()}</td>
-                <td style={{ fontWeight: 900 }}>{a.action_type}{a.ban_until ? ` (until ${new Date(a.ban_until).toLocaleDateString()})` : ""}</td>
-                <td className="muted" style={{ fontSize: 12 }}>{a.target_email || a.target_user_id}</td>
-                <td className="muted" style={{ fontSize: 12 }}>{a.actor_email || "—"}</td>
-                <td className="muted" style={{ fontSize: 12 }}>{a.reason || a.notes || "—"}</td>
+                <td className="muted text-xs">{new Date(a.created_at).toLocaleString()}</td>
+                <td className="font-black">{a.action_type}{a.ban_until ? ` (until ${new Date(a.ban_until).toLocaleDateString()})` : ""}</td>
+                <td className="muted text-xs">{a.target_email || a.target_user_id}</td>
+                <td className="muted text-xs">{a.actor_email || "—"}</td>
+                <td className="muted text-xs">{a.reason || a.notes || "—"}</td>
               </tr>
             ))}
           </tbody>

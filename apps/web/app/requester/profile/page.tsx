@@ -261,7 +261,7 @@ export default async function Page(
                 "—"
               )}
             </p>
-            <p className={styles.meta} style={{ margin: 0 } as any}>
+            <p className={`${styles.meta} m-0`}>
               {rep ? `${rep.received.count} reviews received · ${rep.given.count} given` : "Unable to load reputation"}
             </p>
           </div>
@@ -276,7 +276,7 @@ export default async function Page(
           </p>
         </div>
 
-        <div className={styles.tile} style={{ gridColumn: "1 / -1" } as any}>
+        <div className={`${styles.tile} col-span-full`}>
           <h2 className={styles.tileTitle}>Edit profile</h2>
           <p className={styles.meta}>
             Public profile details are shown to volunteers before you chat. Keep it coarse (city/neighborhood only).
@@ -294,7 +294,7 @@ export default async function Page(
             </label>
 
             <div className={styles.row}>
-              <label className={styles.label} style={{ flex: 1 } as any}>
+              <label className={`${styles.label} flex-1`}>
                 Public location (optional)
                 <input
                   name="publicLocation"
@@ -304,7 +304,7 @@ export default async function Page(
                 />
               </label>
 
-              <label className={styles.label} style={{ flex: 1 } as any}>
+              <label className={`${styles.label} flex-1`}>
                 Avatar URL (optional)
                 <input
                   name="avatarUrl"
@@ -337,7 +337,7 @@ export default async function Page(
             </label>
 
             <div className={styles.row}>
-              <label className={styles.label} style={{ flex: 1 } as any}>
+              <label className={`${styles.label} flex-1`}>
                 Languages (comma-separated)
                 <input
                   name="languages"
@@ -347,7 +347,7 @@ export default async function Page(
                 />
               </label>
 
-              <label className={styles.label} style={{ flex: 1 } as any}>
+              <label className={`${styles.label} flex-1`}>
                 Interaction tags (comma-separated)
                 <input
                   name="interactionStyles"
@@ -421,7 +421,7 @@ export default async function Page(
               </label>
 
               <div className={styles.row}>
-                <label className={styles.label} style={{ flex: 1 } as any}>
+                <label className={`${styles.label} flex-1`}>
                   Pickup vs dropoff (optional)
                   <select
                     name="pickup_vs_dropoff"
@@ -435,7 +435,7 @@ export default async function Page(
                   </select>
                 </label>
 
-                <label className={styles.label} style={{ flex: 1 } as any}>
+                <label className={`${styles.label} flex-1`}>
                   Time flexibility (optional)
                   <select
                     name="time_flexibility"

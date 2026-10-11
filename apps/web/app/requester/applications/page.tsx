@@ -48,7 +48,7 @@ export default async function Page() {
           </p>
         </div>
 
-        <div className={styles.actionsRow} style={{ marginTop: 0 } as any}>
+        <div className={`${styles.actionsRow} mt-0`}>
           <Link className={styles.navLink} href="/requester/requests">
             View requests
           </Link>
