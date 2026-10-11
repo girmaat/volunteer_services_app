@@ -1,0 +1,52 @@
+import { NextResponse } from "next/server";
+import { API_BASE_URL_SERVER } from "@thankyou/config";
+
+function getTokenFromCookie(req: Request) {
+  const cookieHeader = req.headers.get("cookie") || "";
+  const tokenMatch = cookieHeader.match(/(?:^|;\s*)ty_session=([^;]+)/);
+  return tokenMatch ? decodeURIComponent(tokenMatch[1]) : "";
+}
+
+function authHeaders(req: Request) {
+  const token = getTokenFromCookie(req);
+  if (!token) return null;
+  return { authorization: `Bearer ${token}` };
+}
+
+export async function PATCH(
+  req: Request,
+  props: { params: Promise<{ orgId: string; memberId: string }> }
+) {
+  const params = await props.params;
+  const headers = authHeaders(req);
+  if (!headers) return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+
+  const body = await req.json().catch(() => ({}));
+  const res = await fetch(
+    `${API_BASE_URL_SERVER}/v1/orgs/${encodeURIComponent(params.orgId)}/members/${encodeURIComponent(params.memberId)}`,
+    {
+      method: "PATCH",
+      headers: { ...headers, "content-type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store"
+    }
+  );
+  const data = await res.json().catch(() => ({}));
+  return NextResponse.json(data, { status: res.status });
+}
+
+export async function DELETE(
+  req: Request,
+  props: { params: Promise<{ orgId: string; memberId: string }> }
+) {
+  const params = await props.params;
+  const headers = authHeaders(req);
+  if (!headers) return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+
+  const res = await fetch(
+    `${API_BASE_URL_SERVER}/v1/orgs/${encodeURIComponent(params.orgId)}/members/${encodeURIComponent(params.memberId)}`,
+    { method: "DELETE", headers, cache: "no-store" }
+  );
+  const data = await res.json().catch(() => ({}));
+  return NextResponse.json(data, { status: res.status });
+}

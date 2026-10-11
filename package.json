@@ -1,0 +1,36 @@
+{
+  "name": "thankyou",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @thankyou/api --filter @thankyou/web dev",
+    "dev:api": "pnpm --filter @thankyou/api dev",
+    "dev:web": "pnpm --filter @thankyou/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "format": "prettier --write .",
+    "db:migrate": "pnpm --filter @thankyou/api db:migrate",
+    "db:seed": "pnpm --filter @thankyou/api db:seed",
+    "db:reset": "pnpm --filter @thankyou/api db:reset",
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "db:setup": "pnpm --filter @thankyou/api db:setup"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "unrs-resolver",
+      "sharp"
+    ],
+    "overrides": {
+      "postcss": ">=8.5.18"
+    }
+  }
+}

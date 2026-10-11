@@ -1,8 +1,0 @@
-Next, steps:
-
-keep testing the app and troubleshoot issues.
-
-admin@admin.com pw is 123456789
-
-All users pw is 12345678
-To find all users, login with admin@admin.com and find the page that shows all users.
