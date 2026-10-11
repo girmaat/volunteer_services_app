@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { anon, as, EMAILS } from "./helpers";
+import { getApp, anon, as, EMAILS } from "./helpers";
 
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 
@@ -89,5 +89,23 @@ describe("public read API", () => {
     expect(res.headers["x-powered-by"]).toBeUndefined();
     expect(res.headers["x-content-type-options"]).toBe("nosniff");
     expect(res.headers["content-security-policy"]).toContain("default-src 'none'");
+  });
+});
+
+describe("OpenAPI coverage", () => {
+  it("documents every registered /v1 route", async () => {
+    const doc = await anon().get("/v1/openapi.json");
+    const documented = new Set<string>();
+    for (const [p, ops] of Object.entries(doc.body.paths as Record<string, Record<string, unknown>>)) for (const m of Object.keys(ops)) documented.add(`${m.toUpperCase()} ${p}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stack: any[] = (getApp() as any)._router.stack;
+    const missing: string[] = [];
+    for (const layer of stack) {
+      const route = layer.route;
+      if (!route || typeof route.path !== "string" || !route.path.startsWith("/v1/") || ["/v1/openapi.json", "/v1/docs"].includes(route.path)) continue;
+      const p = route.path.replace(/:([A-Za-z_]+)/g, "{$1}");
+      for (const m of Object.keys(route.methods)) if (!documented.has(`${m.toUpperCase()} ${p}`)) missing.push(`${m.toUpperCase()} ${p}`);
+    }
+    expect(missing).toEqual([]);
   });
 });
