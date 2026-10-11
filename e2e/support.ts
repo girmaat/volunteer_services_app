@@ -90,13 +90,16 @@ export async function sessionFor(email: string): Promise<string> {
   return String(s.rows[0].session_token);
 }
 
-/** A browser context signed in as `email`. */
+const openContexts = new Set<BrowserContext>();
+
+/** A browser context signed in as `email` (closed automatically after the test). */
 export async function signedIn(browser: Browser, email: string, opts: Parameters<Browser["newContext"]>[0] = {}): Promise<{ context: BrowserContext; page: Page }> {
   const context = await browser.newContext({ timezoneId: "America/New_York", locale: "en-US", ...opts });
   const baseURL = process.env.E2E_BASE_URL || "http://localhost:3002";
   await context.addCookies([{ name: "ty_session", value: await sessionFor(email), url: baseURL }]);
   const page = await context.newPage();
   trackRequests(page);
+  openContexts.add(context);
   return { context, page };
 }
 
@@ -199,10 +202,18 @@ export async function submit(page: Page, locator: ReturnType<Page["locator"]>) {
   await locator.click();
 }
 
-export const test = base.extend({
+export const test = base.extend<{ closeContexts: void }>({
   page: async ({ page }, use) => {
     trackRequests(page);
     await use(page);
-  }
+  },
+  closeContexts: [
+    async ({}, use) => {
+      await use();
+      for (const c of openContexts) await c.close().catch(() => undefined);
+      openContexts.clear();
+    },
+    { auto: true }
+  ]
 });
 export { expect };

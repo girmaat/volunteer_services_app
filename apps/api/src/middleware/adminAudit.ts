@@ -24,6 +24,18 @@ function scrub(value: unknown, depth = 0): unknown {
 
 export type AuditNote = { action?: string; targetType?: string; targetId?: string; details?: Record<string, unknown> };
 
+/**
+ * Readable default action name from the route: POST /v1/admin/users/:id/strike → "users.strike",
+ * DELETE /v1/admin/categories/:slug → "categories.delete".
+ */
+export function defaultAction(method: string, routePath: string) {
+  const parts = routePath.replace(/^\/v1\/admin\/?/, "").split("/").filter((p) => p && !p.startsWith(":") && !/^[0-9a-f-]{36}$/i.test(p));
+  const verb = { POST: "", PUT: "update", PATCH: "update", DELETE: "delete" }[method] ?? method.toLowerCase();
+  if (!parts.length) return verb || method.toLowerCase();
+  if (parts.length === 1) return verb ? `${parts[0]}.${verb}` : `${parts[0]}.create`;
+  return verb ? `${parts.join(".")}.${verb}` : parts.join(".");
+}
+
 export function adminAudit(req: Request, res: Response, next: NextFunction) {
   if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return next();
   const body = scrub(req.body);
@@ -44,7 +56,7 @@ export function adminAudit(req: Request, res: Response, next: NextFunction) {
           [
             user?.id ?? null,
             user?.platform_role ?? null,
-            note.action ?? `${req.method} ${(req.route?.path as string | undefined) ?? fullPath}`,
+            note.action ?? defaultAction(req.method, (req.route?.path as string | undefined) ?? fullPath),
             req.method,
             fullPath.slice(0, 300),
             note.targetType ?? segs[0] ?? null,

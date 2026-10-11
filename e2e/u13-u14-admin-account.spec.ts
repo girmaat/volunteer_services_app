@@ -46,10 +46,10 @@ test("U13 admin works a report: strike, suspend, take down; all audited", async 
 
   // Audit log: one row per action.
   const actions = async (target: string) => (await db.query("SELECT action FROM admin_audit_log WHERE target_id = $1", [target])).rows.map((r) => String(r.action));
+  // Audit rows are written as each response finishes.
+  await expect.poll(async () => (await actions(offender.id)).sort()).toEqual(["users.ban", "users.strike"]);
+  await expect.poll(async () => await actions(listing)).toContain("request.take_down");
   const onUser = await actions(offender.id);
-  expect(onUser.some((a) => /strike/i.test(a))).toBe(true);
-  expect(onUser.some((a) => /ban|suspend/i.test(a))).toBe(true);
-  expect((await actions(listing)).some((a) => /take_down/.test(a))).toBe(true);
   await page.goto(`/admin/audit?target=${offender.id}`);
   for (const a of onUser) await expect(page.getByRole("cell", { name: a, exact: true }).first()).toBeVisible();
   await page.goto(`/admin/audit?target=${listing}`);

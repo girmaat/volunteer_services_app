@@ -33,14 +33,16 @@ export async function me(pool: Pool, req: Request, res: Response) {
   const user = await requireUserBySession(pool, token);
   if (!user) return res.status(401).json({ message: "Not authenticated" });
 
-  const [flags, unread, orgContext] = await Promise.all([
+  const [flags, unread, orgContext, profile] = await Promise.all([
     getAdminFlags(pool, user as any),
     pool.query("SELECT COUNT(*)::int AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL", [user.id]).catch(() => ({ rows: [{ n: 0 }] })),
     // Org members get their org context here too, so org pages don't need a second call to /v1/org/me.
     can(user as PolicyUser, "org:act")
       ? getOrgContextForUser(pool, String(user.id), contextOrgSlug((user as any).active_context)).catch(() => null)
-      : Promise.resolve(null)
+      : Promise.resolve(null),
+    pool.query("SELECT display_name, full_name, avatar_url FROM user_profiles WHERE user_id = $1", [user.id]).catch(() => ({ rows: [] as any[] }))
   ]);
+  const prof = (profile.rows[0] ?? {}) as { display_name?: string | null; full_name?: string | null; avatar_url?: string | null };
   const contexts = availableContexts(user as PolicyUser);
   const active = user.active_context && (contexts as string[]).includes(user.active_context) ? user.active_context : null;
   return res.json({
@@ -54,7 +56,10 @@ export async function me(pool: Pool, req: Request, res: Response) {
       platform_admin_role: flags.platformAdminRole,
       // Saves the shell a separate /v1/notifications/unread-count call on every page.
       unread_notifications: Number(unread.rows[0]?.n ?? 0),
-      org_context: orgContext
+      org_context: orgContext,
+      // How to greet them: display name, else first name. Never derived from the email address.
+      display_name: (prof.display_name || "").trim() || (prof.full_name || "").trim().split(/\s+/)[0] || null,
+      avatar_url: prof.avatar_url ?? null
     }
   });
 }

@@ -20,7 +20,7 @@ export default async function Page() {
   const countsRes = await backendFetch("/v1/volunteer/dashboard");
   const counts = countsRes.ok ? ((await countsRes.json()) as DashboardCounts) : null;
   const recs = (counts?.recommended ?? []).slice(0, 4);
-  const name = user?.email?.split("@")[0] ?? "there";
+  const name = user?.display_name || "there";
 
   return (
     <>

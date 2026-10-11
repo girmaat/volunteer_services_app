@@ -28,6 +28,8 @@ export type CurrentUser = {
   trust_tier?: "unverified" | "basic" | "trusted";
   platform_role?: "moderator" | "admin" | "super" | null;
   unread_notifications?: number;
+  display_name?: string | null;
+  avatar_url?: string | null;
 
   // Platform admin flags (present when returned from /v1/me)
   is_platform_admin?: boolean;

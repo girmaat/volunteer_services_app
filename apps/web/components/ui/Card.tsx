@@ -10,7 +10,7 @@ export function PageHeader({ title, description, actions, back }: { title: React
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
         {back ? <div className="mb-2 text-sm text-muted">{back}</div> : null}
-        <h1 className="m-0 text-2xl font-bold">{title}</h1>
+        <h1 className="m-0 text-2xl font-bold [overflow-wrap:anywhere]">{title}</h1>
         {description ? <p className="m-0 mt-1.5 text-muted">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}

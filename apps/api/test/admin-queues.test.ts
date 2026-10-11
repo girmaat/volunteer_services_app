@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { anon, as, createUser, EMAILS, pool, userId } from "./helpers";
+import { defaultAction } from "../src/middleware/adminAudit";
 
 const soon = (h: number) => new Date(Date.now() + h * 3600_000).toISOString();
 const waitFor = async (fn: () => Promise<boolean>) => {
@@ -140,7 +141,14 @@ describe("admin: run a scheduled job now", () => {
     expect(ok.body.job).toBe("reminders.attendance");
     expect((await admin.post("/v1/admin/jobs/drop.tables/run", {})).status).toBe(404);
     expect((await (await as(EMAILS.moderator)).post("/v1/admin/jobs/maintenance.hourly/run", {})).status).toBe(403);
-    const audit = await pool.query("SELECT 1 FROM admin_audit_log WHERE action = 'job.run' AND target_id = 'reminders.attendance'");
-    expect(audit.rowCount).toBeGreaterThan(0);
+    expect(await waitFor(async () => ((await pool.query("SELECT 1 FROM admin_audit_log WHERE action = 'job.run' AND target_id = 'reminders.attendance'")).rowCount ?? 0) > 0)).toBe(true);
+  });
+
+  it("names audit actions readably by default", () => {
+    expect(defaultAction("POST", "/v1/admin/users/:id/strike")).toBe("users.strike");
+    expect(defaultAction("POST", "/v1/admin/users/:id/ban")).toBe("users.ban");
+    expect(defaultAction("PATCH", "/v1/admin/categories/:slug")).toBe("categories.update");
+    expect(defaultAction("DELETE", "/v1/admin/categories/:slug")).toBe("categories.delete");
+    expect(defaultAction("POST", "/v1/admin/categories")).toBe("categories.create");
   });
 });

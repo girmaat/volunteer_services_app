@@ -70,7 +70,7 @@ export default async function Page() {
   const rep = counts.reputation ?? null;
   const recentApps = activity?.recentApplications || [];
   const recentThreads = activity?.recentThreads || [];
-  const name = user?.email?.split("@")[0] ?? "there";
+  const name = user?.display_name || "there";
 
   return (
     <>

@@ -25,8 +25,9 @@ async function loadRequest(id: string): Promise<RequestDetail | null> {
   const res = await backendFetch(`/v1/org/requests/${id}`, { method: "GET" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("Failed to load request");
-  const json = (await res.json()) as { request: RequestDetail };
-  return json.request;
+  // The API returns the request itself (older responses wrapped it in { request }).
+  const json = (await res.json()) as RequestDetail & { request?: RequestDetail };
+  return json.request ?? json;
 }
 
 async function loadDocs(id: string): Promise<AssignedDoc[]> {
