@@ -44,7 +44,7 @@ async function createAction(formData: FormData) {
     let msg = "Create failed";
     try {
       const data = (await res.json()) as any;
-      if (data?.error) msg = String(data.error);
+      if (data?.error) msg = String(data.error?.message ?? data.error);
     } catch {
       try {
         const t = await res.text();

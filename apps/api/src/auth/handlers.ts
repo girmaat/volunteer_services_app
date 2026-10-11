@@ -1,4 +1,5 @@
 
+import { HttpUrl } from "@thankyou/contracts";
 import type { Request, Response } from "express";
 import type { Pool } from "pg";
 import bcrypt from "bcryptjs";
@@ -462,7 +463,7 @@ export async function setProfile(pool: Pool, req: Request, res: Response) {
 
     // Public profile (shown to others)
     displayName: z.string().optional().nullable(),
-    avatarUrl: z.string().url().optional().nullable(),
+    avatarUrl: HttpUrl.optional().nullable(),
     publicLocation: z.string().optional().nullable(),
 
     // Legacy field (pre-public_location). Kept for backward compatibility.

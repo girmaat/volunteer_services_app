@@ -21,3 +21,11 @@ export type PageQuery = z.infer<typeof PageQuery>;
 export function page<T extends z.ZodTypeAny>(item: T) {
   return z.object({ items: z.array(item), nextCursor: z.string().nullable() });
 }
+
+/** An absolute http(s) URL. z.string().url() alone also accepts javascript: and data: URLs. */
+export const HttpUrl = z
+  .string()
+  .trim()
+  .max(2048)
+  .url()
+  .refine((u) => /^https?:\/\//i.test(u), { message: "Must be an http(s) URL" });

@@ -6,7 +6,7 @@ import { backendFetch, getOnboardingProfile } from "../../lib/backend";
 export const dynamic = "force-dynamic";
 
 export function safeMessage(err: any, fallback: string) {
-  const msg = String(err?.message || err?.error || "").trim();
+  const msg = String(err?.message || err?.error?.message || "").trim();
   return msg ? msg : fallback;
 }
 

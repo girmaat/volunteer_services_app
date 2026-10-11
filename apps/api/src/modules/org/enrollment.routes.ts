@@ -1,0 +1,603 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { HttpUrl } from "@thankyou/contracts";
+import type { Express } from "express";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { randomTokenUrlSafe, sha256 } from "../../auth/crypto";
+import { devEmailLink, sendEmail } from "../../auth/email";
+import { requireUserBySession } from "../../auth/session";
+import { pool } from "../../lib/db";
+import { wrap } from "../../lib/http";
+import { authHeaderToken, buildInsertSql, buildUpdateSql, getOrgContextForUser, getPublicColumns, pgErrorCode, publicTableExists, requireAdmin, requireOrg, slugifyOrgSlug, webBaseUrl } from "./context";
+
+export function registerOrgEnrollmentRoutes(app: Express) {
+
+  // Legacy endpoint (removed by orgReq)
+
+
+
+  // OrgReq Phase 1: Public org enrollment (creates org + first admin user)
+  app.post(
+    "/v1/orgs/enroll",
+    wrap(async (req: any, res: any) => {
+      const schema = z.object({
+        org: z.object({
+          name: z.string().min(2),
+          slug: z.string().min(2),
+          summary: z.string().min(10),
+          location: z.string().min(2),
+          mission: z.string().min(2).optional().nullable(),
+          website_url: HttpUrl.optional().nullable(),
+          contact_email: z.string().email()
+        }),
+        admin: z.object({
+          fullName: z.string().min(1),
+          email: z.string().email(),
+          password: z.string().min(8)
+        })
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+
+      const orgSlug = slugifyOrgSlug(parsed.data.org.slug);
+      if (!orgSlug) return res.status(400).json({ message: "Invalid org slug" });
+
+      const email = parsed.data.admin.email.toLowerCase().trim();
+
+      const existingUser = await pool.query("SELECT id, email_verified_at FROM users WHERE email=$1", [email]);
+      if ((existingUser.rowCount ?? 0) > 0) return res.status(409).json({ message: "Email already in use" });
+
+      const existingOrg = await pool.query("SELECT slug FROM organizations WHERE slug=$1", [orgSlug]);
+      if ((existingOrg.rowCount ?? 0) > 0) return res.status(409).json({ message: "Organization slug already in use" });
+
+      const passwordHash = await bcrypt.hash(parsed.data.admin.password, 12);
+
+      // Create user (org team member)
+      const userRows = await pool.query(
+        `INSERT INTO users (email, password_hash, role, account_type, profile_completed, availability_completed, onboarding_completed, verification_required, verification_status)
+         VALUES ($1, $2, 'org_admin', 'org_team_member', TRUE, FALSE, TRUE, TRUE, 'required')
+         RETURNING id`,
+        [email, passwordHash]
+      );
+      const userId = String(userRows.rows[0].id);
+
+      await pool.query(
+        `INSERT INTO user_profiles (user_id, full_name)
+         VALUES ($1, $2)
+         ON CONFLICT (user_id) DO UPDATE SET full_name=EXCLUDED.full_name, updated_at=NOW()`,
+        [userId, parsed.data.admin.fullName]
+      );
+
+      // Create org
+      await pool.query(
+        `INSERT INTO organizations (slug, name, summary, location, mission, website_url, contact_email, created_by_user_id, verification_required, verification_status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, 'required')`,
+        [
+          orgSlug,
+          parsed.data.org.name,
+          parsed.data.org.summary,
+          parsed.data.org.location,
+          parsed.data.org.mission ?? null,
+          parsed.data.org.website_url ?? null,
+          parsed.data.org.contact_email,
+          userId
+        ]
+      );
+
+      // Create membership (admin)
+      await pool.query(
+        `INSERT INTO organization_members (org_slug, user_id, role, status)
+         VALUES ($1, $2, 'admin', 'active')
+         ON CONFLICT (org_slug, user_id) DO NOTHING`,
+        [orgSlug, userId]
+      );
+
+      // Email verification (same pattern as /v1/auth/signup)
+      const token = randomTokenUrlSafe(32);
+      const tokenHash = sha256(token);
+
+      await pool.query(
+        `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, NOW() + INTERVAL '24 hours')`,
+        [userId, tokenHash]
+      );
+
+      const verifyUrl = `${webBaseUrl()}/verify-email?token=${encodeURIComponent(token)}`;
+      const delivery = await sendEmail({
+        to: email,
+        subject: "Verify your ThankYou email",
+        text: `Welcome to ThankYou!
+
+Verify your email to continue:
+${verifyUrl}
+
+If you didn't create this account, you can ignore this email.`
+      });
+
+      const dev_verify_url = devEmailLink(verifyUrl, delivery.delivery);
+
+      return res.status(202).json({ status: "accepted", emailDelivery: delivery.delivery, dev_verify_url });
+    })
+  );
+
+
+  // Authenticated org creation (converts an existing requester into an org admin and creates the org + membership)
+  app.post(
+    "/v1/orgs/create",
+    wrap(async (req: any, res: any) => {
+      const token = authHeaderToken(req);
+      if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+      const user = await requireUserBySession(pool, token);
+      if (!user) return res.status(401).json({ message: "Not authenticated" });
+
+      // Only authenticated, verified accounts in the requester onboarding flow may create an org this way.
+      if (String((user as any).role || "") !== "requester") {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (String((user as any).requester_mode || "") !== "organization") {
+        return res.status(400).json({ message: "Requester mode must be 'organization' to create an org" });
+      }
+
+      if (!(user as any).profile_completed) {
+        return res.status(400).json({ message: "Complete your profile before creating an organization" });
+      }
+
+      const schema = z.object({
+        org: z.object({
+          name: z.string().min(2),
+          slug: z.string().min(2),
+          summary: z.string().min(10),
+          location: z.string().min(2),
+          mission: z.string().min(2).optional().nullable(),
+          website_url: HttpUrl.optional().nullable(),
+          contact_email: z.string().email()
+        })
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+
+      const orgSlug = slugifyOrgSlug(parsed.data.org.slug);
+      if (!orgSlug) return res.status(400).json({ message: "Invalid org slug" });
+
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+
+        // Guard: schema may be partially migrated. We dynamically write only columns that exist.
+        const hasOrgs = await publicTableExists(client, "organizations");
+        const hasMembers = await publicTableExists(client, "organization_members");
+        const hasUsers = await publicTableExists(client, "users");
+
+        if (!hasOrgs || !hasMembers || !hasUsers) {
+          await client.query("ROLLBACK");
+          return res.status(500).json({
+            message: "Database schema is missing required organization tables. Run backend migrations (owner role) and retry."
+          });
+        }
+
+        const orgCols = await getPublicColumns(client, "organizations");
+        const memberCols = await getPublicColumns(client, "organization_members");
+        const userCols = await getPublicColumns(client, "users");
+
+        if (!orgCols.has("slug")) {
+          await client.query("ROLLBACK");
+          return res.status(500).json({
+            message: "Database schema for organizations is incomplete (missing organizations.slug). Run migrations and retry."
+          });
+        }
+
+        const existingOrg = await client.query("SELECT slug FROM organizations WHERE slug=$1", [orgSlug]);
+        if ((existingOrg.rowCount ?? 0) > 0) {
+          await client.query("ROLLBACK");
+          return res.status(409).json({ message: "Organization slug already in use" });
+        }
+
+        // Create org (write only columns present in the current schema)
+        const orgInsert = buildInsertSql(
+          "organizations",
+          {
+            slug: orgSlug,
+            name: parsed.data.org.name,
+            summary: parsed.data.org.summary,
+            location: parsed.data.org.location,
+            mission: parsed.data.org.mission ?? null,
+            website_url: parsed.data.org.website_url ?? null,
+            contact_email: parsed.data.org.contact_email,
+            created_by_user_id: String((user as any).id),
+            verification_required: true,
+            verification_status: "required",
+            onboarding_completed: false
+          },
+          orgCols,
+          ["slug", "name", "summary", "location"]
+        );
+
+        await client.query(orgInsert.sql, orgInsert.params);
+
+        // Create membership (admin)
+        const memberInsert = buildInsertSql(
+          "organization_members",
+          {
+            org_slug: orgSlug,
+            user_id: String((user as any).id),
+            role: "admin",
+            status: "active",
+            joined_at: new Date()
+          },
+          memberCols,
+          ["org_slug", "user_id"]
+        );
+
+        // Use ON CONFLICT DO NOTHING to be tolerant of varying constraint names.
+        await client.query(`${memberInsert.sql} ON CONFLICT DO NOTHING`, memberInsert.params);
+
+        // Convert account to org admin (mutually exclusive from individual requester)
+        const userUpdate = buildUpdateSql(
+          "users",
+          "id",
+          String((user as any).id),
+          {
+            role: "org_admin",
+            account_type: "org_team_member",
+            verification_required: true,
+            verification_status: "required",
+            updated_at: new Date()
+          },
+          userCols,
+          ["id", "role"]
+        );
+
+        await client.query(userUpdate.sql, userUpdate.params);
+
+        await client.query("COMMIT");
+        return res.status(201).json({ org: { slug: orgSlug } });
+      } catch (e: any) {
+        try {
+          await client.query("ROLLBACK");
+        } catch (_) {}
+
+        const code = pgErrorCode(e);
+        if (code === "23505") {
+          return res.status(409).json({ message: "Organization slug already in use" });
+        }
+
+        if (code === "42P01" || code === "42703") {
+          return res.status(500).json({
+            message: "Database schema appears out of date for organization features. Run backend migrations (owner role) and retry."
+          });
+        }
+
+        throw e;
+      } finally {
+        client.release();
+      }
+    })
+  );
+
+
+
+
+
+
+// OrgReq Phase 1.5: Join an existing org by email-domain match (authenticated org requester/team member).
+// This prevents users from bypassing org setup by landing on /dashboard without org context.
+app.post(
+  "/v1/orgs/join",
+  wrap(async (req: any, res: any) => {
+    const token = authHeaderToken(req);
+    if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+    const user = await requireUserBySession(pool, token);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+
+    const role = String((user as any).role || "");
+    const requesterMode = String((user as any).requester_mode || "");
+
+    // Only org-requester accounts (requester_mode=organization) or existing org_admin accounts may join.
+    if (role === "requester") {
+      if (requesterMode !== "organization") {
+        return res.status(400).json({ message: "Requester mode must be 'organization' to join an organization" });
+      }
+    } else if (role !== "org_admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (!(user as any).profile_completed) {
+      return res.status(400).json({ message: "Complete your profile before joining an organization" });
+    }
+
+    // No switching: if already active in any org, block join.
+    const existing = await pool.query(
+      "SELECT org_slug FROM organization_members WHERE user_id=$1 AND status='active' LIMIT 1",
+      [String((user as any).id)]
+    );
+    if ((existing.rowCount ?? 0) > 0) {
+      return res.status(409).json({ message: "Already a member of an organization" });
+    }
+
+    const schema = z.object({
+      orgSlug: z.string().min(2)
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+
+    const orgSlug = slugifyOrgSlug(parsed.data.orgSlug);
+    if (!orgSlug) return res.status(400).json({ message: "Invalid org slug" });
+
+    
+    const orgCols = await getPublicColumns(pool as any, "organizations");
+    const selectContact = orgCols.has("contact_email") ? "contact_email" : "NULL::text AS contact_email";
+    const selectWebsite = orgCols.has("website_url") ? "website_url" : "NULL::text AS website_url";
+
+    const orgRes = await pool.query(
+      `SELECT slug, ${selectContact}, ${selectWebsite} FROM organizations WHERE slug=$1`,
+      [orgSlug]
+    );
+
+if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organization not found" });
+
+    const org = orgRes.rows[0] as any;
+
+    function normalizeDomain(d: string) {
+      const s = String(d || "").toLowerCase().trim();
+      return s.startsWith("www.") ? s.slice(4) : s;
+    }
+
+    const userEmail = String((user as any).email || "").toLowerCase().trim();
+    const userDomain = normalizeDomain(userEmail.split("@")[1] || "");
+
+    let orgDomain = "";
+    if (org.contact_email) {
+      orgDomain = normalizeDomain(String(org.contact_email).split("@")[1] || "");
+    } else if (org.website_url) {
+      try {
+        const u = new URL(String(org.website_url));
+        orgDomain = normalizeDomain(u.hostname);
+      } catch {
+        orgDomain = "";
+      }
+    }
+
+    if (!orgDomain) {
+      return res.status(400).json({
+        message: "This organization is not configured for domain-based join. Ask an admin to add you."
+      });
+    }
+
+    if (!userDomain || userDomain !== orgDomain) {
+      return res.status(403).json({
+        message: "Your email domain does not match this organization. Ask an admin to add you."
+      });
+    }
+
+    await pool.query(
+      `INSERT INTO organization_members (org_slug, user_id, role, status, joined_at)
+       VALUES ($1, $2, 'member', 'active', NOW())
+       ON CONFLICT (org_slug, user_id) DO UPDATE SET status='active', joined_at=COALESCE(organization_members.joined_at, NOW()), updated_at=NOW()`,
+      [orgSlug, String((user as any).id)]
+    );
+
+    // Convert account to org admin (mutually exclusive from individual requester).
+    await pool.query(
+      `UPDATE users
+         SET role='org_admin',
+             account_type='org_team_member',
+             verification_required=TRUE,
+             verification_status='required',
+             updated_at=NOW()
+       WHERE id=$1`,
+      [String((user as any).id)]
+    );
+
+    return res.status(201).json({ org: { slug: orgSlug } });
+  })
+);
+
+
+  // Phase 2: Change org slug (admin only). This updates all FK references.
+  app.post(
+    "/v1/orgs/:orgSlug/slug",
+    wrap(async (req: any, res: any) => {
+      const ok = await requireOrg(pool, req, res);
+      if (!ok) return;
+      if (ok.ctx.org.slug !== String(req.params.orgSlug)) return res.status(404).json({ message: "Org not found" });
+      if (!requireAdmin(ok.ctx, res)) return;
+
+      const schema = z.object({ slug: z.string().min(2) });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+
+      const newSlug = slugifyOrgSlug(parsed.data.slug);
+      if (!newSlug) return res.status(400).json({ message: "Invalid org slug" });
+
+      const oldSlug = ok.ctx.org.slug;
+      if (newSlug === oldSlug) return res.json({ org: { slug: oldSlug } });
+
+      const existingOrg = await pool.query("SELECT slug FROM organizations WHERE slug=$1", [newSlug]);
+      if ((existingOrg.rowCount ?? 0) > 0) return res.status(409).json({ message: "Organization slug already in use" });
+
+      // To avoid FK violations (no ON UPDATE CASCADE), we create a new org row, repoint refs, then delete the old row.
+      await pool.query("BEGIN");
+      try {
+        const orgRow = await pool.query(
+          `
+          INSERT INTO organizations (slug, name, summary, location, mission, website_url, contact_email, logo_url, onboarding_completed, created_by_user_id, verification_required, verification_status, verification_submitted_at, verification_submission_notes, verification_notes, verified_at, verified_by_user_id, created_at, updated_at)
+          SELECT $2, name, summary, location, mission, website_url, contact_email, logo_url, onboarding_completed, created_by_user_id, verification_required, verification_status, verification_submitted_at, verification_submission_notes, verification_notes, verified_at, verified_by_user_id, created_at, updated_at
+          FROM organizations
+          WHERE slug = $1
+          RETURNING slug
+          `,
+          [oldSlug, newSlug]
+        );
+        if ((orgRow.rowCount ?? 0) === 0) {
+          await pool.query("ROLLBACK");
+          return res.status(404).json({ message: "Org not found" });
+        }
+
+        await pool.query("UPDATE organization_members SET org_slug=$2 WHERE org_slug=$1", [oldSlug, newSlug]);
+
+        // Optional columns exist in our schema migrations; safe to update.
+        await pool.query("UPDATE sessions SET active_org_slug=$2 WHERE active_org_slug=$1", [oldSlug, newSlug]);
+        await pool.query("UPDATE service_requests SET requester_org_slug=$2 WHERE requester_org_slug=$1", [oldSlug, newSlug]);
+
+        await pool.query("DELETE FROM organizations WHERE slug=$1", [oldSlug]);
+        await pool.query("COMMIT");
+      } catch (e) {
+        await pool.query("ROLLBACK");
+        throw e;
+      }
+
+      const ctx = await getOrgContextForUser(pool, String((ok.user as any).id));
+      return res.json({ org: ctx?.org ? { slug: ctx.org.slug } : { slug: newSlug } });
+    })
+  );
+
+
+  // Phase 2: Update org profile (admin only)
+  app.patch(
+    "/v1/orgs/:orgSlug",
+    wrap(async (req: any, res: any) => {
+      const ok = await requireOrg(pool, req, res);
+      if (!ok) return;
+      if (ok.ctx.org.slug !== String(req.params.orgSlug)) return res.status(404).json({ message: "Org not found" });
+      if (!requireAdmin(ok.ctx, res)) return;
+
+      // Load current org so we can validate completion rules against the post-update shape.
+      const currentOrgRes = await pool.query(
+        "SELECT slug, name, summary, location, contact_email, mission, website_url, logo_url, onboarding_completed FROM organizations WHERE slug=$1",
+        [ok.ctx.org.slug]
+      );
+      if ((currentOrgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Org not found" });
+      const currentOrg = currentOrgRes.rows[0] as any;
+
+      const schema = z.object({
+        name: z.string().min(2).optional(),
+        summary: z.string().min(10).optional(),
+        location: z.string().min(2).optional(),
+        mission: z.string().min(2).optional().nullable(),
+        website_url: HttpUrl.optional().nullable(),
+        contact_email: z.string().email().optional(),
+        logo_url: HttpUrl.optional().nullable(),
+        onboarding_completed: z.boolean().optional()
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+
+      const p = parsed.data;
+
+      const finalName = p.name ?? String(currentOrg.name || "");
+      const finalSummary = p.summary ?? String(currentOrg.summary || "");
+      const finalLocation = p.location ?? String(currentOrg.location || "");
+      const finalContactEmail = (typeof p.contact_email === "string" ? p.contact_email : currentOrg.contact_email) as
+        | string
+        | null;
+
+      // Enforce spec minimums when finishing onboarding.
+      if (p.onboarding_completed === true && !currentOrg.onboarding_completed) {
+        if (!finalName || finalName.trim().length < 2) {
+          return res.status(400).json({ message: "Organization name is required" });
+        }
+        if (!finalLocation || finalLocation.trim().length < 2) {
+          return res.status(400).json({ message: "Organization location is required" });
+        }
+        if (!finalSummary || finalSummary.trim().length < 10) {
+          return res.status(400).json({ message: "Organization summary is required" });
+        }
+        if (!finalContactEmail) {
+          return res.status(400).json({ message: "Contact email is required" });
+        }
+
+        // Also require minimal admin personal profile (name + phone) before org onboarding can complete.
+        const adminProfileRes = await pool.query(
+          "SELECT full_name, phone FROM user_profiles WHERE user_id=$1",
+          [String((ok.user as any).id)]
+        );
+        const adminProfile = adminProfileRes.rows[0] as any;
+        const adminNameOk = Boolean(String(adminProfile?.full_name || "").trim());
+        const adminPhoneOk = Boolean(String(adminProfile?.phone || "").trim());
+        if (!adminNameOk || !adminPhoneOk) {
+          return res.status(400).json({ message: "Admin profile (name and phone) must be completed before finishing organization onboarding" });
+        }
+      }
+
+      await pool.query(
+        `
+        UPDATE organizations
+        SET
+          name = COALESCE($2, name),
+          summary = COALESCE($3, summary),
+          location = COALESCE($4, location),
+          mission = COALESCE($5, mission),
+          website_url = COALESCE($6, website_url),
+          contact_email = COALESCE($7, contact_email),
+          logo_url = COALESCE($8, logo_url),
+          onboarding_completed = COALESCE($9, onboarding_completed),
+          updated_at = NOW()
+        WHERE slug = $1
+        `,
+        [
+          ok.ctx.org.slug,
+          p.name ?? null,
+          p.summary ?? null,
+          p.location ?? null,
+          p.mission ?? null,
+          p.website_url ?? null,
+          typeof p.contact_email === "string" ? p.contact_email : null,
+          p.logo_url ?? null,
+          typeof p.onboarding_completed === "boolean" ? p.onboarding_completed : null
+        ]
+      );
+
+      const ctx = await getOrgContextForUser(pool, String((ok.user as any).id));
+      return res.json(ctx);
+    })
+  );
+
+
+  // Phase 3/4: Dashboard tiles
+  // Phase 2b: Org verification submission (admin only)
+  app.post(
+    "/v1/orgs/:orgSlug/verification/submit",
+    wrap(async (req: any, res: any) => {
+      const ok = await requireOrg(pool, req, res);
+      if (!ok) return;
+      if (ok.ctx.org.slug !== String(req.params.orgSlug)) return res.status(404).json({ message: "Org not found" });
+      if (!requireAdmin(ok.ctx, res)) return;
+
+      const schema = z.object({
+        submission_notes: z.string().max(4000).optional()
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+
+      const notes = parsed.data.submission_notes ? String(parsed.data.submission_notes).trim() : null;
+
+      const cur = await pool.query("SELECT verification_status FROM organizations WHERE slug=$1", [ok.ctx.org.slug]);
+      const status = (cur.rows?.[0]?.verification_status ? String(cur.rows[0].verification_status) : "not_required").toLowerCase();
+      if (status === "approved" || status === "verified") {
+        return res.status(409).json({ message: "Organization is already verified." });
+      }
+
+      await pool.query(
+        `
+        UPDATE organizations
+           SET verification_required=TRUE,
+               verification_status='submitted',
+               verification_submitted_at=NOW(),
+               verification_submission_notes=$2,
+               updated_at=NOW()
+         WHERE slug=$1
+        `,
+        [ok.ctx.org.slug, notes]
+      );
+
+      const ctx = await getOrgContextForUser(pool, String((ok.user as any).id));
+      return res.json({ ok: true, org: ctx?.org ?? ok.ctx.org });
+    })
+  );
+}

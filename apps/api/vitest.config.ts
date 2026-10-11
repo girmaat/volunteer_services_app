@@ -4,8 +4,10 @@ export default defineConfig({
   test: {
     include: ["test/**/*.test.ts", "src/**/*.test.ts"],
     environment: "node",
+    setupFiles: ["test/setup-env.ts"],
+    globalSetup: ["test/global-setup.ts"],
     testTimeout: 20000,
-    hookTimeout: 30000,
+    hookTimeout: 60000,
     fileParallelism: false
   }
 });

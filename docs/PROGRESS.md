@@ -44,3 +44,48 @@ The original app in `Thank-you-App/thankyou` is untouched.
 **Measured locally (1,020 open requests):** recommended 40–70 ms, nearby 10–18 ms, remote 20–31 ms, public list 8 ms; signed-in dashboard = `/v1/me` + 1 data call (+ maintenance check at most every 30 s).
 
 **Found, scheduled for Phase 2:** the contact form discards messages (`/v1/public/contact` stores nothing); org website/URL fields aren't validated on write.
+
+## Phase 2 — Backend restructure, API contract and hardening (done 2026-10-10)
+
+**Structure** — `server.ts` (5,800 lines) is now a 50-line entrypoint. Routes live in `src/modules/<area>/*.routes.ts`
+(platform, public, auth, share, volunteer, requester, settings, org, admin, safety), each file ≤ ~650 lines;
+shared code in `src/lib` (env, db, logger, errors, http, pagination, redaction, clientIp) and `src/middleware`
+(auth, rateLimit). Generated mechanically with the TypeScript compiler API so handler bodies are unchanged.
+Dead code removed: two unregistered volunteer-history modules, a legacy `/v1/org/enroll` stub, duplicate
+messaging-permission helpers, the legacy `opportunities` table family (migration 0003).
+
+**Contract** — `packages/contracts` holds zod schemas for public, auth and common types; OpenAPI 3.1 is
+generated at `/v1/openapi.json` (Redoc at `/v1/docs`, off in production unless `EXPOSE_API_DOCS=true`) and
+lists all 168 paths / 192 operations, with full schemas for public and auth endpoints.
+
+**Hardening**
+- Validated configuration (`lib/env.ts`): the API refuses to start in production without SMTP, https
+  `WEB_BASE_URL`, etc.
+- helmet (strict CSP for a JSON API), CORS allow-list, 1 MB body limit, `x-powered-by` off.
+- Rate limits: login/signup/reset 10/min per IP and 10/15 min per email; public forms 10/10 min; writes 120/min.
+  The web server forwards the visitor IP with a shared secret (`INTERNAL_API_KEY`) so limits apply per visitor,
+  not per web server; spoofed `X-Forwarded-For` is no longer trusted for share-report thresholds.
+- Central error handler with `{ error: { code, message }, message, requestId }`; DB constraint errors map to
+  404/409/400 instead of 500. pino structured logs with request ids and secret redaction.
+- Session lookup returns an explicit column list (internal admin notes no longer reach `/v1/me`);
+  malformed session tokens return 401 instead of 500.
+- `http(s)`-only URL validation for org website/logo and avatars (`z.string().url()` accepted `javascript:`).
+- Other users' emails/full names no longer used as display-name fallbacks (19 queries); blocked-user lists
+  no longer show the blocked person's email.
+- Background jobs with pg-boss (geocoding, scheduled backfill); graceful shutdown; production bundle via esbuild.
+
+**Bugs found by the new tests and fixed**
+- Both review endpoints always failed (`ON CONFLICT` didn't match the partial unique index).
+- Org application decisions (waitlist/accept via PATCH) always failed ("column reference status is ambiguous").
+- Admin maintenance-mode toggle always failed (unused SQL parameter).
+- Admin strike/ban/grant on an unknown user returned 500 (now 404).
+- Settings overview called two endpoints that didn't exist (`blocked-users/count`, `reports/count`).
+- The contact form discarded messages (now stored in `contact_messages` and emailed to `SUPPORT_EMAIL`).
+
+**Tests** — 1,229 API tests (unit + integration on a real Postgres): auth-guard sweep over every private route
+(anonymous + forged token), role-separation sweep, a no-500 sweep for every route × 4 roles, an `ON CONFLICT`
+index check, and functional tests for public browsing, sign-up → verify → login → reset, the request → apply →
+accept → message → complete → review loop, blocking, feeds, org decisions, admin and settings.
+
+**Still open for Phase 4:** volunteer/peer emails are visible to requesters and orgs before acceptance
+(spec: reveal after match), messaging has no masking or expiry.

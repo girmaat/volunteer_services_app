@@ -1,3 +1,4 @@
+import { forwardHeaders } from "../../../../lib/forward";
 import { cookieSecure } from "../../../../lib/cookies";
 import { NextResponse } from "next/server";
 import { backendFetch } from "../../../lib/backend";
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
   // 1) Login against backend
   const res = await backendFetch("/v1/auth/login", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(await forwardHeaders()) },
     body: JSON.stringify({ email, password }),
     cache: "no-store",
   });
@@ -72,12 +73,11 @@ export async function POST(req: Request) {
     let msg = "Login failed";
     try {
       const data: any = await res.json();
-      const err = String(data?.error || data?.message || msg);
+      const err = String(data?.message || data?.error?.message || (typeof data?.error === "string" ? data.error : "") || msg);
 
       // Provide a clearer message when the backend isn't reachable.
       if (err === "backend_fetch_failed") {
-        const tried = Array.isArray(data?.triedBases) ? data.triedBases.join(", ") : "";
-        msg = tried ? `Cannot reach backend API. Tried: ${tried}` : "Cannot reach backend API.";
+        msg = "The service is temporarily unavailable. Please try again.";
       } else {
         msg = err;
       }

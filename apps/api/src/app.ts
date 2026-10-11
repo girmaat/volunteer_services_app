@@ -1,0 +1,86 @@
+import express, { type Express } from "express";
+import cors from "cors";
+import helmet from "helmet";
+import crypto from "crypto";
+import pinoHttp from "pino-http";
+import { env } from "./lib/env";
+import { logger } from "./lib/logger";
+import { errorHandler, notFoundHandler } from "./lib/errors";
+import { authEmailLimiter, authIpLimiter, publicFormLimiter, writeLimiter } from "./middleware/rateLimit";
+import { registerPlatformRoutes } from "./modules/platform/routes";
+import { registerPublicRoutes } from "./modules/public/routes";
+import { registerAuthRoutes } from "./modules/auth/routes";
+import { registerShareRoutes } from "./modules/share/routes";
+import { registerVolunteerRoutes } from "./modules/volunteer";
+import { registerRequesterRoutes } from "./modules/requester";
+import { registerSettingsRoutes } from "./modules/settings/routes";
+import { registerOrgRoutes } from "./modules/org";
+import { registerAdminRoutes } from "./modules/admin";
+import { registerDocsRoutes } from "./openapi/docs";
+
+export function createApp(): Express {
+  const app = express();
+
+  app.disable("x-powered-by");
+  if (env.TRUST_PROXY) app.set("trust proxy", /^\d+$/.test(env.TRUST_PROXY) ? Number(env.TRUST_PROXY) : env.TRUST_PROXY);
+
+  // Request id (propagated from a proxy's x-request-id when present) + structured access log.
+  app.use(
+    pinoHttp({
+      logger,
+      genReqId: (req, res) => {
+        const incoming = req.headers["x-request-id"];
+        const id = typeof incoming === "string" && /^[\w-]{8,64}$/.test(incoming) ? incoming : crypto.randomUUID();
+        res.setHeader("x-request-id", id);
+        return id;
+      },
+      autoLogging: env.LOG_REQUESTS ? true : { ignore: (req) => req.url === "/v1/health" },
+      customLogLevel: (_req, res, err) => (err || res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info"),
+      serializers: {
+        req: (req) => ({ id: req.id, method: req.method, url: req.url }),
+        res: (res) => ({ statusCode: res.statusCode })
+      }
+    })
+  );
+
+  app.use(
+    helmet({
+      // JSON API: no HTML except /v1/docs, which loads the Redoc bundle from jsDelivr.
+      contentSecurityPolicy: {
+        directives: {
+          "default-src": ["'none'"],
+          "script-src": ["'self'", "https://cdn.jsdelivr.net"],
+          "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          "font-src": ["https://fonts.gstatic.com"],
+          "img-src": ["'self'", "data:", "https://cdn.redoc.ly"],
+          "connect-src": ["'self'"],
+          "worker-src": ["blob:"],
+          "frame-ancestors": ["'none'"]
+        }
+      },
+      crossOriginResourcePolicy: { policy: "same-site" }
+    })
+  );
+  app.use(cors({ origin: env.CORS_ORIGIN.split(",").map((s) => s.trim()), credentials: false, maxAge: 600 }));
+  app.use(express.json({ limit: "1mb" }));
+
+  // Rate limits
+  app.use(["/v1/auth/login", "/v1/auth/signup", "/v1/auth/forgot-password", "/v1/auth/resend-verification", "/v1/auth/reset-password"], authIpLimiter, authEmailLimiter);
+  app.use(["/v1/public/contact", "/v1/shares/:token/report", "/v1/orgs/enroll"], publicFormLimiter);
+  app.use("/v1", writeLimiter);
+
+  registerPlatformRoutes(app);
+  registerDocsRoutes(app);
+  registerPublicRoutes(app);
+  registerAuthRoutes(app);
+  registerShareRoutes(app);
+  registerVolunteerRoutes(app);
+  registerRequesterRoutes(app);
+  registerSettingsRoutes(app);
+  registerOrgRoutes(app);
+  registerAdminRoutes(app);
+
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+  return app;
+}

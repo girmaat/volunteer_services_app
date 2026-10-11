@@ -1,3 +1,4 @@
+import { forwardHeaders } from "../../lib/forward";
 import styles from "../(auth)/auth.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 import SignupForm, { type SignupState } from "./SignupForm";
@@ -29,7 +30,7 @@ async function signupOrResendAction(prevState: SignupState, formData: FormData):
   if (intent === "resend") {
     const res = await fetch(`${API_BASE_URL_SERVER}/v1/auth/resend-verification`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...(await forwardHeaders()) },
       body: JSON.stringify({ email }),
       cache: "no-store"
     });
@@ -74,7 +75,7 @@ async function signupOrResendAction(prevState: SignupState, formData: FormData):
 
   const res = await fetch(`${API_BASE_URL_SERVER}/v1/auth/signup`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(await forwardHeaders()) },
     body: JSON.stringify({ email, password }),
     cache: "no-store"
   });

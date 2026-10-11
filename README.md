@@ -58,6 +58,23 @@ Seed data is for local/staging only; the seed script refuses to run in productio
 | `pnpm db:seed` | (re)seed test data; safe to run repeatedly |
 | `pnpm db:reset` | drop and rebuild the local database, then seed (refuses in production) |
 
+## Tests
+
+```bash
+pnpm test        # API: unit + integration (~1,200 tests, ~25 s)
+```
+
+API integration tests need a local Postgres. They create and reset a database named `thankyou_test`
+on the same server as your `DATABASE_URL` (override with `TEST_DATABASE_URL`) — never your development database.
+The Postgres user needs permission to create that database once (`CREATE DATABASE thankyou_test OWNER <user>;`).
+
+The suite includes three sweeps over **every** route: anonymous and forged-token callers get 401,
+volunteers can't reach admin/org routes, and no route answers 500 for any role.
+
+## API documentation
+
+With the API running: http://localhost:4000/v1/docs (OpenAPI JSON at `/v1/openapi.json`).
+
 ## Database migrations
 
 Migrations are plain SQL files in `apps/api/migrations/NNNN_description.sql`, applied in order, each in a transaction, recorded in `schema_migrations`.

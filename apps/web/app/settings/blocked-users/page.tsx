@@ -16,7 +16,6 @@ type Peer = {
 
 type BlockRow = {
   blocked_user_id: string;
-  blocked_email: string;
   blocked_display_name: string | null;
   blocked_avatar_url: string | null;
   blocked_public_location: string | null;
@@ -134,10 +133,9 @@ export default async function Page() {
         <div className={styles.list}>
           {blocked.map((b) => (
             <div key={b.blocked_user_id} className={styles.tile}>
-              <h3 className={styles.tileTitle}>{b.blocked_display_name || b.blocked_email}</h3>
+              <h3 className={styles.tileTitle}>{b.blocked_display_name}</h3>
               <p className={styles.tileBody}>
-                <strong>Email:</strong> {b.blocked_email}
-                {b.blocked_public_location ? ` • ${b.blocked_public_location}` : ""}
+                {b.blocked_public_location || "Location not shared"}
               </p>
 
               <div className={styles.badgeRow}>

@@ -4,8 +4,8 @@
   "type": "commonjs",
   "scripts": {
     "dev": "tsx src/db/migrate-cli.ts up && tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "build": "node build.mjs",
+    "start": "node --enable-source-maps dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src --max-warnings=10000",
     "test": "vitest run",
@@ -14,17 +14,24 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:reset": "tsx src/db/migrate-cli.ts reset && tsx src/db/seed.ts",
     "db:create": "tsx src/db/create-db.ts",
-    "db:setup": "tsx src/db/create-db.ts && tsx src/db/migrate-cli.ts up && tsx src/db/seed.ts"
+    "db:setup": "tsx src/db/create-db.ts && tsx src/db/migrate-cli.ts up && tsx src/db/seed.ts",
+    "db:migrate:prod": "node dist/migrate-cli.js up"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.4",
     "@thankyou/contracts": "workspace:*",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.22.3",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^8.3.0",
     "multer": "^2.0.2",
     "nodemailer": "^10.1.0",
     "pg": "^8.16.3",
+    "pg-boss": "^10.4.2",
+    "pino": "^9.14.0",
+    "pino-http": "^10.5.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -38,7 +45,9 @@
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
+    "esbuild": "^0.25.12",
     "eslint": "^8.57.1",
+    "pino-pretty": "^13.2.0",
     "supertest": "^7.1.4",
     "tsx": "^4.20.3",
     "typescript": "^5.9.3",

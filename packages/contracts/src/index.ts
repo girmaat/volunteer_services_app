@@ -3,3 +3,5 @@
  * Each domain adds its own module and re-exports it here.
  */
 export * from "./common";
+export * from "./public";
+export * from "./auth";

@@ -1,3 +1,4 @@
+import { forwardHeaders } from "../../lib/forward";
 import styles from "../(auth)/auth.module.css";
 import Link from "next/link";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
@@ -15,7 +16,7 @@ async function resetAction(formData: FormData) {
 
   const res = await fetch(`${API_BASE_URL_SERVER}/v1/auth/reset-password`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(await forwardHeaders()) },
     body: JSON.stringify(payload),
     cache: "no-store"
   });

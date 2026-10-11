@@ -3,6 +3,7 @@ import "server-only";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 import { cookies } from "next/headers";
 import { cache } from "react";
+import { forwardHeaders } from "../../lib/forward";
 
 export type CurrentUser = {
   id: string;
@@ -220,6 +221,7 @@ export async function backendFetch(path: string, init: RequestInit = {}) {
   const token = await getSessionToken();
   const headers = new Headers(init.headers);
   if (token && !headers.has("authorization")) headers.set("authorization", `Bearer ${token}`);
+  for (const [k, v] of Object.entries(await forwardHeaders())) if (!headers.has(k)) headers.set(k, v);
 
   // If caller sets cache explicitly, respect it; otherwise default to no-store.
   const cache = init.cache ?? "no-store";

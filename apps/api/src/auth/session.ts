@@ -21,27 +21,43 @@ export async function deleteAllSessionsForUser(pool: Pool, userId: string) {
 }
 
 /**
- * Returns the authenticated user for a session token.
- *
- * Implementation note:
- * We use `u.*` to avoid hard-coding a column list. This prevents runtime failures
- * when the DB schema is slightly behind the code (e.g., new columns added for
- * moderation/verification). We then strip sensitive fields before returning.
+ * Columns of `users` that may leave the API. Explicit on purpose: a new column (for example an
+ * internal moderation note) must be added here deliberately before any client can see it.
  */
+export const USER_PUBLIC_COLUMNS = [
+  "id",
+  "email",
+  "email_verified_at",
+  "phone_verified_at",
+  "role",
+  "account_type",
+  "requester_mode",
+  "profile_completed",
+  "availability_completed",
+  "onboarding_completed",
+  "verification_required",
+  "verification_status",
+  "verification_submitted_at",
+  "verified_at",
+  "strike_count",
+  "banned_until",
+  "banned_reason",
+  "banned_at",
+  "created_at",
+  "updated_at"
+] as const;
+
+const SELECT_USER = USER_PUBLIC_COLUMNS.map((c) => `u.${c}`).join(", ");
+
+/** Returns the authenticated user for a session token (never includes password hash or admin notes). */
 export async function requireUserBySession(pool: Pool, sessionToken: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(sessionToken)) return null;
   const { rows } = await pool.query(
-    `SELECT u.*
-     FROM sessions s
-     JOIN users u ON u.id = s.user_id
-     WHERE s.session_token = $1::uuid AND s.expires_at > NOW()`,
+    `SELECT ${SELECT_USER}
+       FROM sessions s
+       JOIN users u ON u.id = s.user_id
+      WHERE s.session_token = $1::uuid AND s.expires_at > NOW()`,
     [sessionToken]
   );
-
-  if (rows.length === 0) return null;
-
-  const user: any = rows[0];
-  // Never leak password hashes to callers (most callers pass this through to the web).
-  if ("password_hash" in user) delete user.password_hash;
-
-  return user;
+  return rows.length === 0 ? null : (rows[0] as Record<string, any>);
 }

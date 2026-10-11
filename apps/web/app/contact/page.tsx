@@ -1,3 +1,4 @@
+import { forwardHeaders } from "../../lib/forward";
 import styles from "./page.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
@@ -46,7 +47,7 @@ async function submitContact(formData: FormData) {
 
   const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/contact`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(await forwardHeaders()) },
     body: JSON.stringify(payload)
   });
 

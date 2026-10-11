@@ -12,7 +12,11 @@ import type { Pool, PoolClient } from "pg";
  *   are adopted: 0001_baseline is marked applied without running it.
  */
 
-export const MIGRATIONS_DIR = path.resolve(__dirname, "../../migrations");
+// src/db (tsx) → ../../migrations; dist/ (bundled) → ../migrations; override with MIGRATIONS_DIR.
+export const MIGRATIONS_DIR =
+  process.env.MIGRATIONS_DIR ||
+  [path.resolve(__dirname, "../../migrations"), path.resolve(__dirname, "../migrations")].find((d) => fs.existsSync(d)) ||
+  path.resolve(__dirname, "../../migrations");
 const LOCK_KEY = 726_100_001; // arbitrary constant for pg_advisory_lock
 
 export type MigrationFile = { id: string; name: string; file: string };

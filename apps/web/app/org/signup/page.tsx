@@ -1,3 +1,4 @@
+import { forwardHeaders } from "../../../lib/forward";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
@@ -9,7 +10,7 @@ import OrgEnrollForm, { type OrgEnrollState } from "./OrgEnrollForm";
 export const dynamic = "force-dynamic";
 
 function safeMessage(err: any, fallback: string) {
-  const msg = String(err?.message || err?.error || "").trim();
+  const msg = String(err?.message || err?.error?.message || "").trim();
   return msg ? msg : fallback;
 }
 
@@ -34,7 +35,7 @@ async function createOrgAction(formData: FormData) {
 
   const res = await backendFetch("/v1/orgs/create", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(await forwardHeaders()) },
     body: JSON.stringify(payload),
     cache: "no-store"
   });
@@ -57,7 +58,7 @@ async function joinOrgAction(formData: FormData) {
 
   const res = await backendFetch("/v1/orgs/join", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(await forwardHeaders()) },
     body: JSON.stringify({ orgSlug }),
     cache: "no-store"
   });
@@ -138,7 +139,7 @@ async function enrollAction(prevState: OrgEnrollState, formData: FormData): Prom
 
   const res = await fetch(`${API_BASE_URL_SERVER}/v1/orgs/enroll`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(await forwardHeaders()) },
     body: JSON.stringify({
       org: {
         name: orgName,
