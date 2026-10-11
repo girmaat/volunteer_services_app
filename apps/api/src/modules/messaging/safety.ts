@@ -10,6 +10,9 @@ const URL = /\b(?:https?:\/\/|www\.)[^\s<>"]+/gi;
 const BARE_DOMAIN = /\b[a-z0-9-]{2,}\.(?:com|org|net|io|co|me|app|ly|gg|info|biz|us|link|site|xyz)\b(?:\/[^\s<>"]*)?/gi;
 const HANDLE = /(?:^|\s)@(?:[a-z0-9_.]{3,30})\b|\b(?:whatsapp|telegram|signal|snapchat|instagram|insta|ig)\s*[:@]?\s*[a-z0-9_.+-]{3,}/gi;
 
+// Dates such as 2026-10-24 or 10/24/2026 aren't phone numbers.
+const DATE = /^(\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4})$/;
+
 export const MASK_CONTACT = "[contact details hidden until accepted]";
 export const MASK_LINK = "[link hidden until accepted]";
 
@@ -23,7 +26,7 @@ export function maskContacts(body: string): string {
     .replace(EMAIL, MASK_CONTACT)
     .replace(URL, MASK_LINK)
     .replace(BARE_DOMAIN, MASK_LINK)
-    .replace(PHONE, (m) => (digitsCount(m) >= 7 ? MASK_CONTACT : m))
+    .replace(PHONE, (m) => (digitsCount(m) >= 7 && !DATE.test(m.trim()) ? MASK_CONTACT : m))
     .replace(HANDLE, (m) => (m.startsWith(" ") ? " " : "") + MASK_CONTACT);
 }
 

@@ -1,393 +1,159 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import styles from "../../volunteer.module.css";
+import { notFound } from "next/navigation";
+import { Lock, MessageSquare } from "lucide-react";
 import { backendFetch } from "../../../lib/backend";
-import ShareButton from "../../../_components/share/ShareButton";
+import { Button, ButtonLink, Card, Notice, PageHeader, StatusPill } from "../../../../components/ui";
+import ReviewPanel, { type ReviewState } from "../../../../components/reviews/ReviewPanel";
+import { disputeAction, volunteerCancelAction, volunteerWithdrawAction } from "../../../_requests/applicant-actions";
+import { describeRrule, formatInZone } from "../../../../lib/time";
 
 export const dynamic = "force-dynamic";
 
-type ApplicationCommitment = {
-  id: string;
-  status: string;
-  start_at: string;
-  end_at: string | null;
-};
-
-type RequesterReview = {
-  id: string;
-  rating: number;
-  strengths: string | null;
-  improvements: string | null;
-  would_work_again: boolean | null;
-  created_at: string;
-};
-
-type ApplicationDetail = {
+type Detail = {
   id: string;
   opportunity_id: string;
   status: string;
   message: string | null;
   created_at: string;
-  updated_at: string;
-  requester_user_id: string | null;
-  commitment: ApplicationCommitment | null;
+  commitment: { id: string; status: string; start_at: string | null; end_at: string | null } | null;
   opportunity: {
     id: string;
     title: string;
     location: string;
-    mode: "in-person" | "remote" | "hybrid";
+    exact_address: string | null;
+    status: string;
+    starts_at: string | null;
+    timezone: string | null;
+    schedule_type: string | null;
+    recurrence_rule: string | null;
+    mode: string;
     organization_name: string | null;
-    tags: string[] | null;
   };
 };
 
-async function getApplication(id: string): Promise<ApplicationDetail | null> {
-  const res = await backendFetch(`/v1/volunteer/applications/${id}`, { method: "GET" });
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    throw new Error("Failed to load application");
-  }
-  return (await res.json()) as ApplicationDetail;
-}
+const FLASH: Record<string, string> = {
+  withdrawn: "Application withdrawn.",
+  canceled: "You've canceled. The organizer was told and the next person on the waitlist moved up.",
+  reviewed: "Review saved.",
+  disputed: "Dispute sent. Our team will look at it and get back to you."
+};
 
-async function getRequesterReview(id: string): Promise<RequesterReview | null> {
-  const res = await backendFetch(`/v1/volunteer/applications/${id}/review-requester`, { method: "GET" });
-  if (!res.ok) return null;
-  const json = (await res.json()) as { review: RequesterReview | null };
-  return json.review || null;
-}
-
-function toDateTimeLocalValue(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-async function withdrawApplication(formData: FormData) {
-  "use server";
-  const id = String(formData.get("id") || "");
-  if (!id) return;
-
-  const res = await backendFetch(`/v1/volunteer/applications/${id}/withdraw`, { method: "POST" });
-  if (!res.ok) {
-    redirect(`/volunteer/applications/${id}?success=0&action=withdraw`);
-  }
-
-  revalidatePath(`/volunteer/applications/${id}`);
-  redirect(`/volunteer/applications/${id}?success=1&action=withdraw`);
-}
-
-async function scheduleCommitment(formData: FormData) {
-  "use server";
-  const id = String(formData.get("id") || "");
-  const startLocal = String(formData.get("start_at") || "");
-  const endLocal = String(formData.get("end_at") || "");
-
-  if (!id || !startLocal) return;
-
-  const payload: any = {
-    start_at: new Date(startLocal).toISOString(),
-  };
-  if (endLocal) payload.end_at = new Date(endLocal).toISOString();
-
-  const res = await backendFetch(`/v1/volunteer/applications/${id}/schedule`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    redirect(`/volunteer/applications/${id}?success=0&action=schedule`);
-  }
-
-  revalidatePath(`/volunteer/applications/${id}`);
-  redirect(`/volunteer/applications/${id}?success=1&action=schedule`);
-}
-
-async function markCompleted(formData: FormData) {
-  "use server";
-  const id = String(formData.get("id") || "");
-  if (!id) return;
-
-  const res = await backendFetch(`/v1/volunteer/applications/${id}/complete`, { method: "POST" });
-  if (!res.ok) {
-    redirect(`/volunteer/applications/${id}?success=0&action=complete`);
-  }
-
-  revalidatePath(`/volunteer/applications/${id}`);
-  redirect(`/volunteer/applications/${id}?success=1&action=complete`);
-}
-
-async function leaveRequesterReview(formData: FormData) {
-  "use server";
-  const id = String(formData.get("id") || "");
-  const rating = Number(formData.get("rating") || 0);
-  const strengths = String(formData.get("strengths") || "").trim();
-  const improvements = String(formData.get("improvements") || "").trim();
-  const wouldWorkAgain = String(formData.get("would_work_again") || "") === "on";
-
-  if (!id || !rating) {
-    redirect(`/volunteer/applications/${id}?success=0&action=review_requester`);
-  }
-
-  const res = await backendFetch(`/v1/volunteer/applications/${id}/review-requester`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      rating,
-      strengths: strengths || undefined,
-      improvements: improvements || undefined,
-      would_work_again: wouldWorkAgain
-    })
-  });
-
-  if (!res.ok) {
-    redirect(`/volunteer/applications/${id}?success=0&action=review_requester`);
-  }
-
-  revalidatePath(`/volunteer/applications/${id}`);
-  redirect(`/volunteer/applications/${id}?success=1&action=review_requester`);
-}
-
-function statusTimeline(status: string) {
-  const base = [
-    { key: "pending", label: "Applied" },
-    { key: "waitlisted", label: "Waitlisted" },
-    { key: "accepted", label: "Accepted" },
-    { key: "confirmed", label: "Scheduled" },
-    { key: "completed", label: "Completed" },
-  ];
-
-  if (status === "rejected") {
-    return [
-      { key: "pending", label: "Applied", state: "done" as const },
-      { key: "rejected", label: "Rejected", state: "current" as const },
-    ];
-  }
-
-  if (status === "withdrawn") {
-    return [
-      { key: "pending", label: "Applied", state: "done" as const },
-      { key: "withdrawn", label: "Withdrawn", state: "current" as const },
-    ];
-  }
-
-  if (status === "canceled") {
-    return [
-      { key: "pending", label: "Applied", state: "done" as const },
-      { key: "canceled", label: "Canceled", state: "current" as const },
-    ];
-  }
-
-  const idx = base.findIndex((s) => s.key === status);
-  return base.map((s, i) => {
-    if (idx === -1) return { ...s, state: "future" as const };
-    if (i < idx) return { ...s, state: "done" as const };
-    if (i === idx) return { ...s, state: "current" as const };
-    return { ...s, state: "future" as const };
-  });
-}
-
-export default async function VolunteerApplicationDetailPage(
-  props: {
-    params: Promise<{ id: string }>;
-    searchParams?: Promise<{ success?: string; action?: string }>;
-  }
-) {
-  const searchParams = await props.searchParams;
-  const params = await props.params;
-  const app = await getApplication(params.id);
-  const existingRequesterReview = app && app.status === "completed" ? await getRequesterReview(app.id) : null;
-  if (!app) return notFound();
-
-  const timeline = statusTimeline(app.status);
-  const bannerSuccess = searchParams?.success === "1";
-  const bannerAction = searchParams?.action || "";
+export default async function Page(props: { params: Promise<{ id: string }>; searchParams?: Promise<{ flash?: string; error?: string }> }) {
+  const { id } = await props.params;
+  const sp = (await props.searchParams) || {};
+  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  const res = await backendFetch(`/v1/volunteer/applications/${id}`);
+  if (!res.ok) notFound();
+  const a = (await res.json()) as Detail;
+  const o = a.opportunity;
+  const tz = o.timezone || "America/New_York";
+  const start = a.commitment?.start_at || o.starts_at;
+  const within24h = Boolean(start && new Date(start).getTime() - Date.now() < 24 * 3600_000 && new Date(start).getTime() > Date.now());
+  const rv = a.status === "completed" ? await backendFetch(`/v1/reviews/applications/${id}`) : null;
+  const review = rv && rv.ok ? ((await rv.json()) as ReviewState) : null;
+  const back = `/volunteer/applications/${id}`;
+  const otherName = o.organization_name || "the organizer";
 
   return (
-    <div className={styles.page}>
-      <div className={styles.headerRow}>
-        <div>
-          <h1 className={styles.sectionTitle}>Application</h1>
-          <p className={styles.meta}>
-            Status: <span className={styles.statusPill}>{app.status}</span> · Submitted:{" "}
-            {new Date(app.created_at).toLocaleString()} · Updated: {new Date(app.updated_at).toLocaleString()}
-          </p>
+    <>
+      <PageHeader
+        back={<Link href="/volunteer/applications">← My applications</Link>}
+        title={o.title}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            <StatusPill status={a.status} /> <span>{o.organization_name || "Individual requester"}</span>
+          </span>
+        }
+        actions={
+          <>
+            <ButtonLink href={`/inbox/start?requestId=${o.id}`} variant="secondary" icon={<MessageSquare aria-hidden className="h-4 w-4" />}>
+              Message
+            </ButtonLink>
+            <ButtonLink href={`/volunteer/opportunities/${o.id}`} variant="ghost">
+              View opportunity
+            </ButtonLink>
+          </>
+        }
+      />
+      {sp.flash && FLASH[sp.flash] ? (
+        <div className="mb-4">
+          <Notice tone="success">{FLASH[sp.flash]}</Notice>
         </div>
-
-        <div className={styles.actionsRow}>
-          {app.requester_user_id ? (
-            <Link className={styles.navLink} href={`/inbox/start?requestId=${app.opportunity_id}`}>
-              Open messages
-            </Link>
-          ) : null}
-          <Link className={styles.navLink} href={`/volunteer/opportunities/${app.opportunity_id}`}>
-            Back to opportunity
-          </Link>
-        </div>
-      </div>
-
-      {searchParams?.action ? (
-        <div className={`${styles.banner} ${bannerSuccess ? styles.bannerSuccess : styles.bannerError}`}>
-          {bannerSuccess ? (
-            <p className={styles.bannerBody}>Updated ({bannerAction}).</p>
-          ) : (
-            <p className={styles.bannerBody}>Could not update ({bannerAction}). Please try again.</p>
-          )}
+      ) : null}
+      {sp.error ? (
+        <div className="mb-4">
+          <Notice tone="danger">{sp.error}</Notice>
         </div>
       ) : null}
 
-      <div className={styles.banner}>
-        <p className={styles.bannerTitle}>{app.opportunity.title}</p>
-        <p className={styles.bannerBody}>
-          {app.opportunity.organization_name ? `${app.opportunity.organization_name} · ` : ""}
-          {app.opportunity.mode} · {app.opportunity.location}
-        </p>
-      </div>
-
-      <div className={styles.sectionCard}>
-        <h2 className={styles.sectionTitle}>Status timeline</h2>
-        <ol className={styles.timeline}>
-          {timeline.map((s) => (
-            <li key={s.key} className={styles[`timeline_${s.state}` as any]}>
-              <span className={styles.timelineDot} />
-              <span className={styles.timelineLabel}>{s.label}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <div className={styles.sectionCard}>
-        <h2 className={styles.sectionTitle}>Actions</h2>
-
-        {app.status === "pending" ? (
-          <form action={withdrawApplication} className={styles.inlineForm}>
-            <input type="hidden" name="id" value={app.id} />
-            <button className={`${styles.button} ${styles.buttonDanger}`} type="submit">
-              Withdraw application
-            </button>
-          </form>
-        ) : null}
-
-        {app.status === "accepted" || app.status === "confirmed" ? (
-          <div className={styles.stack}>
-            <p className={styles.meta}>
-              {app.commitment
-                ? `Current commitment: ${new Date(app.commitment.start_at).toLocaleString()}${
-                    app.commitment.end_at ? ` – ${new Date(app.commitment.end_at).toLocaleString()}` : ""
-                  } (${app.commitment.status})`
-                : "Schedule your commitment time so it appears on your calendar."}
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="grid content-start gap-5">
+          <Card className="grid gap-3">
+            <p className="m-0">
+              <span className="font-medium">When:</span>{" "}
+              {start ? `${o.schedule_type === "recurring" ? describeRrule(o.recurrence_rule) + " · from " : ""}${formatInZone(start, tz, { withZone: true })}` : "Flexible"}
             </p>
-
-            <form action={scheduleCommitment} className={styles.formGrid}>
-              <input type="hidden" name="id" value={app.id} />
-              <label className={styles.field}>
-                <span className={styles.meta}>Start</span>
-                <input
-                  className={styles.input}
-                  type="datetime-local"
-                  name="start_at"
-                  required
-                  defaultValue={app.commitment?.start_at ? toDateTimeLocalValue(app.commitment.start_at) : undefined}
-                />
-              </label>
-              <label className={styles.field}>
-                <span className={styles.meta}>End</span>
-                <input
-                  className={styles.input}
-                  type="datetime-local"
-                  name="end_at"
-                  defaultValue={app.commitment?.end_at ? toDateTimeLocalValue(app.commitment.end_at) : undefined}
-                />
-              </label>
-              <div className={styles.actionsRow}>
-                <button className={`${styles.button} ${styles.buttonPrimary}`} type="submit">
-                  Save schedule
-                </button>
-              </div>
-            </form>
-
-            {app.status === "confirmed" ? (
-              <form action={markCompleted} className={styles.inlineForm}>
-                <input type="hidden" name="id" value={app.id} />
-                <button className={`${styles.button} ${styles.buttonPrimary}`} type="submit">
-                  Mark completed
-                </button>
-              </form>
+            <p className="m-0 flex items-start gap-2">
+              <span className="font-medium">Where:</span>
+              {o.mode === "remote" ? (
+                <span>Remote</span>
+              ) : o.exact_address ? (
+                <span>{o.exact_address}</span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-muted">
+                  {o.location} <Lock aria-hidden className="h-3.5 w-3.5" /> exact address after you&apos;re accepted
+                </span>
+              )}
+            </p>
+            {a.message ? (
+              <p className="m-0 text-sm text-muted">
+                Your message: <span className="text-ink">{a.message}</span>
+              </p>
             ) : null}
-          </div>
-        ) : null}
+          </Card>
+          {review ? <ReviewPanel applicationId={id} back={back} state={review} otherName={otherName} /> : null}
+        </div>
 
-        {app.status === "completed" ? <p className={styles.meta}>This application is completed.</p> : null}
-        {app.status === "rejected" ? <p className={styles.meta}>This application was rejected.</p> : null}
-        {app.status === "withdrawn" ? <p className={styles.meta}>You withdrew this application.</p> : null}
+        <aside aria-label="Application actions" className="grid content-start gap-4">
+          {a.status === "pending" || a.status === "waitlisted" ? (
+            <form action={volunteerWithdrawAction.bind(null, id)}>
+              <Button type="submit" variant="secondary" className="w-full">
+                Withdraw application
+              </Button>
+            </form>
+          ) : null}
+          {a.status === "accepted" || a.status === "confirmed" ? (
+            <form action={volunteerCancelAction.bind(null, id)} className="grid gap-2 rounded-md border border-line bg-surface p-4">
+              <p className="m-0 text-sm font-medium">Can&apos;t make it?</p>
+              {within24h ? <p className="m-0 text-sm text-warning">It starts within 24 hours, so this counts as a late cancellation on your reliability.</p> : <p className="m-0 text-sm text-muted">Cancel as early as you can so they can find someone else.</p>}
+              <textarea name="reason" maxLength={500} placeholder="A short note for the organizer (optional)" className="min-h-[70px] rounded border border-line-strong bg-surface px-3 py-2 text-sm" />
+              <Button type="submit" variant="danger" size="sm">
+                Cancel my spot
+              </Button>
+            </form>
+          ) : null}
+          {["completed", "canceled"].includes(a.status) ? (
+            <details className="rounded-md border border-line bg-surface p-4">
+              <summary className="cursor-pointer text-sm font-medium">Something wrong? Open a dispute</summary>
+              <form action={disputeAction.bind(null, back, id)} className="mt-3 grid gap-2">
+                <label className="grid gap-1 text-sm">
+                  About
+                  <select name="kind" className="h-10 rounded border border-line-strong bg-surface px-2">
+                    <option value="no_show">I was marked as a no-show</option>
+                    <option value="late_cancel">A late cancellation</option>
+                    <option value="review">A review about me</option>
+                    <option value="other">Something else</option>
+                  </select>
+                </label>
+                <textarea name="reason" required minLength={10} maxLength={2000} placeholder="What happened?" className="min-h-[80px] rounded border border-line-strong bg-surface px-3 py-2 text-sm" />
+                <Button type="submit" size="sm" variant="secondary">
+                  Send to our team
+                </Button>
+              </form>
+            </details>
+          ) : null}
+        </aside>
       </div>
-
-            {app.status === "completed" ? (
-        <div className={styles.sectionCard}>
-          <h2 className={styles.sectionTitle}>Review this requester</h2>
-          <p className={styles.meta} style={{ marginTop: "0.35rem" } as any}>
-            Your feedback helps build trust for future volunteers.
-          </p>
-
-          <form action={leaveRequesterReview} className={styles.inlineForm} style={{ marginTop: "0.75rem" } as any}>
-            <input type="hidden" name="id" value={app.id} />
-            <label className={styles.label}>
-              Rating
-              <select name="rating" defaultValue={existingRequesterReview?.rating ?? 5} className={styles.input}>
-                <option value={5}>5</option>
-                <option value={4}>4</option>
-                <option value={3}>3</option>
-                <option value={2}>2</option>
-                <option value={1}>1</option>
-              </select>
-            </label>
-
-            <label className={styles.label}>
-              What went well
-              <textarea
-                name="strengths"
-                defaultValue={existingRequesterReview?.strengths ?? ""}
-                className={styles.textarea}
-                rows={3}
-                placeholder="Clear communication, prepared materials, flexible scheduling…"
-              />
-            </label>
-
-            <label className={styles.label}>
-              What could be better
-              <textarea
-                name="improvements"
-                defaultValue={existingRequesterReview?.improvements ?? ""}
-                className={styles.textarea}
-                rows={3}
-                placeholder="More detailed directions, earlier notice, clearer scope…"
-              />
-            </label>
-
-            <label className={styles.checkboxRow}>
-              <input type="checkbox" name="would_work_again" defaultChecked={existingRequesterReview?.would_work_again ?? false} />{" "}
-              I would volunteer for this requester again
-            </label>
-
-            <div className={styles.actionsRow} style={{ marginTop: "0.5rem" } as any}>
-              <button className={`${styles.button} ${styles.buttonPrimary}`.trim()} type="submit">
-                Save review
-              </button>
-              <ShareButton target={{ type: "request", ref: app.opportunity.id, title: app.opportunity.title }} label="Share thank you" className={styles.button} />
-              {existingRequesterReview ? <span className={styles.meta}>Last updated: {new Date(existingRequesterReview.created_at).toLocaleString()}</span> : null}
-            </div>
-          </form>
-        </div>
-      ) : null}
-
-{app.message ? (
-        <div className={styles.sectionCard}>
-          <h2 className={styles.sectionTitle}>Your message</h2>
-          <p className={styles.tileBody}>{app.message}</p>
-        </div>
-      ) : null}
-    </div>
+    </>
   );
 }
-

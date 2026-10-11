@@ -360,7 +360,7 @@ export function registerOrgRequestsRoutes(app: Express) {
         SELECT
           a.id AS application_id,
           a.status,
-          a.message,
+          CASE WHEN a.status IN ('accepted','confirmed','completed') THEN a.message ELSE mask_contacts(a.message) END AS message,
           a.created_at,
           a.updated_at,
           a.assigned_to_user_id,

@@ -5,6 +5,8 @@ import { contentDisposition } from "../../lib/http";
 import { requireVolunteerUser } from "../../middleware/auth";
 import { illustrateRows } from "./helpers";
 import { pool } from "../../lib/db";
+import { submitReview, ReviewError } from "../reviews/service";
+import type { PolicyUser } from "../../lib/policy";
 import { afterApplicationUpdate } from "../requests/applications";
 import { wrap } from "../../lib/http";
 
@@ -429,53 +431,19 @@ app.post("/v1/volunteer/applications/:id/review-requester", wrap(async (req, res
     })
     .parse(req.body);
 
-  const appRes = await pool.query(
-    `
-    SELECT a.id, a.status, a.request_id, r.requester_user_id
-    FROM request_applications a
-    JOIN service_requests r ON r.id = a.request_id
-    WHERE a.id = $1 AND a.volunteer_user_id = $2
-    `,
-    [applicationId, user.id]
-  );
-
-  if (appRes.rowCount === 0) return res.status(404).json({ message: "Application not found" });
-
-  const status = String(appRes.rows[0]?.status || "");
-  if (status !== "completed") {
-    return res.status(409).json({ message: "Reviews can be left once the engagement is completed." });
+  try {
+    const out = await submitReview(user as PolicyUser, applicationId, {
+      overall: body.rating,
+      comment: body.strengths || null,
+      strengths: body.strengths || null,
+      improvements: body.improvements || null,
+      wouldWorkAgain: typeof body.would_work_again === "boolean" ? body.would_work_again : null
+    });
+    return res.json({ id: out.id, ok: true, published: out.published });
+  } catch (e) {
+    if (e instanceof ReviewError) return res.status(e.status).json({ message: e.message });
+    throw e;
   }
-
-  const requestId = String(appRes.rows[0]?.request_id);
-  const requesterUserId = String(appRes.rows[0]?.requester_user_id);
-
-  const upsert = await pool.query(
-    `
-    INSERT INTO requester_reviews
-      (requester_user_id, reviewer_user_id, request_application_id, request_id, rating, strengths, improvements, would_work_again)
-    VALUES
-      ($1, $2, $3, $4, $5, $6, $7, $8)
-    ON CONFLICT (request_application_id) WHERE request_application_id IS NOT NULL
-    DO UPDATE SET
-      rating = EXCLUDED.rating,
-      strengths = EXCLUDED.strengths,
-      improvements = EXCLUDED.improvements,
-      would_work_again = EXCLUDED.would_work_again
-    RETURNING id
-    `,
-    [
-      requesterUserId,
-      user.id,
-      applicationId,
-      requestId,
-      body.rating,
-      body.strengths || null,
-      body.improvements || null,
-      typeof body.would_work_again === "boolean" ? body.would_work_again : null
-    ]
-  );
-
-  return res.json({ id: String(upsert.rows[0]?.id), ok: true });
 }));
 
 

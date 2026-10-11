@@ -99,7 +99,7 @@ app.get(
           NULL::text AS application_id,
           NULL::text AS application_status,
           vr.rating::int AS rating
-        FROM volunteer_reviews vr
+        FROM visible_volunteer_reviews vr
         LEFT JOIN users pu ON pu.id = vr.reviewer_user_id
         LEFT JOIN user_profiles pp ON pp.user_id = vr.reviewer_user_id
         LEFT JOIN service_requests sr ON sr.id = vr.request_id
@@ -120,7 +120,7 @@ app.get(
           NULL::text AS application_id,
           NULL::text AS application_status,
           rr.rating::int AS rating
-        FROM requester_reviews rr
+        FROM visible_requester_reviews rr
         LEFT JOIN users pu ON pu.id = rr.reviewer_user_id
         LEFT JOIN user_profiles pp ON pp.user_id = rr.reviewer_user_id
         LEFT JOIN service_requests sr ON sr.id = rr.request_id
@@ -239,13 +239,13 @@ app.get(
         UNION ALL
 
         SELECT vr.created_at AS created_at
-        FROM volunteer_reviews vr
+        FROM visible_volunteer_reviews vr
         WHERE $2 = 'volunteer' AND vr.volunteer_user_id = $1
 
         UNION ALL
 
         SELECT rr.created_at AS created_at
-        FROM requester_reviews rr
+        FROM visible_requester_reviews rr
         WHERE $2 = 'requester' AND rr.requester_user_id = $1
       ) n
       WHERE n.created_at > $3

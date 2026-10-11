@@ -391,7 +391,7 @@ app.get(
         r.title AS request_title,
         org.name AS organization_name,
         COALESCE(NULLIF(p.display_name, ''), NULLIF(split_part(COALESCE(p.full_name, ''), ' ', 1), ''), 'Member') AS reviewer_name
-      FROM volunteer_reviews vr
+      FROM visible_volunteer_reviews vr
       LEFT JOIN service_requests r ON r.id = vr.request_id
       LEFT JOIN organizations org ON org.slug = r.requester_org_slug
       LEFT JOIN users u ON u.id = vr.reviewer_user_id
@@ -456,7 +456,7 @@ app.get(
         `,
         [user.id]
       ),
-      pool.query(`SELECT rating, created_at FROM volunteer_reviews WHERE volunteer_user_id = $1 ORDER BY created_at ASC`, [user.id])
+      pool.query(`SELECT rating, created_at FROM visible_volunteer_reviews WHERE volunteer_user_id = $1 ORDER BY created_at ASC`, [user.id])
     ]);
 
     const completedDates = (completed.rows || []).map((r: any) => new Date(r.updated_at).toISOString());

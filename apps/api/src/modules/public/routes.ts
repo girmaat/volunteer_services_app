@@ -319,9 +319,9 @@ app.get("/v1/public/volunteers/:id", wrap(async (req, res) => {
       ), 0) AS impact_entries_count,
 
       COALESCE((SELECT COALESCE(SUM(hours),0)::float FROM volunteer_impact_entries vie WHERE vie.volunteer_user_id = u.id), 0) AS total_hours,
-      COALESCE((SELECT COUNT(*)::int FROM volunteer_reviews vr WHERE vr.volunteer_user_id = u.id), 0) AS reviews_count,
-      COALESCE((SELECT COUNT(*)::int FROM volunteer_reviews vr WHERE vr.volunteer_user_id = u.id AND vr.would_work_again = TRUE), 0) AS endorsements_count,
-      COALESCE((SELECT COALESCE(AVG(rating),0)::float FROM volunteer_reviews vr WHERE vr.volunteer_user_id = u.id), 0) AS average_rating,
+      COALESCE((SELECT COUNT(*)::int FROM visible_volunteer_reviews vr WHERE vr.volunteer_user_id = u.id), 0) AS reviews_count,
+      COALESCE((SELECT COUNT(*)::int FROM visible_volunteer_reviews vr WHERE vr.volunteer_user_id = u.id AND vr.would_work_again = TRUE), 0) AS endorsements_count,
+      COALESCE((SELECT COALESCE(AVG(rating),0)::float FROM visible_volunteer_reviews vr WHERE vr.volunteer_user_id = u.id), 0) AS average_rating,
       (
         SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY seconds)
         FROM (
@@ -466,8 +466,8 @@ app.get("/v1/public/requesters/:id", wrap(async (req, res) => {
         WHERE sr.requester_user_id = u.id AND c.status = 'canceled'
       ), 0) AS canceled_count,
 
-      COALESCE((SELECT COUNT(*)::int FROM volunteer_reviews vr WHERE vr.reviewer_user_id = u.id), 0) AS thank_you_notes_count,
-      COALESCE((SELECT COUNT(*)::int FROM volunteer_reviews vr WHERE vr.reviewer_user_id = u.id AND vr.would_work_again = TRUE), 0) AS endorsements_given_count,
+      COALESCE((SELECT COUNT(*)::int FROM visible_volunteer_reviews vr WHERE vr.reviewer_user_id = u.id), 0) AS thank_you_notes_count,
+      COALESCE((SELECT COUNT(*)::int FROM visible_volunteer_reviews vr WHERE vr.reviewer_user_id = u.id AND vr.would_work_again = TRUE), 0) AS endorsements_given_count,
 
       (
         SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY seconds)
@@ -515,7 +515,7 @@ app.get("/v1/public/requesters/:id", wrap(async (req, res) => {
 
   const reviewsAgg = await pool.query(
     `SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count
-     FROM requester_reviews
+     FROM visible_requester_reviews
      WHERE requester_user_id = $1`,
     [requesterId]
   );
@@ -532,7 +532,7 @@ app.get("/v1/public/requesters/:id", wrap(async (req, res) => {
       rr.request_id,
       r.title AS request_title,
       COALESCE(NULLIF(p.display_name, ''), NULLIF(split_part(COALESCE(p.full_name, ''), ' ', 1), ''), 'Member') AS reviewer_name
-    FROM requester_reviews rr
+    FROM visible_requester_reviews rr
     LEFT JOIN service_requests r ON r.id = rr.request_id
     LEFT JOIN users u ON u.id = rr.reviewer_user_id
     LEFT JOIN user_profiles p ON p.user_id = u.id

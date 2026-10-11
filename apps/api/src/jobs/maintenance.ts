@@ -7,10 +7,10 @@ import { logger } from "../lib/logger";
 import { hourlyMaintenance as archiveConversations } from "../modules/messaging/jobs";
 import { transitionRequest, TransitionError } from "../modules/requests/lifecycle";
 
-const extra: (() => Promise<unknown>)[] = [];
+const extra = new Set<() => Promise<unknown>>();
 /** Lets other modules (reviews) add hourly work without import cycles. */
 export function onHourly(fn: () => Promise<unknown>) {
-  extra.push(fn);
+  extra.add(fn);
 }
 
 /** Requests past their end time where every accepted volunteer is marked complete. */

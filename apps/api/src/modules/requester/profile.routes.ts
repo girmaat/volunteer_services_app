@@ -72,7 +72,7 @@ app.get(
           JOIN service_requests sr ON sr.id = c.request_id
           WHERE sr.requester_user_id = $1 AND c.status = 'canceled'
         ), 0) AS canceled_count,
-        COALESCE((SELECT COUNT(*)::int FROM volunteer_reviews vr WHERE vr.reviewer_user_id = $1), 0) AS thank_you_notes_count,
+        COALESCE((SELECT COUNT(*)::int FROM visible_volunteer_reviews vr WHERE vr.reviewer_user_id = $1), 0) AS thank_you_notes_count,
         (
           SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY seconds)
           FROM (
@@ -153,14 +153,14 @@ app.get("/v1/requester/reputation/summary", wrap(async (req, res) => {
 
   const received = await pool.query(
     `SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count
-     FROM requester_reviews
+     FROM visible_requester_reviews
      WHERE requester_user_id = $1`,
     [user.id]
   );
 
   const given = await pool.query(
     `SELECT COUNT(*) AS count
-     FROM volunteer_reviews
+     FROM visible_volunteer_reviews
      WHERE reviewer_user_id = $1`,
     [user.id]
   );
@@ -191,7 +191,7 @@ app.get("/v1/requester/history/reviews", wrap(async (req, res) => {
       rr.request_application_id,
       r.title AS request_title,
       COALESCE(NULLIF(p.display_name, ''), NULLIF(split_part(COALESCE(p.full_name, ''), ' ', 1), ''), 'Member') AS reviewer_name
-    FROM requester_reviews rr
+    FROM visible_requester_reviews rr
     LEFT JOIN service_requests r ON r.id = rr.request_id
     LEFT JOIN users u ON u.id = rr.reviewer_user_id
     LEFT JOIN user_profiles p ON p.user_id = u.id
@@ -228,7 +228,7 @@ app.get("/v1/requester/history/reviews-given", wrap(async (req, res) => {
       vr.request_application_id,
       r.title AS request_title,
       COALESCE(NULLIF(p.display_name, ''), NULLIF(split_part(COALESCE(p.full_name, ''), ' ', 1), ''), 'Member') AS volunteer_name
-    FROM volunteer_reviews vr
+    FROM visible_volunteer_reviews vr
     LEFT JOIN service_requests r ON r.id = vr.request_id
     LEFT JOIN users u ON u.id = vr.volunteer_user_id
     LEFT JOIN user_profiles p ON p.user_id = u.id

@@ -11,7 +11,10 @@ export async function afterApplicationUpdate(applicationId: string, status: stri
   const requestId = r.rows[0]?.request_id ? String(r.rows[0].request_id) : null;
   if (!requestId) return;
   if (["accepted", "waitlisted", "rejected"].includes(status)) await enqueue("notify.application_status", { applicationId, status });
-  if (status === "completed") await enqueue("notify.review_requested", { applicationId });
+  if (status === "completed") {
+    await pool.query("UPDATE request_applications SET completed_at = COALESCE(completed_at, NOW()) WHERE id = $1", [applicationId]);
+    await enqueue("notify.review_requested", { applicationId });
+  }
   await syncStaffing(requestId, { userId: actorUserId, kind: actorUserId ? "user" : "system" });
 }
 

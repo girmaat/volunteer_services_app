@@ -97,7 +97,7 @@ app.get(
         a.request_id,
         r.title AS request_title,
         a.status,
-        a.message,
+        CASE WHEN a.status IN ('accepted','confirmed','completed') THEN a.message ELSE mask_contacts(a.message) END AS message,
         a.created_at,
         a.volunteer_user_id,
         NULL::text AS volunteer_email, -- pending/waitlisted only: never shown before acceptance

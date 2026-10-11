@@ -276,7 +276,7 @@ app.get(
         a.id,
         a.request_id,
         a.status,
-        a.message,
+        CASE WHEN a.status IN ('accepted','confirmed','completed') THEN a.message ELSE mask_contacts(a.message) END AS message,
         a.created_at,
         a.updated_at,
         a.volunteer_user_id,

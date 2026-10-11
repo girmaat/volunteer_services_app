@@ -28,6 +28,9 @@ async function liveRequest(email: string, title: string, extra: Record<string, u
 }
 
 describe("message safety helpers", () => {
+  it("leaves dates alone", () => {
+    expect(maskContacts("Starts 2026-10-24 or 10/24/2026")).toBe("Starts 2026-10-24 or 10/24/2026");
+  });
   it("masks emails, phones, links and handles", () => {
     const m = maskContacts("Call (555) 123-4567 or +1 555 987 6543, mail me@example.com, see www.site.com or https://x.io/a, ig: @rose_99. Meet at 10:30 on 5/12.");
     expect(m).not.toMatch(/555|example\.com|site\.com|x\.io|rose_99/);
@@ -285,12 +288,15 @@ describe("contact privacy outside the inbox", () => {
     const admin = await as(EMAILS.orgAdmin);
     await admin.post("/v1/me/context", { context: "org:harbor-food-bank" });
     const id = await liveRequest(EMAILS.orgAdmin, "Privacy: org shift", {}, "org");
-    const ap = await (await as("privacy.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
+    const ap = await (await as("privacy.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi, call 917-555-0142" });
     const before = await admin.get("/v1/org/applications");
     expect(JSON.stringify(before.body)).not.toContain("privacy.vol@thankyou.test");
+    expect(JSON.stringify(before.body)).not.toContain("917-555-0142");
+    expect(JSON.stringify((await admin.get(`/v1/requests/${id}/applicants`)).body)).not.toContain("917-555-0142");
     await admin.patch(`/v1/org/applications/${ap.body.applicationId}`, { status: "accepted" });
     const after = await admin.get("/v1/org/applications");
     expect(JSON.stringify(after.body)).toContain("privacy.vol@thankyou.test");
+    expect(JSON.stringify(after.body)).toContain("917-555-0142");
 
     const rid = await liveRequest(EMAILS.requester, "Privacy: requester ask");
     await (await as("privacy.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${rid}/apply`, { message: "hi" });

@@ -22,7 +22,10 @@ import { registerDiscoveryRoutes } from "./modules/discovery/routes";
 import { registerMessagingRoutes } from "./modules/messaging/routes";
 import { onMessageReceived } from "./modules/messaging/jobs";
 import { registerJobHandler } from "./jobs/queue";
-import { runHourly } from "./jobs/maintenance";
+import { runHourly, onHourly } from "./jobs/maintenance";
+import { registerReviewRoutes } from "./modules/reviews/routes";
+import { registerApplicantRoutes } from "./modules/requests/applicants";
+import { revealDueReviews } from "./modules/reviews/service";
 import { registerDocsRoutes } from "./openapi/docs";
 
 export function createApp(): Express {
@@ -91,6 +94,9 @@ export function createApp(): Express {
   registerMessagingRoutes(app);
   registerJobHandler("notify.message_received", onMessageReceived);
   registerJobHandler("maintenance.hourly", runHourly);
+  registerReviewRoutes(app);
+  registerApplicantRoutes(app);
+  onHourly(revealDueReviews);
   registerAdminRoutes(app);
 
   app.use(notFoundHandler);

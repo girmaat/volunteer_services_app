@@ -42,6 +42,7 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
   filled: { label: "Filled", tone: "success" },
   draft: { label: "Draft", tone: "neutral" },
   in_review: { label: "In review", tone: "warning" },
+  "no-show": { label: "No-show", tone: "danger" },
   pending_review: { label: "In review", tone: "warning" }
 };
 
