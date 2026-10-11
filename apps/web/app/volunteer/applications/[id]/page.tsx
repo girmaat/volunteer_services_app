@@ -4,7 +4,7 @@ import { Lock, MessageSquare } from "lucide-react";
 import { backendFetch } from "../../../lib/backend";
 import { Button, ButtonLink, Card, Notice, PageHeader, StatusPill } from "../../../../components/ui";
 import ReviewPanel, { type ReviewState } from "../../../../components/reviews/ReviewPanel";
-import { disputeAction, volunteerCancelAction, volunteerWithdrawAction } from "../../../_requests/applicant-actions";
+import { confirmAttendanceAction, disputeAction, volunteerCancelAction, volunteerWithdrawAction } from "../../../_requests/applicant-actions";
 import { describeRrule, formatInZone } from "../../../../lib/time";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ type Detail = {
   status: string;
   message: string | null;
   created_at: string;
-  commitment: { id: string; status: string; start_at: string | null; end_at: string | null } | null;
+  commitment: { id: string; status: string; start_at: string | null; end_at: string | null; volunteer_confirmed_at?: string | null } | null;
   opportunity: {
     id: string;
     title: string;
@@ -33,6 +33,7 @@ type Detail = {
 
 const FLASH: Record<string, string> = {
   withdrawn: "Application withdrawn.",
+  attending: "Thanks for confirming. See you there!",
   canceled: "You've canceled. The organizer was told and the next person on the waitlist moved up.",
   reviewed: "Review saved.",
   disputed: "Dispute sent. Our team will look at it and get back to you."
@@ -121,6 +122,24 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
                 Withdraw application
               </Button>
             </form>
+          ) : null}
+          {(a.status === "accepted" || a.status === "confirmed") && start && new Date(start) > new Date() ? (
+            <Card className="grid gap-2">
+              {a.commitment?.volunteer_confirmed_at ? (
+                <p className="m-0 text-sm font-medium text-success">You confirmed you&apos;re coming. Thank you!</p>
+              ) : (
+                <form action={confirmAttendanceAction.bind(null, id)}>
+                  <Button type="submit" className="w-full">
+                    I&apos;m still coming
+                  </Button>
+                </form>
+              )}
+              {a.commitment?.id ? (
+                <a href={`/api/volunteer/calendar/commitments/${a.commitment.id}/ics`} className="text-sm font-medium text-primary">
+                  Add to calendar (.ics)
+                </a>
+              ) : null}
+            </Card>
           ) : null}
           {a.status === "accepted" || a.status === "confirmed" ? (
             <form action={volunteerCancelAction.bind(null, id)} className="grid gap-2 rounded-md border border-line bg-surface p-4">

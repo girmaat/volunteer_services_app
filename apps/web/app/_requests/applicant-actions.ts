@@ -72,3 +72,9 @@ export async function volunteerWithdrawAction(appId: string) {
   const r = await backendFetch(`/v1/volunteer/applications/${appId}/withdraw`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
   redirect(`/volunteer/applications/${appId}?${r.ok ? "flash=withdrawn" : `error=${encodeURIComponent(await msg(r))}`}`);
 }
+
+export async function confirmAttendanceAction(appId: string) {
+  if (!ok(appId)) redirect("/volunteer/applications");
+  const r = await backendFetch(`/v1/volunteer/applications/${appId}/confirm-attendance`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+  redirect(`/volunteer/applications/${appId}?${r.ok ? "flash=attending" : `error=${encodeURIComponent(await msg(r))}`}`);
+}

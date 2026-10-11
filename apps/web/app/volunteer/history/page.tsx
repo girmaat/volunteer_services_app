@@ -1,3 +1,4 @@
+import { ButtonLink, PageHeader } from "../../../components/ui";
 
 import Link from "next/link";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
@@ -29,10 +30,15 @@ export default async function Page() {
 
   return (
     <>
-      <h1 className={styles.sectionTitle}>History</h1>
-      <p className={styles.meta}>
-        Signed in as <strong>{user?.email}</strong>.
-      </p>
+      <PageHeader
+        title="Impact"
+        description="Hours, tasks and outcomes from your volunteering."
+        actions={
+          <ButtonLink href="/api/download?what=impact-csv" variant="secondary" prefetch={false}>
+            Export CSV
+          </ButtonLink>
+        }
+      />
 
       <HistoryTabs active="summary" />
 

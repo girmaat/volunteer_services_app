@@ -165,7 +165,8 @@ export async function discover(viewer: Viewer, f: DiscoveryFilters) {
   if (f.categories?.length) add((n) => `r.category = ANY($${n}::text[])`, f.categories);
   if (f.skills?.length) add((n) => `(r.required_skills && $${n}::text[] OR r.nice_to_have_skills && $${n}::text[])`, f.skills);
   if (f.mode) add((n) => `r.mode = $${n}`, f.mode);
-  if (f.startsAfter) add((n) => `(r.starts_at IS NULL OR r.starts_at >= $${n}::timestamptz)`, f.startsAfter);
+  // Recurring requests keep running after their first session, so only the "before" bound applies to them.
+  if (f.startsAfter) add((n) => `(r.starts_at IS NULL OR r.schedule_type = 'recurring' OR r.starts_at >= $${n}::timestamptz)`, f.startsAfter);
   if (f.startsBefore) add((n) => `(r.starts_at IS NULL OR r.starts_at <= $${n}::timestamptz)`, f.startsBefore);
   if (f.urgency) add((n) => `r.urgency = $${n}`, f.urgency);
   if (f.orgSlug) add((n) => `r.requester_org_slug = $${n}`, f.orgSlug);

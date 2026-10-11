@@ -26,6 +26,7 @@ import { registerJobHandler } from "./jobs/queue";
 import { runHourly, onHourly } from "./jobs/maintenance";
 import { registerReviewRoutes } from "./modules/reviews/routes";
 import { registerApplicantRoutes } from "./modules/requests/applicants";
+import { registerAccountRoutes } from "./modules/account/routes";
 import { revealDueReviews } from "./modules/reviews/service";
 import { registerDocsRoutes } from "./openapi/docs";
 
@@ -97,6 +98,7 @@ export function createApp(): Express {
   registerJobHandler("maintenance.hourly", runHourly);
   registerReviewRoutes(app);
   registerApplicantRoutes(app);
+  registerAccountRoutes(app);
   onHourly(revealDueReviews);
   app.use("/v1/admin", adminAudit);
   registerAdminRoutes(app);

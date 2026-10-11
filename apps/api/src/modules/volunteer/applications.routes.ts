@@ -97,7 +97,7 @@ app.get(
 
     const commitmentRes = await pool.query(
       `
-      SELECT id, status, start_at, end_at
+      SELECT id, status, start_at, end_at, volunteer_confirmed_at
       FROM request_commitments
       WHERE volunteer_user_id = $1 AND request_id = $2
       ORDER BY updated_at DESC
@@ -111,7 +111,8 @@ app.get(
           id: commitmentRes.rows[0].id,
           status: commitmentRes.rows[0].status,
           start_at: commitmentRes.rows[0].start_at,
-          end_at: commitmentRes.rows[0].end_at
+          end_at: commitmentRes.rows[0].end_at,
+          volunteer_confirmed_at: commitmentRes.rows[0].volunteer_confirmed_at
         }
       : null;
 

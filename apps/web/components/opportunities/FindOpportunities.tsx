@@ -26,6 +26,25 @@ const MODES = [
   { value: "hybrid", label: "Hybrid" }
 ];
 
+/** Date window for the "When" filter, in UTC (requests without a date always match). */
+function dateRange(when: string): [string, string] | null {
+  const now = new Date();
+  const day = (d: Date, add: number) => {
+    const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + add));
+    return x;
+  };
+  if (when === "week") return [now.toISOString(), day(now, 8).toISOString()];
+  if (when === "month") return [now.toISOString(), day(now, 31).toISOString()];
+  if (when === "weekend") {
+    const dow = now.getUTCDay(); // 0 Sun … 6 Sat
+    const toSat = dow === 0 ? -1 : 6 - dow;
+    const sat = day(now, toSat);
+    const start = dow === 6 || dow === 0 ? now : sat;
+    return [start.toISOString(), day(sat, 2).toISOString()];
+  }
+  return null;
+}
+
 /**
  * Search + filters + results, used by the public browse page (tab "all") and the volunteer
  * feeds (Recommended · Near you · Remote). Filters are a plain GET form, so it works without JS.
@@ -52,6 +71,7 @@ export default async function FindOpportunities({
   const verified = one(sp.verified) === "1";
   const org = one(sp.org);
   const cursor = one(sp.cursor);
+  const when = one(sp.when);
 
   const params = new URLSearchParams({ tab, limit: "20" });
   if (q) params.set("q", q);
@@ -61,6 +81,11 @@ export default async function FindOpportunities({
   if (verified) params.set("verified_org", "true");
   if (org) params.set("org", org);
   if (cursor) params.set("cursor", cursor);
+  const range = dateRange(when);
+  if (range) {
+    params.set("starts_after", range[0]);
+    params.set("starts_before", range[1]);
+  }
 
   const path = `/v1/discovery/opportunities?${params}`;
   const res = personalized
@@ -70,11 +95,11 @@ export default async function FindOpportunities({
 
   const keep = (patch: Record<string, string>) => {
     const u = new URLSearchParams();
-    for (const [k, v] of Object.entries({ q, category, mode, radius, verified: verified ? "1" : "", org, ...patch })) if (v) u.set(k, v);
+    for (const [k, v] of Object.entries({ q, category, mode, radius, when, verified: verified ? "1" : "", org, ...patch })) if (v) u.set(k, v);
     const s = u.toString();
     return s ? `${basePath}?${s}` : basePath;
   };
-  const filtered = Boolean(q || category || mode || verified || org || radius);
+  const filtered = Boolean(q || category || mode || verified || org || radius || when);
   const viewerTz = data?.viewer?.timezone ?? null;
 
   return (
@@ -99,6 +124,17 @@ export default async function FindOpportunities({
                   {c.label}
                 </option>
               ))}
+            </select>
+          </div>
+          <div className="grid gap-1.5">
+            <label htmlFor="opp-when" className="text-sm font-medium">
+              When
+            </label>
+            <select id="opp-when" name="when" defaultValue={when} className="h-11 rounded border border-line-strong bg-surface px-3">
+              <option value="">Any time</option>
+              <option value="weekend">This weekend</option>
+              <option value="week">Next 7 days</option>
+              <option value="month">Next 30 days</option>
             </select>
           </div>
           {tab !== "remote" && tab !== "nearby" ? (

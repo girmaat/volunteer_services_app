@@ -1,125 +1,104 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
-import styles from "../settings.module.css";
+import { Button, ButtonLink, Card, Notice } from "../../../components/ui";
 
 export const dynamic = "force-dynamic";
 
-function cleanMessage(s: string) {
-  return s.replace(/\+/g, " ").trim();
+const msg = async (r: Response) => ((await r.json().catch(() => null)) as { message?: string } | null)?.message || "That didn't go through.";
+
+async function changePasswordAction(fd: FormData) {
+  "use server";
+  const currentPassword = String(fd.get("currentPassword") || "");
+  const newPassword = String(fd.get("newPassword") || "");
+  const confirmPassword = String(fd.get("confirmPassword") || "");
+  if (newPassword.length < 8) redirect("/settings/account?error=" + encodeURIComponent("The new password needs at least 8 characters."));
+  if (newPassword !== confirmPassword) redirect("/settings/account?error=" + encodeURIComponent("The new passwords don't match."));
+  const r = await backendFetch("/v1/auth/change-password", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ currentPassword, newPassword }) });
+  redirect(r.ok ? "/settings/account?ok=password" : "/settings/account?error=" + encodeURIComponent(await msg(r)));
 }
 
-export default async function Page(
-  props: {
-    searchParams?: Promise<{ ok?: string; error?: string }>;
-  }
-) {
-  const searchParams = await props.searchParams;
+async function deleteAccountAction(fd: FormData) {
+  "use server";
+  const r = await backendFetch("/v1/me/delete", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ password: String(fd.get("password") || ""), confirm: String(fd.get("confirm") || "") })
+  });
+  if (!r.ok) redirect("/settings/account?error=" + encodeURIComponent(await msg(r)) + "#delete");
+  (await cookies()).set("ty_session", "", { path: "/", maxAge: 0 });
+  redirect("/?deleted=1");
+}
+
+export default async function AccountPage(props: { searchParams?: Promise<{ ok?: string; error?: string }> }) {
+  const sp = (await props.searchParams) || {};
   const user = await getCurrentUser();
-
-  const ok = searchParams?.ok === "1";
-  const error = searchParams?.error ? cleanMessage(String(searchParams.error)) : "";
-
-  async function changePasswordAction(formData: FormData) {
-    "use server";
-
-    const currentPassword = String(formData.get("currentPassword") || "");
-    const newPassword = String(formData.get("newPassword") || "");
-    const confirmPassword = String(formData.get("confirmPassword") || "");
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      redirect("/settings/account?error=" + encodeURIComponent("Please fill out all fields."));
-    }
-    if (newPassword.length < 8) {
-      redirect("/settings/account?error=" + encodeURIComponent("New password must be at least 8 characters."));
-    }
-    if (newPassword !== confirmPassword) {
-      redirect("/settings/account?error=" + encodeURIComponent("New passwords do not match."));
-    }
-
-    const res = await backendFetch("/v1/auth/change-password", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ currentPassword, newPassword })
-    });
-
-    if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as any;
-      const msg = String(data?.message || "Failed to change password");
-      redirect("/settings/account?error=" + encodeURIComponent(msg));
-    }
-
-    redirect("/settings/account?ok=1");
-  }
-
+  const input = "h-11 w-full rounded border border-line-strong bg-surface px-3";
   return (
-    <>
-      <h2 className={styles.sectionTitle}>Account</h2>
-      <p className={styles.meta}>
-        Change your password securely. After a successful change, we keep you signed in on this device and sign you out
-        everywhere else.
-      </p>
+    <div className="grid max-w-2xl gap-6">
+      {sp.ok === "password" ? <Notice tone="success">Password updated. Your other sessions were signed out.</Notice> : null}
+      {sp.error ? <Notice tone="danger">{sp.error}</Notice> : null}
 
-      {user?.email ? (
-        <div className={styles.badgeRow} style={{ marginTop: "0.25rem" } as any}>
-          <span className={styles.badge}>Signed in as: {user.email}</span>
+      <Card className="grid gap-4">
+        <div>
+          <h2 className="m-0 text-lg">Password</h2>
+          <p className="m-0 mt-1 text-sm text-muted">Signed in as {user?.email}. Changing your password signs you out everywhere else.</p>
         </div>
-      ) : null}
-
-      {ok ? (
-        <div
-          className={styles.tile}
-          style={{ borderColor: "var(--border)", background: "#ecfdf5", marginTop: "0.9rem" } as any}
-        >
-          <strong>Password updated.</strong>
-          <div className={styles.small} style={{ marginTop: "0.35rem" } as any}>
-            Your other sessions have been signed out.
+        <form action={changePasswordAction} className="grid gap-3">
+          <label className="grid gap-1 text-sm font-medium">
+            Current password
+            <input name="currentPassword" type="password" autoComplete="current-password" required className={input} />
+          </label>
+          <label className="grid gap-1 text-sm font-medium">
+            New password
+            <input name="newPassword" type="password" autoComplete="new-password" minLength={8} required className={input} />
+          </label>
+          <label className="grid gap-1 text-sm font-medium">
+            Confirm new password
+            <input name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required className={input} />
+          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit">Update password</Button>
+            <Link href="/forgot-password" className="text-sm text-primary">
+              Forgot it?
+            </Link>
           </div>
-        </div>
-      ) : null}
+        </form>
+      </Card>
 
-      {error ? (
-        <div
-          className={styles.tile}
-          style={{ borderColor: "var(--border)", background: "var(--danger-tint)", marginTop: "0.9rem" } as any}
-        >
-          <strong>Could not update password.</strong>
-          <div className={styles.small} style={{ marginTop: "0.35rem" } as any}>
-            {error}
+      <Card className="grid gap-3">
+        <h2 className="m-0 text-lg">Your data</h2>
+        <p className="m-0 text-sm text-muted">Download a copy of everything we hold about you: profile, requests, applications, messages, reviews and settings.</p>
+        <div>
+          <ButtonLink href="/api/download?what=my-data" variant="secondary" prefetch={false}>
+            Download my data (JSON)
+          </ButtonLink>
+        </div>
+      </Card>
+
+      <Card id="delete" className="grid gap-3 border-danger">
+        <h2 className="m-0 text-lg">Delete account</h2>
+        <p className="m-0 text-sm text-muted">
+          Your open requests are canceled, applications withdrawn, and your profile and contact details erased. Messages and reviews others received stay, shown as
+          &ldquo;Deleted member&rdquo;. This can&apos;t be undone.
+        </p>
+        <form action={deleteAccountAction} className="grid gap-3">
+          <label className="grid gap-1 text-sm font-medium">
+            Password
+            <input name="password" type="password" autoComplete="current-password" required className={input} />
+          </label>
+          <label className="grid gap-1 text-sm font-medium">
+            Type DELETE to confirm
+            <input name="confirm" required pattern="DELETE" autoComplete="off" className={input} />
+          </label>
+          <div>
+            <Button type="submit" variant="danger">
+              Delete my account
+            </Button>
           </div>
-        </div>
-      ) : null}
-
-      <hr className={styles.hr} />
-
-      <form action={changePasswordAction}>
-        <label className={styles.label} htmlFor="currentPassword">
-          Current password
-        </label>
-        <input className={styles.input} id="currentPassword" name="currentPassword" type="password" required />
-
-        <label className={styles.label} htmlFor="newPassword">
-          New password
-        </label>
-        <input className={styles.input} id="newPassword" name="newPassword" type="password" minLength={8} required />
-
-        <label className={styles.label} htmlFor="confirmPassword">
-          Confirm new password
-        </label>
-        <input className={styles.input} id="confirmPassword" name="confirmPassword" type="password" minLength={8} required />
-
-        <div className={styles.row} style={{ marginTop: "0.9rem" } as any}>
-          <button className={styles.button} type="submit">
-            Update password
-          </button>
-          <Link className={styles.buttonSecondary} href="/forgot-password">
-            Forgot password?
-          </Link>
-          <Link className={styles.buttonSecondary} href="/settings">
-            Back to settings
-          </Link>
-        </div>
-      </form>
-    </>
+        </form>
+      </Card>
+    </div>
   );
 }

@@ -20,6 +20,7 @@ type Applicant = {
   email: string | null;
   phone: string | null;
   start_at: string | null;
+  volunteer_confirmed_at: string | null;
   no_show: boolean | null;
   conversation_id: string | null;
   volunteer_user_id: string;
@@ -116,7 +117,12 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
                   <span className="font-medium">Contact:</span> {[a.email, a.phone].filter(Boolean).join(" · ")}
                 </p>
               ) : null}
-              {a.start_at ? <p className="m-0 mt-1 text-sm text-muted">Scheduled {formatInZone(a.start_at, tz, { withZone: true })}</p> : null}
+              {a.start_at ? (
+                <p className="m-0 mt-1 text-sm text-muted">
+                  Scheduled {formatInZone(a.start_at, tz, { withZone: true })}
+                  {a.volunteer_confirmed_at ? <span className="font-medium text-success"> · confirmed they&apos;re coming</span> : null}
+                </p>
+              ) : null}
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {a.status === "pending" || a.status === "waitlisted" ? (

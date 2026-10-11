@@ -37,7 +37,7 @@ export function registerApplicantRoutes(app: Express) {
                 p.background_check_status, (u.verification_status = 'approved') AS verified,
                 CASE WHEN a.status IN ('accepted','confirmed','completed') THEN u.email END AS email,
                 CASE WHEN a.status IN ('accepted','confirmed','completed') THEN p.phone END AS phone,
-                c.id AS commitment_id, c.status AS commitment_status, c.start_at, c.end_at, c.no_show, c.late_cancel,
+                c.id AS commitment_id, c.status AS commitment_status, c.start_at, c.end_at, c.no_show, c.late_cancel, c.volunteer_confirmed_at,
                 conv.id AS conversation_id,
                 ${RELIABILITY_SQL("a.volunteer_user_id")} AS reliability,
                 (SELECT COALESCE(ROUND(AVG(rating)::numeric, 1), NULL) FROM visible_volunteer_reviews vr WHERE vr.volunteer_user_id = a.volunteer_user_id) AS avg_rating,
