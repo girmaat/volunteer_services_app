@@ -1,0 +1,232 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+    flex-direction: column;
+align-items: center;
+  padding: 3rem 1.25rem;
+  background:
+    radial-gradient(900px 500px at 18% 12%, rgba(59, 130, 246, 0.20), transparent 55%),
+    radial-gradient(850px 520px at 82% 18%, rgba(16, 185, 129, 0.18), transparent 55%),
+    radial-gradient(900px 560px at 50% 92%, rgba(168, 85, 247, 0.12), transparent 55%),
+    linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.title {
+  font-size: 1.0rem;
+  font-weight: 650;
+  margin: 0 0 0.5rem 0;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0 auto;
+  max-width: 46rem;
+  color: #475569;
+  line-height: 1.55;
+}
+
+/* Primary container card */
+.card {
+  margin-top: 1.25rem;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow:
+    0 20px 45px rgba(15, 23, 42, 0.10),
+    0 3px 12px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(10px);
+}
+
+.form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+/* Make label stacks consistent everywhere (fixes tiny inputs on org signup) */
+.form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.meta {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.92);
+  transition: box-shadow 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.80);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.button {
+  border: 0;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 55%, #7c3aed 100%);
+  color: white;
+  border-radius: 0.85rem;
+  padding: 0.72rem 1.05rem;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.32);
+  filter: brightness(1.02);
+}
+
+.button:active {
+  transform: translateY(0px);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.22);
+}
+
+.secondary {
+  background: #111827;
+  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.22);
+}
+
+.error {
+  border: 1px solid rgba(239, 68, 68, 0.40);
+  background: rgba(254, 242, 242, 0.90);
+  color: #991b1b;
+  border-radius: 0.85rem;
+  padding: 0.85rem 0.95rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.success {
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(236, 253, 245, 0.92);
+  color: #065f46;
+  border-radius: 0.85rem;
+  padding: 0.85rem 0.95rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+/* Generic two-column grid used by org signup */
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+/* Existing classes used elsewhere */
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.8rem;
+}
+
+.roleCard {
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.9rem;
+  padding: 0.9rem;
+  background: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+}
+
+.roleTitle {
+  font-weight: 650;
+  margin: 0;
+}
+
+.roleBody {
+  margin: 0.5rem 0 0 0;
+  color: #64748b;
+  line-height: 1.4;
+  font-size: 0.95rem;
+}
+
+.progress {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.step {
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.85rem;
+  color: #334155;
+  background: rgba(241, 245, 249, 0.9);
+}
+
+.stepActive {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.footerLinks {
+  margin-top: 0.75rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.footerLinks a {
+  color: #1d4ed8;
+  font-weight: 650;
+}
+
+.footerLinks a:hover {
+  text-decoration: underline;
+}
+
+.devNote {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.devNote a {
+  color: #1d4ed8;
+  font-weight: 650;
+}

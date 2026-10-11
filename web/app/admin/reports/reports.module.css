@@ -1,0 +1,173 @@
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.left {
+  min-width: 260px;
+  flex: 1 1 560px;
+}
+
+.right {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex: 0 1 360px;
+  flex-wrap: wrap;
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.category {
+  font-weight: 900;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.preview {
+  margin-top: 10px;
+  white-space: pre-wrap;
+}
+
+.submeta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+}
+
+.actionBtn {
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.actionsDetails {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-block;
+}
+
+.actionsSummary {
+  list-style: none;
+}
+
+
+.actionsDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.actionsPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+
+  width: min(520px, 92vw);
+  max-height: 70vh;
+  overflow: auto;
+
+  background: var(--card, #fff);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.12);
+
+  display: grid;
+  gap: 12px;
+}
+
+
+.formGrid {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 840px) {
+  .right {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+
+  .controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+}
+
+.actionBtn {
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+}
+
+.actionsPanel :global(.adminActions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.actionsPanel :global(.adminActions form) {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.actionsPanel :global(.adminActions .input) {
+  min-width: 120px;
+}
+
+@media (max-width: 520px) {
+  .actionsPanel {
+    right: auto;
+    left: 0;
+    width: min(520px, 92vw);
+  }
+}

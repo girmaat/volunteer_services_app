@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ThankYou favicon">
+  <defs>
+    <linearGradient id="g" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#g)"/>
+  <path d="M32 51
+           C32 51 18 43 18 33
+           C18 27 23 22 29 24
+           C30.5 24.4 31.6 25.3 32 26
+           C32.4 25.3 33.5 24.4 35 24
+           C41 22 46 27 46 33
+           C46 43 32 51 32 51Z"
+        fill="#ffffff" opacity="0.95"/>
+</svg>
