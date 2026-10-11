@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import MarketingHeader from "./MarketingHeader";
-import { APP_AREAS, PUBLIC_ORG_PATHS } from "./nav";
+import { APP_AREAS } from "./nav";
 
 /**
  * Chooses the page chrome: public pages get the marketing header/footer; signed-in areas
@@ -11,9 +11,8 @@ import { APP_AREAS, PUBLIC_ORG_PATHS } from "./nav";
  */
 export default function SiteChrome({ children, footer }: { children: ReactNode; footer: ReactNode }) {
   const pathname = usePathname() || "/";
-  const inApp =
-    APP_AREAS.some((a) => pathname === a || pathname.startsWith(a + "/")) &&
-    !PUBLIC_ORG_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  // Area layouts own their chrome (the org layout renders the marketing chrome for its public pages).
+  const inApp = APP_AREAS.some((a) => pathname === a || pathname.startsWith(a + "/"));
   if (inApp) return <>{children}</>;
   return (
     <>

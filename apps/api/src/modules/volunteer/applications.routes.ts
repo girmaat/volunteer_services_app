@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { icsEvent } from "../../lib/ics";
+import { env } from "../../lib/env";
 import type { Express } from "express";
 import { z } from "zod";
 import { contentDisposition } from "../../lib/http";
@@ -479,6 +481,45 @@ app.get(
     );
 
     return res.json(rows.rows);
+  })
+);
+
+// One commitment as a calendar file. Only the volunteer's own; the exact address is included
+// because a commitment exists only after they were accepted.
+app.get(
+  "/v1/volunteer/calendar/commitments/:id/ics",
+  wrap(async (req, res) => {
+    const user = await requireVolunteerUser(req, res);
+    if (!user) return;
+    const id = z.string().uuid().safeParse(req.params.id);
+    if (!id.success) return res.status(400).json({ message: "Invalid id" });
+    const r = await pool.query(
+      `SELECT c.id, c.start_at, c.end_at, r.id AS request_id, r.title, r.mode, r.public_area, r.exact_address, r.duration_minutes,
+              a.id AS application_id
+         FROM request_commitments c
+         JOIN service_requests r ON r.id = c.request_id
+         LEFT JOIN request_applications a ON a.request_id = c.request_id AND a.volunteer_user_id = c.volunteer_user_id
+        WHERE c.id = $1 AND c.volunteer_user_id = $2 AND c.start_at IS NOT NULL`,
+      [id.data, user.id]
+    );
+    const c = r.rows[0];
+    if (!c) return res.status(404).json({ message: "Commitment not found" });
+    const start = new Date(c.start_at);
+    const end = c.end_at ? new Date(c.end_at) : new Date(start.getTime() + (Number(c.duration_minutes) || 60) * 60_000);
+    const link = `${env.WEB_BASE_URL}/volunteer/applications/${c.application_id ?? ""}`;
+    const body = icsEvent({
+      uid: `commitment-${c.id}@thankyou`,
+      start,
+      end,
+      title: `Volunteering: ${c.title}`,
+      location: c.mode === "remote" ? "Remote" : c.exact_address || c.public_area || undefined,
+      description: `Details and messages: ${link}`,
+      url: link
+    });
+    res.setHeader("content-type", "text/calendar; charset=utf-8");
+    res.setHeader("content-disposition", 'attachment; filename="thankyou-commitment.ics"');
+    res.setHeader("cache-control", "private, no-store");
+    return res.send(body);
   })
 );
 }

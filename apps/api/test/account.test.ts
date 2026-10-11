@@ -52,6 +52,29 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
     expect((await v.post(`/v1/volunteer/applications/${ap.body.applicationId}/confirm-attendance`)).body.confirmed).toBe(true);
     const c = await pool.query("SELECT volunteer_confirmed_at FROM request_commitments WHERE request_id = $1 AND volunteer_user_id = $2", [d.body.id, await userId("confirm.vol@thankyou.test")]);
     expect(c.rows[0].volunteer_confirmed_at).toBeTruthy();
+
+    // The commitment downloads as a calendar file, for its volunteer only.
+    const cid = (await pool.query("SELECT id FROM request_commitments WHERE request_id = $1", [d.body.id])).rows[0].id;
+    const ics = await v.get(`/v1/volunteer/calendar/commitments/${cid}/ics`);
+    expect(ics.status).toBe(200);
+    expect(ics.headers["content-type"]).toContain("text/calendar");
+    expect(ics.text).toMatch(/BEGIN:VCALENDAR[\s\S]*SUMMARY:Volunteering: Confirm: shift[\s\S]*END:VCALENDAR/);
+    expect((await (await as(EMAILS.volunteer)).get(`/v1/volunteer/calendar/commitments/${cid}/ics`)).status).toBe(404);
+  });
+
+  it("completed work counts toward impact hours", async () => {
+    await createUser({ email: "hours.vol@thankyou.test", roles: ["volunteer"] });
+    const owner = await as(EMAILS.requester);
+    const d = await owner.post("/v1/requests", { title: "Hours: shift", description: "Impact hours test request.", category: "errands", mode: "remote", scheduleType: "one_time", startsAt: soon(40), durationMinutes: 90 });
+    await owner.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
+    const v = await as("hours.vol@thankyou.test");
+    const ap = await v.post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
+    await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "accept" });
+    await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "complete" });
+    const sum = await v.get("/v1/volunteer/history/summary");
+    expect(sum.body.completed_count).toBe(1);
+    expect(sum.body.total_hours).toBe(1.5);
+    expect(sum.body.recent_completed[0].title).toBe("Hours: shift");
   });
 
   it("exports impact as CSV safe for spreadsheets", async () => {

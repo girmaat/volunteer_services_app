@@ -13,6 +13,7 @@ type Summary = {
   tasks_count: number;
   outcomes_count: number;
   total_hours: number;
+  recent_completed?: { application_id: string; title: string; completed_at: string; hours: number }[];
 };
 
 async function loadSummary(): Promise<{ ok: true; data: Summary } | { ok: false; status: number; message: string }> {
@@ -82,6 +83,26 @@ export default async function Page() {
           <p className={styles.tileBody}>Outcome statements and metrics.</p>
         </Link>
       </div>
+
+      {summary.ok && summary.data.recent_completed?.length ? (
+        <section aria-labelledby="recent-done" className="mt-10">
+          <h2 id="recent-done" className="m-0 text-lg">
+            Recently completed
+          </h2>
+          <ul className="m-0 mt-3 border-t border-line p-0">
+            {summary.data.recent_completed.map((d) => (
+              <li key={d.application_id} className="list-none border-b border-line">
+                <Link prefetch={false} href={`/volunteer/applications/${d.application_id}`} className="flex items-baseline justify-between gap-3 px-1 py-3 text-ink no-underline hover:text-primary">
+                  <span className="font-medium">{d.title}</span>
+                  <span className="shrink-0 text-sm text-muted">
+                    {d.hours} h · {new Date(d.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </>
   );
 }

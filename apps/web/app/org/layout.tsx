@@ -4,20 +4,24 @@ import { getCurrentUser, syncActiveContext } from "../lib/backend";
 import { getOrgContext } from "../lib/org";
 import AppShell from "../../components/shell/AppShell";
 import MarketingHeader from "../../components/shell/MarketingHeader";
+import MarketingFooter from "../../components/shell/MarketingFooter";
 
 export const dynamic = "force-dynamic";
 
 export default async function OrgLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
 
-  // Public org routes (e.g., /org/signup) should be reachable while logged out.
+  // Public org routes (e.g., /org/signup) should be reachable while logged out. This layout owns
+  // the page chrome for every /org path (SiteChrome leaves /org alone), so it renders the
+  // marketing header and footer itself here.
   if (!user) {
     return (
       <>
         <MarketingHeader />
-        <main id="main" className="mx-auto max-w-content px-5 py-8">
+        <main id="main" className="mx-auto min-h-[60vh] max-w-content px-5 py-8">
           {children}
         </main>
+        <MarketingFooter />
       </>
     );
   }
@@ -29,9 +33,10 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
     return (
       <>
         <MarketingHeader />
-        <main id="main" className="mx-auto max-w-content px-5 py-8">
+        <main id="main" className="mx-auto min-h-[60vh] max-w-content px-5 py-8">
           {children}
         </main>
+        <MarketingFooter />
       </>
     );
   }

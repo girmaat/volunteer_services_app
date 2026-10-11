@@ -20,31 +20,31 @@ async function forgotAction(formData: FormData) {
     cache: "no-store"
   });
 
-  const email = encodeURIComponent(payload.email);
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const msg = encodeURIComponent(String(err?.message || "Request failed"));
-    redirect(`/forgot-password?error=${msg}&email=${email}`);
+    redirect(`/forgot-password?error=${msg}`); // never put the email address in the URL
   }
 
   const data = await res.json().catch(() => ({}));
   // Local development only: the API returns a reset link when DEV_EMAIL_LINKS=true and no email was sent.
   // It is carried in a short-lived httpOnly cookie, never in the URL (a URL param could be forged).
   const devLink = typeof data?.dev_reset_url === "string" ? data.dev_reset_url : "";
-  if (devLink && process.env.NODE_ENV !== "production") {
+  // The API only returns a link outside production with DEV_EMAIL_LINKS on (and no SMTP).
+  if (devLink) {
     (await cookies()).set("ty_dev_link", devLink, { httpOnly: true, sameSite: "lax", path: "/forgot-password", maxAge: 120 });
   }
-  redirect(`/forgot-password?sent=1&email=${email}`);
+  redirect(`/forgot-password?sent=1`);
 }
 
 export default async function Page(
-  props: { searchParams?: Promise<{ sent?: string; error?: string; email?: string }> }
+  props: { searchParams?: Promise<{ sent?: string; error?: string }> }
 ) {
   const searchParams = await props.searchParams;
   const sent = searchParams?.sent === "1";
   const error = searchParams?.error ? decodeURIComponent(searchParams.error) : "";
-  const resetUrl = process.env.NODE_ENV !== "production" ? (await cookies()).get("ty_dev_link")?.value || "" : "";
+  const resetUrl = (await cookies()).get("ty_dev_link")?.value || "";
 
   return (
     <section className={styles.page}>

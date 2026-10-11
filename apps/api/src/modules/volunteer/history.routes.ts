@@ -45,9 +45,28 @@ app.get(
       [user.id]
     );
 
-    const totalHours = Number(impact.rows[0]?.hours || 0) + Number(tasks.rows[0]?.hours || 0);
+    // Completed opportunities count toward hours automatically (commitment length, else the
+    // request's duration), unless the volunteer logged hours for that request themselves.
+    const done = await pool.query(
+      `SELECT a.id AS application_id, r.id AS request_id, r.title, COALESCE(a.completed_at, a.updated_at) AS completed_at,
+              ROUND(COALESCE(EXTRACT(EPOCH FROM (c.end_at - c.start_at)) / 3600, r.duration_minutes / 60.0, 1)::numeric, 2)::float AS hours,
+              EXISTS (SELECT 1 FROM volunteer_impact_entries i WHERE i.volunteer_user_id = $1 AND i.request_id = r.id)
+                OR EXISTS (SELECT 1 FROM volunteer_task_entries t WHERE t.volunteer_user_id = $1 AND t.request_id = r.id) AS logged
+         FROM request_applications a
+         JOIN service_requests r ON r.id = a.request_id
+         LEFT JOIN LATERAL (SELECT start_at, end_at FROM request_commitments c
+                             WHERE c.request_id = a.request_id AND c.volunteer_user_id = a.volunteer_user_id AND c.end_at IS NOT NULL
+                             ORDER BY c.updated_at DESC LIMIT 1) c ON TRUE
+        WHERE a.volunteer_user_id = $1 AND a.status = 'completed'
+        ORDER BY COALESCE(a.completed_at, a.updated_at) DESC`,
+      [user.id]
+    );
+    const completedHours = done.rows.filter((d) => !d.logged).reduce((n, d) => n + Number(d.hours || 0), 0);
+    const totalHours = Number(impact.rows[0]?.hours || 0) + Number(tasks.rows[0]?.hours || 0) + completedHours;
 
     return res.json({
+      recent_completed: done.rows.slice(0, 5).map(({ logged: _l, ...d }) => d),
+      completed_hours: completedHours,
       completed_count: completed.rows[0]?.count ?? 0,
       impact_count: impact.rows[0]?.count ?? 0,
       tasks_count: tasks.rows[0]?.count ?? 0,

@@ -172,7 +172,7 @@ export function registerAccountRoutes(app: Express) {
          SELECT 'outcome', o.outcome_date, r.title, NULL, o.outcome, CONCAT(o.quantity, ' ', o.unit) FROM volunteer_outcome_entries o LEFT JOIN service_requests r ON r.id = o.request_id WHERE o.volunteer_user_id = $1
          UNION ALL
          SELECT 'completed', a.completed_at::date, r.title,
-                ROUND((EXTRACT(EPOCH FROM (c.end_at - c.start_at)) / 3600)::numeric, 2), NULL, NULL
+                ROUND(COALESCE(EXTRACT(EPOCH FROM (c.end_at - c.start_at)) / 3600, r.duration_minutes / 60.0, 1)::numeric, 2), NULL, NULL
            FROM request_applications a JOIN service_requests r ON r.id = a.request_id
            LEFT JOIN request_commitments c ON c.request_id = a.request_id AND c.volunteer_user_id = a.volunteer_user_id
           WHERE a.volunteer_user_id = $1 AND a.status = 'completed'

@@ -145,7 +145,7 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
             <form action={volunteerCancelAction.bind(null, id)} className="grid gap-2 rounded-md border border-line bg-surface p-4">
               <p className="m-0 text-sm font-medium">Can&apos;t make it?</p>
               {within24h ? <p className="m-0 text-sm text-warning">It starts within 24 hours, so this counts as a late cancellation on your reliability.</p> : <p className="m-0 text-sm text-muted">Cancel as early as you can so they can find someone else.</p>}
-              <textarea name="reason" maxLength={500} placeholder="A short note for the organizer (optional)" className="min-h-[70px] rounded border border-line-strong bg-surface px-3 py-2 text-sm" />
+              <textarea name="reason" aria-label="A short note for the organizer (optional)" maxLength={500} placeholder="A short note for the organizer (optional)" className="min-h-[70px] rounded border border-line-strong bg-surface px-3 py-2 text-sm" />
               <Button type="submit" variant="danger" size="sm">
                 Cancel my spot
               </Button>
@@ -164,7 +164,7 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
                     <option value="other">Something else</option>
                   </select>
                 </label>
-                <textarea name="reason" required minLength={10} maxLength={2000} placeholder="What happened?" className="min-h-[80px] rounded border border-line-strong bg-surface px-3 py-2 text-sm" />
+                <textarea name="reason" aria-label="What happened?" required minLength={10} maxLength={2000} placeholder="What happened?" className="min-h-[80px] rounded border border-line-strong bg-surface px-3 py-2 text-sm" />
                 <Button type="submit" size="sm" variant="secondary">
                   Send to our team
                 </Button>
