@@ -10,11 +10,11 @@ export function LogoMark({ size = 30 }: { size?: number }) {
   );
 }
 
-export function Logo({ href = "/" }: { href?: string }) {
+export function Logo({ href = "/", wordmarkClassName = "" }: { href?: string; wordmarkClassName?: string }) {
   return (
     <Link prefetch={false} href={href} className="inline-flex items-center gap-2 font-display text-lg font-bold tracking-tight text-ink hover:text-ink" aria-label="ThankYou home">
       <LogoMark />
-      <span>ThankYou</span>
+      <span className={wordmarkClassName}>ThankYou</span>
     </Link>
   );
 }

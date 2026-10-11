@@ -216,10 +216,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 1rem;
+  min-width: 0;
+  overflow-x: auto; /* wide tables scroll inside the card, not the page */
 }
 
 .adminGrid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
 }
 

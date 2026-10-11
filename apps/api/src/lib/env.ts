@@ -34,7 +34,9 @@ const EnvSchema = z
     SMTP_FROM: z.string().optional(),
     GEOCODING_DISABLED: bool(false),
     JOBS_DISABLED: bool(false),
-    RATE_LIMIT_DISABLED: bool(false)
+    RATE_LIMIT_DISABLED: bool(false),
+    /** Sign-in/sign-up/reset attempts per minute per IP (plan: 5). Raise only for test stacks. */
+    AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).max(1000).default(5)
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production") {
@@ -46,6 +48,7 @@ const EnvSchema = z
       }
       if (!env.NOTIFICATION_SECRET) ctx.addIssue({ code: "custom", message: "NOTIFICATION_SECRET (16+ chars) is required in production" });
       if (env.RATE_LIMIT_DISABLED) ctx.addIssue({ code: "custom", message: "RATE_LIMIT_DISABLED is not allowed in production" });
+      if (env.AUTH_RATE_LIMIT_PER_MINUTE > 10) ctx.addIssue({ code: "custom", message: "AUTH_RATE_LIMIT_PER_MINUTE above 10 is not allowed in production" });
     }
   });
 

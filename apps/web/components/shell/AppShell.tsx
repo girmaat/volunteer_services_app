@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "./Logo";
 import { BottomNav, SideNav } from "./AppNav";
@@ -75,23 +74,16 @@ export default function AppShell({
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-surface px-4 lg:hidden">
-          <Logo href={items[0]?.href ?? "/"} />
-          <div className="flex items-center gap-1">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-line bg-surface px-4 lg:hidden">
+          <Logo href={items[0]?.href ?? "/"} wordmarkClassName="hidden min-[400px]:inline" />
+          <div className="flex min-w-0 items-center gap-1">
             <NotificationBell />
             {options.length > 1 ? (
-              <div className="w-40">
+              <div className="w-36 min-w-0">
                 <ContextSwitcher options={options} currentLabel={label} canAddRole={canAddRole} compact />
               </div>
             ) : null}
-            <Link prefetch={false} href="/settings" className="rounded px-2 py-1.5 text-sm text-muted">
-              Settings
-            </Link>
-            <form action="/api/auth/logout" method="post">
-              <button type="submit" className="rounded border-0 bg-transparent px-2 py-1.5 text-sm text-muted">
-                Log out
-              </button>
-            </form>
+            <UserMenu name={name} email={user.email} profileHref={profileHref(context)} compact />
           </div>
         </header>
         {banner}
