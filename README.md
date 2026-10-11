@@ -44,14 +44,18 @@ Seed data is for local/staging only; the seed script refuses to run in productio
 | In-person volunteer (has car, 15 mi) | volunteer.local@thankyou.test |
 | Remote volunteer (tutoring, Spanish) | volunteer.remote@thankyou.test |
 | Individual requester | requester@thankyou.test |
-| Dual-role user (volunteer today; requester role added in Phase 4) | dual.role@thankyou.test |
+| Dual-role user (volunteer and requester) | dual.role@thankyou.test |
+| Moderator (works queues, can't change settings) | moderator@thankyou.test |
 
 ## Everyday commands
 
 | Command | What it does |
 | --- | --- |
 | `pnpm dev` | API + web in watch mode (API applies pending migrations first) |
-| `pnpm check` | typecheck + lint + tests for every package |
+| `pnpm check` | typecheck + lint + tests + the web→API route check |
+| `pnpm e2e` | the UAT scripts U1–U15 and the accessibility sweep (needs the stack running) |
+| `pnpm check:api-calls` | fails if the web app calls an API route that doesn't exist |
+| `pnpm --filter @thankyou/api perf:check` | adds 1,000 requests, times Recommended/Discovery (budget 300 ms), removes them |
 | `pnpm build` | production build of every package |
 | `pnpm db:migrate` | apply pending migrations |
 | `pnpm --filter @thankyou/api db:status` | list applied / pending migrations |
@@ -61,14 +65,24 @@ Seed data is for local/staging only; the seed script refuses to run in productio
 ## Tests
 
 ```bash
-pnpm test        # API: unit + integration (~1,200 tests, ~25 s)
+pnpm test        # API: unit + integration (~1,600 tests, ~50 s)
+pnpm e2e         # Playwright: U1–U15 + accessibility, against http://localhost:3002
 ```
 
 API integration tests need a local Postgres. They create and reset a database named `thankyou_test`
 on the same server as your `DATABASE_URL` (override with `TEST_DATABASE_URL`) — never your development database.
 The Postgres user needs permission to create that database once (`CREATE DATABASE thankyou_test OWNER <user>;`).
 
-The suite includes three sweeps over **every** route: anonymous and forged-token callers get 401,
+### End-to-end (UAT scripts)
+
+`e2e/` has one Playwright spec per UAT script (U1–U15) plus an axe + 375 px sweep of the UAT pages.
+Start the stack first (`pnpm build && pnpm --filter @thankyou/api start` and `pnpm --filter @thankyou/web start`,
+or `pnpm dev`), with a seeded database and, in `apps/api/.env`, `DEV_EMAIL_LINKS=true` and
+`AUTH_RATE_LIMIT_PER_MINUTE=60` (the suite signs up and logs in several users from one IP).
+Specs create their own users and requests with unique names, so they can run again and again on the same database.
+Other targets: `E2E_BASE_URL`, `E2E_API_URL`, `E2E_DATABASE_URL`. First time: `pnpm exec playwright install chromium`.
+
+The API suite includes three sweeps over **every** route: anonymous and forged-token callers get 401,
 volunteers can't reach admin/org routes, and no route answers 500 for any role.
 
 ## API documentation

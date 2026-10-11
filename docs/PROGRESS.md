@@ -121,3 +121,85 @@ decline in place), volunteer applications (active / past), login, signup, passwo
 critical issues remaining. Fixed: every app page now has an `h1` and no skipped heading levels (70 files);
 labelled every admin filter/control; stat panels use list semantics; landmarks are uniquely labelled;
 skip link; 44 px touch targets; visible sunflower focus ring. Mobile checked at 390 px.
+
+**Phase 3 gaps closed (2026-10-11)**
+- UI kit completed: IconButton, Checkbox, Radio/RadioGroup, Avatar, Skeleton, Table/Th/Td, Pagination,
+  Modal and Sheet (Radix Dialog), Toast, SubmitButton (disables itself while its form is sending).
+- 580 static inline `style={{…}}` replaced with design-token classes by a codemod (colour intent kept:
+  red/green/amber boxes map to danger/success/warning tints). Five remain and are legitimately dynamic
+  (chart geometry, bottom-bar column count, the select chevron); Open Graph images need inline styles.
+- Org Home shows a "Finish setting up" checklist (contact, profile, verification, teammate, first request)
+  until every step is done; onboarding is no longer a nav item.
+- Phones: opportunity filters fold behind a "Filters" link (works without JavaScript) so results come first;
+  the signed-in header uses an avatar menu, so no page scrolls sideways at 375 px.
+- SEO: canonical URLs on every public page; PNG Open Graph images (site default and per opportunity).
+- Verified: Lighthouse accessibility **100** on all 13 UAT pages; axe: 0 serious/critical on the same pages;
+  no horizontal scroll at 375 px (both checked in the E2E suite).
+
+## Phase 4 — Core features to spec (2026-10-11)
+
+4.1 **One account, many roles** — `user_roles`, `sessions.active_context`, context switcher at the top of the
+sidebar (Volunteering · Requesting help · each org · Platform admin); one `can(user, action)` policy replaces the
+role checks; Settings → Roles adds a role by reusing the onboarding steps; moderator platform role.
+4.2 **Request model + wizard** — five steps (Basics → When → Where → Requirements → Review), draft saved per step,
+emergency banner, categories with posting/applying trust tiers, sensitive categories go to review. The wizard
+posts each step as a plain form (full page load), and editing a live request saves per step ("Save changes" / "Done").
+4.3 **Lifecycle** — `transitionRequest()` with a transition table, an audit row per change, waitlist
+auto-promotion, owner actions shown only when valid.
+4.4 **Discovery** — `/v1/discovery/opportunities`: full-text search, filters (category, mode, skills, distance,
+dates incl. "this weekend", verified orgs), opaque cursor; match score with reasons ("3 of 4 skills · 6 mi ·
+fits your Saturdays"); tabs Recommended · Near you · Remote · Saved; times shown in the viewer's zone.
+4.5 **Location privacy** — public area only until acceptance; exact address only to the owner and accepted
+volunteers. Phone numbers, emails and links in request text are masked until acceptance too.
+4.6 **Messaging** — one conversation per request + volunteer; SSE live updates with polling fallback; masking
+before acceptance; report / block / end in the thread; attachments (type-sniffed, 5 MB); per-user and
+first-contact limits; scam phrases and new-account links held for review; auto-archive 14 days after completion.
+4.7 **Reviews** — structured, double-blind (visible when both submit or after 14 days); late cancellation and
+no-show recorded on the commitment and shown as reliability; disputes.
+4.8 **Notifications** — in-app bell + HTML/text email for every event in the plan; 48 h / 2 h attendance
+reminders; per-type preferences; one-click unsubscribe (List-Unsubscribe); message emails at most hourly.
+4.9 **Admin minimum** — moderation queues per category, take-down with reason, fill-rate and volume metrics,
+`admin_audit_log` written by every admin mutation (readable action names), shadow-ban, disputes;
+super admins can run a scheduled job now (`POST /v1/admin/jobs/:name/run`, audited).
+
+Also added in this pass: ICS download for a commitment (the link existed, the endpoint didn't); completed
+work counts toward impact hours; org check-in / check-out from the applicants list.
+
+**Done-when: U1–U15 pass end to end** — `e2e/` holds a Playwright spec per UAT script plus an accessibility
+sweep (18 tests). Green **twice in a row** locally against a production build; CI runs them on every push
+(`e2e` job). Writing them found and fixed: org onboarding called two API routes that didn't exist (new orgs could
+never finish onboarding), Settings → change password had no API route, the org documents page always 404'd,
+emails were treated as links and held, and a client-navigation stall (below).
+
+**Navigation stall (fixed)** — with an area-level `loading.tsx`, client-side navigation between nested pages
+and server-action redirects stalled 15–20 % of the time in production builds (Next 15.5.27; reproduced and
+bisected). The area-level loading boundaries are retired (`.retired/web-pages/loading`); nav links show a
+pending spinner (`useLinkStatus`) instead. Link prefetch is off in the signed-in app (each prefetch re-rendered
+layouts and called the API several times).
+
+## Review of Phases 0–4 against the plan (2026-10-11)
+
+| Phase | Done-when | Status |
+| --- | --- | --- |
+| 0 | Clean clone runs with three commands; CI green | Met (CI also runs E2E now) |
+| 1 | Real data logged out; ≤ 2 backend calls per signed-in dashboard; Recommended < 300 ms with 1,000 requests; static pages cached | Met: 2 calls on volunteer, requester and org dashboards (unread count and org context ride on `/v1/me`, top picks / activity ride on the dashboard call); `pnpm --filter @thankyou/api perf:check`: Recommended p90 34 ms, Discovery p90 18 ms with 1,025 requests |
+| 2 | server.ts < 100 lines; tests in < 2 min; OpenAPI lists every route; no extra columns | Met: server.ts 46 lines; 1,600 API tests in ~50 s; a test fails if any route is missing from OpenAPI |
+| 3 | Lighthouse a11y ≥ 95 on UAT pages; no sideways scroll at 375 px; no serious axe issues; one nav per shell | Met (100 / 0 / 0) |
+| 4 | Each UAT script passes end to end with seeded personas | Met locally (staging is Phase 5) |
+
+**Deliberate deviations** (each is simpler now, with a path later):
+- Own SQL migration runner instead of node-pg-migrate; no docker-compose (a local Postgres, per your call).
+- Distance by haversine on lat/lng instead of PostGIS (fine at this scale; PostGIS when the managed DB exists).
+- Attachments stored in Postgres until S3 in Phase 5; the virus-scan hook only knows the EICAR test string.
+- Fonts: Plus Jakarta Sans + Inter instead of IBM Plex. Static pages revalidate every 300 s, not 3,600 s.
+- No area-level loading skeletons (see the navigation stall above).
+
+**Still open from Phases 0–4** (none blocks UAT; listed so nothing is hidden):
+- Phase 2 item 13 — `any`: 408 uses remain in 31 files that carry a file-level lint disable. New code is typed;
+  these files need a typing pass.
+- Phase 2 item 8 — cursor pagination is on public, discovery, notification and inbox lists; other lists are
+  bounded (LIMIT) and admin lists use page numbers.
+- Phase 2 item 12 — the wizard, reviews and inbox forms validate with the shared contracts; older forms
+  (org settings, admin) still rely on the API's validation for errors.
+- Dev-only audit findings: `braces` (via eslint-config-next, no fix published) and `postcss-selector-parser`
+  (via Tailwind 3). Production dependencies: no known vulnerabilities.
