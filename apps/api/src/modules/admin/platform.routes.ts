@@ -1,13 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
-import { requirePlatformAdmin } from "../../admin/auth";
+import { requirePlatformAdmin, requireSuperAdmin } from "../../admin/auth";
+import { RUNNABLE_JOBS, runJobNow, type RunnableJob } from "../../jobs/queue";
 import { migrationPool, pool } from "../../lib/db";
 import { pendingMigrations } from "../../db/migrator";
 import { wrap } from "../../lib/http";
 import { ensurePlatformSettingsRow, nowIso } from "./helpers";
 
 export function registerAdminPlatformRoutes(app: Express) {
+
+  // Run a scheduled job now (reminders, hourly maintenance). Super admins only; audited by the
+  // admin audit middleware like every other admin mutation.
+  app.post(
+    "/v1/admin/jobs/:name/run",
+    wrap(async (req, res) => {
+      const r = await requireSuperAdmin(pool, req, res);
+      if (!r) return;
+      const name = String(req.params.name);
+      if (!(RUNNABLE_JOBS as readonly string[]).includes(name)) return res.status(404).json({ message: "Unknown job", jobs: RUNNABLE_JOBS });
+      const started = Date.now();
+      const result = await runJobNow(name as RunnableJob);
+      res.locals.audit = { action: "job.run", targetType: "job", targetId: name };
+      return res.json({ job: name, result: result ?? null, ms: Date.now() - started });
+    })
+  );
 
   // System health (DB status / ownership)
   app.get(

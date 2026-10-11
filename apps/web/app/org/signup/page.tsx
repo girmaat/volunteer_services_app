@@ -219,7 +219,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
           <div className={styles.stack}>
             <div className={styles.note}>
               Signed in as <strong>{user.email}</strong>.{" "}
-              <Link className={styles.link} href="/settings">
+              <Link prefetch={false} className={styles.link} href="/settings">
                 Account settings
               </Link>
             </div>
@@ -230,7 +230,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
                 <p className={styles.note}>
                   To create or join an organization, choose <strong>Requester (Organization)</strong> in onboarding.
                 </p>
-                <Link className={styles.link} href="/onboarding">
+                <Link prefetch={false} className={styles.link} href="/onboarding">
                   Go to onboarding
                 </Link>
               </div>
@@ -240,7 +240,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
               <div className={styles.card}>
                 <h2 className={styles.h2}>Complete your profile first</h2>
                 <p className={styles.note}>Finish your personal profile so we can create or join your organization.</p>
-                <Link className={styles.link} href="/onboarding">
+                <Link prefetch={false} className={styles.link} href="/onboarding">
                   Continue onboarding
                 </Link>
               </div>
@@ -321,7 +321,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
 
             <div className={styles.note}>
               Want an individual volunteer/requester account instead?{" "}
-              <Link className={styles.link} href="/onboarding">
+              <Link prefetch={false} className={styles.link} href="/onboarding">
                 Go to onboarding
               </Link>
             </div>
@@ -330,7 +330,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
           <div className={styles.stack}>
             <div className={styles.card}>
               <p className={styles.note}>
-                Already have an account? <Link className={styles.link} href="/login">Log in</Link> to create or join an organization
+                Already have an account? <Link prefetch={false} className={styles.link} href="/login">Log in</Link> to create or join an organization
                 from your existing profile.
               </p>
             </div>

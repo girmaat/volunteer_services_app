@@ -39,14 +39,14 @@ export default async function Page() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 mt-3">
-        <Link className="block p-4 rounded-lg border border-line bg-surface text-ink no-underline"
+        <Link prefetch={false} className="block p-4 rounded-lg border border-line bg-surface text-ink no-underline"
           href="/org/onboarding/admin" 
         >
           <div className="font-bold mb-1.5">Admin profile</div>
           <div className="text-muted text-xs">Update admin name + phone used for org onboarding requirements.</div>
         </Link>
 
-        <Link className="block p-4 rounded-lg border border-line bg-surface text-ink no-underline"
+        <Link prefetch={false} className="block p-4 rounded-lg border border-line bg-surface text-ink no-underline"
           href="/org/onboarding/organization" 
         >
           <div className="font-bold mb-1.5">Organization profile</div>
@@ -55,7 +55,7 @@ export default async function Page() {
       </div>
 
       <div className="mt-3.5">
-        <Link className="inline-block py-2.5 px-4 rounded-md border border-line bg-wash text-muted no-underline"
+        <Link prefetch={false} className="inline-block py-2.5 px-4 rounded-md border border-line bg-wash text-muted no-underline"
           href="/org/dashboard" 
         >
           Back to org dashboard

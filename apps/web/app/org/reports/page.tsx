@@ -127,16 +127,16 @@ export default async function Page(
       <div className="flex justify-between items-baseline gap-3 flex-wrap">
         <h1 className="m-0">Reports</h1>
         <div className="flex gap-3 items-baseline flex-wrap">
-          <Link className={styles.smallLink} href={impactCsv}>
+          <Link prefetch={false} className={styles.smallLink} href={impactCsv}>
             Impact CSV
           </Link>
-          <Link className={styles.smallLink} href={impactPdf}>
+          <Link prefetch={false} className={styles.smallLink} href={impactPdf}>
             Impact PDF
           </Link>
-          <Link className={styles.smallLink} href={hoursCsv}>
+          <Link prefetch={false} className={styles.smallLink} href={hoursCsv}>
             Volunteer hours CSV
           </Link>
-          <Link className={styles.smallLink} href={hoursPdf}>
+          <Link prefetch={false} className={styles.smallLink} href={hoursPdf}>
             Volunteer hours PDF
           </Link>
         </div>
@@ -200,7 +200,7 @@ export default async function Page(
           </div>
           <div className={styles.meta}>
             Open check-ins: {num(impact.outcomes?.open_checkins)} · Closed sessions: {num(impact.outcomes?.closed_sessions)} ·{" "}
-            <Link className={styles.smallLink} href="/org/attendance">
+            <Link prefetch={false} className={styles.smallLink} href="/org/attendance">
               Manage attendance
             </Link>
           </div>
@@ -228,7 +228,7 @@ export default async function Page(
               top.map((r) => (
                 <tr key={r.request_id}>
                   <td>
-                    <Link className={styles.smallLink} href={`/org/requests/${r.request_id}`}>
+                    <Link prefetch={false} className={styles.smallLink} href={`/org/requests/${r.request_id}`}>
                       {r.request_title}
                     </Link>
                   </td>

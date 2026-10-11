@@ -103,7 +103,7 @@ export default async function Page() {
             <h2 id="new-apps" className="m-0 text-lg">
               New applicants
             </h2>
-            <Link href="/requester/applications" className="text-sm font-medium text-primary">
+            <Link prefetch={false} href="/requester/applications" className="text-sm font-medium text-primary">
               All applicants
             </Link>
           </div>
@@ -113,7 +113,7 @@ export default async function Page() {
             <ul className="m-0 mt-2 border-t border-line p-0">
               {recentApps.map((a) => (
                 <li key={a.application_id} className="list-none border-b border-line">
-                  <Link href={`/requester/requests/${a.request_id}/applications`} className="block px-1 py-3.5 text-ink no-underline hover:text-ink">
+                  <Link prefetch={false} href={`/requester/requests/${a.request_id}/applications`} className="block px-1 py-3.5 text-ink no-underline hover:text-ink">
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-medium">{a.volunteer_display_name || "Volunteer"}</span>
                       <StatusPill status={a.status} />
@@ -134,7 +134,7 @@ export default async function Page() {
             <h2 id="recent-msgs" className="m-0 text-lg">
               Recent messages
             </h2>
-            <Link href="/inbox" className="text-sm font-medium text-primary">
+            <Link prefetch={false} href="/inbox" className="text-sm font-medium text-primary">
               Open inbox
             </Link>
           </div>
@@ -144,7 +144,7 @@ export default async function Page() {
             <ul className="m-0 mt-2 border-t border-line p-0">
               {recentThreads.map((t) => (
                 <li key={`${t.peer_id}-${t.request_id || "none"}`} className="list-none border-b border-line">
-                  <Link href={threadHref(t)} className="block px-1 py-3.5 text-ink no-underline hover:text-ink">
+                  <Link prefetch={false} href={threadHref(t)} className="block px-1 py-3.5 text-ink no-underline hover:text-ink">
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-medium">{t.peer_display_name || "Member"}</span>
                       <span className="text-xs text-muted">{relTime(t.last_at)}</span>

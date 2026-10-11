@@ -95,11 +95,11 @@ export default async function Home() {
 
           <p className="mt-5 text-sm text-muted">
             Need help yourself?{" "}
-            <Link href="/signup" className="font-medium text-primary underline underline-offset-4">
+            <Link prefetch={false} href="/signup" className="font-medium text-primary underline underline-offset-4">
               Post a request
             </Link>{" "}
             · Running a nonprofit?{" "}
-            <Link href="/org/signup" className="font-medium text-primary underline underline-offset-4">
+            <Link prefetch={false} href="/org/signup" className="font-medium text-primary underline underline-offset-4">
               Register your organization
             </Link>
           </p>
@@ -110,7 +110,7 @@ export default async function Home() {
             <h2 id="open-now" className="m-0 text-lg">
               Open right now
             </h2>
-            <Link href="/opportunities" className="text-sm font-medium text-primary">
+            <Link prefetch={false} href="/opportunities" className="text-sm font-medium text-primary">
               See all
             </Link>
           </div>
@@ -135,7 +135,7 @@ export default async function Home() {
             <div key={a.title} className="border-t-2 border-ink pt-4">
               <h3 className="m-0 text-lg">{a.title}</h3>
               <p className="mt-2 text-muted">{a.body}</p>
-              <Link href={a.href} className="inline-flex items-center gap-1.5 font-medium text-primary">
+              <Link prefetch={false} href={a.href} className="inline-flex items-center gap-1.5 font-medium text-primary">
                 {a.cta} <ArrowRight aria-hidden className="h-4 w-4" />
               </Link>
             </div>
@@ -149,7 +149,7 @@ export default async function Home() {
             How it works
           </h2>
           <p className="mt-3 text-muted">From finding a match to saying thanks, everything happens in one place.</p>
-          <Link href="/how-it-works" className="font-medium text-primary">
+          <Link prefetch={false} href="/how-it-works" className="font-medium text-primary">
             Read the details
           </Link>
         </div>
@@ -180,7 +180,7 @@ export default async function Home() {
             </li>
           ))}
         </ul>
-        <Link href="/trust-safety" className="mt-6 inline-block font-medium text-white underline underline-offset-4 hover:text-sun">
+        <Link prefetch={false} href="/trust-safety" className="mt-6 inline-block font-medium text-white underline underline-offset-4 hover:text-sun">
           How we keep people safe
         </Link>
       </section>

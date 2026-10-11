@@ -49,7 +49,7 @@ export default async function Page() {
         </div>
 
         <div className={`${styles.actionsRow} mt-0`}>
-          <Link className={styles.navLink} href="/requester/requests">
+          <Link prefetch={false} className={styles.navLink} href="/requester/requests">
             View requests
           </Link>
         </div>
@@ -64,7 +64,7 @@ export default async function Page() {
 
       <div className={styles.list} aria-label="Pending applications">
         {apps.map((a) => (
-          <Link key={a.application_id} className={styles.tileLink} href={`/requester/requests/${a.request_id}/applications`}>
+          <Link prefetch={false} key={a.application_id} className={styles.tileLink} href={`/requester/requests/${a.request_id}/applications`}>
             <div className={styles.tile}>
               <div className={styles.row}>
                 <h2 className={styles.tileTitle}>{a.volunteer_display_name || a.volunteer_email}</h2>

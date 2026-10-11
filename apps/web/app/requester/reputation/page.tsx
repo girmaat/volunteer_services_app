@@ -32,7 +32,7 @@ export default async function Page() {
       <ReputationTabs active="overview" />
 
       <div className={`${styles.grid} mt-3.5`}>
-        <Link className={styles.tileLink} href="/requester/reputation/reviews">
+        <Link prefetch={false} className={styles.tileLink} href="/requester/reputation/reviews">
           <div className={styles.tile}>
             <div className={styles.tileTitle}>Reviews received</div>
             <div className={styles.tileNumber}>
@@ -42,7 +42,7 @@ export default async function Page() {
           </div>
         </Link>
 
-        <Link className={styles.tileLink} href="/requester/reputation/reviews-given">
+        <Link prefetch={false} className={styles.tileLink} href="/requester/reputation/reviews-given">
           <div className={styles.tile}>
             <div className={styles.tileTitle}>Reviews given</div>
             <div className={styles.tileNumber}>{summary.given.count}</div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavIcon } from "./Icon";
+import { NavPending } from "./NavPending";
 import type { NavItem } from "./nav";
 import { cn } from "../../lib/cn";
 
@@ -22,7 +23,7 @@ export function SideNav({ items, label }: { items: NavItem[]; label: string }) {
           const active = isActive(pathname, item);
           return (
             <li key={item.href}>
-              <Link
+              <Link prefetch={false}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
@@ -33,6 +34,7 @@ export function SideNav({ items, label }: { items: NavItem[]; label: string }) {
                 {active ? <span aria-hidden className="absolute -left-3 top-1.5 bottom-1.5 w-1 rounded-r bg-sun" /> : null}
                 <NavIcon name={item.icon} />
                 {item.label}
+                <NavPending />
               </Link>
             </li>
           );
@@ -53,7 +55,7 @@ export function BottomNav({ items, label }: { items: NavItem[]; label: string })
           const active = isActive(pathname, item);
           return (
             <li key={item.href}>
-              <Link
+              <Link prefetch={false}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn("flex flex-col items-center gap-0.5 px-1 py-2 text-[0.6875rem] font-medium leading-tight", active ? "text-primary" : "text-muted")}

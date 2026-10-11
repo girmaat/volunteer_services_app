@@ -15,7 +15,7 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
         <div className={styles.error}>{error.message}</div>
         <div className={`${styles.buttonRow} mt-3`}>
           <button className={styles.button} onClick={() => reset()}>Try again</button>
-          <Link className={styles.meta} href="/onboarding">Back</Link>
+          <Link prefetch={false} className={styles.meta} href="/onboarding">Back</Link>
         </div>
       </div>
     </section>

@@ -58,10 +58,10 @@ export default async function Page() {
           </p>
 
           <div className={styles.accountActions}>
-            <Link className={styles.buttonSecondary} href="/settings/account">
+            <Link prefetch={false} className={styles.buttonSecondary} href="/settings/account">
               Account
             </Link>
-            <Link className={styles.buttonSecondary} href="/settings/privacy-safety">
+            <Link prefetch={false} className={styles.buttonSecondary} href="/settings/privacy-safety">
               Privacy &amp; Safety
             </Link>
           </div>
@@ -75,18 +75,18 @@ export default async function Page() {
             <div className={styles.statCard}>
               <div className={styles.statValue}>{unseenCount}</div>
               <div className={styles.statLabel}>Unseen notifications</div>
-              <Link className={styles.statLink} href="/settings/notifications">View</Link>
+              <Link prefetch={false} className={styles.statLink} href="/settings/notifications">View</Link>
             </div>
             <div className={styles.statCard}>
               <div className={styles.statValue}>{blockedCount}</div>
               <div className={styles.statLabel}>Blocked users</div>
-              <Link className={styles.statLink} href="/settings/blocked-users">Manage</Link>
+              <Link prefetch={false} className={styles.statLink} href="/settings/blocked-users">Manage</Link>
             </div>
             <div className={styles.statCard}>
               <div className={styles.statValue}>{reportsCount}</div>
               <div className={styles.statLabel}>Reports filed</div>
               <div className={styles.small}>{reportsOpen > 0 ? `${reportsOpen} open` : "No open reports"}</div>
-              <Link className={styles.statLink} href="/settings/reports">View</Link>
+              <Link prefetch={false} className={styles.statLink} href="/settings/reports">View</Link>
             </div>
             <div className={styles.statCard}>
               <div className={styles.statValue}>{publicProfileVisible === false ? "Private" : "Visible"}</div>
@@ -94,7 +94,7 @@ export default async function Page() {
               <div className={styles.small}>
                 Messages: {messagingPermission ? String(messagingPermission).replace(/_/g, " ") : "—"}
               </div>
-              <Link className={styles.statLink} href="/settings/privacy-safety">Adjust</Link>
+              <Link prefetch={false} className={styles.statLink} href="/settings/privacy-safety">Adjust</Link>
             </div>
           </div>
         </div>
@@ -116,7 +116,7 @@ export default async function Page() {
             </div>
           </div>
         ) : (
-          <Link className={styles.tile} href="/login">
+          <Link prefetch={false} className={styles.tile} href="/login">
             <h3 className={styles.tileTitle}>Invite friends</h3>
             <p className={styles.tileBody}>Sign in to generate an invite link.</p>
           </Link>

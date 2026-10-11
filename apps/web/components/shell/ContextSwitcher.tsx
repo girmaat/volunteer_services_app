@@ -66,7 +66,7 @@ export default function ContextSwitcher({
               <>
                 <Dropdown.Separator className="my-1 h-px bg-line" />
                 <Dropdown.Item asChild className={item}>
-                  <Link href="/settings/roles">
+                  <Link prefetch={false} href="/settings/roles">
                     <Plus aria-hidden className="h-4 w-4" /> Add a role
                   </Link>
                 </Dropdown.Item>

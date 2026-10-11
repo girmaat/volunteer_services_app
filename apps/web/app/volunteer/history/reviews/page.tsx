@@ -89,12 +89,12 @@ export default async function Page() {
 
                     <div className={styles.actionsRow}>
                       {r.request_application_id && (
-                        <Link className={styles.button} href={`/volunteer/applications/${r.request_application_id}`}>
+                        <Link prefetch={false} className={styles.button} href={`/volunteer/applications/${r.request_application_id}`}>
                           View application
                         </Link>
                       )}
                       {r.request_id && (
-                        <Link className={styles.button} href={`/volunteer/opportunities/${r.request_id}`}>
+                        <Link prefetch={false} className={styles.button} href={`/volunteer/opportunities/${r.request_id}`}>
                           View opportunity
                         </Link>
                       )}

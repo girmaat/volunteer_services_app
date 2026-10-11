@@ -17,7 +17,7 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
   return (
     <>
       <p className="m-0 mb-4 text-sm">
-        <Link href="/volunteer/opportunities/recommended" className="text-muted">
+        <Link prefetch={false} href="/volunteer/opportunities/recommended" className="text-muted">
           ← Find opportunities
         </Link>
       </p>

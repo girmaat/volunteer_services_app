@@ -140,7 +140,7 @@ export default async function Page(
           <button className={styles.button} type="submit">
             Save changes
           </button>
-          <Link className={styles.buttonSecondary} href="/settings">
+          <Link prefetch={false} className={styles.buttonSecondary} href="/settings">
             Back to settings
           </Link>
         </div>

@@ -222,7 +222,7 @@ export default async function Page(
             Signed in as <strong>{user.email}</strong>.
           </p>
           <p className={styles.meta}>
-            <Link href={publicUrl}>View public profile</Link>
+            <Link prefetch={false} href={publicUrl}>View public profile</Link>
           </p>
 
           {verification ? (
@@ -249,7 +249,7 @@ export default async function Page(
           </p>
         </div>
 
-        <Link className={styles.tileLink} href="/requester/reputation">
+        <Link prefetch={false} className={styles.tileLink} href="/requester/reputation">
           <div className={styles.tile}>
             <h2 className={styles.tileTitle}>Reputation</h2>
             <p className={styles.tileBody}>
@@ -490,7 +490,7 @@ export default async function Page(
               <button className={styles.button} type="submit">
                 Save profile
               </button>
-              <Link className={styles.button} href={publicUrl}>
+              <Link prefetch={false} className={styles.button} href={publicUrl}>
                 Preview public profile
               </Link>
             </div>

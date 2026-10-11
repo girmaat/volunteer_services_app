@@ -36,7 +36,7 @@ export function Button({ variant = "primary", size = "md", icon, className, chil
 type ButtonLinkProps = ComponentProps<typeof Link> & { variant?: Variant; size?: Size; icon?: ReactNode };
 export function ButtonLink({ variant = "primary", size = "md", icon, className, children, ...rest }: ButtonLinkProps) {
   return (
-    <Link className={buttonClass(variant, size, className)} {...rest}>
+    <Link prefetch={false} className={buttonClass(variant, size, className)} {...rest}>
       {icon}
       {children}
     </Link>

@@ -219,9 +219,9 @@ export default async function Page(
                   </td>
                   <td>{sevBadge(i.severity)}</td>
                   <td>
-                    <Link href={`/org/incidents/${i.id}`}>{i.title}</Link>
+                    <Link prefetch={false} href={`/org/incidents/${i.id}`}>{i.title}</Link>
                   </td>
-                  <td>{i.request_id ? <Link href={`/org/requests/${i.request_id}`}>{i.request_title || i.request_id}</Link> : "-"}</td>
+                  <td>{i.request_id ? <Link prefetch={false} href={`/org/requests/${i.request_id}`}>{i.request_title || i.request_id}</Link> : "-"}</td>
                   <td>{i.volunteer_display_name || i.volunteer_email || i.volunteer_user_id || "-"}</td>
                 </tr>
               ))

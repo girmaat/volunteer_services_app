@@ -13,7 +13,7 @@ export default function ReputationTabs({ active }: Props) {
   return (
     <nav className={styles.subnav}>
       {items.map((item) => (
-        <Link
+        <Link prefetch={false}
           key={item.key}
           href={item.href}
           className={item.key === active ? styles.subnavLinkActive : styles.subnavLink}

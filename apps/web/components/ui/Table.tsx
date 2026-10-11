@@ -60,7 +60,7 @@ export function Pagination({
   return (
     <nav aria-label="Pagination" className="mt-4 flex items-center justify-between gap-3">
       {page > 1 ? (
-        <Link href={href(page - 1)} className={linkCls} rel="prev">
+        <Link prefetch={false} href={href(page - 1)} className={linkCls} rel="prev">
           <ChevronLeft aria-hidden className="h-4 w-4" /> Previous
         </Link>
       ) : (
@@ -73,7 +73,7 @@ export function Pagination({
         {pages ? ` of ${pages}` : ""}
       </span>
       {hasNext ? (
-        <Link href={href(page + 1)} className={linkCls} rel="next">
+        <Link prefetch={false} href={href(page + 1)} className={linkCls} rel="next">
           Next <ChevronRight aria-hidden className="h-4 w-4" />
         </Link>
       ) : (

@@ -28,17 +28,17 @@ export default function UserMenu({ name, email, profileHref }: { name: string; e
       <Dropdown.Portal>
         <Dropdown.Content side="top" align="start" sideOffset={6} className="z-50 min-w-[240px] rounded-md border border-line bg-surface p-1.5 shadow-pop">
           <Dropdown.Item asChild className={item}>
-            <Link href={profileHref}>
+            <Link prefetch={false} href={profileHref}>
               <UserRound aria-hidden className="h-4 w-4" /> Profile
             </Link>
           </Dropdown.Item>
           <Dropdown.Item asChild className={item}>
-            <Link href="/settings">
+            <Link prefetch={false} href="/settings">
               <Settings aria-hidden className="h-4 w-4" /> Settings
             </Link>
           </Dropdown.Item>
           <Dropdown.Item asChild className={item}>
-            <Link href="/help">
+            <Link prefetch={false} href="/help">
               <LifeBuoy aria-hidden className="h-4 w-4" /> Help
             </Link>
           </Dropdown.Item>

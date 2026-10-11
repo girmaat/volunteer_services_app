@@ -30,7 +30,7 @@ export default async function Page(props: Props) {
     <section className={styles.page}>
       <header className={styles.header}>
         <p className={styles.breadcrumb}>
-          <Link href="/organizations">← All organizations</Link>
+          <Link prefetch={false} href="/organizations">← All organizations</Link>
         </p>
         <h1 className={styles.title}>
           {org.name} {org.verified ? <span className={styles.badge}>Verified</span> : null}
@@ -59,7 +59,7 @@ export default async function Page(props: Props) {
         <ul>
           {opps.items.map((o) => (
             <li key={o.id} className={styles.cardBody}>
-              <Link href={`/opportunities/${encodeURIComponent(o.id)}`}>{o.title}</Link> · {modeLabel(o.mode)} · {o.location}
+              <Link prefetch={false} href={`/opportunities/${encodeURIComponent(o.id)}`}>{o.title}</Link> · {modeLabel(o.mode)} · {o.location}
             </li>
           ))}
         </ul>

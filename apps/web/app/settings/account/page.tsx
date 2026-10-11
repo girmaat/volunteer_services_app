@@ -60,7 +60,7 @@ export default async function AccountPage(props: { searchParams?: Promise<{ ok?:
           </label>
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit">Update password</Button>
-            <Link href="/forgot-password" className="text-sm text-primary">
+            <Link prefetch={false} href="/forgot-password" className="text-sm text-primary">
               Forgot it?
             </Link>
           </div>

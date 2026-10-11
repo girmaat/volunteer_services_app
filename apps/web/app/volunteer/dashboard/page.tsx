@@ -48,7 +48,7 @@ export default async function Page() {
           <h2 id="picked" className="m-0 text-lg">
             Picked for you
           </h2>
-          <Link href="/volunteer/opportunities/recommended" className="text-sm font-medium text-primary">
+          <Link prefetch={false} href="/volunteer/opportunities/recommended" className="text-sm font-medium text-primary">
             See all {counts ? counts.recommendedOpportunities : ""}
           </Link>
         </div>

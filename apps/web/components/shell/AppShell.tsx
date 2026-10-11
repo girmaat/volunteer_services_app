@@ -84,7 +84,7 @@ export default function AppShell({
                 <ContextSwitcher options={options} currentLabel={label} canAddRole={canAddRole} compact />
               </div>
             ) : null}
-            <Link href="/settings" className="rounded px-2 py-1.5 text-sm text-muted">
+            <Link prefetch={false} href="/settings" className="rounded px-2 py-1.5 text-sm text-muted">
               Settings
             </Link>
             <form action="/api/auth/logout" method="post">

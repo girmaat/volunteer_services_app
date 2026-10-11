@@ -51,7 +51,7 @@ function SetupChecklist({ steps }: { steps: { done: boolean; label: string; href
                 <span className="sr-only">(done)</span>
               </span>
             ) : (
-              <Link href={x.href} className="flex items-center gap-3 rounded py-1.5 text-sm font-medium text-ink no-underline hover:text-primary">
+              <Link prefetch={false} href={x.href} className="flex items-center gap-3 rounded py-1.5 text-sm font-medium text-ink no-underline hover:text-primary">
                 <Circle aria-hidden className="h-5 w-5 text-line-strong" />
                 {x.label}
                 <ChevronRight aria-hidden className="ml-auto h-4 w-4 text-muted" />
@@ -115,7 +115,7 @@ export default async function OrgDashboardPage() {
                 <h2 id="org-recent-apps" className="m-0 text-lg">
                   Latest applicants
                 </h2>
-                <Link href="/org/applications" className="text-sm font-medium text-primary">
+                <Link prefetch={false} href="/org/applications" className="text-sm font-medium text-primary">
                   Review all
                 </Link>
               </div>
@@ -125,7 +125,7 @@ export default async function OrgDashboardPage() {
                 <ul className="m-0 mt-2 border-t border-line p-0">
                   {data.recentApplications.map((a) => (
                     <li key={a.application_id} className="list-none border-b border-line">
-                      <Link href={`/org/requests/${a.request_id}/applications`} className="block px-1 py-3.5 text-ink no-underline hover:text-ink">
+                      <Link prefetch={false} href={`/org/requests/${a.request_id}/applications`} className="block px-1 py-3.5 text-ink no-underline hover:text-ink">
                         <div className="flex items-center justify-between gap-3">
                           <span className="font-medium">{a.volunteer_display_name || "Volunteer"}</span>
                           <StatusPill status={a.status} />
@@ -145,7 +145,7 @@ export default async function OrgDashboardPage() {
                 <h2 id="org-recent-reqs" className="m-0 text-lg">
                   Recent requests
                 </h2>
-                <Link href="/org/requests" className="text-sm font-medium text-primary">
+                <Link prefetch={false} href="/org/requests" className="text-sm font-medium text-primary">
                   All requests
                 </Link>
               </div>
@@ -157,7 +157,7 @@ export default async function OrgDashboardPage() {
                 <ul className="m-0 mt-2 border-t border-line p-0">
                   {data.recentRequests.map((r) => (
                     <li key={r.id} className="list-none border-b border-line">
-                      <Link href={`/org/requests/${r.id}`} className="block px-1 py-3.5 text-ink no-underline hover:text-ink">
+                      <Link prefetch={false} href={`/org/requests/${r.id}`} className="block px-1 py-3.5 text-ink no-underline hover:text-ink">
                         <div className="flex items-center justify-between gap-3">
                           <span className="font-medium">{r.title}</span>
                           <StatusPill status={r.status} />

@@ -76,7 +76,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
         <ul className="m-0 flex list-none gap-1 overflow-x-auto p-0">
           {FILTERS.map((f) => (
             <li key={f.value}>
-              <Link
+              <Link prefetch={false}
                 href={`/org/applications?status=${f.value}`}
                 aria-current={filter === f.value ? "page" : undefined}
                 className={`-mb-px inline-block whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium ${filter === f.value ? "border-sun text-ink" : "border-transparent text-muted hover:text-ink"}`}
@@ -105,7 +105,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
                   <div className="min-w-0">
                     <p className="m-0 font-semibold">{a.volunteer_display_name || "Volunteer"}</p>
                     <p className="m-0 mt-0.5 text-sm text-muted">
-                      <Link href={`/org/requests/${a.request_id}/applications`} className="text-muted underline">
+                      <Link prefetch={false} href={`/org/requests/${a.request_id}/applications`} className="text-muted underline">
                         {a.request_title}
                       </Link>{" "}
                       · applied {day(a.created_at)}
@@ -131,7 +131,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
                       </form>
                     </>
                   ) : null}
-                  <Link
+                  <Link prefetch={false}
                     className="ml-1 text-sm font-medium text-primary"
                     href={`/inbox/start?requestId=${a.request_id}&volunteerId=${a.volunteer_user_id}`}
                   >

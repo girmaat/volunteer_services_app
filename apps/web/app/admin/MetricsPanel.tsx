@@ -95,7 +95,7 @@ export default async function MetricsPanel() {
         </details>
       </figure>
       <p className="m-0 text-sm">
-        <Link href="/admin/moderation" className="font-medium text-primary">
+        <Link prefetch={false} href="/admin/moderation" className="font-medium text-primary">
           Open moderation queues →
         </Link>
       </p>

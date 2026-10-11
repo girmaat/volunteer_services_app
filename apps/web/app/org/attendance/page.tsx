@@ -90,7 +90,7 @@ export default async function Page(
         <div className="flex gap-3 items-baseline">
           <span className={styles.meta}>Open check-ins: {openCount}</span>
           <span className={styles.meta}>Total hours: {totalHours}</span>
-          <Link className={styles.smallLink} href={`/org/attendance/export?${exportQs.toString()}`}>
+          <Link prefetch={false} className={styles.smallLink} href={`/org/attendance/export?${exportQs.toString()}`}>
             Export CSV
           </Link>
         </div>
@@ -163,7 +163,7 @@ export default async function Page(
               rows.map((r) => (
                 <tr key={r.id}>
                   <td>
-                    <Link href={`/org/requests/${r.request_id}`}>{r.request_title}</Link>
+                    <Link prefetch={false} href={`/org/requests/${r.request_id}`}>{r.request_title}</Link>
                   </td>
                   <td>
                     <div className="flex flex-col">

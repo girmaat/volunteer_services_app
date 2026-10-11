@@ -7,7 +7,7 @@ export default async function NotificationBell() {
   // Read from the cached /v1/me response, so the bell costs no extra backend call.
   const n = Number((await getCurrentUser())?.unread_notifications ?? 0);
   return (
-    <Link
+    <Link prefetch={false}
       href="/settings/notifications#recent"
       className="relative inline-flex h-9 w-9 items-center justify-center rounded text-muted hover:bg-[var(--muted-bg)] hover:text-ink"
       aria-label={n ? `Notifications, ${n} unread` : "Notifications"}

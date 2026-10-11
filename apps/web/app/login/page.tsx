@@ -56,8 +56,8 @@ export default async function Page(props: { searchParams?: Promise<SearchParams>
 
           <div className={styles.buttonRow}>
             <button className={styles.button} type="submit">Log in</button>
-            <Link className={styles.meta} href="/forgot-password">Forgot password?</Link>
-            <Link className={styles.meta} href="/signup">Create account</Link>
+            <Link prefetch={false} className={styles.meta} href="/forgot-password">Forgot password?</Link>
+            <Link prefetch={false} className={styles.meta} href="/signup">Create account</Link>
           </div>
         </form>
 

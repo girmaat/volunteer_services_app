@@ -16,7 +16,7 @@ export function LinkTabs({ items, label }: { items: TabItem[]; label: string }) 
           const active = t.exact ? pathname === t.href : pathname === t.href || pathname.startsWith(t.href + "/");
           return (
             <li key={t.href}>
-              <Link
+              <Link prefetch={false}
                 href={t.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(

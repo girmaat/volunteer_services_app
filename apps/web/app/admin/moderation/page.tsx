@@ -43,7 +43,7 @@ export default async function Moderation(props: { searchParams?: Promise<{ tab?:
         <ul className="m-0 flex list-none gap-1 overflow-x-auto p-0">
           {TABS.map((t) => (
             <li key={t.value}>
-              <Link
+              <Link prefetch={false}
                 href={t.value === "reports" ? "/admin/reports" : `/admin/moderation?tab=${t.value}`}
                 aria-current={tab === t.value ? "page" : undefined}
                 className={cn("-mb-px inline-block whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium", tab === t.value ? "border-sun text-ink" : "border-transparent text-muted hover:text-ink")}
@@ -70,11 +70,11 @@ async function ReviewQueue({ category }: { category?: string }) {
     <>
       {data.categories.length ? (
         <p className="m-0 mb-4 flex flex-wrap gap-2 text-sm">
-          <Link href="/admin/moderation?tab=review" className={cn("rounded-full border px-3 py-1", !category ? "border-primary text-primary" : "border-line text-muted")}>
+          <Link prefetch={false} href="/admin/moderation?tab=review" className={cn("rounded-full border px-3 py-1", !category ? "border-primary text-primary" : "border-line text-muted")}>
             All
           </Link>
           {data.categories.map((c) => (
-            <Link key={c.category} href={`/admin/moderation?tab=review&category=${c.category}`} className={cn("rounded-full border px-3 py-1", category === c.category ? "border-primary text-primary" : "border-line text-muted")}>
+            <Link prefetch={false} key={c.category} href={`/admin/moderation?tab=review&category=${c.category}`} className={cn("rounded-full border px-3 py-1", category === c.category ? "border-primary text-primary" : "border-line text-muted")}>
               {c.label} ({c.n})
             </Link>
           ))}

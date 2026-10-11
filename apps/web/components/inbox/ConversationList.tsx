@@ -16,7 +16,7 @@ export default function ConversationList({ items, activeId }: { items: Conversat
     <ul className="m-0 border-t border-line p-0">
       {items.map((c) => (
         <li key={c.id} className="list-none border-b border-line">
-          <Link
+          <Link prefetch={false}
             href={`/inbox/${c.id}`}
             aria-current={c.id === activeId ? "page" : undefined}
             className={cn("flex gap-3 px-3 py-3 text-ink no-underline hover:bg-[var(--muted-bg)] hover:text-ink", c.id === activeId && "bg-primary-tint")}

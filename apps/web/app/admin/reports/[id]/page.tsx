@@ -170,7 +170,7 @@ export default async function Page(
           <h1 className="m-0">Report details</h1>
           <p className="muted mt-1.5 mb-0">Review the report, update status, and apply moderation actions.</p>
         </div>
-        <Link className="btn" href="/admin/reports">Back to reports</Link>
+        <Link prefetch={false} className="btn" href="/admin/reports">Back to reports</Link>
       </header>
 
       {loaded.error ? (
@@ -255,7 +255,7 @@ export default async function Page(
 	                </div>
 	              </div>
 	              <div className="flex gap-2.5 flex-wrap items-center mt-3">
-	                <Link className="btn" href="/admin/reports">Back to queue</Link>
+	                <Link prefetch={false} className="btn" href="/admin/reports">Back to queue</Link>
 	              </div>
 	            </div>
 	          ) : (
@@ -279,7 +279,7 @@ export default async function Page(
 
 	                <div className="flex gap-2.5 flex-wrap items-center">
 	                  <button className="btn btnSoft" type="submit">Save</button>
-	                  <Link className="btn" href="/admin/reports">Back to queue</Link>
+	                  <Link prefetch={false} className="btn" href="/admin/reports">Back to queue</Link>
 	                </div>
 	              </form>
 	            </div>

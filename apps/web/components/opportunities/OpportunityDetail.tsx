@@ -77,7 +77,7 @@ export default function OpportunityDetail({
             </span>
             <span className="inline-flex items-center gap-1.5">
               {o.organization_slug ? (
-                <Link href={`/organizations/${o.organization_slug}`} className="text-muted underline">
+                <Link prefetch={false} href={`/organizations/${o.organization_slug}`} className="text-muted underline">
                   {o.posted_by}
                 </Link>
               ) : (
@@ -238,7 +238,7 @@ export default function OpportunityDetail({
                     </li>
                   ))}
                 </ul>
-                <Link href="/volunteer/profile" className="text-sm font-medium text-primary">
+                <Link prefetch={false} href="/volunteer/profile" className="text-sm font-medium text-primary">
                   Update your profile
                 </Link>
               </div>

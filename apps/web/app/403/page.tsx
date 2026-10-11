@@ -11,9 +11,9 @@ export default function AccessDenied() {
           You don&apos;t have permission to view this page.
         </p>
         <div className="edgeActions">
-          <Link className="btn" href="/">Go home</Link>
-          <Link className="btn btnSoft" href="/dashboard">Dashboard</Link>
-          <Link className="btn btnSoft" href="/login">Log in</Link>
+          <Link prefetch={false} className="btn" href="/">Go home</Link>
+          <Link prefetch={false} className="btn btnSoft" href="/dashboard">Dashboard</Link>
+          <Link prefetch={false} className="btn btnSoft" href="/login">Log in</Link>
         </div>
       </div>
     </div>

@@ -94,7 +94,7 @@ export default async function Page() {
             Unbanning restores access immediately; strike counts can be used to decide future actions.
           </p>
         </div>
-        <Link className="btn" href="/admin/users">Open user management</Link>
+        <Link prefetch={false} className="btn" href="/admin/users">Open user management</Link>
       </header>
 
       {loadError ? (

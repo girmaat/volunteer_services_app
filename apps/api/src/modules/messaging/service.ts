@@ -94,8 +94,7 @@ export async function listConversations(user: PolicyUser, scope: ListScope) {
             a.status AS application_status, r.title AS request_title,
             vp.display_name AS volunteer_name, op.display_name AS owner_name, o.name AS org_name,
             vp.avatar_url AS volunteer_avatar, op.avatar_url AS owner_avatar, o.logo_url AS org_logo,
-            (SELECT body FROM direct_messages m WHERE m.conversation_id = c.id AND (m.status = 'sent' OR m.sender_user_id = $1)
-              ORDER BY m.created_at DESC LIMIT 1) AS last_body,
+            lm.body AS last_body, lm.sender_user_id AS last_sender_id,
             (SELECT COUNT(*)::int FROM direct_messages m WHERE m.conversation_id = c.id AND m.status = 'sent' AND m.sender_user_id <> $1
                AND m.created_at > COALESCE((SELECT last_read_at FROM conversation_reads cr WHERE cr.conversation_id = c.id AND cr.user_id = $1), 'epoch')) AS unread
        FROM conversations c
@@ -104,6 +103,8 @@ export async function listConversations(user: PolicyUser, scope: ListScope) {
        LEFT JOIN user_profiles vp ON vp.user_id = c.volunteer_user_id
        LEFT JOIN user_profiles op ON op.user_id = c.owner_user_id
        LEFT JOIN organizations o ON o.slug = c.org_slug
+       LEFT JOIN LATERAL (SELECT body, sender_user_id FROM direct_messages m WHERE m.conversation_id = c.id AND (m.status = 'sent' OR m.sender_user_id = $1)
+                           ORDER BY m.created_at DESC LIMIT 1) lm ON TRUE
       WHERE ${where}
         AND ($2::text IS NULL OR TRUE) AND ($3::text[] IS NULL OR TRUE)
       ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
@@ -126,7 +127,8 @@ export async function listConversations(user: PolicyUser, scope: ListScope) {
       application_status: row.application_status,
       contacts_unlocked: unlocked,
       last_message_at: row.last_message_at,
-      last_body: row.last_body ? (unlocked ? row.last_body : maskContacts(String(row.last_body))).slice(0, 140) : null,
+      // Your own last message is never masked back to you.
+      last_body: row.last_body ? (unlocked || row.last_sender_id === user.id ? row.last_body : maskContacts(String(row.last_body))).slice(0, 140) : null,
       unread: row.unread
     };
   });

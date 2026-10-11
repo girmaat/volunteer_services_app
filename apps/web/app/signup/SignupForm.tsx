@@ -70,7 +70,7 @@ export default function SignupForm({ action }: { action: ServerAction }) {
             <div className={styles.meta}>Didn’t receive the email?</div>
             <div className={styles.buttonRow}>
               <SubmitButton secondary>Resend verification</SubmitButton>
-              <Link className={styles.meta} href="/login">
+              <Link prefetch={false} className={styles.meta} href="/login">
                 Go to log in
               </Link>
             </div>
@@ -119,7 +119,7 @@ export default function SignupForm({ action }: { action: ServerAction }) {
 
           <div className={styles.buttonRow}>
             <SubmitButton>Create account</SubmitButton>
-            <Link className={styles.meta} href="/login">
+            <Link prefetch={false} className={styles.meta} href="/login">
               Already have an account?
             </Link>
           </div>

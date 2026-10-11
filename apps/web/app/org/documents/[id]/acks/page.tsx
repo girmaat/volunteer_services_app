@@ -46,7 +46,7 @@ export default async function Page(
     <div className={styles.mainFull}>
       <div className="flex justify-between items-baseline gap-3 flex-wrap">
         <h1 className="m-0">Acknowledgements</h1>
-        <Link className={styles.smallLink} href={`/org/requests/${requestId}/documents`}>
+        <Link prefetch={false} className={styles.smallLink} href={`/org/requests/${requestId}/documents`}>
           Back to request docs
         </Link>
       </div>

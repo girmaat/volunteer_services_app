@@ -51,6 +51,13 @@ export function registerJobHandler<K extends JobName>(name: K, fn: (data: JobMap
   (extraHandlers as Record<string, unknown>)[name] = fn;
 }
 
+/** Scheduled jobs a super admin may run on demand (POST /v1/admin/jobs/:name/run). */
+export const RUNNABLE_JOBS = ["reminders.attendance", "maintenance.hourly", "geocode.backfill"] as const;
+export type RunnableJob = (typeof RUNNABLE_JOBS)[number];
+export async function runJobNow(name: RunnableJob) {
+  return handlers[name]({} as never);
+}
+
 let boss: PgBoss | null = null;
 const inline = () => env.JOBS_DISABLED || isTest;
 

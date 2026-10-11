@@ -65,14 +65,14 @@ export default async function Page() {
           {stories.map((s) => (
             <article key={s.id} className={styles.card}>
               <h3 className={styles.cardTitle}>
-                <Link href={`/impact-stories/${s.slug}`}>{s.title}</Link>
+                <Link prefetch={false} href={`/impact-stories/${s.slug}`}>{s.title}</Link>
               </h3>
               <div className={styles.meta}>
                 Updated {new Date(s.updated_at).toLocaleDateString()}
               </div>
               <p className={styles.cardBody}>{s.excerpt}</p>
               <p className={styles.cardBody}>
-                <Link href={`/impact-stories/${s.slug}`}>Read story →</Link>
+                <Link prefetch={false} href={`/impact-stories/${s.slug}`}>Read story →</Link>
               </p>
             </article>
           ))}

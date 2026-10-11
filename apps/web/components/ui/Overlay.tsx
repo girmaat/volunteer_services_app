@@ -3,7 +3,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "../../lib/cn";
 
 type OverlayProps = {
@@ -81,20 +80,16 @@ const TOAST_TONE = {
  */
 export function Toast({ message, tone = "success", param = "flash" }: { message: ReactNode; tone?: keyof typeof TOAST_TONE; param?: string }) {
   const [shown, setShown] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
-  const search = useSearchParams();
   useEffect(() => {
-    const t = setTimeout(() => setShown(false), 6000);
-    if (search.has(param)) {
-      const q = new URLSearchParams(search.toString());
-      q.delete(param);
-      const s = q.toString();
-      router.replace(s ? `${pathname}?${s}` : pathname, { scroll: false });
+    const t = setTimeout(() => setShown(false), 8000);
+    // Drop ?flash= from the address bar without a server round-trip (Next syncs native history).
+    const url = new URL(window.location.href);
+    if (url.searchParams.has(param)) {
+      url.searchParams.delete(param);
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
     }
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per toast
-  }, []);
+  }, [param]);
   if (!shown) return null;
   return (
     <div

@@ -118,7 +118,7 @@ export default async function FindOpportunities({
             </label>
             <input id="opp-q" name="q" defaultValue={q} placeholder="Tutoring, food bank…" className="h-11 rounded border border-line-strong bg-surface px-3" />
           </div>
-          <Link
+          <Link prefetch={false}
             href={filtersOpen ? keep({}) : keep({ filters: "open" })}
             className={buttonClass("secondary", "md", "lg:hidden")}
             aria-expanded={filtersOpen}
@@ -189,7 +189,7 @@ export default async function FindOpportunities({
               Show results
             </button>
             {filtered ? (
-              <Link href={basePath} className={buttonClass("ghost", "md")}>
+              <Link prefetch={false} href={basePath} className={buttonClass("ghost", "md")}>
                 Clear
               </Link>
             ) : null}
@@ -205,7 +205,7 @@ export default async function FindOpportunities({
             <EmptyState
               title="Add your location to see what's near you"
               body="We use your neighborhood or ZIP code to find in-person opportunities. It's never shown to anyone."
-              action={<Link className={buttonClass("primary", "md")} href="/volunteer/profile">Update profile</Link>}
+              action={<Link prefetch={false} className={buttonClass("primary", "md")} href="/volunteer/profile">Update profile</Link>}
             />
           ) : null}
           {data && !data.needsLocation && data.items.length === 0 ? (
@@ -214,7 +214,7 @@ export default async function FindOpportunities({
               body={tab === "recommended" ? "Add skills and the causes you care about to your profile to get better matches." : "Try a broader search or a different area."}
               action={
                 filtered ? (
-                  <Link className={buttonClass("secondary", "md")} href={basePath}>
+                  <Link prefetch={false} className={buttonClass("secondary", "md")} href={basePath}>
                     Clear filters
                   </Link>
                 ) : undefined
@@ -230,7 +230,7 @@ export default async function FindOpportunities({
           ) : null}
           {data?.nextCursor ? (
             <div className="mt-6">
-              <Link className={buttonClass("secondary", "md")} href={keep({ cursor: data.nextCursor })}>
+              <Link prefetch={false} className={buttonClass("secondary", "md")} href={keep({ cursor: data.nextCursor })}>
                 Show more
               </Link>
             </div>

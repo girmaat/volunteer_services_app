@@ -52,7 +52,7 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
   const banner = needsVerification ? (
     <div className="border-b border-line bg-warning-tint px-4 py-3 text-sm sm:px-6 lg:px-10" role="note">
       <strong>Verification required.</strong> Submit your organization&apos;s details in{" "}
-      <Link className="font-medium text-primary underline" href="/org/settings#verification">
+      <Link prefetch={false} className="font-medium text-primary underline" href="/org/settings#verification">
         Organization settings
       </Link>
       . A platform admin reviews them before your requests are marked verified.

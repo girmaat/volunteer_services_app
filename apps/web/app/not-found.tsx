@@ -9,8 +9,8 @@ export default function NotFound() {
           We couldn&apos;t find that page. It may have been moved or deleted.
         </p>
         <div className="edgeActions">
-          <Link className="btn" href="/">Go home</Link>
-          <Link className="btn btnSoft" href="/dashboard">Dashboard</Link>
+          <Link prefetch={false} className="btn" href="/">Go home</Link>
+          <Link prefetch={false} className="btn btnSoft" href="/dashboard">Dashboard</Link>
         </div>
       </div>
     </div>

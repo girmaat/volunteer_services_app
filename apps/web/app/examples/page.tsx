@@ -92,10 +92,10 @@ export default async function Page() {
         </div>
 
         <div className={styles.headerCtas}>
-          <Link className={styles.primaryCta} href="/opportunities">
+          <Link prefetch={false} className={styles.primaryCta} href="/opportunities">
             Browse all opportunities
           </Link>
-          <Link className={styles.secondaryCta} href="/signup">
+          <Link prefetch={false} className={styles.secondaryCta} href="/signup">
             Create a free account
           </Link>
         </div>
@@ -135,7 +135,7 @@ export default async function Page() {
             <ul className={styles.examplesList}>
               {exampleOpps.map((opp) => (
                 <li key={opp.id}>
-                  <Link href={`/opportunities/${encodeURIComponent(opp.id)}`}>{opp.title}</Link>
+                  <Link prefetch={false} href={`/opportunities/${encodeURIComponent(opp.id)}`}>{opp.title}</Link>
                 </li>
               ))}
             </ul>
@@ -148,7 +148,7 @@ export default async function Page() {
           )}
 
           <div className={styles.footer}>
-            <Link className={styles.secondaryCta} href="/opportunities">
+            <Link prefetch={false} className={styles.secondaryCta} href="/opportunities">
               Browse all opportunities
             </Link>
           </div>

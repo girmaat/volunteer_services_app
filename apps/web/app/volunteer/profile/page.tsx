@@ -151,7 +151,7 @@ export default async function Page(
             Signed in as <strong>{user.email}</strong>.
           </p>
           <p className={styles.meta}>
-            <Link href={publicUrl}>View public profile</Link>
+            <Link prefetch={false} href={publicUrl}>View public profile</Link>
           </p>
         </div>
       </div>
@@ -180,7 +180,7 @@ export default async function Page(
 
           {!user.onboarding_completed ? (
             <p className={`${styles.meta} mt-3`}>
-              <Link href="/onboarding">Continue onboarding</Link>
+              <Link prefetch={false} href="/onboarding">Continue onboarding</Link>
             </p>
           ) : null}
         </div>
@@ -317,7 +317,7 @@ export default async function Page(
               <button className={`${styles.button} ${styles.buttonPrimary}`} type="submit">
                 Save profile
               </button>
-              <Link className={styles.button} href={publicUrl}>
+              <Link prefetch={false} className={styles.button} href={publicUrl}>
                 Preview public profile
               </Link>
             </div>

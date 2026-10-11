@@ -180,7 +180,7 @@ export default async function Page() {
                   <td>{d.assignment_count ?? 0}</td>
                   <td>
                     <div className="flex gap-2.5 flex-wrap items-center">
-                      <Link className={styles.smallLink} href={`/org/documents/${d.id}/download`}>
+                      <Link prefetch={false} className={styles.smallLink} href={`/org/documents/${d.id}/download`}>
                         Download
                       </Link>
                       <form className="flex gap-2 items-center" action={assignDocument}>

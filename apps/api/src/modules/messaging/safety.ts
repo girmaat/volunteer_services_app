@@ -31,9 +31,11 @@ export function maskContacts(body: string): string {
 }
 
 export function containsLink(body: string) {
+  // An email address's domain isn't a link (emails are masked separately).
+  const text = body.replace(EMAIL, " ");
   URL.lastIndex = 0;
   BARE_DOMAIN.lastIndex = 0;
-  return URL.test(body) || BARE_DOMAIN.test(body);
+  return URL.test(text) || BARE_DOMAIN.test(text);
 }
 
 const SCAM_PATTERNS: [RegExp, string][] = [

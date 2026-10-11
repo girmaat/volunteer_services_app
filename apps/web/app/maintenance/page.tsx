@@ -47,9 +47,9 @@ export default async function MaintenancePage() {
         )}
 
         <div className="edgeActions">
-          <Link className="btn" href="/">Go home</Link>
-          <Link className="btn btnSoft" href="/login">Log in</Link>
-          <Link className="btn btnSoft" href="/admin">Admin</Link>
+          <Link prefetch={false} className="btn" href="/">Go home</Link>
+          <Link prefetch={false} className="btn btnSoft" href="/login">Log in</Link>
+          <Link prefetch={false} className="btn btnSoft" href="/admin">Admin</Link>
         </div>
       </div>
     </div>

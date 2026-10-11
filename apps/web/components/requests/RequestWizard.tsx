@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AlertTriangle, Check, Lock } from "lucide-react";
-import { Button, Card, Checkbox, Notice, SubmitButton } from "../ui";
+import { Button, Card, Checkbox, Notice, SubmitButton, buttonClass } from "../ui";
 import { cn } from "../../lib/cn";
 import type { Category, OwnerRequest } from "../../lib/requests";
 import { COMMON_TIMEZONES, DAY_LABELS, WEEK_DAYS, describeRrule, formatInZone, isoToZonedLocal, rruleDays } from "../../lib/time";
@@ -37,7 +37,7 @@ function Progress({ step, base, id }: { step: number; base: string; id?: string 
           return (
             <li key={s} aria-current={current ? "step" : undefined}>
               {id && !current ? (
-                <Link href={`${base}?id=${id}&step=${n}`} className="no-underline">
+                <Link prefetch={false} href={`${base}?id=${id}&step=${n}`} className="no-underline">
                   {body}
                 </Link>
               ) : (
@@ -62,7 +62,7 @@ function Hidden({ base, owner, step, id }: { base: string; owner: string; step: 
   );
 }
 
-function Nav({ step }: { step: number }) {
+function Nav({ step, live }: { step: number; live?: boolean }) {
   return (
     <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
       <div>
@@ -74,7 +74,7 @@ function Nav({ step }: { step: number }) {
       </div>
       <div className="flex gap-2">
         <SubmitButton name="nav" value="save" variant="secondary">
-          Save draft
+          {live ? "Save changes" : "Save draft"}
         </SubmitButton>
         <SubmitButton name="nav" value="next">
           Continue
@@ -108,6 +108,8 @@ export default function RequestWizard({
   const d = draft;
   const tz = d?.timezone || "America/New_York";
   const id = d?.id;
+  // Editing a request that is already live: changes save per step; there's nothing to publish.
+  const live = Boolean(d?.status && !["draft"].includes(d.status) && d.review_status !== "rejected");
   const cat = categories.find((c) => c.slug === d?.category);
   const regular = categories.filter((c) => !c.is_sensitive);
   const sensitive = categories.filter((c) => c.is_sensitive);
@@ -122,7 +124,7 @@ export default function RequestWizard({
       ) : null}
       {saved ? (
         <div className="mb-5">
-          <Notice tone="success">Draft saved. You can come back to it from your requests.</Notice>
+          <Notice tone="success">{live ? "Changes saved." : "Draft saved. You can come back to it from your requests."}</Notice>
         </div>
       ) : null}
 
@@ -226,7 +228,7 @@ export default function RequestWizard({
                 </div>
               </fieldset>
             </div>
-            <Nav step={1} />
+            <Nav step={1} live={live} />
           </form>
         </>
       ) : null}
@@ -302,7 +304,7 @@ export default function RequestWizard({
               <input id="w-apply" name="applyBy" type="date" defaultValue={isoToZonedLocal(d.apply_by, tz, true)} className={input} />
             </div>
           </div>
-          <Nav step={2} />
+          <Nav step={2} live={live} />
         </form>
       ) : null}
 
@@ -348,7 +350,7 @@ export default function RequestWizard({
             </label>
             <textarea id="w-acc" name="accessibilityNotes" maxLength={1000} defaultValue={d.accessibility_notes || ""} placeholder="Fourth-floor walk-up, no elevator" className={cn(control, "min-h-[90px] py-2.5")} />
           </div>
-          <Nav step={3} />
+          <Nav step={3} live={live} />
         </form>
       ) : null}
 
@@ -378,7 +380,7 @@ export default function RequestWizard({
             </label>
             <textarea id="w-eq" name="equipmentNotes" maxLength={1000} defaultValue={d.equipment_notes || ""} className={cn(control, "min-h-[90px] py-2.5")} />
           </div>
-          <Nav step={4} />
+          <Nav step={4} live={live} />
         </form>
       ) : null}
 
@@ -432,12 +434,18 @@ export default function RequestWizard({
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="detail" value={`${detailBase}/${id}`} />
             <input type="hidden" name="intent" value="publish" />
-            <Link href={`${base}?id=${id}&step=4`} className="text-sm font-medium text-primary">
+            <Link prefetch={false} href={`${base}?id=${id}&step=4`} className="text-sm font-medium text-primary">
               Back
             </Link>
-            <SubmitButton disabled={d.publish_problems.length > 0 || d.review_status === "pending_review"}>
-              {cat?.is_sensitive ? "Submit for review" : "Publish request"}
-            </SubmitButton>
+            {live ? (
+              <Link prefetch={false} href={`${detailBase}/${id}`} className={buttonClass("primary", "md")}>
+                Done
+              </Link>
+            ) : (
+              <SubmitButton disabled={d.publish_problems.length > 0 || d.review_status === "pending_review"}>
+                {cat?.is_sensitive ? "Submit for review" : "Publish request"}
+              </SubmitButton>
+            )}
           </form>
         </div>
       ) : null}
@@ -451,7 +459,7 @@ function Row({ label: l, value, edit }: { label: string; value: string; edit: st
       <dt className="text-sm font-medium text-muted">{l}</dt>
       <dd className="m-0 flex items-start justify-between gap-3">
         <span className="whitespace-pre-line">{value}</span>
-        <Link href={edit} className="shrink-0 text-sm text-primary">
+        <Link prefetch={false} href={edit} className="shrink-0 text-sm text-primary">
           Edit<span className="sr-only"> {l.toLowerCase()}</span>
         </Link>
       </dd>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MessageSquare, ShieldCheck } from "lucide-react";
 import { backendFetch } from "../../app/lib/backend";
-import { applicantAction, noShowAction } from "../../app/_requests/applicant-actions";
+import { applicantAction, attendanceAction, noShowAction } from "../../app/_requests/applicant-actions";
 import { Button, EmptyState, Notice, PageHeader, StatusPill, Toast, VerifiedBadge } from "../ui";
 import ReviewPanel, { type ReviewState } from "../reviews/ReviewPanel";
 import { formatInZone, isoToZonedLocal } from "../../lib/time";
@@ -38,7 +38,9 @@ const FLASH: Record<string, string> = {
   complete: "Marked complete. Reviews are open for 14 days.",
   cancel: "Canceled. If anyone was waitlisted, they moved up.",
   no_show: "Recorded as a no-show.",
-  reviewed: "Review saved."
+  reviewed: "Review saved.",
+  checked_in: "Checked in. Check them out when they leave to log their hours.",
+  checked_out: "Checked out. Their hours are on the attendance log."
 };
 
 function Reliability({ r }: { r: Applicant["reliability"] }) {
@@ -60,6 +62,13 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
   const back = `${base}/${requestId}/applications`;
   const tz = "America/New_York";
   const accepted = data.applicants.filter((a) => ["accepted", "confirmed", "completed"].includes(a.status)).length;
+  // Organizations take attendance here: who is checked in right now.
+  const isOrg = base === "/org/requests";
+  const openAttendance = new Set<string>();
+  if (isOrg && accepted > 0) {
+    const r = await backendFetch(`/v1/org/attendance?requestId=${requestId}&status=open`);
+    if (r.ok) for (const row of ((await r.json()) as { attendance?: { volunteer_user_id: string }[] }).attendance ?? []) openAttendance.add(row.volunteer_user_id);
+  }
   const reviews = await Promise.all(
     data.applicants.map(async (a) => {
       if (a.status !== "completed") return null;
@@ -71,7 +80,7 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
   return (
     <>
       <PageHeader
-        back={<Link href={`${base}/${requestId}`}>← {data.request.title}</Link>}
+        back={<Link prefetch={false} href={`${base}/${requestId}`}>← {data.request.title}</Link>}
         title="Applicants"
         description={`${accepted} of ${data.request.volunteers_needed} spots filled. Contact details unlock when you accept someone.`}
       />
@@ -152,6 +161,18 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
                 ) : null}
                 {a.status === "accepted" || a.status === "confirmed" ? (
                   <>
+                    {isOrg ? (
+                      openAttendance.has(a.volunteer_user_id) ? (
+                        <form action={attendanceAction.bind(null, back, a.id, "check-out")}>
+                          <Button type="submit" size="sm">Check out</Button>
+                        </form>
+                      ) : (
+                        <form action={attendanceAction.bind(null, back, a.id, "check-in")}>
+                          <Button type="submit" size="sm" variant="secondary">Check in</Button>
+                        </form>
+                      )
+                    ) : null}
+                    {isOrg && openAttendance.has(a.volunteer_user_id) ? <span className="text-sm font-medium text-success">Checked in</span> : null}
                     <form action={act}>
                       <input type="hidden" name="action" value="complete" />
                       <Button type="submit" size="sm" variant="secondary">Mark complete</Button>
@@ -167,7 +188,7 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
                     ) : null}
                   </>
                 ) : null}
-                <Link href={a.conversation_id ? `/inbox/${a.conversation_id}` : `/inbox/start?requestId=${requestId}&volunteerId=${a.volunteer_user_id}`} className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                <Link prefetch={false} href={a.conversation_id ? `/inbox/${a.conversation_id}` : `/inbox/start?requestId=${requestId}&volunteerId=${a.volunteer_user_id}`} className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary">
                   <MessageSquare aria-hidden className="h-4 w-4" /> Message
                 </Link>
               </div>

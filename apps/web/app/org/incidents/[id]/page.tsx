@@ -75,7 +75,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <div className={styles.mainFull}>
       <div className="flex justify-between items-baseline gap-3 flex-wrap">
         <h1 className="m-0">Incident</h1>
-        <Link className={styles.smallLink} href="/org/incidents">
+        <Link prefetch={false} className={styles.smallLink} href="/org/incidents">
           Back to incidents
         </Link>
       </div>
@@ -86,7 +86,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           <div>Updated: {new Date(incident.updated_at).toLocaleString()}</div>
           {incident.request_id ? (
             <div>
-              Request: <Link href={`/org/requests/${incident.request_id}`}>{incident.request_title || incident.request_id}</Link>
+              Request: <Link prefetch={false} href={`/org/requests/${incident.request_id}`}>{incident.request_title || incident.request_id}</Link>
             </div>
           ) : null}
           {incident.volunteer_user_id ? <div>Volunteer: {incident.volunteer_display_name || incident.volunteer_email || incident.volunteer_user_id}</div> : null}

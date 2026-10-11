@@ -76,7 +76,7 @@ export default async function Page(
             Review submitted identity documents.
           </p>
         </div>
-        <Link className="btn" href="/admin/verification?tab=users">Back to queue</Link>
+        <Link prefetch={false} className="btn" href="/admin/verification?tab=users">Back to queue</Link>
       </header>
 
       {ok ? (

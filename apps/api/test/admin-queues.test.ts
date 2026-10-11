@@ -131,3 +131,16 @@ describe("held messages, disputes, shadow-ban, metrics", () => {
     expect(m.body.posted_30d).toBeGreaterThan(0);
   });
 });
+
+describe("admin: run a scheduled job now", () => {
+  it("super admins can run the reminder job; moderators can't; the run is audited", async () => {
+    const admin = await as(EMAILS.admin);
+    const ok = await admin.post("/v1/admin/jobs/reminders.attendance/run", {});
+    expect(ok.status, JSON.stringify(ok.body)).toBe(200);
+    expect(ok.body.job).toBe("reminders.attendance");
+    expect((await admin.post("/v1/admin/jobs/drop.tables/run", {})).status).toBe(404);
+    expect((await (await as(EMAILS.moderator)).post("/v1/admin/jobs/maintenance.hourly/run", {})).status).toBe(403);
+    const audit = await pool.query("SELECT 1 FROM admin_audit_log WHERE action = 'job.run' AND target_id = 'reminders.attendance'");
+    expect(audit.rowCount).toBeGreaterThan(0);
+  });
+});

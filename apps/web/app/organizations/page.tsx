@@ -42,13 +42,13 @@ export default async function Page() {
         {orgs.map((o) => (
           <article key={o.slug} className={styles.card}>
             <h2 className={styles.cardTitle}>
-              <Link href={`/organizations/${encodeURIComponent(o.slug)}`}>{o.name}</Link>{" "}
+              <Link prefetch={false} href={`/organizations/${encodeURIComponent(o.slug)}`}>{o.name}</Link>{" "}
               {o.verified ? <span className={styles.badge}>Verified</span> : null}
             </h2>
             <div className={styles.meta}>{o.location || "Location not listed"}</div>
             <p className={styles.cardBody}>{o.summary}</p>
             <p className={styles.cardBody}>
-              <Link href={`/organizations/${encodeURIComponent(o.slug)}`}>View profile →</Link>
+              <Link prefetch={false} href={`/organizations/${encodeURIComponent(o.slug)}`}>View profile →</Link>
             </p>
           </article>
         ))}
@@ -59,10 +59,10 @@ export default async function Page() {
           <div className={styles.noteTitle}>Represent an organization?</div>
           <div className={styles.noteBody}>Register your organization to post requests and manage volunteers.</div>
           <div className={styles.noteActions}>
-            <Link className={styles.smallCta} href="/org/signup">
+            <Link prefetch={false} className={styles.smallCta} href="/org/signup">
               Register your organization
             </Link>
-            <Link className={styles.textLink} href="/contact">
+            <Link prefetch={false} className={styles.textLink} href="/contact">
               Contact us →
             </Link>
           </div>

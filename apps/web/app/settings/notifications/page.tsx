@@ -53,7 +53,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
           <ul className="m-0 mt-3 border-t border-line p-0">
             {list.notifications.map((x) => (
               <li key={x.id} className="list-none border-b border-line">
-                <Link href={x.href || "#"} className="flex items-start gap-3 px-1 py-3 text-ink no-underline hover:text-ink">
+                <Link prefetch={false} href={x.href || "#"} className="flex items-start gap-3 px-1 py-3 text-ink no-underline hover:text-ink">
                   <span aria-hidden className={`mt-2 h-2 w-2 shrink-0 rounded-full ${x.read_at ? "bg-transparent" : "bg-sun"}`} />
                   <span className="min-w-0">
                     <span className={x.read_at ? "" : "font-semibold"}>{x.title}</span>

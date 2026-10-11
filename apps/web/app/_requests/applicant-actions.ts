@@ -77,3 +77,10 @@ export async function confirmAttendanceAction(appId: string) {
   const r = await backendFetch(`/v1/volunteer/applications/${appId}/confirm-attendance`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
   redirect(`/volunteer/applications/${appId}?${r.ok ? "flash=attending" : `error=${encodeURIComponent(await msg(r))}`}`);
 }
+
+/** Org attendance: check an accepted volunteer in or out from the applicants list. */
+export async function attendanceAction(back: string, appId: string, kind: "check-in" | "check-out") {
+  if (!ok(appId) || !backOk(back) || !back.startsWith("/org/") || !["check-in", "check-out"].includes(kind)) redirect("/dashboard");
+  const r = await backendFetch(`/v1/org/applications/${appId}/attendance/${kind}`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+  redirect(`${back}?${r.ok ? `flash=${kind === "check-in" ? "checked_in" : "checked_out"}` : `error=${encodeURIComponent(await msg(r))}`}#a-${appId}`);
+}

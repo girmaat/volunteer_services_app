@@ -25,7 +25,7 @@ export default function GlobalError({
 
         <div className="edgeActions">
           <button className="btn" onClick={() => reset()}>Try again</button>
-          <Link className="btn btnSoft" href="/">Go home</Link>
+          <Link prefetch={false} className="btn btnSoft" href="/">Go home</Link>
         </div>
 
         {error?.digest ? (

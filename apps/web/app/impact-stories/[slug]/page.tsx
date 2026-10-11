@@ -59,7 +59,7 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
       <section className={styles.page}>
         <header className={styles.header}>
           <p className={styles.breadcrumb}>
-            <Link href="/impact-stories">← Back to Impact Stories</Link>
+            <Link prefetch={false} href="/impact-stories">← Back to Impact Stories</Link>
           </p>
           <h1 className={styles.title}>Impact Story</h1>
           <p className={styles.meta}>{error}</p>
@@ -73,7 +73,7 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
       <section className={styles.page}>
         <header className={styles.header}>
           <p className={styles.breadcrumb}>
-            <Link href="/impact-stories">← Back to Impact Stories</Link>
+            <Link prefetch={false} href="/impact-stories">← Back to Impact Stories</Link>
           </p>
           <h1 className={styles.title}>Story not found</h1>
           <p className={styles.meta}>This story may have been removed or is unavailable.</p>
@@ -86,7 +86,7 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
     <section className={styles.page}>
       <header className={styles.header}>
         <p className={styles.breadcrumb}>
-          <Link href="/impact-stories">← Back to Impact Stories</Link>
+          <Link prefetch={false} href="/impact-stories">← Back to Impact Stories</Link>
         </p>
 
         <div className={styles.titleRow}>

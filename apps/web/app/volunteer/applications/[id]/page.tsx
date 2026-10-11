@@ -58,7 +58,7 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
   return (
     <>
       <PageHeader
-        back={<Link href="/volunteer/applications">← My applications</Link>}
+        back={<Link prefetch={false} href="/volunteer/applications">← My applications</Link>}
         title={o.title}
         description={
           <span className="inline-flex flex-wrap items-center gap-2">

@@ -38,7 +38,7 @@ export default async function OwnerRequestList({ as, base, tab, title, descripti
         <ul className="m-0 flex list-none gap-1 overflow-x-auto p-0">
           {TABS.map((t) => (
             <li key={t.value}>
-              <Link
+              <Link prefetch={false}
                 href={`${base}?tab=${t.value}`}
                 aria-current={t.value === current.value ? "page" : undefined}
                 className={`-mb-px inline-block whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium ${t.value === current.value ? "border-sun text-ink" : "border-transparent text-muted hover:text-ink"}`}
@@ -60,7 +60,7 @@ export default async function OwnerRequestList({ as, base, tab, title, descripti
         <ul className="m-0 border-t border-line p-0">
           {shown.map((r) => (
             <li key={r.id} className="list-none border-b border-line">
-              <Link href={`${base}/${r.id}`} className="block px-1 py-4 text-ink no-underline hover:text-ink">
+              <Link prefetch={false} href={`${base}/${r.id}`} className="block px-1 py-4 text-ink no-underline hover:text-ink">
                 <div className="flex items-start justify-between gap-3">
                   <span className="font-semibold">{r.title || "Untitled draft"}</span>
                   <StatusPill kind="request" status={r.review_status === "pending_review" ? "in_review" : r.status} />

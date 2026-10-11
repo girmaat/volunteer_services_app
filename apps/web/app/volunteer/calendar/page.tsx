@@ -64,7 +64,7 @@ export default async function Page() {
               <p className={styles.tileBody}>Status: {c.status}</p>
               {c.opportunity_id ? (
                 <p className={styles.meta}>
-                  <Link href={`/volunteer/opportunities/${c.opportunity_id}`}>View opportunity</Link>
+                  <Link prefetch={false} href={`/volunteer/opportunities/${c.opportunity_id}`}>View opportunity</Link>
                 </p>
               ) : null}
             </div>

@@ -20,7 +20,7 @@ export function StatStrip({ stats }: { stats: Stat[] }) {
         return (
           <li key={s.label} className="border-b border-r border-line lg:border-b-0">
             {s.href ? (
-              <Link href={s.href} className="block h-full px-5 py-4 text-ink no-underline hover:bg-[var(--muted-bg)] hover:text-ink">
+              <Link prefetch={false} href={s.href} className="block h-full px-5 py-4 text-ink no-underline hover:bg-[var(--muted-bg)] hover:text-ink">
                 {body}
               </Link>
             ) : (

@@ -95,8 +95,8 @@ export default async function Page(
       </header>
 
       <div className="adminCard flex gap-2.5 flex-wrap items-center">
-        <Link className="btn" href="/admin/verification?tab=users">Users</Link>
-        <Link className="btn" href="/admin/verification?tab=organizations">Organizations</Link>
+        <Link prefetch={false} className="btn" href="/admin/verification?tab=users">Users</Link>
+        <Link prefetch={false} className="btn" href="/admin/verification?tab=organizations">Organizations</Link>
         <span className="muted text-xs">
           {tab === "users" ? "User verification queue" : "Organization verification queue"}
         </span>
@@ -142,7 +142,7 @@ export default async function Page(
                   <td className="muted text-xs">{u.docs_count}</td>
                   <td className="muted text-xs">{u.verification_submitted_at ? new Date(u.verification_submitted_at).toLocaleString() : "—"}</td>
                   <td>
-                    <Link className="btn" href={`/admin/verification/users/${encodeURIComponent(u.id)}`}>Review</Link>
+                    <Link prefetch={false} className="btn" href={`/admin/verification/users/${encodeURIComponent(u.id)}`}>Review</Link>
                   </td>
                 </tr>
               ))}

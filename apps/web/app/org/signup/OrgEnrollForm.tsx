@@ -47,7 +47,7 @@ export default function OrgEnrollForm({ action }: { action: ServerAction }) {
         ) : null}
 
         <p className={styles.note}>
-          Already verified? <Link className={styles.link} href="/login">Log in</Link>
+          Already verified? <Link prefetch={false} className={styles.link} href="/login">Log in</Link>
         </p>
       </div>
     );
@@ -128,7 +128,7 @@ export default function OrgEnrollForm({ action }: { action: ServerAction }) {
         <div className={styles.submitRow}>
           <SubmitButton>Create org account</SubmitButton>
           <p className={styles.note}>
-            Already have an account? <Link className={styles.link} href="/login">Log in</Link>
+            Already have an account? <Link prefetch={false} className={styles.link} href="/login">Log in</Link>
           </p>
         </div>
       </div>

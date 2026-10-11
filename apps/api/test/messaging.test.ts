@@ -41,6 +41,9 @@ describe("message safety helpers", () => {
     expect(holdReason("Send it by Zelle", { unlocked: true, senderAgeDays: 100 })).toMatch(/payment/);
     expect(holdReason("see https://bit.ly/x", { unlocked: false, senderAgeDays: 1 })).toMatch(/Link/);
     expect(holdReason("see https://bit.ly/x", { unlocked: false, senderAgeDays: 30 })).toBeNull();
+    // An email address is masked, not held: its domain isn't a link.
+    expect(holdReason("write to max.helper@example.org", { unlocked: false, senderAgeDays: 1 })).toBeNull();
+    expect(holdReason("see example.org/sign-up", { unlocked: false, senderAgeDays: 1 })).toMatch(/Link/);
     expect(holdReason("See you Saturday at 10!", { unlocked: false, senderAgeDays: 0 })).toBeNull();
   });
 });

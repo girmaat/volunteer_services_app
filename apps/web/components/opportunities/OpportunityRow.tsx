@@ -70,7 +70,7 @@ export default function OpportunityRow({ o, href, compact, viewerTz }: { o: Oppo
   const by = o.organization_name || o.posted_by || null;
   return (
     <li className="list-none">
-      <Link href={href} className="group grid gap-1.5 border-b border-line px-1 py-4 text-ink no-underline hover:text-ink sm:grid-cols-[1fr_auto] sm:gap-6">
+      <Link prefetch={false} href={href} className="group grid gap-1.5 border-b border-line px-1 py-4 text-ink no-underline hover:text-ink sm:grid-cols-[1fr_auto] sm:gap-6">
         <div className="min-w-0">
           <h3 className="m-0 font-display text-base font-semibold leading-snug group-hover:text-primary group-hover:underline">{o.title}</h3>
           {!compact && o.summary ? <p className="m-0 mt-1 line-clamp-2 text-sm text-muted">{o.summary}</p> : null}

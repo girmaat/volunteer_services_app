@@ -36,7 +36,7 @@ export default async function ThreadPage(props: { params: Promise<{ id: string }
       <LiveRefresh conversationId={id} />
       <aside aria-label="Conversations" className="hidden lg:block">
         <h2 className="m-0 mb-2 text-base">
-          <Link href="/inbox" className="text-ink">
+          <Link prefetch={false} href="/inbox" className="text-ink">
             Inbox
           </Link>
         </h2>
@@ -45,7 +45,7 @@ export default async function ThreadPage(props: { params: Promise<{ id: string }
 
       <section aria-labelledby="thread-h" className="grid min-w-0 content-start gap-4">
         <p className="m-0 text-sm lg:hidden">
-          <Link href="/inbox" className="text-muted">
+          <Link prefetch={false} href="/inbox" className="text-muted">
             ← Inbox
           </Link>
         </p>
@@ -55,7 +55,7 @@ export default async function ThreadPage(props: { params: Promise<{ id: string }
               {c.with_name}
             </h1>
             <p className="m-0 mt-0.5 flex flex-wrap items-center gap-2 text-sm text-muted">
-              {requestHref ? <Link href={requestHref} className="text-muted underline">{c.request_title}</Link> : <span>{c.request_title || "Direct message"}</span>}
+              {requestHref ? <Link prefetch={false} href={requestHref} className="text-muted underline">{c.request_title}</Link> : <span>{c.request_title || "Direct message"}</span>}
               {c.application_status ? <StatusPill status={c.application_status} /> : null}
             </p>
           </div>
@@ -78,7 +78,7 @@ export default async function ThreadPage(props: { params: Promise<{ id: string }
                     <option value="inappropriate">Inappropriate</option>
                     <option value="other">Something else</option>
                   </select>
-                  <textarea name="details" maxLength={2000} placeholder="What happened? (optional)" className="min-h-[70px] rounded border border-line-strong bg-surface px-2 py-1.5 text-sm" />
+                  <textarea name="details" aria-label="What happened? (optional)" maxLength={2000} placeholder="What happened? (optional)" className="min-h-[70px] rounded border border-line-strong bg-surface px-2 py-1.5 text-sm" />
                   <Button type="submit" size="sm" variant="secondary">
                     Send report
                   </Button>

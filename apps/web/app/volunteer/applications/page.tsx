@@ -30,7 +30,7 @@ export default async function VolunteerApplicationsPage() {
     <ul className="m-0 border-t border-line p-0">
       {rows.map((a) => (
         <li key={a.id} className="list-none border-b border-line">
-          <Link href={`/volunteer/applications/${a.id}`} className="block px-1 py-4 text-ink no-underline hover:text-ink">
+          <Link prefetch={false} href={`/volunteer/applications/${a.id}`} className="block px-1 py-4 text-ink no-underline hover:text-ink">
             <div className="flex items-start justify-between gap-3">
               <span className="font-semibold">{a.title}</span>
               <StatusPill status={a.status} />

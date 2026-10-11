@@ -305,7 +305,7 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
             <div className="font-black">Recent reports</div>
             <div className="muted text-xs mt-0.5">Last 8 reports</div>
           </div>
-          <Link className="btn" href="/admin/reports">Open reports</Link>
+          <Link prefetch={false} className="btn" href="/admin/reports">Open reports</Link>
         </div>
 
         <div className="mt-2.5">

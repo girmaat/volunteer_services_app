@@ -82,7 +82,7 @@ export default async function AdminRequests(props: { searchParams?: Promise<{ q?
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="m-0 font-semibold">
-                  <Link href={`/opportunities/${x.id}`} className="text-ink">
+                  <Link prefetch={false} href={`/opportunities/${x.id}`} className="text-ink">
                     {x.title || "Untitled"}
                   </Link>
                 </p>

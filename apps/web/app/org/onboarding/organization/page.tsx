@@ -114,7 +114,7 @@ export default async function Page(
         <div className="bg-primary-tint border border-primary p-3 rounded-md my-3 mx-0">
           <strong>Onboarding is complete.</strong> You can edit the organization profile anytime. Changes take effect immediately.
           <div className="mt-2">
-            <Link className="inline-block py-2 px-3 rounded-md border border-line bg-wash text-muted no-underline"
+            <Link prefetch={false} className="inline-block py-2 px-3 rounded-md border border-line bg-wash text-muted no-underline"
               href="/org/dashboard" 
             >
               Back to dashboard
@@ -143,13 +143,13 @@ export default async function Page(
 
       {/* Step tabs (no query strings) */}
       <div className="flex gap-3 my-4 mx-0">
-        <Link className="py-2 px-3 rounded-full border border-line bg-surface text-ink no-underline"
+        <Link prefetch={false} className="py-2 px-3 rounded-full border border-line bg-surface text-ink no-underline"
           href="/org/onboarding/admin" 
         >
           1. Admin profile
         </Link>
 
-        <Link className="py-2 px-3 rounded-full border border-line bg-wash text-muted no-underline"
+        <Link prefetch={false} className="py-2 px-3 rounded-full border border-line bg-wash text-muted no-underline"
           href="/org/onboarding/organization" 
         >
           2. Organization profile
@@ -160,7 +160,7 @@ export default async function Page(
       <div className="border border-line rounded-lg p-4 mb-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="mt-0 mb-0">Organization profile</h2>
-          <Link className="text-ink underline text-xs" href="/org/onboarding/admin">
+          <Link prefetch={false} className="text-ink underline text-xs" href="/org/onboarding/admin">
             Back to admin profile
           </Link>
         </div>

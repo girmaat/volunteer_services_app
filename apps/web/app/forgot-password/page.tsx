@@ -73,7 +73,7 @@ export default async function Page(
 
             <div className={styles.buttonRow}>
               <button className={styles.button} type="submit">Send reset link</button>
-              <Link className={styles.meta} href="/login">Back to log in</Link>
+              <Link prefetch={false} className={styles.meta} href="/login">Back to log in</Link>
             </div>
           </form>
         )}

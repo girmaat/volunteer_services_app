@@ -35,7 +35,7 @@ export default async function Page(props: { searchParams?: Promise<SearchParams>
           </p>
         </div>
         {!me ? (
-          <Link className={buttonClass("primary", "md")} href="/signup">
+          <Link prefetch={false} className={buttonClass("primary", "md")} href="/signup">
             Create an account to apply
           </Link>
         ) : null}

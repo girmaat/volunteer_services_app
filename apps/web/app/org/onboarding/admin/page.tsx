@@ -58,7 +58,7 @@ export default async function Page(
         <div className="bg-primary-tint border border-primary p-3 rounded-md my-3 mx-0">
           <strong>Onboarding is complete.</strong> You can edit these details anytime.
           <div className="mt-2">
-            <Link className="inline-block py-2 px-3 rounded-md border border-line bg-wash text-muted no-underline"
+            <Link prefetch={false} className="inline-block py-2 px-3 rounded-md border border-line bg-wash text-muted no-underline"
               href="/org/dashboard" 
             >
               Back to dashboard
@@ -81,13 +81,13 @@ export default async function Page(
 
       {/* Step tabs (no query strings) */}
       <div className="flex gap-3 my-4 mx-0">
-        <Link className="py-2 px-3 rounded-full border border-line bg-wash text-muted no-underline"
+        <Link prefetch={false} className="py-2 px-3 rounded-full border border-line bg-wash text-muted no-underline"
           href="/org/onboarding/admin" 
         >
           1. Admin profile
         </Link>
 
-        <Link className="py-2 px-3 rounded-full border border-line bg-surface text-ink no-underline"
+        <Link prefetch={false} className="py-2 px-3 rounded-full border border-line bg-surface text-ink no-underline"
           href="/org/onboarding/organization" 
         >
           2. Organization profile
@@ -133,7 +133,7 @@ export default async function Page(
               Save admin profile
             </button>
 
-            <Link
+            <Link prefetch={false}
               href="/org/onboarding/organization"
               className={`rounded-md border border-ink bg-surface px-4 py-2.5 text-ink no-underline ${adminComplete ? "" : "pointer-events-none opacity-50"}`}
               aria-disabled={!adminComplete}

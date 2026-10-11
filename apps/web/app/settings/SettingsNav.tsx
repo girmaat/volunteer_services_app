@@ -55,7 +55,7 @@ export function SettingsNav() {
         const badgeText = unseen > 99 ? "99+" : String(unseen);
 
         return (
-          <Link key={t.href} href={t.href} className={`${styles.navLink} ${active ? styles.navLinkActive : ""}`}>
+          <Link prefetch={false} key={t.href} href={t.href} className={`${styles.navLink} ${active ? styles.navLinkActive : ""}`}>
             <span className={styles.navLinkInner}>
               <span>{t.label}</span>
               {showBadge ? <span className={styles.navBadge}>{badgeText}</span> : null}

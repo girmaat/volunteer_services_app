@@ -67,7 +67,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <div className={styles.mainFull}>
       <div className="flex justify-between items-baseline gap-3 flex-wrap">
         <h1 className="m-0">Documents</h1>
-        <Link className={styles.smallLink} href={`/org/requests/${params.id}`}>
+        <Link prefetch={false} className={styles.smallLink} href={`/org/requests/${params.id}`}>
           Back to request
         </Link>
       </div>
@@ -110,10 +110,10 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                   <td>{d.ack_count ?? 0}</td>
                   <td>
                     <div className="flex gap-2.5 flex-wrap items-center">
-                      <Link className={styles.smallLink} href={`/org/documents/${d.id}/download`}>
+                      <Link prefetch={false} className={styles.smallLink} href={`/org/documents/${d.id}/download`}>
                         Download
                       </Link>
-                      <Link className={styles.smallLink} href={`/org/documents/${d.id}/acks?requestId=${encodeURIComponent(params.id)}`}>
+                      <Link prefetch={false} className={styles.smallLink} href={`/org/documents/${d.id}/acks?requestId=${encodeURIComponent(params.id)}`}>
                         View acks
                       </Link>
                       <form action={unassignDoc}>

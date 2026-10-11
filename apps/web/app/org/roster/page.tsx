@@ -62,10 +62,10 @@ export default async function OrgRosterPage(
       <div className="flex justify-between items-baseline gap-3 flex-wrap">
         <h1>Volunteer roster</h1>
         <div className="flex gap-3 flex-wrap">
-          <Link className={styles.badge} href={`/org/roster/export?${exportQs.toString()}`}>
+          <Link prefetch={false} className={styles.badge} href={`/org/roster/export?${exportQs.toString()}`}>
             Export CSV
           </Link>
-          <Link className={styles.badge} href="/org/applications">
+          <Link prefetch={false} className={styles.badge} href="/org/applications">
             View applications
           </Link>
         </div>
@@ -96,7 +96,7 @@ export default async function OrgRosterPage(
           Apply
         </button>
 
-        <Link className={styles.badge} href="/org/roster">
+        <Link prefetch={false} className={styles.badge} href="/org/roster">
           Reset
         </Link>
       </form>
@@ -122,7 +122,7 @@ export default async function OrgRosterPage(
                   </div>
 
                   <div className="flex gap-2.5 flex-wrap">
-                    <Link className={styles.badge} href={`/inbox`}>
+                    <Link prefetch={false} className={styles.badge} href={`/inbox`}>
                       Message
                     </Link>
                                       </div>

@@ -83,7 +83,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         <p className={styles.body}>{bio || "This volunteer hasn’t added a bio yet."}</p>
 
         <div className={styles.actions}>
-          <Link className={styles.button} href="/opportunities">
+          <Link prefetch={false} className={styles.button} href="/opportunities">
             Browse opportunities
           </Link>
         </div>

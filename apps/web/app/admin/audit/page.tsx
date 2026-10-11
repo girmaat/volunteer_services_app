@@ -50,7 +50,7 @@ export default async function AuditLog(props: { searchParams?: Promise<{ target?
                   <td className="py-2 pr-3">
                     {x.target_type}
                     {x.target_id ? (
-                      <Link href={`/admin/audit?target=${encodeURIComponent(x.target_id)}`} className="block max-w-[14ch] truncate text-xs text-primary">
+                      <Link prefetch={false} href={`/admin/audit?target=${encodeURIComponent(x.target_id)}`} className="block max-w-[14ch] truncate text-xs text-primary">
                         {x.target_id}
                       </Link>
                     ) : null}
@@ -65,8 +65,8 @@ export default async function AuditLog(props: { searchParams?: Promise<{ target?
         </div>
       ) : null}
       <div className="mt-4 flex gap-3 text-sm">
-        {offset > 0 ? <Link href={`/admin/audit?${new URLSearchParams({ offset: String(Math.max(0, offset - 50)), ...(sp.target ? { target: sp.target } : {}) })}`}>← Newer</Link> : null}
-        {data && data.items.length === 50 ? <Link href={`/admin/audit?${new URLSearchParams({ offset: String(offset + 50), ...(sp.target ? { target: sp.target } : {}) })}`}>Older →</Link> : null}
+        {offset > 0 ? <Link prefetch={false} href={`/admin/audit?${new URLSearchParams({ offset: String(Math.max(0, offset - 50)), ...(sp.target ? { target: sp.target } : {}) })}`}>← Newer</Link> : null}
+        {data && data.items.length === 50 ? <Link prefetch={false} href={`/admin/audit?${new URLSearchParams({ offset: String(offset + 50), ...(sp.target ? { target: sp.target } : {}) })}`}>Older →</Link> : null}
       </div>
     </>
   );

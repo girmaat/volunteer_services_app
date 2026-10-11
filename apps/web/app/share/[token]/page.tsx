@@ -146,12 +146,12 @@ export default async function Page(props: { params: Promise<{ token: string }> }
           {unavailable ? (
             <span className={styles.ctaDisabled}>Link unavailable</span>
           ) : (
-            <Link className={styles.cta} href={preview.cta_href}>
+            <Link prefetch={false} className={styles.cta} href={preview.cta_href}>
               {preview.cta_label}
             </Link>
           )}
 
-          <Link className={styles.secondary} href="/volunteer/opportunities/recommended">
+          <Link prefetch={false} className={styles.secondary} href="/volunteer/opportunities/recommended">
             Browse opportunities
           </Link>
 

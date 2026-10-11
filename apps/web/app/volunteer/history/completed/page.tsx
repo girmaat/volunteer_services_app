@@ -64,10 +64,10 @@ export default async function Page() {
               </div>
 
               <div className={styles.actions}>
-                <Link className={styles.actionLink} href={`/volunteer/applications/${r.application_id}`}>
+                <Link prefetch={false} className={styles.actionLink} href={`/volunteer/applications/${r.application_id}`}>
                   Open application
                 </Link>
-                <Link className={styles.actionLink} href={`/volunteer/opportunities/${r.request_id}`}>
+                <Link prefetch={false} className={styles.actionLink} href={`/volunteer/opportunities/${r.request_id}`}>
                   View opportunity
                 </Link>
               </div>

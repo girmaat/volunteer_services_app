@@ -18,7 +18,7 @@ export default function HistoryTabs({ active }: Props) {
   return (
     <div className={styles.subnav}>
       {items.map((it) => (
-        <Link
+        <Link prefetch={false}
           key={it.key}
           href={it.href}
           className={`${styles.subnavLink} ${active === it.key ? styles.subnavLinkActive : ""}`}

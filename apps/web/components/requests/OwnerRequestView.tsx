@@ -58,7 +58,7 @@ export default function OwnerRequestView({
   return (
     <>
       <PageHeader
-        back={<Link href={base}>← All requests</Link>}
+        back={<Link prefetch={false} href={base}>← All requests</Link>}
         title={r.title || "Untitled draft"}
         description={
           <span className="inline-flex flex-wrap items-center gap-2">
@@ -132,7 +132,7 @@ export default function OwnerRequestView({
           {extraLinks?.length ? (
             <nav aria-label="More for this request" className="flex flex-wrap gap-4 text-sm">
               {extraLinks.map((l) => (
-                <Link key={l.href} href={l.href} className="font-medium text-primary">
+                <Link prefetch={false} key={l.href} href={l.href} className="font-medium text-primary">
                   {l.label}
                 </Link>
               ))}
