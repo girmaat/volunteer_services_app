@@ -83,7 +83,7 @@ export function createApp(): Express {
   app.use(express.json({ limit: "1mb" }));
 
   // Rate limits
-  app.use(["/v1/auth/login", "/v1/auth/signup", "/v1/auth/forgot-password", "/v1/auth/resend-verification", "/v1/auth/reset-password"], authIpLimiter, authEmailLimiter);
+  app.use(["/v1/auth/login", "/v1/auth/signup", "/v1/auth/forgot-password", "/v1/auth/resend-verification", "/v1/auth/reset-password", "/v1/auth/change-password"], authIpLimiter, authEmailLimiter);
   app.use(["/v1/public/contact", "/v1/shares/:token/report", "/v1/orgs/enroll"], publicFormLimiter);
   app.use("/v1", writeLimiter);
 

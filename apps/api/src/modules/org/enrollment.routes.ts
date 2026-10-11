@@ -571,6 +571,15 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
         ]
       );
 
+      // Finishing org onboarding also finishes the admin's own account onboarding (an org-only
+      // account has no volunteer or requester profile to fill in), or every API call stays 403.
+      if (p.onboarding_completed === true) {
+        await pool.query(
+          "UPDATE users SET profile_completed = TRUE, onboarding_completed = TRUE, updated_at = NOW() WHERE id = $1 AND NOT onboarding_completed",
+          [String((ok.user as any).id)]
+        );
+      }
+
       const ctx = await getOrgContextForUser(pool, String((ok.user as any).id), ok.ctx.org.slug);
       return res.json(ctx);
     })

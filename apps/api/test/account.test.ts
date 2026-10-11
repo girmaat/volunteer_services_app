@@ -87,3 +87,20 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
     expect(r.text).toContain(`"'=HYPERLINK(""x"")"`);
   });
 });
+
+describe("password change (Settings → Account)", () => {
+  it("needs the current password and signs out other sessions", async () => {
+    await createUser({ email: "pw.change@thankyou.test", roles: ["volunteer"] });
+    const a = await as("pw.change@thankyou.test");
+    // A second device: its own session row.
+    const uid = await userId("pw.change@thankyou.test");
+    const otherToken = (await pool.query("INSERT INTO sessions (user_id, session_token, expires_at) VALUES ($1, gen_random_uuid(), NOW() + INTERVAL '1 day') RETURNING session_token", [uid])).rows[0].session_token;
+    expect((await a.post("/v1/auth/change-password", { currentPassword: "wrong-one", newPassword: "New-Password-456!" })).status).toBe(400);
+    const ok = await a.post("/v1/auth/change-password", { currentPassword: "Test-Password-123!", newPassword: "New-Password-456!" });
+    expect(ok.status, JSON.stringify(ok.body)).toBe(200);
+    expect((await a.get("/v1/me")).status).toBe(200);
+    expect((await anon().get("/v1/me").set("authorization", `Bearer ${otherToken}`)).status).toBe(401);
+    const login = await anon().post("/v1/auth/login").send({ email: "pw.change@thankyou.test", password: "New-Password-456!" });
+    expect(login.status).toBe(200);
+  });
+});

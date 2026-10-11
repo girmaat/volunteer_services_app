@@ -1,12 +1,10 @@
+import { csvCell } from "../../../../lib/csv";
 import { inOrg } from "../../../../lib/access";
 import { backendFetch, getCurrentUser } from "../../../lib/backend";
 import { getOrgContext } from "../../../lib/org";
 import { Buffer } from "buffer";
 
-function csvEscape(value: unknown) {
-  const s = String(value ?? "");
-  return `"${s.replace(/"/g, '""')}"`;
-}
+const csvEscape = csvCell;
 
 function pdfEscape(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");

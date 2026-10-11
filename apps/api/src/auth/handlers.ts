@@ -763,3 +763,4 @@ export async function submitVerification(pool: Pool, req: Request, res: Response
   const updated = await requireUserBySession(pool, token);
   return res.json({ user: updated });
 }
+

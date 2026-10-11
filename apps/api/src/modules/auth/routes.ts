@@ -45,6 +45,9 @@ app.post("/v1/auth/reset-password", wrap((req, res) => resetPassword(pool, req, 
 
 app.post("/v1/auth/logout", wrap((req, res) => logout(pool, req, res)));
 
+// Signed-in password change (Settings → Account). Keeps this session, ends the others.
+app.post("/v1/auth/change-password", wrap((req, res) => authHandlers.changePassword(pool, req, res)));
+
 
 // Current user
 app.get("/v1/me", wrap((req, res) => me(pool, req, res)));

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { can, effectiveLegacyRole, availableContexts, type PolicyUser } from "../src/lib/policy";
-import { anon, as, createUser, EMAILS, PASSWORD } from "./helpers";
+import { anon, as, createUser, EMAILS, PASSWORD, pool } from "./helpers";
 
 describe("policy: can()", () => {
   const base: PolicyUser = { id: "u1", roles: [], orgs: [] };
@@ -115,5 +115,20 @@ describe("one account, multiple roles", () => {
     expect(me.body.user.platform_role).toBe("moderator");
     expect(me.body.user.is_platform_admin).toBe(false);
     expect(me.body.user.contexts).toContain("admin");
+  });
+});
+
+describe("org onboarding", () => {
+  it("finishing org onboarding finishes the admin's account onboarding too", async () => {
+    await pool.query("INSERT INTO organizations (slug, name, summary, location, contact_email, onboarding_completed) VALUES ('onb-test-org', 'Onboarding Test Org', 'A test organization summary.', 'Queens, NY', 'onb@example.org', FALSE) ON CONFLICT DO NOTHING");
+    const id = await createUser({ email: "onb.admin@thankyou.test", org: { slug: "onb-test-org", role: "admin" } });
+    await pool.query("UPDATE users SET onboarding_completed = FALSE, profile_completed = FALSE WHERE id = $1", [id]);
+    await pool.query("UPDATE user_profiles SET full_name = 'Onb Admin', phone = '718-555-0101' WHERE user_id = $1", [id]);
+    const a = await as("onb.admin@thankyou.test");
+    expect((await a.post("/v1/requests", { as: "org", title: "x" })).status).toBe(403);
+    const r = await a.patch("/v1/orgs/onb-test-org", { onboarding_completed: true });
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
+    const u = await pool.query("SELECT onboarding_completed FROM users WHERE id = $1", [id]);
+    expect(u.rows[0].onboarding_completed).toBe(true);
   });
 });

@@ -26,7 +26,7 @@ async function saveOrgProfileAction(formData: FormData) {
 
   // Update slug if changed.
   if (desiredSlug !== currentSlug) {
-    const slugRes = await backendFetch(`/v1/org/${encodeURIComponent(currentSlug)}/slug`, {
+    const slugRes = await backendFetch(`/v1/orgs/${encodeURIComponent(currentSlug)}/slug`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ slug: desiredSlug }),
@@ -40,8 +40,9 @@ async function saveOrgProfileAction(formData: FormData) {
     }
   }
 
-  const res = await backendFetch("/v1/org/profile", {
-    method: "POST",
+  const slugNow = desiredSlug && desiredSlug !== currentSlug ? desiredSlug : currentSlug;
+  const res = await backendFetch(`/v1/orgs/${encodeURIComponent(slugNow)}`, {
+    method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       name,
@@ -69,10 +70,10 @@ async function finishOrgOnboardingAction() {
 
   const ctx = await requireOrgContextOrRedirect();
 
-  const res = await backendFetch("/v1/org/onboarding/finish", {
-    method: "POST",
+  const res = await backendFetch(`/v1/orgs/${encodeURIComponent(String(ctx.org.slug || ""))}`, {
+    method: "PATCH",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ org_slug: String(ctx.org.slug || "") }),
+    body: JSON.stringify({ onboarding_completed: true }),
     cache: "no-store"
   });
 

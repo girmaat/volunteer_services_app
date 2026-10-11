@@ -17,8 +17,10 @@
     "db:migrate": "pnpm --filter @thankyou/api db:migrate",
     "db:seed": "pnpm --filter @thankyou/api db:seed",
     "db:reset": "pnpm --filter @thankyou/api db:reset",
-    "check": "pnpm typecheck && pnpm lint && pnpm test",
-    "db:setup": "pnpm --filter @thankyou/api db:setup"
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm check:api-calls",
+    "db:setup": "pnpm --filter @thankyou/api db:setup",
+    "check:api-calls": "node scripts/check-api-calls.mjs",
+    "e2e": "playwright test"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",
