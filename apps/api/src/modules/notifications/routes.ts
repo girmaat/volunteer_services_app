@@ -3,6 +3,7 @@ import { z } from "zod";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { requireAuthedUser } from "../../middleware/auth";
+import { can, type PolicyUser } from "../../lib/policy";
 import { getPreferences, isNotificationType, readUnsubscribeToken, setPreference, NOTIFICATION_TYPES, type NotificationType } from "./service";
 
 export function registerNotificationRoutes(app: Express) {
@@ -60,7 +61,8 @@ export function registerNotificationRoutes(app: Express) {
     wrap(async (req, res) => {
       const user = await requireAuthedUser(req, res);
       if (!user) return;
-      return res.json({ preferences: await getPreferences(String(user.id)) });
+      const staff = can(user as PolicyUser, "platform:moderate");
+      return res.json({ preferences: (await getPreferences(String(user.id))).filter((p) => staff || p.type !== "moderation") });
     })
   );
 

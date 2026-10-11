@@ -4,6 +4,7 @@ import { Logo } from "./Logo";
 import { BottomNav, SideNav } from "./AppNav";
 import UserMenu from "./UserMenu";
 import ContextSwitcher, { type ContextOption } from "./ContextSwitcher";
+import NotificationBell from "./NotificationBell";
 import { contextLabel, navFor, profileHref, type AppContext } from "./nav";
 
 type ShellUser = {
@@ -58,7 +59,10 @@ export default function AppShell({
     <div className="min-h-screen lg:grid lg:grid-cols-[256px_1fr]">
       <aside aria-label="Sidebar" className="sticky top-0 hidden h-screen flex-col border-r border-line bg-surface px-4 py-5 lg:flex">
         <div className="px-2">
-          <Logo href={items[0]?.href ?? "/"} />
+          <div className="flex items-center justify-between">
+            <Logo href={items[0]?.href ?? "/"} />
+            <NotificationBell />
+          </div>
           <ContextSwitcher options={options} currentLabel={label} canAddRole={canAddRole} />
         </div>
         <div className="mt-2 flex-1 overflow-y-auto pl-3 pr-1">
@@ -73,6 +77,7 @@ export default function AppShell({
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-surface px-4 lg:hidden">
           <Logo href={items[0]?.href ?? "/"} />
           <div className="flex items-center gap-1">
+            <NotificationBell />
             {options.length > 1 ? (
               <div className="w-40">
                 <ContextSwitcher options={options} currentLabel={label} canAddRole={canAddRole} compact />

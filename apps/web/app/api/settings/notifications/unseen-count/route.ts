@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ unseen_count: 0 }, { status: 401 });
   }
 
-  const res = await fetch(`${API_BASE_URL_SERVER}/v1/settings/notifications/unseen-count`, {
+  const res = await fetch(`${API_BASE_URL_SERVER}/v1/notifications/unread-count`, {
     method: "GET",
     headers: { authorization: `Bearer ${token}` },
     cache: "no-store"
@@ -21,6 +21,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ unseen_count: 0, message: body || "Failed" }, { status: res.status });
   }
 
-  const data = await res.json().catch(() => ({ unseen_count: 0 }));
-  return NextResponse.json(data, { status: 200 });
+  const data = (await res.json().catch(() => ({ unread_count: 0 }))) as { unread_count?: number };
+  return NextResponse.json({ unseen_count: Number(data.unread_count ?? 0) }, { status: 200 });
 }
