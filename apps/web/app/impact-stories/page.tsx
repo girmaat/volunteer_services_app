@@ -1,9 +1,9 @@
 
 import styles from "./page.module.css";
 import Link from "next/link";
-import { backendFetch } from "../lib/backend";
+import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type Story = {
   id: number;
@@ -20,7 +20,7 @@ type StoriesResult = {
 
 async function getStories(): Promise<StoriesResult> {
   try {
-    const res = await backendFetch("/v1/public/stories");
+    const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/stories`, { next: { revalidate: 300 } });
 
     if (!res.ok) {
       // Try to read a useful server message, but never crash the page.

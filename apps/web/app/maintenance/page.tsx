@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type PlatformStatus = {
   maintenance: { enabled: boolean; message: string | null; updated_at: string };
@@ -13,7 +13,7 @@ function stripTrailingSlash(url: string) {
 
 async function getStatus(): Promise<PlatformStatus | null> {
   try {
-    const res = await fetch(`${stripTrailingSlash(API_BASE_URL_SERVER)}/v1/platform/status`, { cache: "no-store" });
+    const res = await fetch(`${stripTrailingSlash(API_BASE_URL_SERVER)}/v1/platform/status`, { next: { revalidate: 300 } });
     if (!res.ok) return null;
     return (await res.json()) as PlatformStatus;
   } catch {

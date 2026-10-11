@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { API_BASE_URL } from "@thankyou/config";
+import { API_BASE_URL_SERVER as API_BASE_URL } from "@thankyou/config";
 
 function stripTrailingSlash(url: string) {
   return url.endsWith("/") ? url.slice(0, -1) : url;
@@ -21,16 +21,31 @@ const ALLOW_PREFIXES = [
   "/favicon.ico"
 ];
 
+// Maintenance mode is read from the API at most once every 30 seconds per server instance,
+// instead of on every request (it used to add a backend round-trip to every navigation).
+const MAINTENANCE_TTL_MS = 30_000;
+let maintenanceCache: { value: boolean; at: number } | null = null;
+
 async function isMaintenanceEnabled(): Promise<boolean> {
+  if (process.env.MAINTENANCE_MODE === "true") return true;
+  const now = Date.now();
+  if (maintenanceCache && now - maintenanceCache.at < MAINTENANCE_TTL_MS) return maintenanceCache.value;
+  let value = false;
   try {
-    const res = await fetch(`${stripTrailingSlash(API_BASE_URL)}/v1/platform/status`, { cache: "no-store" });
-    if (!res.ok) return false;
-    const json = (await res.json()) as any;
-    return Boolean(json?.maintenance?.enabled);
+    const res = await fetch(`${stripTrailingSlash(API_BASE_URL)}/v1/platform/status`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(1500)
+    });
+    if (res.ok) {
+      const json = (await res.json()) as { maintenance?: { enabled?: boolean } };
+      value = Boolean(json?.maintenance?.enabled);
+    }
   } catch {
-    // If the backend is unavailable, do not hard-lock the site at the edge.
-    return false;
+    // If the backend is unavailable, do not lock the whole site.
+    value = false;
   }
+  maintenanceCache = { value, at: now };
+  return value;
 }
 
 function shouldClearFlash(pathname: string) {

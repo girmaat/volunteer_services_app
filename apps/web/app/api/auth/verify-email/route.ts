@@ -1,3 +1,4 @@
+import { cookieSecure } from "../../../../lib/cookies";
 import { NextResponse } from "next/server";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
@@ -79,7 +80,7 @@ export async function GET(req: Request) {
   next.cookies.set("ty_session", sessionToken, {
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure: cookieSecure(),
     path: "/"
   });
   return next;

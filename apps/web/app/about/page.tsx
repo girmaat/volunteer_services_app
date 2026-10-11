@@ -2,7 +2,7 @@ import styles from "./page.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 import PublicPageBody from "../_components/PublicPageBody";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type PublicPage = {
   slug: string;
@@ -43,7 +43,7 @@ This environment may include demo content for training and smoke testing. Before
 
 async function getPage(): Promise<PageLoad> {
   try {
-    const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/pages/about`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/pages/about`, { next: { revalidate: 300 } });
     if (!res.ok) {
       let msg = `Failed to load page (HTTP ${res.status})`;
       try {
@@ -69,8 +69,6 @@ export default async function Page() {
     <section className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.title}>{page?.title ?? "About GiveBack"}</h1>
-        <p className={styles.subtitle}>Mission and story content loaded from backend.</p>
-        {error && (<p className={styles.subtitle}>Content unavailable: {error}</p>)}
         <span className={styles.badge}>Public</span>
       </header>
       <div className={styles.content}>

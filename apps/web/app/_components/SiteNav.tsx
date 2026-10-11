@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type NavUser = {
   role?: "volunteer" | "requester" | "org_admin" | null;
@@ -30,7 +31,7 @@ function isActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-function roleAdjustedPublicItems(user: NavUser): NavItem[] {
+function roleAdjustedPublicItems(user: NavUser | undefined): NavItem[] {
   if (!user?.role) return publicItems;
 
   if (user.role === "org_admin") {
@@ -46,10 +47,25 @@ function roleAdjustedPublicItems(user: NavUser): NavItem[] {
   return publicItems;
 }
 
-export default function SiteNav({ user }: { user: NavUser }) {
+export default function SiteNav() {
   const pathname = usePathname() || "/";
+  // undefined = still loading; null = signed out.
+  const [user, setUser] = useState<NavUser | undefined>(undefined);
 
-  const authedItems: NavItem[] = user
+  useEffect(() => {
+    let active = true;
+    fetch("/api/session", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { user: null }))
+      .then((d) => active && setUser((d?.user as NavUser) ?? null))
+      .catch(() => active && setUser(null));
+    return () => {
+      active = false;
+    };
+  }, [pathname]);
+
+  const authedItems: NavItem[] = user === undefined
+    ? []
+    : user
     ? [{ href: "/dashboard", label: "Dashboard" }].concat(user.is_platform_admin ? [{ href: "/admin", label: "Admin" }] : [])
     : [
         { href: "/login", label: "Log in", exact: true },
@@ -69,9 +85,11 @@ export default function SiteNav({ user }: { user: NavUser }) {
       })}
 
       {user ? (
-        <a className="navLink" href="/api/auth/logout">
-          Log out
-        </a>
+        <form action="/api/auth/logout" method="post" className="navForm">
+          <button type="submit" className="navLink navButton">
+            Log out
+          </button>
+        </form>
       ) : null}
     </nav>
   );

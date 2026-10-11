@@ -1,6 +1,7 @@
 import styles from "./page.module.css";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getPublicOpportunity } from "../../../lib/public-api";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 
 export const dynamic = "force-dynamic";
@@ -108,31 +109,35 @@ export default async function OpportunityDetailPage(
   const me = await getCurrentUser().catch(() => null);
 
   if (!me) {
+    const pub = await getPublicOpportunity(id);
+    if (!pub) notFound();
     return (
       <section className={styles.page}>
         <header className={styles.header}>
           <div>
             <div className={styles.kicker}>Volunteer Opportunity</div>
-            <h1 className={styles.title}>Sign in to view details</h1>
+            <h1 className={styles.title}>{pub.title}</h1>
             <p className={styles.meta}>
-              We keep sensitive details private until you sign in.
+              {modeLabel(pub.mode)} · {pub.location}
+              {pub.organization_name ? ` · ${pub.organization_name}${pub.organization_verified ? " (verified)" : ""}` : ""}
             </p>
           </div>
           <div className={styles.actions}>
-            <Link className={styles.primary} href="/signup">
-              Create account
+            <Link className={styles.primary} href={`/login?returnTo=${encodeURIComponent(`/opportunities/${pub.id}`)}`}>
+              Sign in to apply
             </Link>
-            <Link className={styles.secondary} href="/login">
-              Sign in
+            <Link className={styles.secondary} href="/signup">
+              Create account
             </Link>
           </div>
         </header>
 
         <div className={styles.card}>
-          <div className={styles.cardTitle}>What you&apos;ll be able to do</div>
-          <div className={styles.body}>
-            Apply to help, coordinate safely through messaging, and track your impact.
-          </div>
+          <div className={styles.cardTitle}>About this opportunity</div>
+          <div className={styles.body}>{pub.summary}</div>
+          {pub.tags.length ? <div className={styles.meta}>Tags: {pub.tags.join(", ")}</div> : null}
+          {pub.needed_by ? <div className={styles.meta}>Needed by {new Date(pub.needed_by).toLocaleDateString()}</div> : null}
+          <div className={styles.meta}>Exact location and contact details are shared after your application is accepted.</div>
         </div>
       </section>
     );

@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import multer from "multer";
 import { z } from "zod";
 import { randomTokenUrlSafe, sha256 } from "./crypto";
-import { sendEmail } from "./email";
+import { devEmailLink, sendEmail } from "./email";
 import { createSession, deleteSession, deleteAllSessionsForUser, requireUserBySession } from "./session";
 import { recomputeOnboarding } from "./onboarding";
 import { ensureUserGeo } from "../geo";
@@ -76,7 +76,7 @@ ${verifyUrl}
 If you didn't create this account, you can ignore this email.`
       });
 
-      const dev_verify_url = delivery.delivery !== "smtp" ? verifyUrl : undefined;
+      const dev_verify_url = devEmailLink(verifyUrl, delivery.delivery);
 
       return res.status(202).json({
         status: "accepted",
@@ -138,9 +138,9 @@ ${verifyUrl}
 If you didn't create this account, you can ignore this email.`
   });
 
-  const dev_verify_url = delivery.delivery !== "smtp" ? verifyUrl : undefined;
+  const dev_verify_url = devEmailLink(verifyUrl, delivery.delivery);
 
-  return res.status(202).json({ status: "accepted", emailDelivery: delivery.delivery, dev_verify_url });
+  return res.status(202).json({ status: "accepted", dev_verify_url });
 }
 
 export async function resendVerification(pool: Pool, req: Request, res: Response) {
@@ -153,7 +153,7 @@ export async function resendVerification(pool: Pool, req: Request, res: Response
   const u = await pool.query("SELECT id, email_verified_at FROM users WHERE email=$1", [email]);
   if ((u.rowCount ?? 0) === 0) {
     // Do not reveal whether the email exists.
-    return res.status(202).json({ status: "accepted", emailDelivery: "disabled" });
+    return res.status(202).json({ status: "accepted" });
   }
 
   const userId = String((u.rows[0] as any).id);
@@ -184,9 +184,9 @@ ${verifyUrl}
 If you didn't request this email, you can ignore it.`
   });
 
-  const dev_verify_url = delivery.delivery !== "smtp" ? verifyUrl : undefined;
+  const dev_verify_url = devEmailLink(verifyUrl, delivery.delivery);
 
-  return res.status(202).json({ status: "accepted", emailDelivery: delivery.delivery, dev_verify_url });
+  return res.status(202).json({ status: "accepted", dev_verify_url });
 }
 
 export async function verifyEmail(pool: Pool, req: Request, res: Response) {
@@ -318,7 +318,7 @@ export async function forgotPassword(pool: Pool, req: Request, res: Response) {
   const u = await pool.query("SELECT id FROM users WHERE email=$1", [email]);
   if ((u.rowCount ?? 0) === 0) {
     // Do not reveal whether the email exists.
-    return res.status(202).json({ status: "accepted", emailDelivery: "disabled" });
+    return res.status(202).json({ status: "accepted" });
   }
 
   const userId = String((u.rows[0] as any).id);
@@ -344,9 +344,9 @@ ${resetUrl}
 If you didn't request this, you can ignore this email.`
   });
 
-  const dev_reset_url = delivery.delivery !== "smtp" ? resetUrl : undefined;
+  const dev_reset_url = devEmailLink(resetUrl, delivery.delivery);
 
-  return res.status(202).json({ status: "accepted", emailDelivery: delivery.delivery, dev_reset_url });
+  return res.status(202).json({ status: "accepted", dev_reset_url });
 }
 
 export async function resetPassword(pool: Pool, req: Request, res: Response) {

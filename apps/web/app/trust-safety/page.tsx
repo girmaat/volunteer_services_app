@@ -1,7 +1,7 @@
 import styles from "./page.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type PublicPage = {
   slug: string;
@@ -17,7 +17,7 @@ type PageLoad = {
 
 async function getPage(): Promise<PageLoad> {
   try {
-    const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/pages/trust-safety`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/pages/trust-safety`, { next: { revalidate: 300 } });
     if (!res.ok) {
       let msg = `Failed to load page (HTTP ${res.status})`;
       try {
@@ -44,7 +44,6 @@ export default async function Page() {
       <header className={styles.header}>
         <h1 className={styles.title}>{page?.title ?? "Trust & Safety"}</h1>
         <p className={styles.subtitle}>Safety, verification, and reporting policies.</p>
-        {error && (<p className={styles.subtitle}>Content unavailable: {error}</p>)}
         <span className={styles.badge}>Public</span>
       </header>
       <div className={styles.content}>

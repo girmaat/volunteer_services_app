@@ -1,24 +1,14 @@
 import styles from "./page.module.css";
 import Link from "next/link";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { listPublicOpportunities } from "../../lib/public-api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
-type PublicOpportunityListItem = {
-  id: string;
-  title: string;
-  tags: string[] | null;
-};
+type PublicOpportunityListItem = { id: string; title: string; tags: string[] | null };
 
 async function getPublicOpportunities(): Promise<PublicOpportunityListItem[]> {
-  const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/opportunities`, { cache: "no-store" });
-  if (!res.ok) return [];
-  const data = (await res.json()) as any[];
-  return data.map((o) => ({
-    id: String(o.id),
-    title: String(o.title || "Opportunity"),
-    tags: Array.isArray(o.tags) ? (o.tags as any[]).map((t) => String(t)) : null,
-  }));
+  const list = await listPublicOpportunities({ limit: 24 });
+  return list.items.map((o) => ({ id: o.id, title: o.title, tags: o.tags }));
 }
 
 type HelpIdea = {

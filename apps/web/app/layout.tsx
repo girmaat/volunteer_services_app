@@ -2,7 +2,6 @@ import "./globals.css";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import localFont from "next/font/local";
-import { getCurrentUser } from "../lib/backend";
 import SiteNav from "./_components/SiteNav";
 
 const inter = localFont({ src: "./fonts/Inter-Variable.woff2", variable: "--font-inter", display: "swap", weight: "100 900" });
@@ -19,9 +18,7 @@ export const metadata = {
   icons: { icon: "/brand/favicon.svg" }
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const user = await getCurrentUser();
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${jakarta.variable}`}>
       <body>
@@ -34,7 +31,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               </span>
               <span className="brandText">ThankYou</span>
             </Link>
-            <SiteNav user={user} />
+            <SiteNav />
           </div>
         </header>
 

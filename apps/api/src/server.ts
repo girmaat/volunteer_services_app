@@ -1,3 +1,5 @@
+import { contentDisposition } from "./lib/http";
+import { parsePage, toPage } from "./lib/pagination";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -17,7 +19,19 @@ dotenv.config();
 const app = express();
 const port = Number(process.env.PORT || 4000);
 
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
+
+if (process.env.LOG_REQUESTS === "true") {
+  app.use((req, res, next) => {
+    const t0 = process.hrtime.bigint();
+    res.on("finish", () => {
+      const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+      // eslint-disable-next-line no-console
+      console.log(`[req] ${req.method} ${req.originalUrl} ${res.statusCode} ${ms.toFixed(1)}ms`);
+    });
+    next();
+  });
+}
 
 const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:3002";
 app.use(cors({ origin: corsOrigin }));
@@ -73,19 +87,23 @@ function derivePublicLocation(mode: string, rawLocation: string | null | undefin
   const m = String(mode || "remote").toLowerCase();
   if (m === "remote") return "Remote";
 
+  // Prefer the request's own area (reduced to "City, ST"), then the organization's area.
+  const raw = String(rawLocation || "").trim();
+  if (raw) {
+    if (!looksPreciseLocation(raw)) {
+      const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+      return parts.length > 2 ? parts.slice(-2).join(", ") : raw;
+    }
+    // Try to reduce "123 Main St, City, ST 02139" -> "City, ST"
+    const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      const cityState = parts.slice(-2).join(", ").replace(/\b\d{5}(?:-\d{4})?\b/g, "").trim();
+      if (cityState && !looksPreciseLocation(cityState)) return cityState;
+    }
+  }
+
   const orgLoc = String(orgLocation || "").trim();
   if (orgLoc && !looksPreciseLocation(orgLoc)) return orgLoc;
-
-  const raw = String(rawLocation || "").trim();
-  if (!raw) return "Location shared after you apply";
-
-  // Try to reduce "123 Main St, City, ST 02139" -> "City, ST"
-  const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
-  if (parts.length >= 2) {
-    const cityState = parts.slice(-2).join(", ");
-    const cleaned = cityState.replace(/\b\d{5}(?:-\d{4})?\b/g, "").trim();
-    if (cleaned && !looksPreciseLocation(cleaned)) return cleaned;
-  }
 
   // If we can't safely derive, never leak the raw string
   return "Location shared after you apply";
@@ -573,128 +591,151 @@ app.get(
   })
 );
 
-app.get("/v1/public/organizations", async (req, res) => {
-  const user = await requireAuthedUser(req, res);
-  if (!user) return;
+// ---------------------------------------------------------------------------
+// Public read endpoints. No authentication: these back the SEO-indexed public
+// pages. They return whitelisted, redacted fields only (no contact details,
+// no exact addresses, no private profile data).
+// ---------------------------------------------------------------------------
 
-  const moderation = await getShareModerationSummaryForUser(String((user as any).id));
-  if (moderation.share_creation_restricted) {
-    return res.status(403).json({
-      message: `Sharing is temporarily restricted due to repeated reports (${moderation.reports_last_30d} in the last 30 days).`
+app.get(
+  "/v1/public/organizations",
+  wrap(async (req, res) => {
+    const page = parsePage(req.query as Record<string, unknown>, { limit: 24, max: 50 });
+    const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
+    const rows = await pool.query(
+      `SELECT slug, name, summary, location, verification_status, verified_at, updated_at
+         FROM organizations
+        WHERE ($1::text = '' OR name ILIKE '%' || $1 || '%' OR summary ILIKE '%' || $1 || '%')
+        ORDER BY (verification_status = 'approved') DESC, name ASC
+        LIMIT $2 OFFSET $3`,
+      [q, page.limit + 1, page.offset]
+    );
+    const items = rows.rows.map((o: any) => ({
+      slug: o.slug,
+      name: o.name,
+      summary: sanitizePublicDescription(String(o.summary || "")),
+      location: looksPreciseLocation(String(o.location || "")) ? null : o.location,
+      verified: o.verification_status === "approved",
+      updated_at: o.updated_at
+    }));
+    res.setHeader("cache-control", "public, max-age=60, stale-while-revalidate=300");
+    return res.json(toPage(items, page));
+  })
+);
+
+app.get(
+  "/v1/public/organizations/:slug",
+  wrap(async (req, res) => {
+    const slug = String(req.params.slug || "").slice(0, 120);
+    const rows = await pool.query(
+      `SELECT o.slug, o.name, o.summary, o.location, o.mission, o.website_url, o.logo_url,
+              o.verification_status, o.verified_at, o.updated_at,
+              (SELECT COUNT(*)::int FROM service_requests r WHERE r.requester_org_slug = o.slug AND r.status = 'open') AS open_requests
+         FROM organizations o
+        WHERE o.slug = $1`,
+      [slug]
+    );
+    if (rows.rowCount === 0) return res.status(404).json({ message: "Organization not found" });
+    const o: any = rows.rows[0];
+    res.setHeader("cache-control", "public, max-age=60, stale-while-revalidate=300");
+    return res.json({
+      slug: o.slug,
+      name: o.name,
+      summary: sanitizePublicDescription(String(o.summary || "")),
+      mission: o.mission ? sanitizePublicDescription(String(o.mission)) : null,
+      location: looksPreciseLocation(String(o.location || "")) ? null : o.location,
+      website_url: /^https?:\/\//i.test(String(o.website_url || "")) ? o.website_url : null,
+      logo_url: o.logo_url ?? null,
+      verified: o.verification_status === "approved",
+      verification_status: o.verification_status,
+      verified_at: o.verified_at,
+      open_requests: o.open_requests,
+      updated_at: o.updated_at
     });
-  }
+  })
+);
 
-  const rows = await pool.query(
-    "SELECT slug, name, summary, location, verification_status, verified_at, updated_at FROM organizations ORDER BY updated_at DESC"
-  );
-  return res.json(rows.rows);
-});
+const PUBLIC_MODES = new Set(["in-person", "remote", "hybrid"]);
 
-app.get("/v1/public/organizations/:slug", async (req, res) => {
-  const user = await requireAuthedUser(req, res);
-  if (!user) return;
+app.get(
+  "/v1/public/opportunities",
+  wrap(async (req, res) => {
+    const page = parsePage(req.query as Record<string, unknown>, { limit: 24, max: 50 });
+    const orgSlug = typeof req.query.org === "string" && req.query.org.trim() ? req.query.org.trim().slice(0, 120) : null;
+    const mode = typeof req.query.mode === "string" && PUBLIC_MODES.has(req.query.mode) ? req.query.mode : null;
+    const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
 
-  const slug = req.params.slug;
-  const rows = await pool.query(
-    "SELECT slug, name, summary, location, verification_status, verified_at, updated_at FROM organizations WHERE slug = $1",
-    [slug]
-  );
-  if (rows.rowCount === 0) {
-    return res.status(404).json({ message: "Organization not found" });
-  }
-  return res.json(rows.rows[0]);
-});
+    const rows = await pool.query(
+      `SELECT r.id, r.title, r.description, r.location_text, COALESCE(r.mode, 'remote') AS mode,
+              r.tags, r.needed_by, r.updated_at,
+              org.name AS organization_name, org.slug AS organization_slug,
+              (org.verification_status = 'approved') AS organization_verified,
+              org.location AS org_location
+         FROM service_requests r
+         LEFT JOIN organizations org ON org.slug = r.requester_org_slug
+        WHERE r.status = 'open'
+          AND ($1::text IS NULL OR r.requester_org_slug = $1)
+          AND ($2::text IS NULL OR COALESCE(r.mode, 'remote') = $2)
+          AND ($3::text = '' OR r.title ILIKE '%' || $3 || '%' OR r.description ILIKE '%' || $3 || '%')
+        ORDER BY r.updated_at DESC, r.id
+        LIMIT $4 OFFSET $5`,
+      [orgSlug, mode, q, page.limit + 1, page.offset]
+    );
 
-app.get("/v1/public/opportunities", async (req, res) => {
-  const user = await requireAuthedUser(req, res);
-  if (!user) return;
-
-  const orgSlug = typeof (req.query as any).org === "string" ? String((req.query as any).org).trim() : null;
-  const orgFilter = orgSlug ? orgSlug : null;
-
-
-  const rows = await pool.query(
-    `
-    SELECT
-      r.id,
-      r.title,
-      r.description,
-      r.location_text,
-      COALESCE(r.mode, 'remote') AS mode,
-      r.updated_at,
-      org.location AS org_location
-    FROM service_requests r
-    LEFT JOIN organizations org ON org.slug = r.requester_org_slug
-    WHERE r.status = 'open' AND ($1::text IS NULL OR r.requester_org_slug = $1)
-    ORDER BY r.updated_at DESC
-    LIMIT 200
-    `,
-    [orgFilter]
-  );
-
-  const safe = rows.rows.map((r: any) => {
-    const summary = sanitizePublicDescription(String(r.description || "")).slice(0, 240);
-    const location = derivePublicLocation(String(r.mode || "remote"), r.location_text, r.org_location);
-    return {
+    const items = rows.rows.map((r: any) => ({
       id: r.id,
       title: r.title,
-      summary,
-      location,
+      summary: sanitizePublicDescription(String(r.description || "")).slice(0, 240),
+      location: derivePublicLocation(String(r.mode || "remote"), r.location_text, r.org_location),
       mode: r.mode,
+      tags: Array.isArray(r.tags) ? r.tags : [],
+      needed_by: r.needed_by,
+      organization_name: r.organization_name ?? null,
+      organization_slug: r.organization_slug ?? null,
+      organization_verified: Boolean(r.organization_verified),
       updated_at: r.updated_at
-    };
-  });
+    }));
+    res.setHeader("cache-control", "public, max-age=30, stale-while-revalidate=120");
+    return res.json(toPage(items, page));
+  })
+);
 
-  return res.json(safe);
-});
+app.get(
+  "/v1/public/opportunities/:id",
+  wrap(async (req, res) => {
+    const idParsed = z.string().uuid().safeParse(req.params.id);
+    if (!idParsed.success) return res.status(400).json({ message: "Invalid id" });
 
-app.get("/v1/public/opportunities/:id", async (req, res) => {
-  const user = await requireAuthedUser(req, res);
-  if (!user) return;
+    const rows = await pool.query(
+      `SELECT r.id, r.title, r.description, r.location_text, COALESCE(r.mode, 'remote') AS mode,
+              r.tags, r.needed_by, r.updated_at,
+              org.name AS organization_name, org.slug AS organization_slug,
+              (org.verification_status = 'approved') AS organization_verified,
+              org.location AS org_location
+         FROM service_requests r
+         LEFT JOIN organizations org ON org.slug = r.requester_org_slug
+        WHERE r.id = $1 AND r.status = 'open'`,
+      [idParsed.data]
+    );
+    if (rows.rowCount === 0) return res.status(404).json({ message: "Opportunity not found" });
 
-  const idParsed = z.string().uuid().safeParse(req.params.id);
-  if (!idParsed.success) {
-    return res.status(400).json({ message: "Invalid id" });
-  }
-  const id = idParsed.data;
-
-  const rows = await pool.query(
-    `
-    SELECT
-      r.id,
-      r.title,
-      r.description AS description,
-      r.location_text,
-      COALESCE(r.mode, 'remote') AS mode,
-      r.updated_at,
-      org.name AS organization_name,
-      org.location AS org_location,
-      r.tags
-    FROM service_requests r
-    LEFT JOIN organizations org ON org.slug = r.requester_org_slug
-    WHERE r.id = $1 AND r.status = 'open'
-    `,
-    [id]
-  );
-
-  if (rows.rowCount === 0) return res.status(404).json({ message: "Opportunity not found" });
-
-  const r = rows.rows[0] as any;
-  const summary = sanitizePublicDescription(String(r.description || ""));
-  const location = derivePublicLocation(String(r.mode || "remote"), r.location_text, r.org_location);
-
-  return res.json({
-    id: r.id,
-    title: r.title,
-    summary,
-    location,
-    mode: r.mode,
-    updated_at: r.updated_at,
-    organization_name: r.organization_name ?? null,
-    tags: Array.isArray(r.tags) ? r.tags : []
-  });
-});
-
+    const r: any = rows.rows[0];
+    res.setHeader("cache-control", "public, max-age=30, stale-while-revalidate=120");
+    return res.json({
+      id: r.id,
+      title: r.title,
+      summary: sanitizePublicDescription(String(r.description || "")),
+      location: derivePublicLocation(String(r.mode || "remote"), r.location_text, r.org_location),
+      mode: r.mode,
+      tags: Array.isArray(r.tags) ? r.tags : [],
+      needed_by: r.needed_by,
+      organization_name: r.organization_name ?? null,
+      organization_slug: r.organization_slug ?? null,
+      organization_verified: Boolean(r.organization_verified),
+      updated_at: r.updated_at
+    });
+  })
+);
 
 // Public: volunteer profile (Step 3.16)
 app.get("/v1/public/volunteers/:id", wrap(async (req, res) => {
@@ -709,9 +750,9 @@ app.get("/v1/public/volunteers/:id", wrap(async (req, res) => {
       u.id,
       (u.email_verified_at IS NOT NULL) AS email_verified,
       u.verification_status,
-      COALESCE(up.display_name, up.full_name) AS display_name,
+      COALESCE(NULLIF(up.display_name, ''), split_part(COALESCE(up.full_name, ''), ' ', 1)) AS display_name,
       up.avatar_url,
-      COALESCE(up.public_location, up.location) AS public_location,
+      up.public_location AS public_location,
       up.bio,
       up.languages,
       up.interaction_styles,
@@ -836,9 +877,9 @@ app.get("/v1/public/requesters/:id", wrap(async (req, res) => {
       (u.email_verified_at IS NOT NULL) AS email_verified,
       (u.phone_verified_at IS NOT NULL) AS phone_verified,
       u.verification_status,
-      COALESCE(up.display_name, up.full_name) AS display_name,
+      COALESCE(NULLIF(up.display_name, ''), split_part(COALESCE(up.full_name, ''), ' ', 1)) AS display_name,
       up.avatar_url,
-      COALESCE(up.public_location, up.location) AS public_location,
+      up.public_location AS public_location,
       up.bio,
       up.languages,
       up.interaction_styles,
@@ -1732,34 +1773,32 @@ app.get(
     const user = await requireRequesterUser(req, res);
     if (!user) return;
 
-    const activeRequestsRes = await pool.query(
-      "SELECT COUNT(*)::int AS c FROM service_requests WHERE requester_user_id = $1 AND status IN ('open','paused')",
-      [user.id]
-    );
-
-    const pendingApplicationsRes = await pool.query(
-      `SELECT COUNT(*)::int AS c
-       FROM request_applications a
-       JOIN service_requests r ON r.id = a.request_id
-       WHERE r.requester_user_id = $1 AND a.status = 'pending'`,
-      [user.id]
-    );
-
-    const upcomingRes = await pool.query(
-      `SELECT COUNT(*)::int AS c
-       FROM request_commitments c
-       JOIN service_requests r ON r.id = c.request_id
-       WHERE r.requester_user_id = $1
-         AND c.status IN ('scheduled','confirmed')
-         AND c.start_at IS NOT NULL
-         AND c.start_at > NOW()`,
-      [user.id]
-    );
-
-    const unreadThreadsRes = await pool.query(
-      "SELECT COUNT(DISTINCT sender_user_id)::int AS c FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL",
-      [user.id]
-    );
+    const [activeRequestsRes, pendingApplicationsRes, upcomingRes, unreadThreadsRes] = await Promise.all([
+      pool.query(
+        "SELECT COUNT(*)::int AS c FROM service_requests WHERE requester_user_id = $1 AND status IN ('open','paused')",
+        [user.id]
+      ),
+      pool.query(
+        `SELECT COUNT(*)::int AS c
+           FROM request_applications a
+           JOIN service_requests r ON r.id = a.request_id
+          WHERE r.requester_user_id = $1 AND a.status = 'pending'`,
+        [user.id]
+      ),
+      pool.query(
+        `SELECT COUNT(*)::int AS c
+           FROM request_commitments c
+           JOIN service_requests r ON r.id = c.request_id
+          WHERE r.requester_user_id = $1
+            AND c.status IN ('scheduled','confirmed')
+            AND c.start_at > NOW()`,
+        [user.id]
+      ),
+      pool.query(
+        "SELECT COUNT(DISTINCT sender_user_id)::int AS c FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL",
+        [user.id]
+      )
+    ]);
 
     return res.json({
       activeRequests: activeRequestsRes.rows[0]?.c ?? 0,
@@ -2585,7 +2624,8 @@ app.post(
 
     // Best-effort geocode for in-person/hybrid requests (powers Nearby).
     if (requestId && String(parsed.data.mode || "remote") !== "remote" && String(parsed.data.locationText || "").trim()) {
-      await ensureServiceRequestGeo(pool, String(requestId), String(parsed.data.locationText || "")).catch(() => null);
+      // Geocode in the background; never block the response on a third-party API.
+      void ensureServiceRequestGeo(pool, String(requestId), String(parsed.data.locationText || "")).catch(() => null);
     }
 
     return res.status(201).json({ id: requestId });
@@ -2672,7 +2712,7 @@ app.put(
 
     // Best-effort geocode for in-person/hybrid requests (powers Nearby).
     if (String(parsed.data.mode || "remote") !== "remote" && String(parsed.data.locationText || "").trim()) {
-      await ensureServiceRequestGeo(pool, id, String(parsed.data.locationText || "")).catch(() => null);
+      void ensureServiceRequestGeo(pool, id, String(parsed.data.locationText || "")).catch(() => null);
     }
 
     return res.json(update.rows[0] as RequesterRequestDetail);
@@ -3150,53 +3190,34 @@ app.get(
     const user = await requireVolunteerUser(req, res);
     if (!user) return;
 
-    const availabilityRes = await pool.query(
-      "SELECT remote_ok, in_person_ok FROM user_availability WHERE user_id = $1",
+    // One round-trip for all dashboard counters (previously 6 sequential queries).
+    const r = await pool.query(
+      `WITH a AS (
+         SELECT COALESCE(remote_ok, TRUE) AS remote_ok, COALESCE(in_person_ok, TRUE) AS in_person_ok
+           FROM (SELECT 1) x LEFT JOIN user_availability ua ON ua.user_id = $1
+       )
+       SELECT
+         (SELECT COUNT(*)::int FROM service_requests sr, a
+           WHERE sr.status = 'open'
+             AND (sr.mode IS NULL
+                  OR (a.remote_ok AND sr.mode IN ('remote','hybrid'))
+                  OR (a.in_person_ok AND sr.mode IN ('in-person','hybrid')))) AS recommended,
+         (SELECT COUNT(*)::int FROM volunteer_saved_requests WHERE user_id = $1) AS saved,
+         (SELECT COUNT(*)::int FROM request_applications
+           WHERE volunteer_user_id = $1 AND status IN ('pending','accepted')) AS applications,
+         (SELECT COUNT(*)::int FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL) AS unread,
+         (SELECT COUNT(*)::int FROM request_commitments
+           WHERE volunteer_user_id = $1 AND start_at > NOW() AND status IN ('scheduled','confirmed')) AS upcoming`,
       [user.id]
     );
-    const availability = availabilityRes.rows[0] as { remote_ok?: boolean; in_person_ok?: boolean } | undefined;
-    const remoteOk = availability?.remote_ok ?? true;
-    const inPersonOk = availability?.in_person_ok ?? true;
-
-    let recommendedCount = 0;
-    if (remoteOk && inPersonOk) {
-      const r = await pool.query("SELECT COUNT(*)::int AS c FROM service_requests WHERE status = 'open'");
-      recommendedCount = r.rows[0]?.c ?? 0;
-    } else {
-      const modes: string[] = remoteOk ? ["remote", "hybrid"] : inPersonOk ? ["in-person", "hybrid"] : [];
-      if (modes.length === 0) {
-        recommendedCount = 0;
-      } else {
-        const r = await pool.query(
-          "SELECT COUNT(*)::int AS c FROM service_requests WHERE status = 'open' AND (mode = ANY($1::text[]) OR mode IS NULL)",
-          [modes]
-        );
-        recommendedCount = r.rows[0]?.c ?? 0;
-      }
-    }
-
-    const savedRes = await pool.query("SELECT COUNT(*)::int AS c FROM volunteer_saved_requests WHERE user_id = $1", [
-      user.id
-    ]);
-    const applicationsRes = await pool.query(
-      "SELECT COUNT(*)::int AS c FROM request_applications WHERE volunteer_user_id = $1 AND status IN ('pending','accepted')",
-      [user.id]
-    );
-    const unreadRes = await pool.query(
-      "SELECT COUNT(*)::int AS c FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL",
-      [user.id]
-    );
-    const upcomingRes = await pool.query(
-      "SELECT COUNT(*)::int AS c FROM request_commitments WHERE volunteer_user_id = $1 AND start_at IS NOT NULL AND start_at > NOW() AND status IN ('scheduled','confirmed')",
-      [user.id]
-    );
+    const c = r.rows[0] as Record<string, number>;
 
     return res.json({
-      recommendedOpportunities: recommendedCount,
-      savedOpportunities: savedRes.rows[0]?.c ?? 0,
-      applicationsNeedingAction: applicationsRes.rows[0]?.c ?? 0,
-      unreadMessages: unreadRes.rows[0]?.c ?? 0,
-      upcomingCommitments: upcomingRes.rows[0]?.c ?? 0
+      recommendedOpportunities: c.recommended ?? 0,
+      savedOpportunities: c.saved ?? 0,
+      applicationsNeedingAction: c.applications ?? 0,
+      unreadMessages: c.unread ?? 0,
+      upcomingCommitments: c.upcoming ?? 0
     });
   })
 );
@@ -3354,8 +3375,7 @@ app.get(
     if (allowedModes.length === 0) allowedModes.push("remote");
 
     // Keep geo reasonably fresh so distance can contribute when applicable.
-    await backfillRecentServiceRequestGeo(pool, { limit: 15 }).catch(() => null);
-    const userGeo = await ensureUserGeo(pool, user.id).catch(() => null);
+    const userGeo = await cachedUserGeo(user.id);
 
     const distanceExpr = `
       (3958.7613 * 2 * ASIN(SQRT(
@@ -3391,7 +3411,7 @@ app.get(
           ) AS matched_tags,
           similarity($3, COALESCE(o.title, '') || ' ' || COALESCE(o.description, '')) AS text_sim,
           CASE
-            WHEN $4::boolean AND o.location_lat IS NOT NULL AND o.location_lng IS NOT NULL AND $5 IS NOT NULL AND $6 IS NOT NULL
+            WHEN $4::boolean AND o.location_lat IS NOT NULL AND o.location_lng IS NOT NULL AND $5::float8 IS NOT NULL AND $6::float8 IS NOT NULL
             THEN ${distanceExpr}
             ELSE NULL
           END AS distance_miles
@@ -3473,7 +3493,7 @@ app.get(
           ) AS matched_tags,
           0::double precision AS text_sim,
           CASE
-            WHEN $3::boolean AND o.location_lat IS NOT NULL AND o.location_lng IS NOT NULL AND $4 IS NOT NULL AND $5 IS NOT NULL
+            WHEN $3::boolean AND o.location_lat IS NOT NULL AND o.location_lng IS NOT NULL AND $4::float8 IS NOT NULL AND $5::float8 IS NOT NULL
             THEN (3958.7613 * 2 * ASIN(SQRT(
               POWER(SIN(RADIANS((o.location_lat - $4) / 2)), 2)
               + COS(RADIANS($4)) * COS(RADIANS(o.location_lat))
@@ -3602,9 +3622,8 @@ app.get(
     const label = String(profile.rows[0]?.public_location || profile.rows[0]?.location || "").trim();
 
     // Best-effort: backfill a few recently-updated requests so the first "Nearby" load isn't empty.
-    await backfillRecentServiceRequestGeo(pool, { limit: 15 }).catch(() => null);
 
-    const userGeo = await ensureUserGeo(pool, user.id).catch(() => null);
+    const userGeo = await cachedUserGeo(user.id);
     if (!userGeo) {
       res.setHeader("x-volunteer-location-missing", "1");
       res.setHeader("x-volunteer-radius-miles", String(radius));
@@ -4264,7 +4283,7 @@ app.get(
 
     const r = row.rows[0] as any;
     res.setHeader("content-type", r.mime_type || "application/octet-stream");
-    res.setHeader("content-disposition", `attachment; filename="${String(r.file_name || "document")}"`);
+    res.setHeader("content-disposition", contentDisposition(r.file_name));
     return res.status(200).send(r.bytes);
   })
 );
@@ -5795,6 +5814,23 @@ app.post(
 registerOrgRoutes(app, pool, wrap);
 registerAdminRoutes(app, pool, wrap);
 
+/**
+ * Distance features read only what is already geocoded. A missing user location is geocoded in
+ * the background so the next request can use it; the request itself never waits on Nominatim.
+ */
+async function cachedUserGeo(userId: string) {
+  const geo = await ensureUserGeo(pool, userId, { allowFetch: false }).catch(() => null);
+  if (!geo) void ensureUserGeo(pool, userId).catch(() => null);
+  return geo;
+}
+
+function startGeoBackfill() {
+  if (process.env.GEOCODING_DISABLED === "true") return;
+  const run = () => backfillRecentServiceRequestGeo(pool, { limit: 15 }).catch(() => null);
+  setTimeout(run, 10_000).unref();
+  setInterval(run, 10 * 60_000).unref();
+}
+
 async function start() {
   const pending = await pendingMigrations(migrationPool);
   if (pending.length > 0) {
@@ -5802,6 +5838,7 @@ async function start() {
     console.error(`[ThankYou API] ${pending.length} pending migration(s): ${pending.join(", ")}. Run \`pnpm db:migrate\` first.`);
     process.exit(1);
   }
+  startGeoBackfill();
   app.listen(port, () => {
     // eslint-disable-next-line no-console
     console.log(`[ThankYou API] listening on http://localhost:${port}`);

@@ -1,9 +1,9 @@
 import styles from "./page.module.css";
 import Link from "next/link";
 import ShareButton from "../../_components/share/ShareButton";
-import { backendFetch } from "../../lib/backend";
+import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type StoryDetail = {
   id: number;
@@ -18,7 +18,7 @@ type StoryDetail = {
 async function getStory(
   slug: string
 ): Promise<{ story: StoryDetail | null; error: string | null }> {
-  const res = await backendFetch(`/v1/public/stories/${encodeURIComponent(slug)}`);
+  const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/stories/${encodeURIComponent(slug)}`, { next: { revalidate: 300 } });
   if (!res.ok) {
     let msg = `Failed to load story (HTTP ${res.status})`;
     try {

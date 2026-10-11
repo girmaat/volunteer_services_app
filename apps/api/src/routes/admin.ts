@@ -1,3 +1,4 @@
+import { contentDisposition } from "../lib/http";
 import type express from "express";
 import type { Pool } from "pg";
 import { z } from "zod";
@@ -1489,7 +1490,7 @@ return res.json({ reports: rows.rows, limit, offset });
 
       const d = rows.rows[0] as any;
       res.setHeader("content-type", d.mime_type || "application/octet-stream");
-      res.setHeader("content-disposition", `attachment; filename="${String(d.file_name || "document").replace(/"/g, "")}"`);
+      res.setHeader("content-disposition", contentDisposition(d.file_name));
       return res.send(d.bytes);
     })
   );

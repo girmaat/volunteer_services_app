@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import authStyles from "../../(auth)/auth.module.css";
 import styles from "./page.module.css";
 
@@ -28,7 +29,7 @@ function SubmitButton({ children }: { children: string }) {
 }
 
 export default function OrgEnrollForm({ action }: { action: ServerAction }) {
-  const [state, formAction] = useFormState(action, { view: "form" });
+  const [state, formAction] = useActionState(action, { view: "form" });
 
   if (state.view === "sent") {
     return (
@@ -36,15 +37,9 @@ export default function OrgEnrollForm({ action }: { action: ServerAction }) {
         <p className={styles.success}>Account created. Please verify your email to continue.</p>
         {state.info ? <p className={styles.note}>{state.info}</p> : null}
 
-        {state.delivery ? (
-          <p className={styles.note}>
-            Delivery: <strong>{state.delivery}</strong>
-          </p>
-        ) : null}
-
         {state.verifyUrl ? (
           <p className={styles.note}>
-            Dev verify URL:{" "}
+            Development only — verification link:{" "}
             <a className={styles.link} href={state.verifyUrl}>
               {state.verifyUrl}
             </a>

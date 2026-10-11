@@ -1,38 +1,15 @@
 import styles from "./page.module.css";
 import Link from "next/link";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { getPublicPage, listPublicOpportunities, type PublicOpportunity } from "../lib/public-api";
 
-export const dynamic = "force-dynamic";
+// Rebuilt at most once a minute (ISR); no per-request rendering.
+export const revalidate = 60;
 
-type PublicPage = {
-  slug: string;
-  title: string;
-  body: string;
-  updated_at: string;
+const DEFAULT_HOME = {
+  title: "ThankYou — where volunteering meets real needs",
+  body:
+    "Find flexible volunteer opportunities, offer help to your community, and track your impact — all in one place."
 };
-
-async function getPage(): Promise<PublicPage> {
-  const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/pages/home`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load page");
-  return res.json();
-}
-
-type PublicOpportunityListItem = {
-  id: string;
-  title: string;
-  tags: string[] | null;
-};
-
-async function getPublicOpportunities(): Promise<PublicOpportunityListItem[]> {
-  const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/opportunities`, { cache: "no-store" });
-  if (!res.ok) return [];
-  const data = (await res.json()) as any[];
-  return data.map((o) => ({
-    id: String(o.id),
-    title: String(o.title || "Opportunity"),
-    tags: Array.isArray(o.tags) ? (o.tags as any[]).map((t) => String(t)) : null
-  }));
-}
 
 type QuickIdeaGroup = {
   title: string;
@@ -81,9 +58,9 @@ const fallbackExampleTitles: string[] = [
 ];
 
 export default async function Page() {
-  const [page, opportunities] = await Promise.all([getPage(), getPublicOpportunities()] as const);
-
-  const exampleOpps: PublicOpportunityListItem[] = opportunities.slice(0, 6);
+  const [cms, list] = await Promise.all([getPublicPage("home"), listPublicOpportunities({ limit: 6 })]);
+  const page = cms ?? DEFAULT_HOME;
+  const exampleOpps: PublicOpportunity[] = list.items;
 
   return (
     <section className={styles.page}>

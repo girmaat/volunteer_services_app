@@ -1,7 +1,7 @@
 import styles from "./page.module.css";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type PublicPage = {
   slug: string;
@@ -17,7 +17,7 @@ type PageLoad = {
 
 async function getPage(): Promise<PageLoad> {
   try {
-    const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/pages/terms`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/pages/terms`, { next: { revalidate: 300 } });
     if (!res.ok) {
       let msg = `Failed to load page (HTTP ${res.status})`;
       try {
@@ -43,8 +43,6 @@ export default async function Page() {
     <section className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.title}>{page?.title ?? "Terms of Service"}</h1>
-        <p className={styles.subtitle}>Terms of service loaded from backend.</p>
-        {error && (<p className={styles.subtitle}>Content unavailable: {error}</p>)}
         <span className={styles.badge}>Public</span>
       </header>
       <div className={styles.content}>

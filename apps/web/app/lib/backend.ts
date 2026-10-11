@@ -2,6 +2,7 @@ import "server-only";
 
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 export type CurrentUser = {
   id: string;
@@ -208,87 +209,34 @@ function joinUrl(base: string, path: string) {
   return `${b}${p}`;
 }
 
-function candidateBaseUrls(base: string): string[] {
-  try {
-    const u = new URL(base);
-    const host = u.hostname;
-    const candidates = new Set<string>();
+const BACKEND_TIMEOUT_MS = Number(process.env.API_TIMEOUT_MS || 8000);
 
-    // Always try the provided hostname first.
-    candidates.add(host);
-
-    // Common local-dev permutations.
-    if (host === "localhost") {
-      candidates.add("127.0.0.1");
-      candidates.add("host.docker.internal");
-    } else if (host === "127.0.0.1") {
-      candidates.add("localhost");
-      candidates.add("host.docker.internal");
-    } else if (host === "host.docker.internal") {
-      candidates.add("localhost");
-      candidates.add("127.0.0.1");
-    }
-
-    // Rebuild full base URLs (preserve protocol + port + pathname).
-    const out: string[] = [];
-    for (const h of candidates) {
-      const clone = new URL(u.toString());
-      clone.hostname = h;
-      out.push(stripTrailingSlash(clone.toString()));
-    }
-    return out;
-  } catch {
-    // If API_BASE_URL_SERVER isn't a valid URL, just return it as-is.
-    return [stripTrailingSlash(base)];
-  }
-}
-
+/**
+ * Server-side fetch to the API with the user's session forwarded as a bearer token.
+ * One configured base URL (API_BASE_URL or NEXT_PUBLIC_API_BASE_URL) and a hard timeout;
+ * failures come back as a 503 Response instead of throwing.
+ */
 export async function backendFetch(path: string, init: RequestInit = {}) {
   const token = await getSessionToken();
-
   const headers = new Headers(init.headers);
-
-  if (token && !headers.has("authorization")) {
-    headers.set("authorization", `Bearer ${token}`);
-  }
+  if (token && !headers.has("authorization")) headers.set("authorization", `Bearer ${token}`);
 
   // If caller sets cache explicitly, respect it; otherwise default to no-store.
-  const cache = (init as any).cache ?? "no-store";
+  const cache = init.cache ?? "no-store";
+  const url = path.startsWith("http") ? path : joinUrl(stripTrailingSlash(API_BASE_URL_SERVER), path);
 
-  // Absolute URLs should just be fetched directly (no retry hosts).
-  if (path.startsWith("http")) {
-    try {
-      return await fetch(path, { ...init, headers, cache } as RequestInit);
-    } catch (err: any) {
-      const message = err instanceof Error ? err.message : String(err);
-      return new Response(
-        JSON.stringify({ error: "backend_fetch_failed", message, urlTried: path }),
-        { status: 503, headers: { "content-type": "application/json" } }
-      );
-    }
+  try {
+    return await fetch(url, { ...init, headers, cache, signal: init.signal ?? AbortSignal.timeout(BACKEND_TIMEOUT_MS) });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: "backend_fetch_failed", message }), {
+      status: 503,
+      headers: { "content-type": "application/json" }
+    });
   }
-
-  const bases = candidateBaseUrls(API_BASE_URL_SERVER);
-  let lastErr: unknown = null;
-
-  for (const base of bases) {
-    const url = joinUrl(base, path);
-    try {
-      return await fetch(url, { ...init, headers, cache } as RequestInit);
-    } catch (err) {
-      lastErr = err;
-      continue;
-    }
-  }
-
-  const message = lastErr instanceof Error ? lastErr.message : String(lastErr);
-  return new Response(
-    JSON.stringify({ error: "backend_fetch_failed", message, urlTried: joinUrl(API_BASE_URL_SERVER, path), triedBases: bases }),
-    { status: 503, headers: { "content-type": "application/json" } }
-  );
 }
 
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+async function loadCurrentUser(): Promise<CurrentUser | null> {
   const token = await getSessionToken();
   if (!token) return null;
 
@@ -298,6 +246,12 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const data = (await res.json().catch(() => null)) as any;
   return (data?.user as CurrentUser) || null;
 }
+
+/**
+ * The signed-in user for this request. Wrapped in React cache() so the root layout,
+ * section layouts and the page share ONE /v1/me round-trip per request.
+ */
+export const getCurrentUser = cache(loadCurrentUser);
 
 
 

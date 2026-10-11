@@ -1,3 +1,4 @@
+import { cookieSecure } from "../../../../lib/cookies";
 import { NextResponse } from "next/server";
 import { backendFetch } from "../../../lib/backend";
 
@@ -18,7 +19,7 @@ function flashRedirect(req: Request, path: string, errorMessage?: string) {
       value: encodeURIComponent(String(errorMessage)),
       httpOnly: true,
       sameSite: "lax",
-      secure: false,
+      secure: cookieSecure(),
       path: "/",
       // Short-lived: enough for a single redirect + render.
       maxAge: 15,
@@ -30,7 +31,7 @@ function flashRedirect(req: Request, path: string, errorMessage?: string) {
       value: "",
       httpOnly: true,
       sameSite: "lax",
-      secure: false,
+      secure: cookieSecure(),
       path: "/",
       maxAge: 0,
     });
@@ -135,7 +136,7 @@ export async function POST(req: Request) {
   // Optional post-login redirect (from form hidden field)
   try {
     const rt = String((req as any).__returnTo || "").trim();
-    if (rt && rt.startsWith("/") && !rt.startsWith("//")) {
+    if (rt && rt.startsWith("/") && !rt.startsWith("//") && !rt.startsWith("/\\") && !/[\r\n]/.test(rt)) {
       location = rt;
     }
   } catch {
@@ -149,7 +150,7 @@ export async function POST(req: Request) {
     value: token,
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure: cookieSecure(),
     path: "/",
   });
 
@@ -159,7 +160,7 @@ export async function POST(req: Request) {
     value: "",
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure: cookieSecure(),
     path: "/",
     maxAge: 0,
   });

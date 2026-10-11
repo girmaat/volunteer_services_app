@@ -16,12 +16,35 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
+const FAILURE_RETRY_DAYS = 7;
+const NOMINATIM_MIN_INTERVAL_MS = 1100; // Nominatim usage policy: max 1 request per second
+let nominatimChain: Promise<unknown> = Promise.resolve();
+let lastNominatimAt = 0;
+
+/** Serialises calls so the whole process never exceeds 1 request/second to Nominatim. */
+function throttled<T>(fn: () => Promise<T>): Promise<T> {
+  const run = nominatimChain.then(async () => {
+    const wait = lastNominatimAt + NOMINATIM_MIN_INTERVAL_MS - Date.now();
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    lastNominatimAt = Date.now();
+    return fn();
+  });
+  nominatimChain = run.catch(() => undefined);
+  return run;
+}
+
 async function fetchNominatim(query: string): Promise<GeoPoint | null> {
+  if (process.env.GEOCODING_DISABLED === "true") return null;
+  return throttled(() => fetchNominatimNow(query));
+}
+
+async function fetchNominatimNow(query: string): Promise<GeoPoint | null> {
   const q = encodeURIComponent(query);
   const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${q}`;
 
   const res = await fetch(url, {
     method: "GET",
+    signal: AbortSignal.timeout(4000),
     headers: {
       // Nominatim usage policy requires a valid User-Agent.
       "user-agent": "ThankYouApp/1.0 (volunteer-app)",
@@ -44,7 +67,7 @@ async function fetchNominatim(query: string): Promise<GeoPoint | null> {
 export async function geocodeWithCache(
   pool: Pool,
   rawQuery: string,
-  opts?: { ttlDays?: number }
+  opts?: { ttlDays?: number; allowFetch?: boolean }
 ): Promise<GeoPoint | null> {
   const q = normalizeQuery(rawQuery);
   if (!q) return null;
@@ -53,7 +76,7 @@ export async function geocodeWithCache(
 
   const cached = await pool.query(
     `
-    SELECT lat, lng, updated_at
+    SELECT lat, lng, updated_at, failed_at
     FROM geo_cache
     WHERE query = $1
     `,
@@ -69,10 +92,24 @@ export async function geocodeWithCache(
       const ageDays = (Date.now() - updatedAt) / (1000 * 60 * 60 * 24);
       if (ageDays <= ttlDays) return { lat, lng };
     }
+    if (row.failed_at) {
+      const failedDays = (Date.now() - new Date(row.failed_at as string).getTime()) / (1000 * 60 * 60 * 24);
+      if (failedDays < FAILURE_RETRY_DAYS) return null;
+    }
   }
 
-  const fresh = await fetchNominatim(rawQuery);
-  if (!fresh) return null;
+  if (opts?.allowFetch === false) return null;
+
+  const fresh = await fetchNominatim(rawQuery).catch(() => null);
+  if (!fresh) {
+    await pool.query(
+      `INSERT INTO geo_cache (query, lat, lng, updated_at, failed_at)
+       VALUES ($1, NULL, NULL, NOW(), NOW())
+       ON CONFLICT (query) DO UPDATE SET failed_at = NOW()`,
+      [q]
+    );
+    return null;
+  }
 
   await pool.query(
     `
@@ -81,7 +118,8 @@ export async function geocodeWithCache(
     ON CONFLICT (query) DO UPDATE SET
       lat = EXCLUDED.lat,
       lng = EXCLUDED.lng,
-      updated_at = NOW()
+      updated_at = NOW(),
+      failed_at = NULL
     `,
     [q, fresh.lat, fresh.lng]
   );
@@ -89,7 +127,7 @@ export async function geocodeWithCache(
   return fresh;
 }
 
-export async function ensureUserGeo(pool: Pool, userId: string): Promise<GeoPoint | null> {
+export async function ensureUserGeo(pool: Pool, userId: string, opts?: { allowFetch?: boolean }): Promise<GeoPoint | null> {
   const rows = await pool.query(
     `
     SELECT geo_lat, geo_lng, public_location, location
@@ -109,7 +147,7 @@ export async function ensureUserGeo(pool: Pool, userId: string): Promise<GeoPoin
   const label = String(r.public_location || r.location || "").trim();
   if (!label) return null;
 
-  const geo = await geocodeWithCache(pool, label);
+  const geo = await geocodeWithCache(pool, label, { allowFetch: opts?.allowFetch });
   if (!geo) return null;
 
   await pool.query(

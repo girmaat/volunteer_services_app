@@ -1,13 +1,14 @@
 
 //  backend/src/routes/org.ts
 
+import { contentDisposition } from "../lib/http";
 import type { Application, Request, Response } from "express";
 import type { Pool } from "pg";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import { sha256, randomTokenUrlSafe } from "../auth/crypto";
-import { sendEmail } from "../auth/email";
+import { devEmailLink, sendEmail } from "../auth/email";
 import { requireUserBySession, createSession } from "../auth/session";
 
 function authHeaderToken(req: Request): string | null {
@@ -396,7 +397,7 @@ ${verifyUrl}
 If you didn't create this account, you can ignore this email.`
       });
 
-      const dev_verify_url = delivery.delivery !== "smtp" ? verifyUrl : undefined;
+      const dev_verify_url = devEmailLink(verifyUrl, delivery.delivery);
 
       return res.status(202).json({ status: "accepted", emailDelivery: delivery.delivery, dev_verify_url });
     })
@@ -2317,7 +2318,7 @@ app.patch(
 
       const r = row.rows[0] as any;
       res.setHeader("content-type", r.mime_type || "application/octet-stream");
-      res.setHeader("content-disposition", `attachment; filename="${String(r.file_name || "document")}"`);
+      res.setHeader("content-disposition", contentDisposition(r.file_name));
       return res.status(200).send(r.bytes);
     })
   );

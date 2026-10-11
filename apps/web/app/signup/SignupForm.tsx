@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import styles from "../(auth)/auth.module.css";
 
 export type SignupState = {
@@ -29,7 +30,7 @@ function SubmitButton({ children, secondary }: { children: string; secondary?: b
 
 export default function SignupForm({ action }: { action: ServerAction }) {
   const initialState: SignupState = useMemo(() => ({ view: "signup" }), []);
-  const [state, formAction] = useFormState(action, initialState);
+  const [state, formAction] = useActionState(action, initialState);
 
   const [email, setEmail] = useState("");
 
@@ -39,7 +40,6 @@ export default function SignupForm({ action }: { action: ServerAction }) {
 
   const sent = state.view === "sent";
   const verifyUrl = String(state.verifyUrl || "").trim();
-  const delivery = String(state.delivery || "").trim();
   const error = String(state.error || "").trim();
   const info = String(state.info || "").trim();
 
@@ -51,18 +51,16 @@ export default function SignupForm({ action }: { action: ServerAction }) {
       {sent ? (
         <>
           <div className={styles.success}>
-            {delivery === "smtp"
-              ? "Account created (or already exists). Check your inbox for a verification email."
-              : "Email sending is disabled for now. Use the verification link below to continue."}
+            Check your inbox for a verification email to finish creating your account.
           </div>
 
           {verifyUrl ? (
             <div className={styles.meta} style={{ marginTop: 12, overflowWrap: "anywhere" }}>
-              Verification link: <a href={verifyUrl}>{verifyUrl}</a>
+              Development only — verification link: <a href={verifyUrl}>{verifyUrl}</a>
             </div>
           ) : (
             <div className={styles.meta} style={{ marginTop: 12 }}>
-              Verification link not available yet. Click <strong>Resend verification</strong> to generate one.
+              Didn&apos;t get it? Check spam, or use <strong>Resend verification</strong>.
             </div>
           )}
 
