@@ -54,10 +54,12 @@ export default function AppShell({
   const options: ContextOption[] = contextList.map((c) => ({ value: c, label: optionLabel(c, user), current: isCurrent(c) }));
   const roles = user.roles ?? [];
   const canAddRole = !(roles.includes("volunteer") && roles.includes("requester"));
+  // The platform admin area gets a dark sidebar so staff always know they're in the admin tools.
+  const adminTheme = context === "admin" ? " admin-chrome" : "";
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[256px_1fr]">
-      <aside aria-label="Sidebar" className="sticky top-0 hidden h-screen flex-col border-r border-line bg-surface px-4 py-5 lg:flex">
+      <aside aria-label="Sidebar" className={`sticky top-0 hidden h-screen flex-col border-r border-line bg-surface px-4 py-5 lg:flex${adminTheme}`}>
         <div className="px-2">
           <div className="flex items-center justify-between">
             <Logo href={items[0]?.href ?? "/"} />
@@ -74,7 +76,7 @@ export default function AppShell({
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-line bg-surface px-4 lg:hidden">
+        <header className={`sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-line bg-surface px-4 lg:hidden${adminTheme}`}>
           <Logo href={items[0]?.href ?? "/"} wordmarkClassName="hidden min-[400px]:inline" />
           <div className="flex min-w-0 items-center gap-1">
             <NotificationBell />

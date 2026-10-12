@@ -360,3 +360,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin-top: 1rem;
 }
 
+
+/* Platform admin area: dark slate sidebar and mobile top bar, so it never looks like the user portal.
+   Menus opened from it (account, switcher) render outside and keep the normal colors. */
+.admin-chrome {
+  --surface: #1d2733;
+  --ink: #f3f5f7;
+  --muted: #b4bfca;
+  --line: #334252;
+  --line-strong: #455668;
+  --muted-bg: #2a3644;
+  --primary: #8fd9cf;
+  --primary-tint: #2c4048;
+  background-color: var(--surface);
+  color: var(--ink);
+}
