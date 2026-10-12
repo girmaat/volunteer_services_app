@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookieSecure } from "../../../lib/cookies";
 import { backendFetch } from "../../lib/backend";
+import { safeLocalPath } from "../../../lib/safePath";
 
 /**
  * After a successful sign-in (password, or password + code): pick where to go, store the session
@@ -51,7 +52,7 @@ export async function finishSignIn(req: Request, data: any, token: string, retur
   // Optional post-login redirect (from form hidden field)
   try {
     const rt = String(returnTo || "").trim();
-    if (rt && rt.startsWith("/") && !rt.startsWith("//") && !rt.startsWith("/\\") && !/[\r\n]/.test(rt)) {
+    if (rt && safeLocalPath(rt, "") === rt) {
       location = rt;
     }
   } catch {

@@ -48,3 +48,12 @@ export async function checkAttachment(buf: Buffer, name: string): Promise<FileCh
 async function scan(buf: Buffer): Promise<boolean> {
   return !buf.subarray(0, 4096).toString("latin1").includes("EICAR-STANDARD-ANTIVIRUS-TEST-FILE");
 }
+
+/**
+ * Forms and ID documents: PDF, JPEG or PNG by content, whatever the browser claimed. Returns the real
+ * type (stored and served as such), or null.
+ */
+export function documentType(buf: Buffer, name: string): "application/pdf" | "image/jpeg" | "image/png" | null {
+  const t = buf.length ? sniffType(buf, name) : null;
+  return t === "application/pdf" || t === "image/jpeg" || t === "image/png" ? t : null;
+}

@@ -1,20 +1,27 @@
+import crypto from "crypto";
 import { effectiveLegacyRole, type PolicyUser } from "../lib/policy";
 import type { Pool } from "pg";
 
 const SESSION_DAYS = Number(process.env.SESSION_DAYS || 30);
 
+/**
+ * Session tokens: the browser holds a random UUID; the database stores only `session_key(token)`
+ * (derived from SHA-256), so a copy of the sessions table can't be used to sign in.
+ */
 export async function createSession(pool: Pool, userId: string) {
+  const token = crypto.randomUUID();
   const { rows } = await pool.query(
     `INSERT INTO sessions (user_id, session_token, expires_at)
-     VALUES ($1, gen_random_uuid(), NOW() + ($2::text || ' days')::interval)
-     RETURNING session_token, expires_at`,
-    [userId, SESSION_DAYS]
+     VALUES ($1, session_key($3), NOW() + ($2::text || ' days')::interval)
+     RETURNING expires_at`,
+    [userId, SESSION_DAYS, token]
   );
-  return { sessionToken: rows[0].session_token as string, expiresAt: rows[0].expires_at as string };
+  return { sessionToken: token, expiresAt: rows[0].expires_at as string };
 }
 
 export async function deleteSession(pool: Pool, sessionToken: string) {
-  await pool.query("DELETE FROM sessions WHERE session_token=$1::uuid", [sessionToken]);
+  if (!/^[0-9a-f-]{36}$/i.test(sessionToken)) return;
+  await pool.query("DELETE FROM sessions WHERE session_token = session_key($1)", [sessionToken]);
 }
 
 export async function deleteAllSessionsForUser(pool: Pool, userId: string) {
@@ -67,7 +74,7 @@ export async function requireUserBySession(pool: Pool, sessionToken: string) {
             (SELECT pa.role FROM platform_admins pa WHERE pa.user_id = u.id AND pa.revoked_at IS NULL LIMIT 1) AS platform_role
        FROM sessions s
        JOIN users u ON u.id = s.user_id
-      WHERE s.session_token = $1::uuid AND s.expires_at > NOW()`,
+      WHERE s.session_token = session_key($1) AND s.expires_at > NOW()`,
     [sessionToken]
   );
   if (rows.length === 0) return null;
@@ -90,7 +97,7 @@ export function decorateUser(row: Record<string, any>) {
 /** Sets the context this session acts in. */
 export async function setSessionContext(pool: Pool, sessionToken: string, context: string) {
   const orgSlug = context.startsWith("org:") ? context.slice(4) : null;
-  await pool.query("UPDATE sessions SET active_context = $2, active_org_slug = COALESCE($3, active_org_slug) WHERE session_token = $1::uuid", [
+  await pool.query("UPDATE sessions SET active_context = $2, active_org_slug = COALESCE($3, active_org_slug) WHERE session_token = session_key($1)", [
     sessionToken,
     context,
     orgSlug

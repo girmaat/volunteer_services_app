@@ -15,6 +15,7 @@ export async function signUpAndOnboardVolunteer(page: Page, name = "Vera Newcome
   const link = page.locator('a[href*="verify-email?token="]').first();
   await expect(link).toBeVisible();
   await page.goto((await link.getAttribute("href"))!);
+  await page.getByRole("button", { name: "Verify my email" }).click();
 
   await expect(page).toHaveURL(/\/onboarding/);
   // Clicks a chip the way a person does: on its label (the checkbox itself is visually hidden).

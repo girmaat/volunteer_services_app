@@ -13,7 +13,11 @@ describe("authentication", () => {
     expect(beforeVerify.status).toBe(403);
 
     const token = new URL(signup.body.dev_verify_url).searchParams.get("token");
-    const verify = await anon().get(`/v1/auth/verify-email?token=${token}`);
+    // Opening the link only checks it.
+    const peek = await anon().get(`/v1/auth/verify-email?token=${token}`);
+    expect(peek.body.status).toBe("valid");
+    expect((await anon().post("/v1/auth/login").send({ email, password: "A-good-password-1" })).status).toBe(403);
+    const verify = await anon().post("/v1/auth/verify-email").send({ token });
     expect(verify.status).toBeLessThan(400);
 
     const login = await anon().post("/v1/auth/login").send({ email, password: "A-good-password-1" });

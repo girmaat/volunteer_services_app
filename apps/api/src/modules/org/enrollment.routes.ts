@@ -7,6 +7,8 @@ import { randomTokenUrlSafe, sha256 } from "../../auth/crypto";
 import { devEmailLink, sendEmail } from "../../auth/email";
 import { requireUserBySession } from "../../auth/session";
 import { staffAdultCheck } from "../../lib/age";
+import { MediaPath } from "../../lib/media";
+import { notify } from "../notifications/service";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { authHeaderToken, buildInsertSql, buildUpdateSql, getOrgContextForUser, getPublicColumns, pgErrorCode, publicTableExists, requireAdmin, requireOrg, slugifyOrgSlug, webBaseUrl } from "./context";
@@ -265,7 +267,7 @@ If you didn't create this account, you can ignore this email.`
             [String((user as any).id), parsed.data.admin?.fullName ?? null, parsed.data.admin?.phone ?? null]
           );
         }
-        await client.query("UPDATE sessions SET active_context = $2 WHERE session_token = $1::uuid", [token, `org:${orgSlug}`]);
+        await client.query("UPDATE sessions SET active_context = $2 WHERE session_token = session_key($1)", [token, `org:${orgSlug}`]);
         void userCols;
 
         await client.query("COMMIT");
@@ -335,70 +337,33 @@ app.post(
     if (!orgSlug) return res.status(400).json({ message: "Invalid org slug" });
 
     
-    const orgCols = await getPublicColumns(pool as any, "organizations");
-    const selectContact = orgCols.has("contact_email") ? "contact_email" : "NULL::text AS contact_email";
-    const selectWebsite = orgCols.has("website_url") ? "website_url" : "NULL::text AS website_url";
-
-    const orgRes = await pool.query(
-      `SELECT slug, ${selectContact}, ${selectWebsite} FROM organizations WHERE slug=$1`,
-      [orgSlug]
-    );
-
-if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organization not found" });
-
-    const org = orgRes.rows[0] as any;
-
-    function normalizeDomain(d: string) {
-      const s = String(d || "").toLowerCase().trim();
-      return s.startsWith("www.") ? s.slice(4) : s;
+    // Joining is a request an admin approves. An email domain alone never makes someone staff:
+    // shared providers (gmail.com…) would let anyone in.
+    const org = (await pool.query("SELECT slug, name FROM organizations WHERE slug = $1", [orgSlug])).rows[0];
+    if (!org) return res.status(404).json({ message: "Organization not found" });
+    const uid = String((user as any).id);
+    const pending = await pool.query("SELECT org_slug FROM organization_members WHERE user_id = $1 AND status = 'requested'", [uid]);
+    if (pending.rowCount) {
+      const same = pending.rows.some((r) => r.org_slug === orgSlug);
+      return res.status(same ? 200 : 409).json(same ? { status: "requested", org: { slug: orgSlug } } : { message: "You already asked to join another organization. Wait for its answer first." });
     }
-
-    const userEmail = String((user as any).email || "").toLowerCase().trim();
-    const userDomain = normalizeDomain(userEmail.split("@")[1] || "");
-
-    let orgDomain = "";
-    if (org.contact_email) {
-      orgDomain = normalizeDomain(String(org.contact_email).split("@")[1] || "");
-    } else if (org.website_url) {
-      try {
-        const u = new URL(String(org.website_url));
-        orgDomain = normalizeDomain(u.hostname);
-      } catch {
-        orgDomain = "";
-      }
-    }
-
-    if (!orgDomain) {
-      return res.status(400).json({
-        message: "This organization is not configured for domain-based join. Ask an admin to add you."
-      });
-    }
-
-    if (!userDomain || userDomain !== orgDomain) {
-      return res.status(403).json({
-        message: "Your email domain does not match this organization. Ask an admin to add you."
-      });
-    }
-
     await pool.query(
-      `INSERT INTO organization_members (org_slug, user_id, role, status, joined_at)
-       VALUES ($1, $2, 'member', 'active', NOW())
-       ON CONFLICT (org_slug, user_id) DO UPDATE SET status='active', joined_at=COALESCE(organization_members.joined_at, NOW()), updated_at=NOW()`,
-      [orgSlug, String((user as any).id)]
+      `INSERT INTO organization_members (org_slug, user_id, role, status, requested_at)
+       VALUES ($1, $2, 'member', 'requested', NOW())
+       ON CONFLICT (org_slug, user_id) DO NOTHING`,
+      [orgSlug, uid]
     );
-
-    // An account with no volunteer/requester role becomes an org-only account.
-    const roles = await pool.query("SELECT 1 FROM user_roles WHERE user_id = $1 LIMIT 1", [String((user as any).id)]);
-    if (!roles.rowCount) {
-      await pool.query(
-        `UPDATE users SET role='org_admin', account_type='org_team_member', profile_completed=TRUE, availability_completed=TRUE,
-                onboarding_completed=TRUE, verification_required=FALSE, verification_status='not_required', updated_at=NOW()
-          WHERE id=$1`,
-        [String((user as any).id)]
-      );
+    const admins = await pool.query("SELECT user_id FROM organization_members WHERE org_slug = $1 AND role = 'admin' AND status = 'active'", [orgSlug]);
+    const who = String((user as any).email || "Someone");
+    for (const a of admins.rows) {
+      await notify(String(a.user_id), "request_updates", {
+        title: `${who} asked to join ${org.name}`,
+        body: "Approve or decline on your Team page.",
+        href: "/org/team#requests",
+        email: { subject: `Join request for ${org.name}`, heading: `${who} asked to join ${org.name}`, lines: ["Only approve people you know work or volunteer with you. They'll see applicants and messages."], cta: { label: "Review the request", url: "/org/team#requests" } }
+      });
     }
-
-    return res.status(201).json({ org: { slug: orgSlug } });
+    return res.status(202).json({ status: "requested", org: { slug: orgSlug } });
   })
 );
 
@@ -425,39 +390,28 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
       const existingOrg = await pool.query("SELECT slug FROM organizations WHERE slug=$1", [newSlug]);
       if ((existingOrg.rowCount ?? 0) > 0) return res.status(409).json({ message: "Organization slug already in use" });
 
-      // To avoid FK violations (no ON UPDATE CASCADE), we create a new org row, repoint refs, then delete the old row.
-      await pool.query("BEGIN");
+      // One UPDATE: every table that references the organization follows it (ON UPDATE CASCADE,
+      // migration 0014), so nothing is copied, deleted or left behind.
+      const client = await pool.connect();
       try {
-        const orgRow = await pool.query(
-          `
-          INSERT INTO organizations (slug, name, summary, location, mission, website_url, contact_email, logo_url, onboarding_completed, created_by_user_id, verification_required, verification_status, verification_submitted_at, verification_submission_notes, verification_notes, verified_at, verified_by_user_id, created_at, updated_at)
-          SELECT $2, name, summary, location, mission, website_url, contact_email, logo_url, onboarding_completed, created_by_user_id, verification_required, verification_status, verification_submitted_at, verification_submission_notes, verification_notes, verified_at, verified_by_user_id, created_at, updated_at
-          FROM organizations
-          WHERE slug = $1
-          RETURNING slug
-          `,
-          [oldSlug, newSlug]
-        );
-        if ((orgRow.rowCount ?? 0) === 0) {
-          await pool.query("ROLLBACK");
+        await client.query("BEGIN");
+        const up = await client.query("UPDATE organizations SET slug = $2, updated_at = NOW() WHERE slug = $1 RETURNING slug", [oldSlug, newSlug]);
+        if (!up.rowCount) {
+          await client.query("ROLLBACK");
           return res.status(404).json({ message: "Org not found" });
         }
-
-        await pool.query("UPDATE organization_members SET org_slug=$2 WHERE org_slug=$1", [oldSlug, newSlug]);
-
-        // Optional columns exist in our schema migrations; safe to update.
-        await pool.query("UPDATE sessions SET active_org_slug=$2 WHERE active_org_slug=$1", [oldSlug, newSlug]);
-        await pool.query("UPDATE service_requests SET requester_org_slug=$2 WHERE requester_org_slug=$1", [oldSlug, newSlug]);
-
-        await pool.query("DELETE FROM organizations WHERE slug=$1", [oldSlug]);
-        await pool.query("COMMIT");
+        // Text references that aren't foreign keys.
+        await client.query("UPDATE sessions SET active_context = $2 WHERE active_context = $1", [`org:${oldSlug}`, `org:${newSlug}`]);
+        await client.query("COMMIT");
       } catch (e) {
-        await pool.query("ROLLBACK");
+        await client.query("ROLLBACK");
+        if (pgErrorCode(e) === "23505") return res.status(409).json({ message: "Organization slug already in use" });
         throw e;
+      } finally {
+        client.release();
       }
 
-      const ctx = await getOrgContextForUser(pool, String((ok.user as any).id), ok.ctx.org.slug);
-      return res.json({ org: ctx?.org ? { slug: ctx.org.slug } : { slug: newSlug } });
+      return res.json({ org: { slug: newSlug } });
     })
   );
 
@@ -486,7 +440,7 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
         mission: z.string().min(2).optional().nullable(),
         website_url: HttpUrl.optional().nullable(),
         contact_email: z.string().email().optional(),
-        logo_url: HttpUrl.optional().nullable(),
+        logo_url: MediaPath.optional(),
         onboarding_completed: z.boolean().optional(),
         preferred_skills: z
           .union([z.array(z.string()), z.string()])

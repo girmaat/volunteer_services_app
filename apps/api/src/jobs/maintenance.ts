@@ -34,11 +34,25 @@ export async function autoCompleteRequests() {
   return n;
 }
 
+/**
+ * Accounts nobody verified within 7 days are removed, so an email address can't be held by someone
+ * who signed up with it but never proved they own it.
+ */
+export async function purgeUnverifiedAccounts() {
+  const r = await pool.query(
+    `DELETE FROM users u WHERE u.email_verified_at IS NULL AND u.created_at < NOW() - INTERVAL '7 days'
+        AND NOT EXISTS (SELECT 1 FROM organization_members m WHERE m.user_id = u.id)
+        AND NOT EXISTS (SELECT 1 FROM platform_admins p WHERE p.user_id = u.id)`
+  );
+  return r.rowCount ?? 0;
+}
+
 export async function runHourly() {
   const out: Record<string, unknown> = {};
   out.archived = (await archiveConversations()).archived;
   out.completed = await autoCompleteRequests();
   out.offers_expired = await expireOffers();
+  out.unverified_purged = await purgeUnverifiedAccounts();
   for (const fn of extra) await fn();
   logger.info(out, "hourly maintenance");
   return out;

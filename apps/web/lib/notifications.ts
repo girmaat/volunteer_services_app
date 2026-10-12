@@ -1,3 +1,4 @@
+import { safeLocalPath } from "./safePath";
 /** Shared by the bell menu and the notifications page. */
 export type NotificationItem = { id: string; type: string; title: string; body: string; href: string | null; created_at: string; read_at: string | null };
 
@@ -19,8 +20,7 @@ export const NOTIFICATION_ACTION: Record<string, string> = {
 
 /** Only same-site paths are followed from a notification. */
 export function safeHref(href: string | null | undefined) {
-  const h = String(href || "");
-  return h.startsWith("/") && !h.startsWith("//") && !h.startsWith("/\\") ? h : "/notifications";
+  return safeLocalPath(href, "/notifications");
 }
 
 export function timeAgo(iso: string, now = Date.now()) {

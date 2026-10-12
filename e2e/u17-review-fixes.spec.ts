@@ -60,3 +60,54 @@ test("U17 saved search alerts about a new matching request", async ({ browser })
   await submit(page, item.getByRole("button", { name: "Save" }));
   await expect(page.getByText("Alert settings saved.")).toBeVisible();
 });
+
+// U17 · Security fixes: joining an organization is approved by an admin; logos are uploaded; no page
+// breaks the Content-Security-Policy; sign-in never redirects to another site.
+test("U17 join request approved by an admin, logo upload, CSP and safe sign-in redirect", async ({ browser }) => {
+  const org = await signedIn(browser, PERSONAS.orgAdmin);
+  const violations: string[] = [];
+  org.page.on("console", (m) => {
+    if (/Content Security Policy|Refused to/i.test(m.text())) violations.push(m.text());
+  });
+  const slug = (await db.query("SELECT org_slug FROM organization_members m JOIN users u ON u.id = m.user_id WHERE u.email = $1 AND m.status = 'active' LIMIT 1", [PERSONAS.orgAdmin])).rows[0].org_slug;
+
+  // Someone asks to join; nothing opens until the admin approves.
+  const asker = await createUser({ name: `Jo${run} Asker`, roles: ["volunteer"] });
+  const { page } = await signedIn(browser, asker.email);
+  await page.goto("/org/signup");
+  await page.getByLabel("Organization’s ThankYou address").fill(slug);
+  await page.locator("#j-adult").check();
+  await submit(page, page.getByRole("button", { name: "Ask to join" }));
+  await expect(page.getByText("Request sent.")).toBeVisible();
+
+  await org.page.goto("/org/team#requests");
+  const row = org.page.locator("#requests > div > div").filter({ hasText: asker.email });
+  await submit(org.page, row.getByRole("button", { name: "Approve" }));
+  await expect(org.page.getByText("Approved. They’re now a member.")).toBeVisible();
+  const m = await db.query("SELECT status FROM organization_members WHERE user_id = $1", [asker.id]);
+  expect(m.rows[0].status).toBe("active");
+  await db.query("DELETE FROM organization_members WHERE user_id = $1", [asker.id]);
+
+  // Logo: an uploaded image served from this site.
+  await org.page.goto("/org/settings");
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+  await org.page.locator('input[name="logo"]').setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
+  await submit(org.page, org.page.getByRole("button", { name: "Upload logo" }));
+  const logo = org.page.getByRole("img", { name: "Current logo" });
+  await expect(logo).toBeVisible();
+  expect(await logo.getAttribute("src")).toMatch(/^\/media\/[0-9a-f-]{36}$/);
+  expect(await logo.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBe(1);
+
+  for (const p of ["/org/dashboard", "/org/hours", "/org/reports", "/inbox"]) await org.page.goto(p);
+  expect(violations).toEqual([]);
+
+  // Sign-in with a crafted return address stays on this site.
+  const ctx = await browser.newContext();
+  const p2 = await ctx.newPage();
+  await p2.goto(`/login?returnTo=${encodeURIComponent("/\t/evil.example")}`);
+  await p2.getByLabel("Email").fill(asker.email);
+  await p2.getByLabel("Password").fill(PASSWORD);
+  await p2.getByRole("button", { name: "Log in" }).click();
+  await expect(p2).toHaveURL(/^http:\/\/localhost:3002\//);
+  await ctx.close();
+});

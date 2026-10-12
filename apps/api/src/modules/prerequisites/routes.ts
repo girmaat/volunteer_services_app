@@ -114,6 +114,18 @@ export function registerPrerequisiteRoutes(app: Express) {
       // The volunteer can't be their own guardian (FORM-03).
       const own = await pool.query("SELECT 1 FROM users WHERE id = $1 AND lower(email) = $2", [user.id, body.data.guardianEmail]);
       if (own.rowCount) return res.status(422).json({ message: "Use your parent or guardian's own email address, not yours" });
+      // Consent emails go to an address the volunteer typed, so they're limited: 3 per application and
+      // 5 per volunteer in any 24 hours.
+      const recent = (
+        await pool.query(
+          `SELECT COUNT(*) FILTER (WHERE application_id = $2)::int AS app, COUNT(*)::int AS total
+             FROM guardian_consents WHERE volunteer_user_id = $1 AND requested_at > NOW() - INTERVAL '24 hours'`,
+          [user.id, id.data]
+        )
+      ).rows[0];
+      if (recent.app >= 3 || recent.total >= 5) {
+        return res.status(429).json({ error: { code: "too_many_requests", message: "You've sent several consent requests today. Try again tomorrow, or ask the organizer for help." }, message: "You've sent several consent requests today. Try again tomorrow, or ask the organizer for help." });
+      }
 
       const token = crypto.randomBytes(24).toString("base64url");
       await pool.query("UPDATE guardian_consents SET status = 'replaced' WHERE volunteer_user_id = $1 AND request_id = $2 AND status = 'pending'", [user.id, a.request_id]);

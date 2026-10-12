@@ -357,3 +357,38 @@ numbers and the extended U16 E2E.
 **Testing**: 1,830 API tests (new `test/review-fixes.test.ts`, `test/mfa.test.ts`) and 21 E2E
 scripts (new U17: two-step sign-in, saved-search alerts) pass twice in a row. `E2E_WEBKIT=1 pnpm e2e`
 adds an iPhone Safari (WebKit) project where WebKit is installed; it wasn't run here.
+
+### Security audit fixes (2026-10-12)
+
+All findings from the audit (project doc `claude/security-audit-2026-10-12.md`) are fixed; each has a
+test in `apps/api/test/security-fixes.test.ts` showing the attack now fails and the normal path works.
+Migrations 0014 and 0015.
+
+- **Joining an organization** is a request an admin approves or declines (Team → Requests to join);
+  an email domain alone no longer makes anyone staff.
+- **Renaming an organization's address** is one UPDATE inside a real transaction; every table follows
+  the new address (ON UPDATE CASCADE), so documents, attendance, incidents, hours and settings stay.
+- **Account pre-hijacking**: the verification link carries the password chosen in that sign-up and
+  ends earlier sessions; never-verified accounts are removed after 7 days. Opening the link only checks
+  it; the "Verify my email" button verifies (email link scanners no longer use it up).
+- **Bans** end all sessions, block sign-in (password and two-step) and org tools; a ban without an end
+  date lasts until lifted; only super admins can act on platform staff.
+- **Minors' profiles** are never public; public hours are approved hours.
+- **Sign-in return addresses** must be on this site (tab/backslash tricks rejected).
+- **Teams**: the only admin can't be demoted or removed; anyone else can be removed.
+- **Limits**: guardian consent emails (3 per application, 5 per day), ID uploads (5 per day), two-step
+  codes (10 wrong codes per account in 15 minutes).
+- **Transactions**: password reset and change run in real transactions; a reset link can't be used twice.
+- **Web Content-Security-Policy** (self only; images, frames and scripts from other sites blocked).
+- **Hosted images**: logos (and the profile-photo API) are uploads checked by content and served from
+  `/media/<id>`; links to images on other sites are refused.
+- **Storage**: session tokens are stored hashed (existing sessions converted); uploaded forms and ID
+  documents are checked by content, not the browser's claimed type.
+- **No account enumeration**: sign-up with an existing email answers like any other and emails the
+  owner; login takes the same time for unknown emails.
+- Incident reports only name volunteers who applied to that request.
+- Dependencies: postcss-selector-parser pinned to the patched 7.1.6; the remaining `braces` advisory has
+  no fixed release and only affects ESLint tooling (recorded in `pnpm.auditConfig`).
+
+Checks: 1,881 API tests and 22 E2E scripts (new U17 check: join approval, logo upload, no CSP
+violations, safe sign-in redirect) pass repeatedly.

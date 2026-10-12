@@ -314,6 +314,11 @@ export function registerOrgComplianceRoutes(app: Express) {
       } else if (requestId) {
         const r = await pool.query("SELECT 1 FROM service_requests WHERE id=$1 AND requester_org_slug=$2", [requestId, ok.ctx.org.slug]);
         if ((r.rowCount ?? 0) === 0) return res.status(404).json({ message: "Request not found" });
+        // A named volunteer must actually have applied to this request.
+        if (volunteerUserId) {
+          const v = await pool.query("SELECT 1 FROM request_applications WHERE request_id=$1 AND volunteer_user_id=$2", [requestId, volunteerUserId]);
+          if (!v.rowCount) return res.status(404).json({ message: "That volunteer didn't apply to this request" });
+        }
       } else {
         return res.status(400).json({ message: "request_id or application_id is required" });
       }

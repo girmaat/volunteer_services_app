@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requirePlatformAdmin, requireSuperAdmin } from "../../admin/auth";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
-import { ensureNotSelf, parseLimit, parseOffset, writeEnforcement } from "./helpers";
+import { ensureNotSelf, parseLimit, parseOffset, writeEnforcement, staffTargetAllowed } from "./helpers";
 
 export function registerAdminUsersRoutes(app: Express) {
 
@@ -177,6 +177,7 @@ app.post(
       const targetUserId = String(req.params.id || "");
       const actingUserId = String((r.user as any).id);
       if (!ensureNotSelf(targetUserId, actingUserId)) return res.status(400).json({ message: "Cannot strike yourself" });
+      if (!(await staffTargetAllowed(targetUserId, Boolean(r.flags.isSuperAdmin)))) return res.status(403).json({ message: "Only a super admin can take action on platform staff" });
 
       const schema = z.object({ reason: z.string().min(1).max(500).optional(), notes: z.string().max(4000).optional() });
       const parsed = schema.safeParse(req.body);
@@ -221,6 +222,7 @@ app.post(
       const targetUserId = String(req.params.id || "");
       const actingUserId = String((r.user as any).id);
       if (!ensureNotSelf(targetUserId, actingUserId)) return res.status(400).json({ message: "Cannot ban yourself" });
+      if (!(await staffTargetAllowed(targetUserId, Boolean(r.flags.isSuperAdmin)))) return res.status(403).json({ message: "Only a super admin can take action on platform staff" });
 
       const schema = z.object({
         until: z.string().datetime().optional(),
@@ -232,6 +234,7 @@ app.post(
 
       const until = parsed.data.until ? new Date(parsed.data.until) : null;
       if (until && !Number.isFinite(until.getTime())) return res.status(400).json({ message: "Invalid until" });
+      if (until && until.getTime() <= Date.now()) return res.status(400).json({ message: "Pick an end date in the future" });
 
       await pool.query(
         `UPDATE users
@@ -241,8 +244,11 @@ app.post(
                 banned_by_user_id = $4,
                 updated_at = NOW()
           WHERE id = $1`,
-        [targetUserId, until ? until.toISOString() : null, parsed.data.reason ? String(parsed.data.reason) : null, actingUserId]
+        // No end date means until further notice (previously it stored NULL and banned nobody).
+        [targetUserId, until ? until.toISOString() : "infinity", parsed.data.reason ? String(parsed.data.reason) : null, actingUserId]
       );
+      // A ban takes effect now: every session ends.
+      await pool.query("DELETE FROM sessions WHERE user_id::text = $1", [targetUserId]);
 
       await writeEnforcement(actingUserId, targetUserId, "ban", parsed.data.reason ? String(parsed.data.reason) : null, parsed.data.notes ? String(parsed.data.notes) : null, until);
 

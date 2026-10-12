@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { minorSql } from "../../lib/age";
+import { can, type PolicyUser } from "../../lib/policy";
 import type { Express } from "express";
 import { ContactRequest } from "@thankyou/contracts";
 import crypto from "crypto";
@@ -313,12 +315,11 @@ app.get("/v1/public/volunteers/:id", wrap(async (req, res) => {
       COALESCE((SELECT COUNT(*)::int FROM request_commitments c WHERE c.volunteer_user_id = u.id AND c.status = 'completed'), 0) AS completed_count,
       COALESCE((SELECT COUNT(*)::int FROM request_commitments c WHERE c.volunteer_user_id = u.id AND c.status = 'canceled'), 0) AS canceled_count,
 
-      COALESCE((SELECT COUNT(*)::int
-        FROM volunteer_impact_entries vie
-        WHERE vie.volunteer_user_id = u.id
-      ), 0) AS impact_entries_count,
+      COALESCE((SELECT COUNT(*)::int FROM contributions c WHERE c.volunteer_user_id = u.id AND c.status IN ('approved', 'adjusted')), 0) AS impact_entries_count,
 
-      COALESCE((SELECT COALESCE(SUM(hours),0)::float FROM volunteer_impact_entries vie WHERE vie.volunteer_user_id = u.id), 0) AS total_hours,
+      -- Hours an organization or requester approved; self-reported time never shows publicly.
+      COALESCE((SELECT SUM(c.approved_hours)::float FROM contributions c WHERE c.volunteer_user_id = u.id AND c.status IN ('approved', 'adjusted')), 0) AS total_hours,
+      ${minorSql("u.id")} AS minor,
       COALESCE((SELECT COUNT(*)::int FROM visible_volunteer_reviews vr WHERE vr.volunteer_user_id = u.id), 0) AS reviews_count,
       COALESCE((SELECT COUNT(*)::int FROM visible_volunteer_reviews vr WHERE vr.volunteer_user_id = u.id AND vr.would_work_again = TRUE), 0) AS endorsements_count,
       COALESCE((SELECT COALESCE(AVG(rating),0)::float FROM visible_volunteer_reviews vr WHERE vr.volunteer_user_id = u.id), 0) AS average_rating,
@@ -356,8 +357,9 @@ app.get("/v1/public/volunteers/:id", wrap(async (req, res) => {
 
   const viewer = await optionalAuthedUser(req);
   const viewerId = viewer ? String((viewer as any).id || "") : "";
-  const isAdmin = !!(viewer && (viewer as any).is_platform_admin);
-  const visible = !!r.public_profile_visible;
+  const isAdmin = !!(viewer && can(viewer as PolicyUser, "platform:moderate"));
+  // Under-18 volunteers never have a public profile (SAFE-04): only they and platform staff see it.
+  const visible = !!r.public_profile_visible && !r.minor;
   const canView = visible || viewerId === volunteerId || isAdmin;
   if (!canView) return res.status(404).json({ message: "Volunteer not found" });
 

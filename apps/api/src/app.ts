@@ -14,6 +14,7 @@ import { registerPublicRoutes } from "./modules/public/routes";
 import { registerAuthRoutes } from "./modules/auth/routes";
 import { registerMfaRoutes } from "./modules/mfa/routes";
 import { registerAlertRoutes } from "./modules/alerts/routes";
+import { registerMediaRoutes } from "./modules/media/routes";
 import { registerShareRoutes } from "./modules/share/routes";
 import { registerVolunteerRoutes } from "./modules/volunteer";
 import { registerRequesterRoutes } from "./modules/requester";
@@ -109,6 +110,7 @@ export function createApp(): Express {
   registerNotificationRoutes(app);
   registerDiscoveryRoutes(app);
   registerAlertRoutes(app);
+  registerMediaRoutes(app);
   registerMessagingRoutes(app);
   registerJobHandler("notify.message_received", onMessageReceived);
   registerJobHandler("maintenance.hourly", runHourly);

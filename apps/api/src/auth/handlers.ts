@@ -1,6 +1,9 @@
 
 import { HttpUrl } from "@thankyou/contracts";
-import { startMfaChallenge } from "../modules/mfa/routes";
+import { MfaLocked, startMfaChallenge } from "../modules/mfa/routes";
+import { isBanned } from "../lib/ban";
+import { MediaPath } from "../lib/media";
+import { documentType } from "../modules/messaging/files";
 import { mfaRequiredForStaff } from "../lib/env";
 import { ageOn, MIN_ACCOUNT_AGE, parseBirthDate } from "../lib/age";
 import type { Request, Response } from "express";
@@ -104,17 +107,21 @@ export async function signup(pool: Pool, req: Request, res: Response) {
     const existingUserId = String(existingUser.id);
     const verifiedAt = existingUser.email_verified_at as string | null;
 
-    // If the email exists but is not verified, generate a fresh verification token and return it (no SMTP required).
+    // The email exists but was never verified: whoever signed up before never proved they own it.
+    // The new link carries this sign-up's password, and verifying sets it, so an earlier sign-up by
+    // someone else (who chose a password they know) can't end up owning the verified account.
     if (!verifiedAt) {
       const token = randomTokenUrlSafe(32);
       const tokenHash = sha256(token);
+      const boundHash = await bcrypt.hash(parsed.data.password, 12);
 
       await pool.query("DELETE FROM email_verification_tokens WHERE user_id=$1", [existingUserId]);
       await pool.query(
-        `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
-         VALUES ($1, $2, NOW() + INTERVAL '24 hours')`,
-        [existingUserId, tokenHash]
+        `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at, password_hash)
+         VALUES ($1, $2, NOW() + INTERVAL '24 hours', $3)`,
+        [existingUserId, tokenHash, boundHash]
       );
+      await pool.query("UPDATE user_profiles SET birth_date = $2::date, birth_year = $3 WHERE user_id = $1", [existingUserId, birthDate, Number(birthDate.slice(0, 4))]);
 
       const verifyUrl = `${webBaseUrl()}/verify-email?token=${encodeURIComponent(token)}`;
       const delivery = await sendEmail({
@@ -139,7 +146,18 @@ If you didn't create this account, you can ignore this email.`
       });
     }
 
-    return res.status(409).json({ message: "Email already in use" });
+    // Don't reveal that the address has an account; tell its owner instead.
+    await sendEmail({
+      to: email,
+      subject: "You already have a ThankYou account",
+      text: `Someone (maybe you) tried to create a ThankYou account with this email address, which already has one.
+
+Sign in: ${webBaseUrl()}/login
+Forgot your password? ${webBaseUrl()}/forgot-password
+
+If this wasn't you, you can ignore this email.`
+    });
+    return res.status(202).json({ status: "accepted" });
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
@@ -166,9 +184,9 @@ If you didn't create this account, you can ignore this email.`
   const tokenHash = sha256(token);
 
   await pool.query(
-    `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
-     VALUES ($1, $2, NOW() + INTERVAL '24 hours')`,
-    [userId, tokenHash]
+    `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at, password_hash)
+     VALUES ($1, $2, NOW() + INTERVAL '24 hours', $3)`,
+    [userId, tokenHash, passwordHash]
   );
 
   const verifyUrl = `${webBaseUrl()}/verify-email?token=${encodeURIComponent(token)}`;
@@ -233,8 +251,25 @@ If you didn't request this email, you can ignore it.`
   return res.status(202).json({ status: "accepted", dev_verify_url });
 }
 
-export async function verifyEmail(pool: Pool, req: Request, res: Response) {
+/**
+ * Email verification is two steps so link scanners (which open links in emails) can't use it up:
+ * GET only checks the link; POST, from the "Verify my email" button, verifies and signs in.
+ */
+export async function checkVerifyLink(pool: Pool, req: Request, res: Response) {
   const token = String((req.query as any)?.token || "");
+  if (!token) return res.status(400).json({ message: "Missing token" });
+  const t = await pool.query(
+    "SELECT evt.used_at, evt.expires_at, u.email FROM email_verification_tokens evt JOIN users u ON u.id = evt.user_id WHERE evt.token_hash = $1",
+    [sha256(token)]
+  );
+  const row = t.rows[0];
+  if (!row || row.used_at || new Date(row.expires_at).getTime() < Date.now()) return res.status(400).json({ message: "This link has expired or was already used" });
+  const [name, domain] = String(row.email).split("@");
+  return res.json({ status: "valid", email: `${name.slice(0, 2)}***@${domain}` });
+}
+
+export async function verifyEmail(pool: Pool, req: Request, res: Response) {
+  const token = String((req.body as any)?.token || "");
   if (!token) return res.status(400).json({ message: "Missing token" });
 
   const tokenHash = sha256(token);
@@ -260,10 +295,18 @@ export async function verifyEmail(pool: Pool, req: Request, res: Response) {
   const userId = String(row.user_id);
   const tokenId = String(row.token_id);
 
-  await pool.query("UPDATE users SET email_verified_at=COALESCE(email_verified_at, NOW()), updated_at=NOW() WHERE id=$1", [
-    userId
-  ]);
-  await pool.query("UPDATE email_verification_tokens SET used_at=NOW() WHERE id=$1", [tokenId]);
+  // Single use, even when two requests race.
+  const used = await pool.query("UPDATE email_verification_tokens SET used_at=NOW() WHERE id=$1 AND used_at IS NULL RETURNING password_hash", [tokenId]);
+  if (!used.rowCount) return res.status(400).json({ message: "Token already used" });
+  const bound = used.rows[0].password_hash as string | null;
+  // First verification sets the password chosen in the sign-up this link belongs to, and ends any
+  // sessions that existed before the email was proven.
+  const firstTime = !row.email_verified_at;
+  await pool.query(
+    "UPDATE users SET email_verified_at=COALESCE(email_verified_at, NOW()), password_hash = CASE WHEN $2::boolean AND $3::text IS NOT NULL THEN $3 ELSE password_hash END, updated_at=NOW() WHERE id=$1",
+    [userId, firstTime, bound]
+  );
+  if (firstTime) await pool.query("DELETE FROM sessions WHERE user_id = $1", [userId]);
 
   await recomputeOnboarding(pool, userId);
 
@@ -272,6 +315,8 @@ export async function verifyEmail(pool: Pool, req: Request, res: Response) {
 
   return res.json({ status: "ok", sessionToken: session.sessionToken, user });
 }
+
+const DUMMY_HASH = bcrypt.hashSync("not-a-real-password-placeholder", 12);
 
 export async function login(pool: Pool, req: Request, res: Response) {
   const schema = z.object({ email: z.string().email(), password: z.string().min(1) });
@@ -283,11 +328,15 @@ export async function login(pool: Pool, req: Request, res: Response) {
 
   const u = await pool.query(
     `SELECT id, email, password_hash, email_verified_at, role, profile_completed, availability_completed,
-            verification_required, verification_status, onboarding_completed, created_at, updated_at
+            verification_required, verification_status, onboarding_completed, created_at, updated_at, banned_until
      FROM users WHERE email=$1`,
     [email]
   );
-  if ((u.rowCount ?? 0) === 0) return res.status(401).json({ message: "Invalid email or password" });
+  if ((u.rowCount ?? 0) === 0) {
+    // Same work as a real check, so response time doesn't reveal which emails have accounts.
+    await bcrypt.compare(password, DUMMY_HASH);
+    return res.status(401).json({ message: "Invalid email or password" });
+  }
 
   const row = u.rows[0] as any;
   const ok = await bcrypt.compare(password, String(row.password_hash || ""));
@@ -296,9 +345,18 @@ export async function login(pool: Pool, req: Request, res: Response) {
   if (!row.email_verified_at) {
     return res.status(403).json({ message: "Please verify your email to log in" });
   }
+  if (isBanned(row)) {
+    return res.status(403).json({ message: "This account is suspended", banned_until: row.banned_until === Infinity ? null : row.banned_until });
+  }
 
   // Two-step sign-in: no session until the code checks out (POST /v1/auth/mfa).
-  const mfaToken = await startMfaChallenge(String(row.id));
+  let mfaToken: string | null;
+  try {
+    mfaToken = await startMfaChallenge(String(row.id));
+  } catch (e) {
+    if (e instanceof MfaLocked) return res.status(429).json({ error: { code: "mfa_locked", message: e.message }, message: e.message });
+    throw e;
+  }
   if (mfaToken) return res.json({ mfa_required: true, mfa_token: mfaToken });
 
   const session = await createSession(pool, String(row.id));
@@ -341,15 +399,18 @@ export async function changePassword(pool: Pool, req: Request, res: Response) {
 
   const nextHash = await bcrypt.hash(parsed.data.newPassword, 12);
 
-  await pool.query("BEGIN");
+  const c = await pool.connect();
   try {
-    await pool.query("UPDATE users SET password_hash=$2, updated_at=NOW() WHERE id=$1", [user.id, nextHash]);
+    await c.query("BEGIN");
+    await c.query("UPDATE users SET password_hash=$2, updated_at=NOW() WHERE id=$1", [user.id, nextHash]);
     // Keep the current session, sign out everywhere else.
-    await pool.query("DELETE FROM sessions WHERE user_id=$1 AND session_token <> $2::uuid", [user.id, token]);
-    await pool.query("COMMIT");
+    await c.query("DELETE FROM sessions WHERE user_id=$1 AND session_token <> session_key($2)", [user.id, token]);
+    await c.query("COMMIT");
   } catch (e) {
-    await pool.query("ROLLBACK");
+    await c.query("ROLLBACK");
     throw e;
+  } finally {
+    c.release();
   }
 
   return res.json({ status: "password_changed", signedOutOtherSessions: true });
@@ -420,15 +481,23 @@ export async function resetPassword(pool: Pool, req: Request, res: Response) {
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
 
-  await pool.query("BEGIN");
+  const c = await pool.connect();
   try {
-    await pool.query("UPDATE users SET password_hash=$2, updated_at=NOW() WHERE id=$1", [row.user_id, passwordHash]);
-    await pool.query("UPDATE password_reset_tokens SET used_at=NOW() WHERE id=$1", [row.id]);
-    await deleteAllSessionsForUser(pool, row.user_id);
-    await pool.query("COMMIT");
+    await c.query("BEGIN");
+    // Claim the token first: of two requests racing with the same link, only one wins.
+    const claim = await c.query("UPDATE password_reset_tokens SET used_at=NOW() WHERE id=$1 AND used_at IS NULL RETURNING id", [row.id]);
+    if (!claim.rowCount) {
+      await c.query("ROLLBACK");
+      return res.status(400).json({ message: "Token already used" });
+    }
+    await c.query("UPDATE users SET password_hash=$2, updated_at=NOW() WHERE id=$1", [row.user_id, passwordHash]);
+    await c.query("DELETE FROM sessions WHERE user_id=$1", [row.user_id]);
+    await c.query("COMMIT");
   } catch (e) {
-    await pool.query("ROLLBACK");
+    await c.query("ROLLBACK");
     throw e;
+  } finally {
+    c.release();
   }
 
   return res.json({ status: "password_reset" });
@@ -514,7 +583,7 @@ export async function setProfile(pool: Pool, req: Request, res: Response) {
 
     // Public profile (shown to others)
     displayName: z.string().optional().nullable(),
-    avatarUrl: HttpUrl.optional().nullable(),
+    avatarUrl: MediaPath.optional(),
     publicLocation: z.string().optional().nullable(),
 
     // Legacy field (pre-public_location). Kept for backward compatibility.
@@ -770,10 +839,12 @@ export async function submitVerification(pool: Pool, req: Request, res: Response
   const file = (req as any).file as Express.Multer.File | undefined;
   if (!file) return res.status(400).json({ message: "Missing document file" });
 
-  const allowed = ["application/pdf", "image/jpeg", "image/png"];
-  if (!allowed.includes(file.mimetype)) {
-    return res.status(400).json({ message: "Unsupported file type. Use PDF, JPG, or PNG." });
-  }
+  const real = documentType(file.buffer, file.originalname);
+  if (!real) return res.status(400).json({ message: "Unsupported file type. Use PDF, JPG, or PNG." });
+  file.mimetype = real;
+  // A handful of ID uploads a day is plenty; more is abuse (each can be 10 MB).
+  const recent = (await pool.query("SELECT COUNT(*)::int AS n FROM verification_documents WHERE user_id = $1 AND uploaded_at > NOW() - INTERVAL '24 hours'", [user.id])).rows[0].n;
+  if (recent >= 5) return res.status(429).json({ message: "You've uploaded several documents today. Wait for the review, or try again tomorrow." });
 
   await pool.query(
     `INSERT INTO verification_documents (user_id, file_name, mime_type, bytes)

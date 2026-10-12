@@ -5,6 +5,7 @@ import { randomTokenUrlSafe, sha256 } from "../../auth/crypto";
 import { sendEmail } from "../../auth/email";
 import { requireUserBySession } from "../../auth/session";
 import { staffAdultCheck } from "../../lib/age";
+import { notify } from "../notifications/service";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { authHeaderToken, requireAdmin, requireAdminOrManager, requireOrg, webBaseUrl } from "./context";
@@ -30,6 +31,7 @@ export function registerOrgTeamRoutes(app: Express) {
           p.full_name,
           m.role,
           m.status,
+          m.requested_at,
           m.created_at,
           m.updated_at
         FROM organization_members m
@@ -333,6 +335,38 @@ export function registerOrgTeamRoutes(app: Express) {
   );
 
 
+  // Join requests: an admin approves (they become a member) or declines.
+  const joinDecision = (decision: "approve" | "decline") =>
+      wrap(async (req: any, res: any) => {
+        const ok = await requireOrg(pool, req, res);
+        if (!ok) return;
+        if (!requireAdmin(ok.ctx, res)) return;
+        const id = z.string().uuid().safeParse(req.params.memberId);
+        if (!id.success) return res.status(400).json({ message: "Invalid request id" });
+        const row = (await pool.query("SELECT id, user_id FROM organization_members WHERE id = $1 AND org_slug = $2 AND status = 'requested'", [id.data, ok.ctx.org.slug])).rows[0];
+        if (!row) return res.status(404).json({ message: "Join request not found" });
+        if (decision === "decline") {
+          await pool.query("DELETE FROM organization_members WHERE id = $1", [row.id]);
+          await notify(String(row.user_id), "request_updates", { title: `${ok.ctx.org.name} declined your request to join`, href: "/org/signup" });
+          return res.json({ ok: true, status: "declined" });
+        }
+        const other = await pool.query("SELECT 1 FROM organization_members WHERE user_id = $1 AND status = 'active' AND org_slug <> $2", [row.user_id, ok.ctx.org.slug]);
+        if (other.rowCount) return res.status(409).json({ message: "They already belong to another organization." });
+        await pool.query("UPDATE organization_members SET status = 'active', joined_at = NOW(), updated_at = NOW() WHERE id = $1", [row.id]);
+        const roles = await pool.query("SELECT 1 FROM user_roles WHERE user_id = $1 LIMIT 1", [row.user_id]);
+        if (!roles.rowCount) {
+          await pool.query(
+            `UPDATE users SET role='org_admin', account_type='org_team_member', profile_completed=TRUE, availability_completed=TRUE,
+                    onboarding_completed=TRUE, verification_required=FALSE, verification_status='not_required', updated_at=NOW() WHERE id=$1`,
+            [row.user_id]
+          );
+        }
+        await notify(String(row.user_id), "request_updates", { title: `You're on the ${ok.ctx.org.name} team`, href: "/org/dashboard" });
+        return res.json({ ok: true, status: "active" });
+      });
+  app.post("/v1/org/members/requests/:memberId/approve", joinDecision("approve"));
+  app.post("/v1/org/members/requests/:memberId/decline", joinDecision("decline"));
+
 app.patch(
     "/v1/org/members/:userId",
     wrap(async (req: any, res: any) => {
@@ -347,6 +381,13 @@ app.patch(
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
+      const target = (await pool.query("SELECT role, status FROM organization_members WHERE org_slug=$1 AND user_id=$2", [ok.ctx.org.slug, params.data.userId])).rows[0];
+      if (!target || target.status !== "active") return res.status(404).json({ message: "Member not found" });
+      // Never leave the organization without an admin.
+      if (target.role === "admin" && parsed.data.role !== "admin") {
+        const admins = (await pool.query("SELECT COUNT(*)::int AS c FROM organization_members WHERE org_slug=$1 AND role='admin' AND status='active'", [ok.ctx.org.slug])).rows[0].c;
+        if (admins <= 1) return res.status(409).json({ message: "This is the only admin. Make someone else an admin first." });
+      }
       await pool.query(
         "UPDATE organization_members SET role=$3, updated_at=NOW() WHERE org_slug=$1 AND user_id=$2",
         [ok.ctx.org.slug, params.data.userId, parsed.data.role]
@@ -369,15 +410,17 @@ app.patch(
 
       const targetId = params.data.userId;
 
-      // Prevent removing last admin
-      const admins = await pool.query(
-        "SELECT COUNT(*)::int AS c FROM organization_members WHERE org_slug=$1 AND role='admin' AND status='active'",
-        [ok.ctx.org.slug]
-      );
-      const n = Number(admins.rows[0]?.c ?? 0);
-      if (n <= 1) return res.status(409).json({ message: "You are the last admin; add another admin first." });
+      const target = (await pool.query("SELECT role, status FROM organization_members WHERE org_slug=$1 AND user_id=$2", [ok.ctx.org.slug, targetId])).rows[0];
+      if (!target) return res.status(404).json({ message: "Member not found" });
+      // Only removing the last admin is refused; anyone else can be removed (access ends at once).
+      if (target.role === "admin" && target.status === "active") {
+        const n = Number((await pool.query("SELECT COUNT(*)::int AS c FROM organization_members WHERE org_slug=$1 AND role='admin' AND status='active'", [ok.ctx.org.slug])).rows[0]?.c ?? 0);
+        if (n <= 1) return res.status(409).json({ message: "This is the only admin. Make someone else an admin first." });
+      }
 
       await pool.query("DELETE FROM organization_members WHERE org_slug=$1 AND user_id=$2", [ok.ctx.org.slug, targetId]);
+      // Their sessions stop acting for this organization.
+      await pool.query("UPDATE sessions SET active_context = NULL, active_org_slug = NULL WHERE user_id = $1 AND (active_org_slug = $2 OR active_context = $3)", [targetId, ok.ctx.org.slug, `org:${ok.ctx.org.slug}`]);
       return res.json({ ok: true });
     })
   );

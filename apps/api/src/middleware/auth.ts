@@ -1,3 +1,4 @@
+import { isBanned } from "../lib/ban";
 import type express from "express";
 import { requireUserBySession } from "../auth/session";
 import { pool } from "../lib/db";
@@ -37,12 +38,9 @@ async function authenticate(req: express.Request, res: express.Response, opts: O
     res.status(401).json({ message: "Not authenticated" });
     return null;
   }
-  if (user.banned_until) {
-    const until = new Date(user.banned_until as any).getTime();
-    if (!Number.isNaN(until) && until > Date.now()) {
-      res.status(403).json({ message: "Account is banned", banned_until: user.banned_until, banned_reason: (user as any).banned_reason || null });
-      return null;
-    }
+  if (isBanned(user)) {
+    res.status(403).json({ message: "Account is banned", banned_until: user.banned_until, banned_reason: (user as any).banned_reason || null });
+    return null;
   }
   if (!opts.allowIncompleteOnboarding && !user.onboarding_completed) {
     res.status(403).json({ message: "Onboarding incomplete" });

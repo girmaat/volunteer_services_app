@@ -32,7 +32,6 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
       mission: String(formData.get("mission") || "") || null,
       website_url: String(formData.get("website_url") || "") || null,
       contact_email: String(formData.get("contact_email") || "") || null,
-      logo_url: String(formData.get("logo_url") || "") || null,
       preferred_skills: String(formData.get("preferred_skills") || ""),
       service_area: String(formData.get("service_area") || "") || null,
       hours: String(formData.get("hours") || "") || null,
@@ -52,6 +51,23 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
       redirect(`/org/settings?error=${msg}`);
     }
 
+    revalidatePath("/org");
+    redirect("/org/settings?saved=1");
+  }
+
+  async function uploadLogoAction(formData: FormData) {
+    "use server";
+    const file = formData.get("logo");
+    if (formData.get("remove") === "1") {
+      const r = await backendFetch(`/v1/orgs/${encodeURIComponent(orgSlug)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ logo_url: null }) });
+      redirect(r.ok ? "/org/settings?saved=1" : `/org/settings?error=${encodeURIComponent("Couldn't remove the logo")}`);
+    }
+    if (!file || !(file instanceof File) || !file.size) redirect(`/org/settings?error=${encodeURIComponent("Choose an image")}`);
+    const payload = new FormData();
+    payload.set("file", file, file.name);
+    const res = await backendFetch(`/v1/orgs/${encodeURIComponent(orgSlug)}/logo`, { method: "POST", body: payload });
+    const json = (await res.json().catch(() => ({}))) as any;
+    if (!res.ok) redirect(`/org/settings?error=${encodeURIComponent(String(json?.message || "Upload failed"))}`);
     revalidatePath("/org");
     redirect("/org/settings?saved=1");
   }
@@ -143,6 +159,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
         {!canEdit ? (
           <p className="m-0 text-muted">Only organization admins can edit these settings.</p>
         ) : (
+          <>
           <form action={saveProfileAction} className="grid gap-4">
             <label className={label}>
               Name
@@ -179,10 +196,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
                 Website <span className={hint}>(optional)</span>
                 <input name="website_url" type="url" defaultValue={org.website_url || ""} className={input} />
               </label>
-              <label className={label}>
-                Logo URL <span className={hint}>(optional)</span>
-                <input name="logo_url" type="url" defaultValue={org.logo_url || ""} className={input} />
-              </label>
+
             </div>
             <fieldset className="m-0 grid gap-3 rounded border border-line p-4">
               <legend className="px-1 text-sm font-medium">Contact (never shown publicly)</legend>
@@ -209,6 +223,25 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
               <Button type="submit">Save profile</Button>
             </div>
           </form>
+          <form action={uploadLogoAction} className="mt-6 flex flex-wrap items-end gap-3 border-t border-line pt-4">
+            {org.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={org.logo_url} alt="Current logo" width={48} height={48} className="h-12 w-12 rounded border border-line object-contain" />
+            ) : null}
+            <label className={label}>
+              Logo <span className={hint}>PNG, JPEG or WebP, up to 1 MB</span>
+              <input name="logo" type="file" accept="image/png,image/jpeg,image/webp" className="text-sm" />
+            </label>
+            <button type="submit" className="h-10 rounded-md border border-line bg-surface px-3 font-semibold">
+              Upload logo
+            </button>
+            {org.logo_url ? (
+              <button type="submit" name="remove" value="1" className="h-10 rounded-md border border-line px-3">
+                Remove
+              </button>
+            ) : null}
+          </form>
+          </>
         )}
       </Card>
 

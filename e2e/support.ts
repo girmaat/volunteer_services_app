@@ -88,7 +88,7 @@ export async function createUser(opts: {
 export async function sessionFor(email: string): Promise<string> {
   const u = await db.query("SELECT id FROM users WHERE email = $1", [email]);
   if (!u.rowCount) throw new Error(`No user ${email}. Is the database seeded (pnpm db:seed)?`);
-  const s = await db.query("INSERT INTO sessions (user_id, session_token, expires_at) VALUES ($1, gen_random_uuid(), NOW() + INTERVAL '1 day') RETURNING session_token", [u.rows[0].id]);
+  const s = await db.query("WITH t AS (SELECT gen_random_uuid()::text AS raw) INSERT INTO sessions (user_id, session_token, expires_at) SELECT $1, session_key(t.raw), NOW() + INTERVAL '1 day' FROM t RETURNING (SELECT raw FROM t) AS session_token", [u.rows[0].id]);
   return String(s.rows[0].session_token);
 }
 

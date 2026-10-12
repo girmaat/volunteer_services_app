@@ -14,6 +14,7 @@ const {
   signup,
   login,
   verifyEmail,
+  checkVerifyLink,
   resendVerification,
   forgotPassword,
   resetPassword,
@@ -35,7 +36,8 @@ app.post("/v1/auth/signup", wrap((req, res) => signup(pool, req, res)));
 
 app.post("/v1/auth/login", wrap((req, res) => login(pool, req, res)));
 
-app.get("/v1/auth/verify-email", wrap((req, res) => verifyEmail(pool, req, res)));
+app.get("/v1/auth/verify-email", wrap((req, res) => checkVerifyLink(pool, req, res)));
+app.post("/v1/auth/verify-email", wrap((req, res) => verifyEmail(pool, req, res)));
 
 app.post("/v1/auth/resend-verification", wrap((req, res) => resendVerification(pool, req, res)));
 

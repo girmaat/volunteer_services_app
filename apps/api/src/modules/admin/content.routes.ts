@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { MediaPath } from "../../lib/media";
 import type { Express } from "express";
 import { z } from "zod";
 import { requireModerator, requirePlatformAdmin } from "../../admin/auth";
@@ -120,7 +121,7 @@ export function registerAdminContentRoutes(app: Express) {
           mission: z.string().max(4000).optional().nullable(),
           website_url: z.string().max(500).optional().nullable(),
           contact_email: z.string().email().optional().nullable(),
-          logo_url: z.string().max(500).optional().nullable(),
+          logo_url: MediaPath.optional(),
           verification_required: z.boolean().optional(),
           verification_status: z.enum(["not_required", "required", "submitted", "approved", "rejected"]).optional()
         })

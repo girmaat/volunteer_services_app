@@ -1,3 +1,4 @@
+import { isBanned } from "../lib/ban";
 import { mfaRequiredForStaff } from "../lib/env";
 import type { Request, Response } from "express";
 import type { Pool } from "pg";
@@ -83,9 +84,8 @@ export async function requireAuthedUser(pool: Pool, req: Request, res: Response)
     return null;
   }
 
-  const bannedUntil = (user as any).banned_until ? new Date(String((user as any).banned_until)) : null;
-  if (bannedUntil && bannedUntil.getTime() > Date.now()) {
-    res.status(403).json({ message: "Account is temporarily suspended", banned_until: bannedUntil.toISOString() });
+  if (isBanned(user)) {
+    res.status(403).json({ message: "Account is temporarily suspended", banned_until: (user as any).banned_until });
     return null;
   }
 

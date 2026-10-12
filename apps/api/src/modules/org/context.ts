@@ -1,3 +1,4 @@
+import { isBanned } from "../../lib/ban";
 import { can, contextOrgSlug, type PolicyUser } from "../../lib/policy";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import multer from "multer";
@@ -222,6 +223,10 @@ export async function requireOrg(pool: Pool, req: Request, res: Response) {
   const user = await requireUserBySession(pool, token);
   if (!user) {
     res.status(401).json({ message: "Not authenticated" });
+    return null;
+  }
+  if (isBanned(user)) {
+    res.status(403).json({ message: "Account is banned", banned_until: (user as any).banned_until });
     return null;
   }
 

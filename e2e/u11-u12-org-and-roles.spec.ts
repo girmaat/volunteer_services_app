@@ -18,6 +18,7 @@ test("U11 org admin: sign up, verify, invite, recurring request, attendance, ros
   const verify = page.locator('a[href*="verify-email?token="]').first();
   await expect(verify).toBeVisible();
   await page.goto((await verify.getAttribute("href"))!);
+  await page.getByRole("button", { name: "Verify my email" }).click();
 
   // Verifying signs you in and lands on one "finish setting up" page, prefilled from sign-up.
   await expect(page).toHaveURL(/\/org\/onboarding$/);

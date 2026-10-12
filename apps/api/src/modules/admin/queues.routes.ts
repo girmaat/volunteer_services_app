@@ -12,7 +12,7 @@ import { wrap } from "../../lib/http";
 import { transitionRequest, TransitionError } from "../requests/lifecycle";
 import { deliver, loadConversation } from "../messaging/service";
 import { notify } from "../notifications/service";
-import { parseLimit, parseOffset } from "./helpers";
+import { parseLimit, parseOffset, staffTargetAllowed } from "./helpers";
 
 const uuid = z.string().uuid();
 
@@ -232,6 +232,7 @@ export function registerAdminQueueRoutes(app: Express) {
       const body = z.object({ on: z.boolean(), reason: z.string().trim().max(500).optional() }).safeParse(req.body ?? {});
       if (!id.success || !body.success) return res.status(400).json({ message: "Invalid request" });
       if (id.data === String(a.user.id)) return res.status(409).json({ message: "You can't shadow-ban yourself" });
+      if (!(await staffTargetAllowed(id.data, Boolean(a.flags.isSuperAdmin)))) return res.status(403).json({ message: "Only a super admin can take action on platform staff" });
       const r = await pool.query("UPDATE users SET shadow_banned = $2, updated_at = NOW() WHERE id = $1 RETURNING id", [id.data, body.data.on]);
       if (!r.rowCount) return res.status(404).json({ message: "User not found" });
       res.locals.audit = { action: body.data.on ? "user.shadow_ban" : "user.shadow_unban", targetType: "user", targetId: id.data, details: { reason: body.data.reason ?? null } };

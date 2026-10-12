@@ -9,6 +9,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { randomTokenUrlSafe, sha256 } from "../../auth/crypto";
 import { createSession, requireUserBySession } from "../../auth/session";
+import { isBanned } from "../../lib/ban";
 import { pool } from "../../lib/db";
 import { mfaKey } from "../../lib/env";
 import { wrap } from "../../lib/http";
@@ -19,9 +20,22 @@ const CHALLENGE_MINUTES = 5;
 const MAX_ATTEMPTS = 5;
 
 /** After the password checks out: a challenge token when two-step is on, else null. */
+/** Wrong codes across all of an account's sign-ins in the last 15 minutes before it pauses. */
+const ACCOUNT_FAILURES = 10;
+
+export class MfaLocked extends Error {}
+
 export async function startMfaChallenge(userId: string): Promise<string | null> {
   const r = await pool.query("SELECT mfa_enabled_at FROM users WHERE id = $1", [userId]);
   if (!r.rows[0]?.mfa_enabled_at) return null;
+  // Per account, not just per sign-in: new challenges don't reset the count (stops guessing from many IPs).
+  const failed = (
+    await pool.query(
+      "SELECT COALESCE(SUM(attempts) FILTER (WHERE used_at IS NULL), 0)::int + COALESCE(SUM(GREATEST(attempts - 1, 0)) FILTER (WHERE used_at IS NOT NULL), 0)::int AS n FROM mfa_challenges WHERE user_id = $1 AND created_at > NOW() - INTERVAL '15 minutes'",
+      [userId]
+    )
+  ).rows[0].n;
+  if (failed >= ACCOUNT_FAILURES) throw new MfaLocked("Too many wrong codes. Wait 15 minutes, then sign in again.");
   const token = randomTokenUrlSafe(32);
   await pool.query(`INSERT INTO mfa_challenges (user_id, token_hash, expires_at) VALUES ($1, $2, NOW() + INTERVAL '${CHALLENGE_MINUTES} minutes')`, [userId, sha256(token)]);
   return token;
@@ -66,6 +80,8 @@ export function registerMfaRoutes(app: Express) {
       }
       const done = await pool.query("UPDATE mfa_challenges SET used_at = NOW() WHERE id = $1 AND used_at IS NULL", [c.id]);
       if (!done.rowCount) return res.status(401).json({ error: { code: "mfa_expired", message: "That sign-in expired. Enter your password again." }, message: "That sign-in expired. Enter your password again." });
+      const acct = (await pool.query("SELECT banned_until FROM users WHERE id = $1", [c.user_id])).rows[0];
+      if (isBanned(acct)) return res.status(403).json({ message: "This account is suspended" });
       const session = await createSession(pool, String(c.user_id));
       const user = await requireUserBySession(pool, session.sessionToken);
       const left = how === "recovery" ? Number((await pool.query("SELECT cardinality(mfa_recovery_hashes) AS n FROM users WHERE id = $1", [c.user_id])).rows[0]?.n ?? 0) : null;
@@ -120,7 +136,7 @@ export function registerMfaRoutes(app: Express) {
         [user.id, step, codes.map(hashRecovery)]
       );
       const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-      await pool.query("DELETE FROM sessions WHERE user_id = $1 AND session_token::text <> $2", [user.id, token]);
+      await pool.query("DELETE FROM sessions WHERE user_id = $1 AND session_token <> session_key($2)", [user.id, token]);
       return res.json({ enabled: true, recovery_codes: codes });
     })
   );

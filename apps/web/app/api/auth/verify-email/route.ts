@@ -2,30 +2,39 @@ import { cookieSecure } from "../../../../lib/cookies";
 import { NextResponse } from "next/server";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
+/** Old links pointed here directly; they now open the page with the "Verify my email" button. */
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const token = searchParams.get("token") || "";
+  const token = new URL(req.url).searchParams.get("token") || "";
+  return NextResponse.redirect(new URL(`/verify-email${token ? `?token=${encodeURIComponent(token)}` : ""}`, req.url), 303);
+}
+
+/** The button on /verify-email: verifies (single use) and signs in. */
+export async function POST(req: Request) {
+  const form = await req.formData().catch(() => null);
+  const token = String(form?.get("token") || "");
 
   if (!token) {
-    return NextResponse.redirect(new URL(`/verify-email?error=${encodeURIComponent("Missing token")}`, req.url));
+    return NextResponse.redirect(new URL(`/verify-email?error=${encodeURIComponent("Missing token")}`, req.url), 303);
   }
 
-  const res = await fetch(`${API_BASE_URL_SERVER}/v1/auth/verify-email?token=${encodeURIComponent(token)}`, {
-    method: "GET",
+  const res = await fetch(`${API_BASE_URL_SERVER}/v1/auth/verify-email`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ token }),
     cache: "no-store"
   });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const message = err?.message || "Verification failed";
-    return NextResponse.redirect(new URL(`/verify-email?error=${encodeURIComponent(message)}`, req.url));
+    return NextResponse.redirect(new URL(`/verify-email?error=${encodeURIComponent(message)}`, req.url), 303);
   }
 
   const data = await res.json().catch(() => ({}));
   const sessionToken = String(data.sessionToken || "");
 
   if (!sessionToken) {
-    return NextResponse.redirect(new URL(`/verify-email?error=${encodeURIComponent("Missing session token")}`, req.url));
+    return NextResponse.redirect(new URL(`/verify-email?error=${encodeURIComponent("Missing session token")}`, req.url), 303);
   }
 
   // Decide where to send the user after email verification.
@@ -77,7 +86,7 @@ export async function GET(req: Request) {
     // Fall back to default
   }
 
-  const next = NextResponse.redirect(new URL(location, req.url));
+  const next = NextResponse.redirect(new URL(location, req.url), 303);
   next.cookies.set("ty_session", sessionToken, {
     httpOnly: true,
     sameSite: "lax",

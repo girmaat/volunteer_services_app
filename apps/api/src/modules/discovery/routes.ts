@@ -1,3 +1,4 @@
+import { isBanned } from "../../lib/ban";
 import type { Express, Request } from "express";
 import { z } from "zod";
 import { pool } from "../../lib/db";
@@ -22,7 +23,7 @@ const decodeCursor = (c?: string) => {
 /** Volunteers get personalised matching; everyone else gets the public view. */
 async function viewerFor(req: Request): Promise<{ user: PolicyUser | null; viewer: Viewer }> {
   const user = (await optionalAuthedUser(req)) as PolicyUser | null;
-  const usable = user && !(user.banned_until && new Date(String(user.banned_until)) > new Date()) ? user : null;
+  const usable = user && !isBanned(user) ? user : null;
   const viewer = await loadViewer(usable && can(usable, "volunteer:act") ? usable : null);
   // Non-volunteer signed-in users still shouldn't see their own requests or blocked people.
   if (usable && !viewer.id) viewer.id = usable.id;

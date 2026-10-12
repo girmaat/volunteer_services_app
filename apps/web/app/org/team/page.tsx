@@ -14,7 +14,7 @@ type MemberRow = {
   email: string;
   full_name: string | null;
   role: "admin" | "manager" | "member";
-  status: "active" | "invited";
+  status: "active" | "invited" | "requested";
   created_at: string;
   updated_at: string;
 };
@@ -36,7 +36,7 @@ function isAdminOrManager(role: string) {
 }
 
 export default async function Page(
-  props: { searchParams?: Promise<{ sent?: string; devInviteUrl?: string; error?: string }> }
+  props: { searchParams?: Promise<{ sent?: string; devInviteUrl?: string; error?: string; request?: string }> }
 ) {
   const searchParams = await props.searchParams;
   const user = await getCurrentUser();
@@ -141,6 +141,22 @@ export default async function Page(
     redirect(`/org/team?sent=1${devInviteUrl ? `&devInviteUrl=${devInviteUrl}` : ""}`);
   }
 
+  async function joinRequestAction(formData: FormData) {
+    "use server";
+    const memberId = String(formData.get("member_id") || "");
+    const decision = formData.get("decision") === "approve" ? "approve" : "decline";
+    if (!/^[0-9a-f-]{36}$/i.test(memberId)) return;
+    const res = await backendFetch(
+      decision === "approve" ? `/v1/org/members/requests/${memberId}/approve` : `/v1/org/members/requests/${memberId}/decline`,
+      { method: "POST" }
+    );
+    const json = (await res.json().catch(() => ({}))) as any;
+    if (!res.ok) redirect(`/org/team?error=${encodeURIComponent(String(json?.message || "That didn't work"))}#requests`);
+    revalidatePath("/org/team");
+    redirect(`/org/team?request=${decision}#requests`);
+  }
+
+  const requests = data.members.filter((m) => m.status === "requested");
   const active = data.members.filter((m) => m.status === "active");
   const invited = data.members.filter((m) => m.status === "invited");
 
@@ -248,6 +264,38 @@ export default async function Page(
           </div>
         )}
       </section>
+
+      {canManage ? (
+        <section id="requests" className="border border-line rounded-lg p-3.5">
+          <h2 className="mt-0">Requests to join</h2>
+          {searchParams?.request === "approve" ? <p className="m-0 mb-2 text-sm text-success">Approved. They’re now a member.</p> : null}
+          {searchParams?.request === "decline" ? <p className="m-0 mb-2 text-sm">Request declined.</p> : null}
+          {requests.length === 0 ? (
+            <p className="m-0 text-muted">No requests waiting.</p>
+          ) : (
+            <div className="grid gap-2.5">
+              <p className="m-0 text-sm text-muted">Only approve people you know work or volunteer with you: members see applicants and messages.</p>
+              {requests.map((m) => (
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border border-line" key={m.member_id}>
+                  <div>
+                    <div className="font-bold">{m.full_name || m.email}</div>
+                    <div className="text-xs text-muted">{m.email}</div>
+                  </div>
+                  <form action={joinRequestAction} className="flex gap-2">
+                    <input type="hidden" name="member_id" value={m.member_id} />
+                    <button className="py-2 px-2.5 rounded-md border border-line bg-surface font-semibold" type="submit" name="decision" value="approve">
+                      Approve
+                    </button>
+                    <button className="py-2 px-2.5 rounded-md border border-danger bg-danger-tint" type="submit" name="decision" value="decline">
+                      Decline
+                    </button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <section className="border border-line rounded-lg p-3.5">
         <h2 className="mt-0">Pending invites</h2>

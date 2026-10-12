@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { documentType } from "../messaging/files";
 import type { Express } from "express";
 import { contentDisposition } from "../../lib/http";
 import type { Request } from "express";
@@ -61,10 +62,9 @@ export function registerOrgDocumentsRoutes(app: Express) {
       const file = (req as any).file as Express.Multer.File | undefined;
       if (!file) return res.status(400).json({ message: "Missing file" });
 
-      const allowed = ["application/pdf", "image/jpeg", "image/png"];
-      if (!allowed.includes(file.mimetype)) {
-        return res.status(400).json({ message: "Unsupported file type. Use PDF, JPG, or PNG." });
-      }
+      const real = documentType(file.buffer, file.originalname);
+      if (!real) return res.status(400).json({ message: "Unsupported file type. Use PDF, JPG, or PNG." });
+      file.mimetype = real;
 
       const body = z
         .object({
@@ -124,7 +124,9 @@ export function registerOrgDocumentsRoutes(app: Express) {
       if (!params.success) return res.status(400).json({ message: "Invalid document id" });
       const file = (req as any).file as Express.Multer.File | undefined;
       if (!file) return res.status(400).json({ message: "Missing file" });
-      if (!["application/pdf", "image/jpeg", "image/png"].includes(file.mimetype)) return res.status(400).json({ message: "Unsupported file type. Use PDF, JPG, or PNG." });
+      const real = documentType(file.buffer, file.originalname);
+      if (!real) return res.status(400).json({ message: "Unsupported file type. Use PDF, JPG, or PNG." });
+      file.mimetype = real;
       const body = z
         .object({ change_note: z.string().trim().min(3).max(1000), requires_resign: z.string().optional(), title: z.string().trim().min(2).max(200).optional() })
         .safeParse(req.body ?? {});

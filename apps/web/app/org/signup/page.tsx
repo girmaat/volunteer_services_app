@@ -47,8 +47,8 @@ async function joinOrgAction(fd: FormData) {
     cache: "no-store"
   });
   if (res.status === 401) redirect("/login?returnTo=/org/signup");
-  if (!res.ok) redirect(`/org/signup?error=${encodeURIComponent(message(await res.json().catch(() => null), "We couldn’t add you to that organization."))}`);
-  redirect("/org/dashboard");
+  if (!res.ok) redirect(`/org/signup?error=${encodeURIComponent(message(await res.json().catch(() => null), "We couldn’t send that request."))}`);
+  redirect("/org/signup?requested=1");
 }
 
 /** Logged-out: create the organization and its first admin together; then verify the email. */
@@ -73,7 +73,7 @@ async function enrollAction(_prev: OrgEnrollState, fd: FormData): Promise<OrgEnr
   return { view: "sent", adminEmail: values.adminEmail, verifyUrl: data.dev_verify_url || "" };
 }
 
-export default async function Page(props: { searchParams?: Promise<{ error?: string }> }) {
+export default async function Page(props: { searchParams?: Promise<{ error?: string; requested?: string }> }) {
   const sp = (await props.searchParams) || {};
   const user = await getCurrentUser();
   // Already in an organization: go there.
@@ -87,6 +87,11 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
       {sp.error ? (
         <div className="mt-6">
           <Notice tone="danger">{sp.error}</Notice>
+        </div>
+      ) : null}
+      {sp.requested === "1" ? (
+        <div className="mt-6">
+          <Notice tone="success">Request sent. The organization’s admins will approve it, and you’ll get a notification.</Notice>
         </div>
       ) : null}
 
@@ -140,7 +145,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
                 <Users aria-hidden className="h-5 w-5 text-primary" /> Join your team’s organization
               </h2>
               <p className="m-0 -mt-1 text-sm text-muted">
-                Works when your email matches the organization’s domain. Otherwise, ask one of its admins to invite you from their Team page.
+                We’ll ask the organization’s admins to approve you. Or ask one of them to invite you from their Team page.
               </p>
               <div className="grid gap-1.5">
                 <label htmlFor="j-slug" className={label}>

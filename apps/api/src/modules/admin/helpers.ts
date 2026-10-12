@@ -75,6 +75,16 @@ export function nowIso() {
   return new Date().toISOString();
 }
 
+  /**
+   * Enforcement on platform staff (moderators, admins, super admins) is for super admins only, so an
+   * admin can't lock out a super admin or another admin.
+   */
+  export async function staffTargetAllowed(targetUserId: string, actorIsSuper: boolean) {
+    if (actorIsSuper) return true;
+    const t = await pool.query("SELECT 1 FROM platform_admins WHERE user_id::text = $1 AND revoked_at IS NULL", [String(targetUserId)]);
+    return !t.rowCount;
+  }
+
   export function ensureNotSelf(targetUserId: string, actingUserId: string) {
     return String(targetUserId) !== String(actingUserId);
   }
