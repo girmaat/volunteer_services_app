@@ -147,6 +147,9 @@ export type OrgContext = {
     hours: string | null;
     contact_phone: string | null;
     preferred_contact_method: string | null;
+    publication_policy: string;
+    suspended_at: string | null;
+    suspended_reason: string | null;
   };
   membership: {
     role: "admin" | "manager" | "member";
@@ -161,6 +164,7 @@ export async function getOrgContextForUser(pool: Pool, userId: string, preferred
       o.slug, o.name, o.summary, o.location, o.mission, o.website_url, o.contact_email, o.logo_url, o.onboarding_completed, o.updated_at,
       o.verification_required, o.verification_status, o.verification_submitted_at, o.verification_submission_notes, o.verification_notes, o.verified_at,
       o.preferred_skills, o.service_area, o.hours, o.contact_phone, o.preferred_contact_method,
+      o.publication_policy, o.suspended_at, o.suspended_reason,
       m.role, m.status
     FROM organization_members m
     JOIN organizations o ON o.slug = m.org_slug
@@ -196,7 +200,10 @@ export async function getOrgContextForUser(pool: Pool, userId: string, preferred
       service_area: r.service_area ?? null,
       hours: r.hours ?? null,
       contact_phone: r.contact_phone ?? null,
-      preferred_contact_method: r.preferred_contact_method ?? null
+      preferred_contact_method: r.preferred_contact_method ?? null,
+      publication_policy: String(r.publication_policy || "owner_first_and_high_risk"),
+      suspended_at: r.suspended_at ? String(r.suspended_at) : null,
+      suspended_reason: r.suspended_reason ?? null
     },
     membership: {
       role: String(r.role) as any,

@@ -36,3 +36,26 @@ export async function deleteDraft(fd: FormData) {
   await backendFetch(`/v1/requests/${encodeURIComponent(id)}`, { method: "DELETE" });
   redirect(list);
 }
+
+/** An organization owner approves a coordinator's request (it publishes) or sends it back with a note. */
+export async function ownerApprovalAction(fd: FormData) {
+  const id = String(fd.get("id") || "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) redirect("/org/requests");
+  const decision = fd.get("decision") === "reject" ? "reject" : "approve";
+  const notes = String(fd.get("notes") || "").trim();
+  const res = await backendFetch(`/v1/requests/${id}/owner-approval`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ decision, ...(notes ? { notes } : {}) })
+  });
+  const body = (await res.json().catch(() => null)) as { message?: string } | null;
+  redirect(`/org/requests/${id}?${res.ok ? `flash=${decision === "approve" ? "owner_approved" : "owner_rejected"}` : `error=${encodeURIComponent(body?.message || "That didn’t go through.")}`}`);
+}
+
+/** Shows (or rotates) the request's on-site check-in code. */
+export async function checkinCodeAction(fd: FormData) {
+  const id = String(fd.get("id") || "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) redirect("/org/requests");
+  const res = await backendFetch(`/v1/requests/${id}/checkin-code`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ rotate: fd.get("rotate") === "1" }) });
+  redirect(`/org/requests/${id}?${res.ok ? (fd.get("rotate") === "1" ? "flash=code_rotated" : "") : "error=" + encodeURIComponent("The check-in code couldn’t be made.")}#checkin`);
+}

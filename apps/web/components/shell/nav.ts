@@ -2,7 +2,7 @@ export type AppContext = "volunteer" | "requester" | "org" | "admin";
 
 export type NavItem = { href: string; label: string; icon: IconName; match?: string[]; exact?: boolean };
 export type IconName =
-  | "home" | "search" | "clipboard" | "calendar" | "inbox" | "award" | "list" | "users" | "star" | "chart" | "building" | "settings" | "shield" | "flag" | "file";
+  | "home" | "search" | "clipboard" | "calendar" | "inbox" | "award" | "list" | "users" | "star" | "chart" | "building" | "settings" | "shield" | "flag" | "file" | "clock";
 
 /** Primary navigation per context: at most 7 items, plain-language labels. */
 export function navFor(ctx: AppContext): NavItem[] {
@@ -21,6 +21,7 @@ export function navFor(ctx: AppContext): NavItem[] {
         { href: "/requester/dashboard", label: "Home", icon: "home" },
         { href: "/requester/requests", label: "My requests", icon: "list" },
         { href: "/requester/applications", label: "Applicants", icon: "users" },
+        { href: "/requester/hours", label: "Hours", icon: "clock" },
         { href: "/inbox", label: "Inbox", icon: "inbox" },
         { href: "/requester/reputation", label: "Reviews", icon: "star" }
       ];
@@ -29,10 +30,11 @@ export function navFor(ctx: AppContext): NavItem[] {
         { href: "/org/dashboard", label: "Home", icon: "home" },
         { href: "/org/requests", label: "Requests", icon: "list" },
         { href: "/org/applications", label: "Applicants", icon: "users" },
+        { href: "/org/hours", label: "Hours", icon: "clock" },
         { href: "/org/roster", label: "People", icon: "clipboard", match: ["/org/roster", "/org/attendance", "/org/documents", "/org/incidents"] },
         { href: "/inbox", label: "Inbox", icon: "inbox" },
-        { href: "/org/reports", label: "Reports", icon: "chart" },
-        { href: "/org/team", label: "Organization", icon: "building", match: ["/org/team", "/org/settings", "/org/onboarding"] }
+        // Reports live with the organization's pages (tabs there and a link on Home) to keep 7 items.
+        { href: "/org/team", label: "Organization", icon: "building", match: ["/org/team", "/org/settings", "/org/onboarding", "/org/reports"] }
       ];
     case "admin":
       return [

@@ -66,7 +66,14 @@ export const RequestFields = z
     requiresTraining: z.coerce.boolean(),
     requiresWaiver: z.coerce.boolean(),
     requiresCar: z.coerce.boolean(),
-    equipmentNotes: z.string().trim().max(1000).nullable()
+    equipmentNotes: z.string().trim().max(1000).nullable(),
+    // Target and unit (REQ-01/05): what the request needs in total, e.g. 40 hours or 200 meals.
+    targetValue: z.coerce.number().positive().max(1_000_000).nullable(),
+    targetUnit: z.string().trim().toLowerCase().min(1).max(40).nullable(),
+    minContribution: z.coerce.number().positive().max(1_000_000).nullable(),
+    allowOverfill: z.coerce.boolean(),
+    // Volunteers under 18 need a parent or guardian's consent before check-in (FORM-03).
+    requiresGuardianConsent: z.coerce.boolean()
   })
   .partial()
   .strict();
@@ -124,8 +131,20 @@ export type OwnerRequest = {
   removed_reason: string | null;
   created_at: string;
   updated_at: string;
-  staffing: { accepted: number; needed: number; waitlisted: number };
+  staffing: { accepted: number; needed: number; waitlisted: number; offered?: number; target?: number | null; unit?: string | null; committed?: number };
   actions: OwnerEvent[];
+  target_value?: number | null;
+  target_unit?: string | null;
+  min_contribution?: number | null;
+  allow_overfill?: boolean;
+  requires_guardian_consent?: boolean;
+  owner_approval?: "pending" | "approved" | "rejected" | null;
+  owner_approval_notes?: string | null;
+  owner_approved_at?: string | null;
+  submitted_by_user_id?: string | null;
+  checkin_token?: string | null;
+  checkin_url?: string | null;
+  progress?: { committed: number; approved: number; waiting_approval: number; approved_hours: number; open_capacity: number | null; committed_not_approved: number | null };
   publish_problems: string[];
   events: { event: string; from_status: string | null; to_status: string; actor_kind: string; reason: string | null; created_at: string }[];
 };

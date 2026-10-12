@@ -479,10 +479,19 @@ app.post(
     }
 
     const schema = z.object({
-      message: z.string().trim().min(1).max(5000)
+      message: z.string().trim().min(1).max(5000),
+      // Part of a target (REQ-05): "I can give 4 of the 40 hours" / "20 of the 200 meals".
+      offeredAmount: z.coerce.number().positive().max(1_000_000).optional()
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+    const goal = (await pool.query("SELECT target_value::float AS target, target_unit, min_contribution::float AS min FROM service_requests WHERE id = $1", [id])).rows[0];
+    if (goal?.target != null && parsed.data.offeredAmount == null) {
+      return res.status(400).json({ message: `Say how much you can offer, in ${goal.target_unit}`, errors: { fieldErrors: { offeredAmount: ["Required"] } } });
+    }
+    if (goal?.min != null && parsed.data.offeredAmount != null && parsed.data.offeredAmount < goal.min) {
+      return res.status(422).json({ message: `The smallest useful offer is ${goal.min} ${goal.target_unit}` });
+    }
 
     const already = await pool.query(
       "SELECT id, status FROM request_applications WHERE volunteer_user_id = $1 AND request_id = $2 ORDER BY updated_at DESC LIMIT 1",
@@ -495,8 +504,8 @@ app.post(
     // A full request takes new applicants onto the waitlist; they move up automatically if a spot opens.
     const initial = elig.status === "filled" ? "waitlisted" : "pending";
     const inserted = await pool.query(
-      "INSERT INTO request_applications (volunteer_user_id, request_id, status, message) VALUES ($1, $2, $3, $4) RETURNING id, status, created_at",
-      [user.id, id, initial, parsed.data.message]
+      "INSERT INTO request_applications (volunteer_user_id, request_id, status, message, offered_amount) VALUES ($1, $2, $3, $4, $5) RETURNING id, status, created_at",
+      [user.id, id, initial, parsed.data.message, goal?.target != null ? parsed.data.offeredAmount : null]
     );
     await enqueue("notify.application_received", { applicationId: String(inserted.rows[0].id) });
     // The application message opens the conversation with the organizer (same safety checks as any message).
@@ -537,56 +546,4 @@ app.get(
 
 
 
-// Volunteer: required waiver/training documents for a request + acknowledgement
-app.get(
-  "/v1/volunteer/requests/:id/documents",
-  wrap(async (req, res) => {
-    const user = await requireVolunteerUser(req, res);
-    if (!user) return;
-
-    const idParsed = z.string().uuid().safeParse(req.params.id);
-    if (!idParsed.success) return res.status(400).json({ message: "Invalid request id" });
-    const requestId = idParsed.data;
-
-    const reqRow = await pool.query("SELECT requester_org_slug FROM service_requests WHERE id = $1", [requestId]);
-    if ((reqRow.rowCount ?? 0) === 0) return res.status(404).json({ message: "Opportunity not found" });
-    const orgSlug = String(reqRow.rows[0]?.requester_org_slug || "");
-    if (!orgSlug) return res.json({ documents: [] });
-
-    const hasApp = await pool.query(
-      "SELECT 1 FROM request_applications WHERE volunteer_user_id = $1 AND request_id = $2 LIMIT 1",
-      [user.id, requestId]
-    );
-    if ((hasApp.rowCount ?? 0) === 0) return res.status(403).json({ message: "You must apply to view required documents for this request." });
-
-    const docs = await pool.query(
-      `
-      SELECT
-        d.id,
-        d.doc_type,
-        d.title,
-        d.description,
-        d.file_name,
-        d.mime_type,
-        d.require_ack,
-        d.active,
-        (ack.id IS NOT NULL) AS acknowledged,
-        ack.acknowledged_at
-      FROM org_document_assignments a
-      JOIN org_documents d ON d.id = a.org_document_id
-      LEFT JOIN volunteer_document_acks ack
-        ON ack.org_document_id = d.id
-        AND ack.volunteer_user_id = $2
-        AND ack.request_id = $1
-      WHERE d.org_slug = $3
-        AND d.active = TRUE
-        AND (a.request_id = $1 OR a.request_id IS NULL)
-      ORDER BY d.created_at DESC
-      `,
-      [requestId, user.id, orgSlug]
-    );
-
-    return res.json({ documents: docs.rows });
-  })
-);
 }

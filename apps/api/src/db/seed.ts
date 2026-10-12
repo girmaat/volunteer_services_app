@@ -34,6 +34,8 @@ type Persona = {
   roles?: ("volunteer" | "requester")[];
   /** Identity checked by an admin (trust tier "trusted"). */
   trusted?: boolean;
+  /** YYYY-MM-DD; adults by default. */
+  birthDate?: string;
 };
 
 const PERSONAS: Persona[] = [
@@ -44,8 +46,18 @@ const PERSONAS: Persona[] = [
   { key: "vol_remote", email: `volunteer.remote@${DOMAIN}`, fullName: "Ravi Patel", displayName: "Ravi", role: "volunteer", accountType: "volunteer", location: "Hoboken, NJ", lat: 40.7433, lng: -74.0324, helpCategories: ["education", "tech", "translation"], experienceTags: ["tutoring", "spanish", "web design"], remoteOk: true, inPersonOk: false, hasCar: false, radius: 5 },
   { key: "requester", email: `requester@${DOMAIN}`, fullName: "Rose Martin", displayName: "Rose", role: "requester", accountType: "individual_requester", requesterMode: "individual", location: "Manhattan, NY", lat: 40.7831, lng: -73.9712 },
   { key: "dual", email: `dual.role@${DOMAIN}`, fullName: "Diego Alvarez", displayName: "Diego", role: "volunteer", accountType: "volunteer", location: "Newark, NJ", lat: 40.7357, lng: -74.1724, helpCategories: ["community", "food"], experienceTags: ["event setup"], remoteOk: true, inPersonOk: true, hasCar: true, radius: 20, roles: ["volunteer", "requester"] },
-  { key: "moderator", email: `moderator@${DOMAIN}`, fullName: "Maya Moderator", displayName: "Maya (Moderator)", role: "volunteer", accountType: "volunteer", location: "Brooklyn, NY", lat: 40.6782, lng: -73.9442, platformAdmin: "moderator" }
+  { key: "moderator", email: `moderator@${DOMAIN}`, fullName: "Maya Moderator", displayName: "Maya (Moderator)", role: "volunteer", accountType: "volunteer", location: "Brooklyn, NY", lat: 40.6782, lng: -73.9442, platformAdmin: "moderator" },
+  // A 17-year-old: minors' protections, guardian consent and age limits.
+  { key: "teen", email: `teen.volunteer@${DOMAIN}`, fullName: "Tara Young", displayName: "Tara", role: "volunteer", accountType: "volunteer", location: "Jersey City, NJ", lat: 40.7178, lng: -74.0431, helpCategories: ["education", "food"], experienceTags: ["tutoring"], remoteOk: true, inPersonOk: true, radius: 10, birthDate: "minor" }
 ];
+
+/** A birth date that keeps the persona the same age whenever the seed runs (minor: 17, otherwise 34). */
+function birthDateFor(p: Persona) {
+  const d = new Date();
+  d.setUTCFullYear(d.getUTCFullYear() - (p.birthDate === "minor" ? 17 : 34));
+  d.setUTCDate(d.getUTCDate() - 30);
+  return p.birthDate && p.birthDate !== "minor" ? p.birthDate : d.toISOString().slice(0, 10);
+}
 
 const ORGS = [
   { slug: "harbor-food-bank", name: "Harbor Food Bank", summary: "Neighborhood food pantry serving Queens families.", location: "Queens, NY", mission: "No neighbor goes hungry.", website: "https://example.org/harbor", verified: true },
@@ -137,6 +149,7 @@ async function upsertUser(c: PoolClient, p: Persona, passwordHash: string): Prom
     [id, p.fullName, p.displayName, p.location, `Seeded ${p.key} persona for local testing.`, ["English"],
      p.helpCategories ?? [], p.experienceTags ?? [], p.hasCar ?? null, p.radius ?? null, p.lat, p.lng]
   );
+  await c.query("UPDATE user_profiles SET birth_date = $2::date, birth_year = EXTRACT(YEAR FROM $2::date)::int WHERE user_id = $1", [id, birthDateFor(p)]);
   if (p.role === "volunteer" || p.accountType === "individual_requester") {
     await c.query(
       `INSERT INTO user_availability (user_id, timezone, days, hours_per_week, remote_ok, in_person_ok)
@@ -187,7 +200,7 @@ async function main() {
            mission=EXCLUDED.mission, website_url=EXCLUDED.website_url, verification_status=EXCLUDED.verification_status,
            verified_at=EXCLUDED.verified_at, onboarding_completed=TRUE, updated_at=NOW()`,
         [o.slug, o.name, o.summary, o.location, o.mission, o.website, `hello@${o.slug}.example.org`, ids.org_admin,
-         o.verified ? "approved" : "not_required", o.verified ? new Date() : null]
+         o.verified ? "approved" : "required", o.verified ? new Date() : null]
       );
     }
     const members: [string, string, string][] = [

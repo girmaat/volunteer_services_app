@@ -5,7 +5,7 @@ describe("authentication", () => {
   const email = `new.user.${Date.now()}@example.com`;
 
   it("signs up, verifies email via the dev link, logs in, reads /me, logs out", async () => {
-    const signup = await anon().post("/v1/auth/signup").send({ email, password: "A-good-password-1", fullName: "New User" });
+    const signup = await anon().post("/v1/auth/signup").send({ email, password: "A-good-password-1", fullName: "New User", birthDate: "1995-03-14" });
     expect(signup.status).toBe(202);
     expect(signup.body.dev_verify_url).toMatch(/\/verify-email\?token=/);
 

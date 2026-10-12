@@ -237,3 +237,63 @@ Checks: 1,616 API tests pass (new: impact totals/notes/CSV, notification detail,
 volunteer starting an org); 18 E2E tests pass on two consecutive runs, updated for the new flows; the
 axe/375 px gate now also covers `/org/signup`, the onboarding steps, `/onboarding/welcome`,
 `/notifications`, `/volunteer/history` and `/org/onboarding`. Replaced files are copied to `.retired/`.
+
+## Pilot requirements: hours, records, minors, governance (2026-10-11)
+
+Built from `requirements_document.docx` (Draft 2). Migration `0012_trust_hours_records.sql`; run
+`pnpm db:migrate` then `pnpm db:seed` (adds birth dates and a 17-year-old persona).
+
+1. **Hours approval** (CON-01/05/06, DATA-04, REC-01). Every piece of service is a *contribution*:
+   created on staff or QR check-out, when work is marked complete (scheduled time), or when a
+   volunteer reports time. Reviewers (org admins/managers, or the individual who posted) approve,
+   approve with a change, send back or decline at `/org/hours` and `/requester/hours`; anything but a
+   plain approval needs a note the volunteer sees. Bulk approval skips entries with something to check.
+   Decisions live in `contribution_decisions`, which a database trigger makes append-only. Impact,
+   summary, badges and the CSV count **approved** hours only; waiting and self-reported hours are shown
+   separately. Service outside ThankYou stays "self-reported". Volunteers can resubmit what was sent
+   back and dispute a decision.
+2. **Shareable service record** (REC-02/03, ID-07). `/volunteer/records`: pick approved entries,
+   choose display or full name and an expiry, preview exactly what's shown, confirm, get a link.
+   `/verify/<token>` shows issuer, approver role and method for each entry, and says when the record
+   is expired, turned off, replaced or corrected after issue (then no entries are shown). Correcting
+   shared hours marks the record "corrected" and the volunteer can reissue.
+3. **No self-approval, conflicts, overlaps** (ID-05, GOV-04, DATA-03). Nobody approves their own
+   hours; a reviewer can declare a conflict ("my son") and is then blocked for that volunteer; blocked
+   attempts are recorded. Credited time can't overlap other credited time for the same volunteer.
+   A dispute goes to another reviewer; if none, platform staff can let it stand or mark it
+   unverifiable, never approve it.
+4. **Age gate and minors** (SAFE-01/04, ID-01, FORM-03). Sign-up needs a date of birth (16+); older
+   accounts give it in onboarding. Organization sign-up asks staff to confirm they're 18+. Minors can
+   work only with organizations, their contact details stay hidden (applicants list and messages), and
+   requests can require a parent or guardian's consent: the teen enters the guardian's email, the
+   guardian consents on `/guardian/consent/<token>`, and check-in waits until then.
+5. **Verified-only publishing and owner approval** (ORG-02/05, GOV-01/02, CASE-01). New organizations
+   start unverified and can only draft. Staff can approve, ask for more information, decline (the
+   organization can resubmit), suspend (listings hidden, no publishing or approvals) and reinstate.
+   Owners choose a publishing rule in Settings (default: owner approves the first and high-risk
+   requests); coordinators' requests then wait for the owner, who approves or sends back with a note.
+6. **Waitlist offers** (REQ-07). A freed spot is offered to the next person for 24 hours; they accept
+   or decline from their application; unanswered offers expire hourly and pass on.
+7. **Waivers as prerequisites** (FORM-01/02/04). Forms have versions (with SHA-256); volunteers sign
+   with a typed name and the exact version is stored. Each form is required before applying or before
+   check-in. A new version that needs re-signing blocks check-in for people who signed the old one and
+   notifies them and the organizers. Applicants show "Ready to check in" or what's missing.
+8. **Target and unit, partial offers** (REQ-01/05/06). A request can have a goal (40 hours, 200 meals)
+   and a smallest useful offer; volunteers offer an amount, organizers accept all or part, and target,
+   promised, waiting and approved are shown separately. Units are never added to hours.
+9. **Calendar updates and QR check-in** (CAL-01/02, CON-04). Commitments keep a stable UID; moving a
+   one-time shift or canceling sends an email with an updated invite or a cancellation (next SEQUENCE).
+   Organizers show a per-request QR code; volunteers check themselves in and out at
+   `/check-in/<token>` near the shift time, once prerequisites are done. Location is never used.
+
+Also: org navigation gains **Hours** (Reports moved into the Organization tabs), the org dashboard
+shows hours to approve and requests waiting for the owner, and tabs that differ only by query string
+now highlight correctly. Fixed an old bug where semicolons in calendar text weren't escaped.
+
+Checks: 1,802 API tests (new `test/pilot.test.ts`: each feature with its refusals); 19 E2E tests pass
+twice in a row, including new U16 (minor, guardian consent, QR check-in, hours approval) and a
+rewritten U10 (hours approval → Impact → verified record → CSV); the axe/375 px gate covers the new pages.
+
+Not done (from the same document): school coordinator features, in-kind goods and deliverables,
+CSV import, embeds, MFA for staff, duplicate-account merge, and organization metrics by approved
+hours (org reports still use attendance hours).

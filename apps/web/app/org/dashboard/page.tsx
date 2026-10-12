@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 type OrgDashboard = {
   org: { name: string; onboarding_completed?: boolean };
   openRequests: number;
+  hoursWaiting?: number;
+  ownerApprovalsWaiting?: number;
   pendingApplications: number;
   unreadMessages: number;
   activeMembers: number;
@@ -93,8 +95,8 @@ export default async function OrgDashboardPage(props: { searchParams?: Promise<{
                 href: "/org/settings"
               },
               {
-                done: ["submitted", "approved", "verified"].includes(String(org?.org.verification_status || "")) || !org?.org.verification_required,
-                label: "Submit verification so volunteers see the Verified badge",
+                done: ["approved", "verified"].includes(String(org?.org.verification_status || "")),
+                label: ["submitted"].includes(String(org?.org.verification_status || "")) ? "Verification is being reviewed; requests go public once it’s done" : "Get verified so your requests can go public",
                 href: "/org/settings"
               },
               { done: data.activeMembers > 1, label: "Invite a teammate", href: "/org/team" },
@@ -102,12 +104,22 @@ export default async function OrgDashboardPage(props: { searchParams?: Promise<{
             ]}
           />
 
+          {data.ownerApprovalsWaiting && org?.membership.role === "admin" ? (
+            <div className="mb-5">
+              <Notice tone="warning">
+                {data.ownerApprovalsWaiting} request{data.ownerApprovalsWaiting === 1 ? " is" : "s are"} waiting for your approval before going public.{" "}
+                <Link prefetch={false} href="/org/requests">
+                  Review requests
+                </Link>
+              </Notice>
+            </div>
+          ) : null}
           <StatStrip
             stats={[
               { label: "Open requests", value: data.openRequests, href: "/org/requests" },
               { label: "Applicants to review", value: data.pendingApplications, href: "/org/applications", attention: data.pendingApplications > 0 },
-              { label: "Unread messages", value: data.unreadMessages, href: "/inbox", attention: data.unreadMessages > 0 },
-              { label: "Team members", value: data.activeMembers, href: "/org/team" }
+              { label: "Hours to approve", value: data.hoursWaiting ?? 0, href: "/org/hours", attention: (data.hoursWaiting ?? 0) > 0 },
+              { label: "Unread messages", value: data.unreadMessages, href: "/inbox", attention: data.unreadMessages > 0 }
             ]}
           />
 

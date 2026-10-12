@@ -56,7 +56,12 @@ const COLUMN: Record<keyof RequestFieldsInput, string> = {
   requiresTraining: "requires_training",
   requiresWaiver: "requires_waiver",
   requiresCar: "requires_car",
-  equipmentNotes: "equipment_notes"
+  equipmentNotes: "equipment_notes",
+  targetValue: "target_value",
+  targetUnit: "target_unit",
+  minContribution: "min_contribution",
+  allowOverfill: "allow_overfill",
+  requiresGuardianConsent: "requires_guardian_consent"
 };
 
 /** SET clause + params for the given fields, starting at $<offset>. Keeps legacy columns in sync. */
@@ -82,6 +87,8 @@ export function crossFieldProblems(row: Record<string, any>): string[] {
   if (row.apply_by && row.starts_at && new Date(row.apply_by) > new Date(row.starts_at)) out.push("The apply-by date is after the start");
   if (row.schedule_type === "recurring" && !row.recurrence_rule) out.push("Pick which days it repeats");
   if (row.mode !== "remote" && row.exact_address && !row.public_area) out.push("Add a public area (city or neighborhood) to show instead of the address");
+  if (row.target_value != null && !row.target_unit) out.push("Say what the goal is counted in (hours, meals, items…)");
+  if (row.min_contribution != null && row.target_value != null && Number(row.min_contribution) > Number(row.target_value)) out.push("The smallest useful offer is bigger than the goal");
   return out;
 }
 

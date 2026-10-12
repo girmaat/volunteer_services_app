@@ -6,7 +6,8 @@ import { RequestFields } from "@thankyou/contracts";
 
 const LABELS: Record<string, string> = {
   title: "Title", description: "Description", category: "Category", volunteersNeeded: "Volunteers needed", startsAt: "Start", endsAt: "End",
-  durationMinutes: "Duration", applyBy: "Apply by", publicArea: "Area", exactAddress: "Address", minAge: "Minimum age", timezone: "Time zone", recurrenceRule: "Repeat days"
+  durationMinutes: "Duration", applyBy: "Apply by", publicArea: "Area", exactAddress: "Address", minAge: "Minimum age", timezone: "Time zone", recurrenceRule: "Repeat days",
+  targetValue: "Goal", targetUnit: "Goal unit", minContribution: "Smallest useful offer"
 };
 
 export const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
@@ -36,7 +37,12 @@ function fieldsForStep(step: number, fd: FormData): Record<string, unknown> {
         requiredSkills: str(fd, "requiredSkills"),
         niceToHaveSkills: str(fd, "niceToHaveSkills"),
         volunteersNeeded: num(fd, "volunteersNeeded") ?? 1,
-        urgency: str(fd, "urgency") || "normal"
+        urgency: str(fd, "urgency") || "normal",
+        // Optional goal: an amount in a unit (40 hours, 200 meals). Hours by default.
+        targetValue: num(fd, "targetValue"),
+        targetUnit: num(fd, "targetValue") != null ? (optStr(fd, "targetUnit") || "hours").toLowerCase() : null,
+        minContribution: num(fd, "targetValue") != null ? num(fd, "minContribution") : null,
+        allowOverfill: fd.get("allowOverfill") === "on"
       };
     case 2: {
       const scheduleType = str(fd, "scheduleType") || "flexible_window";
@@ -65,6 +71,7 @@ function fieldsForStep(step: number, fd: FormData): Record<string, unknown> {
         requiresTraining: fd.get("requiresTraining") === "on",
         requiresWaiver: fd.get("requiresWaiver") === "on",
         requiresCar: fd.get("requiresCar") === "on",
+        requiresGuardianConsent: fd.get("requiresGuardianConsent") === "on",
         equipmentNotes: optStr(fd, "equipmentNotes")
       };
     default:
@@ -123,7 +130,8 @@ export async function publishTarget(fd: FormData): Promise<string> {
     const msg = errorText(await res.json().catch(() => null));
     return `${base}?${new URLSearchParams({ id, step: "5", error: msg })}`;
   }
-  const out = (await res.json()) as { review_status: string };
-  return `${detail}?${new URLSearchParams({ flash: out.review_status === "pending_review" ? "submitted" : "published" })}`;
+  const out = (await res.json()) as { review_status: string; owner_approval?: string };
+  const flash = out.owner_approval === "pending" ? "awaiting_owner" : out.review_status === "pending_review" ? "submitted" : "published";
+  return `${detail}?${new URLSearchParams({ flash })}`;
 }
 

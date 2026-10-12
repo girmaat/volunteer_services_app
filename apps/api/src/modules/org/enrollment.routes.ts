@@ -46,7 +46,9 @@ export function registerOrgEnrollmentRoutes(app: Express) {
         admin: z.object({
           fullName: z.string().min(1),
           email: z.string().email(),
-          password: z.string().min(8)
+          password: z.string().min(8),
+          // Organization staff confirm they're adults instead of giving a birth date.
+          adultConfirmed: z.literal(true, { errorMap: () => ({ message: "Confirm you're 18 or older" }) })
         })
       });
 
@@ -70,8 +72,8 @@ export function registerOrgEnrollmentRoutes(app: Express) {
       const userRows = await pool.query(
         // Org-only account: no volunteer/requester profile to fill in. Verification belongs to the
         // organization (organizations.verification_status), not to the person.
-        `INSERT INTO users (email, password_hash, role, account_type, profile_completed, availability_completed, onboarding_completed, verification_required, verification_status)
-         VALUES ($1, $2, 'org_admin', 'org_team_member', TRUE, TRUE, TRUE, FALSE, 'not_required')
+        `INSERT INTO users (email, password_hash, role, account_type, profile_completed, availability_completed, onboarding_completed, verification_required, verification_status, adult_attested_at)
+         VALUES ($1, $2, 'org_admin', 'org_team_member', TRUE, TRUE, TRUE, FALSE, 'not_required', NOW())
          RETURNING id`,
         [email, passwordHash]
       );
@@ -487,7 +489,9 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
         service_area: z.string().trim().max(200).optional().nullable(),
         hours: z.string().trim().max(500).optional().nullable(),
         contact_phone: z.string().trim().max(40).optional().nullable(),
-        preferred_contact_method: z.enum(["in_app", "email", "phone"]).optional().nullable()
+        preferred_contact_method: z.enum(["in_app", "email", "phone"]).optional().nullable(),
+        // GOV-01: which requests need an owner's approval before a coordinator can publish them.
+        publication_policy: z.enum(["owner_all", "owner_first_and_high_risk", "delegated"]).optional()
       });
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
@@ -547,6 +551,7 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
           hours = COALESCE($12, hours),
           contact_phone = COALESCE($13, contact_phone),
           preferred_contact_method = COALESCE($14, preferred_contact_method),
+          publication_policy = COALESCE($15, publication_policy),
           updated_at = NOW()
         WHERE slug = $1
         `,
@@ -564,7 +569,8 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
           p.service_area ?? null,
           p.hours ?? null,
           p.contact_phone ?? null,
-          p.preferred_contact_method ?? null
+          p.preferred_contact_method ?? null,
+          p.publication_policy ?? null
         ]
       );
 
@@ -605,6 +611,9 @@ if ((orgRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Organi
       const status = (cur.rows?.[0]?.verification_status ? String(cur.rows[0].verification_status) : "not_required").toLowerCase();
       if (status === "approved" || status === "verified") {
         return res.status(409).json({ message: "Organization is already verified." });
+      }
+      if (status === "suspended") {
+        return res.status(409).json({ message: "This organization is suspended. Reply to the notice from ThankYou to ask for a review." });
       }
 
       await pool.query(

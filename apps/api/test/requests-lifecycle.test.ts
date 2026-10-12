@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { anon, as, createUser, EMAILS, pool, userId } from "./helpers";
+import { anon, as, birthDateForAge, createUser, EMAILS, pool, userId } from "./helpers";
 import { readUnsubscribeToken, unsubscribeToken } from "../src/modules/notifications/service";
 
 const soon = (days: number) => new Date(Date.now() + days * 86400_000).toISOString();
@@ -153,17 +153,46 @@ describe("staffing: open → pending → filled, waitlist auto-promotion", () =>
     expect(over.body.error.code).toBe("full");
   });
 
-  it("when an accepted volunteer is canceled, the waitlist moves up and the volunteer is told", async () => {
+  it("when an accepted volunteer is canceled, the next waitlisted person is offered the spot (never placed silently)", async () => {
     const api = await as(EMAILS.requester);
     const c = await api.post(`/v1/requester/applications/${apps[vols[0]]}/cancel`);
     expect(c.status, JSON.stringify(c.body)).toBe(200);
-    const promoted = await pool.query("SELECT status FROM request_applications WHERE id = $1", [apps[vols[2]]]);
-    expect(promoted.rows[0].status).toBe("accepted");
+    const offered = await pool.query("SELECT status, offer_expires_at FROM request_applications WHERE id = $1", [apps[vols[2]]]);
+    expect(offered.rows[0].status).toBe("offered");
+    expect(new Date(offered.rows[0].offer_expires_at).getTime()).toBeGreaterThan(Date.now() + 23 * 3_600_000);
     const r = await api.get(`/v1/requests/${requestId}`);
-    expect(r.body.status).toBe("filled");
-    expect(r.body.events.map((e: { event: string }) => e.event)).toContain("waitlist_promoted");
+    expect(r.body.status).toBe("pending"); // an offered spot holds the place but isn't filled until they say yes
+    expect(r.body.events.map((e: { event: string }) => e.event)).toContain("waitlist_offered");
     const n = await (await as(vols[2])).get("/v1/notifications");
-    expect(n.body.notifications.some((x: { type: string }) => x.type === "application_status")).toBe(true);
+    expect(n.body.notifications.some((x: { title: string }) => x.title.startsWith("A spot opened"))).toBe(true);
+    // Only the offered volunteer can answer, and saying yes fills the request.
+    expect((await (await as(vols[1])).post(`/v1/volunteer/applications/${apps[vols[2]]}/offer`, { accept: true })).status).toBe(404);
+    const yes = await (await as(vols[2])).post(`/v1/volunteer/applications/${apps[vols[2]]}/offer`, { accept: true });
+    expect(yes.body.status).toBe("accepted");
+    expect((await api.get(`/v1/requests/${requestId}`)).body.status).toBe("filled");
+  });
+
+  it("an unanswered offer expires after 24 hours and goes to the next person", async () => {
+    const api = await as(EMAILS.requester);
+    const id = await draft(EMAILS.requester, { ...BASICS, ...WHEN, ...WHERE, title: "Offer expiry", volunteersNeeded: 1 });
+    await api.post(`/v1/requests/${id}/transition`, { event: "publish" });
+    const people = ["offer.a@thankyou.test", "offer.b@thankyou.test", "offer.c@thankyou.test"];
+    for (const e of people) await createUser({ email: e, roles: ["volunteer"] });
+    const ids: string[] = [];
+    for (const e of people) ids.push((await (await as(e)).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" })).body.applicationId);
+    await api.post(`/v1/requester/applications/${ids[0]}/accept`);
+    for (const x of ids.slice(1)) await pool.query("UPDATE request_applications SET status = 'waitlisted' WHERE id = $1", [x]);
+    await api.post(`/v1/requester/applications/${ids[0]}/cancel`);
+    expect((await pool.query("SELECT status FROM request_applications WHERE id = $1", [ids[1]])).rows[0].status).toBe("offered");
+    // Declining passes it on; letting the next one lapse expires it.
+    expect((await (await as(people[1])).post(`/v1/volunteer/applications/${ids[1]}/offer`, { accept: false })).body.status).toBe("withdrawn");
+    expect((await pool.query("SELECT status FROM request_applications WHERE id = $1", [ids[2]])).rows[0].status).toBe("offered");
+    await pool.query("UPDATE request_applications SET offer_expires_at = NOW() - INTERVAL '1 minute' WHERE id = $1", [ids[2]]);
+    const { expireOffers } = await import("../src/modules/requests/offers");
+    expect(await expireOffers()).toBeGreaterThanOrEqual(1);
+    expect((await pool.query("SELECT status FROM request_applications WHERE id = $1", [ids[2]])).rows[0].status).toBe("offer_expired");
+    const late = await (await as(people[2])).post(`/v1/volunteer/applications/${ids[2]}/offer`, { accept: true });
+    expect(late.status).toBe(409);
   });
 
   it("raising the number needed reopens slots; lowering below accepted is refused", async () => {
@@ -195,13 +224,17 @@ describe("staffing: open → pending → filled, waitlist auto-promotion", () =>
 
 describe("apply eligibility", () => {
   it("enforces car, age and background-check requirements", async () => {
-    await createUser({ email: "elig.vol@thankyou.test", roles: ["volunteer"] });
+    await createUser({ email: "elig.vol@thankyou.test", roles: ["volunteer"], birthDate: null });
     const id = await draft(EMAILS.requester, { ...BASICS, ...WHEN, ...WHERE, title: "Eligibility: driver", requiresCar: true, minAge: 21, requiresBackgroundCheck: true });
     await (await as(EMAILS.requester)).post(`/v1/requests/${id}/transition`, { event: "publish" });
     const r = await (await as("elig.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
     expect(r.status).toBe(422);
     expect(r.body.problems.map((p: { code: string }) => p.code).sort()).toEqual(["age_unknown", "background_check", "car_required"]);
-    await pool.query("UPDATE user_profiles SET has_car = TRUE, birth_year = 1990, background_check_status = 'cleared' WHERE user_id = $1", [await userId("elig.vol@thankyou.test")]);
+    await pool.query("UPDATE user_profiles SET has_car = TRUE, birth_date = $2::date, background_check_status = 'cleared' WHERE user_id = $1", [await userId("elig.vol@thankyou.test"), birthDateForAge(20)]);
+    // 20 is still under the 21+ limit.
+    const young = await (await as("elig.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
+    expect(young.body.problems.map((p: { code: string }) => p.code)).toEqual(["too_young"]);
+    await pool.query("UPDATE user_profiles SET birth_date = '1990-01-01' WHERE user_id = $1", [await userId("elig.vol@thankyou.test")]);
     const ok = await (await as("elig.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
     expect(ok.status, JSON.stringify(ok.body)).toBe(201);
   });

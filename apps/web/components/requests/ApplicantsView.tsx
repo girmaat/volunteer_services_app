@@ -27,16 +27,21 @@ type Applicant = {
   reliability: { completed: number; late_cancels: number; no_shows: number; rate: number | null };
   avg_rating: string | null;
   review_count: number;
+  minor?: boolean;
+  offered_amount?: number | null;
+  accepted_amount?: number | null;
+  offer_expires_at?: string | null;
+  prerequisites?: { status: "cleared" | "pending" | "blocked"; items: { label: string; state: string; detail: string | null }[] };
 };
 
 const FLASH: Record<string, string> = {
   accept: "Accepted. They can now see the exact address and your contact details.",
-  waitlist: "Waitlisted. They'll move up automatically if a spot opens.",
+  waitlist: "Waitlisted. If a spot opens they'll be offered it and have 24 hours to say yes.",
   decline: "Declined. We let them know kindly.",
   reconsider: "Moved back to review.",
   confirm: "Confirmed. We'll send reminders 48 hours and 2 hours before.",
   complete: "Marked complete. Reviews are open for 14 days.",
-  cancel: "Canceled. If anyone was waitlisted, they moved up.",
+  cancel: "Canceled. If anyone was waitlisted, the next person was offered the spot.",
   no_show: "Recorded as a no-show.",
   reviewed: "Review saved.",
   checked_in: "Checked in. Check them out when they leave to log their hours.",
@@ -58,7 +63,24 @@ function Reliability({ r }: { r: Applicant["reliability"] }) {
 export default async function ApplicantsView({ requestId, base, flash, error }: { requestId: string; base: "/requester/requests" | "/org/requests"; flash?: string; error?: string }) {
   const res = await backendFetch(`/v1/requests/${requestId}/applicants`);
   if (!res.ok) return <Notice tone="danger">Applicants couldn&apos;t load.</Notice>;
-  const data = (await res.json()) as { request: { id: string; title: string; status: string; volunteers_needed: number; starts_at: string | null }; applicants: Applicant[] };
+  const data = (await res.json()) as {
+    request: {
+      id: string;
+      title: string;
+      status: string;
+      volunteers_needed: number;
+      starts_at: string | null;
+      target: number | null;
+      unit: string | null;
+      allow_overfill: boolean;
+      offered: number;
+      committed: number;
+      approved: number;
+      waiting_approval: number;
+      open_capacity: number | null;
+    };
+    applicants: Applicant[];
+  };
   const back = `${base}/${requestId}/applications`;
   const tz = "America/New_York";
   const accepted = data.applicants.filter((a) => ["accepted", "confirmed", "completed"].includes(a.status)).length;
@@ -82,8 +104,17 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
       <PageHeader
         back={<Link prefetch={false} href={`${base}/${requestId}`}>← {data.request.title}</Link>}
         title="Applicants"
-        description={`${accepted} of ${data.request.volunteers_needed} spots filled. Contact details unlock when you accept someone.`}
+        description={`${accepted} of ${data.request.volunteers_needed} spots filled${data.request.offered ? `, ${data.request.offered} offered` : ""}. Contact details unlock when you accept someone (never for volunteers under 18).`}
       />
+      {data.request.target != null ? (
+        <p className="-mt-2 mb-5 text-sm">
+          <span className="font-medium">
+            Goal {data.request.target} {data.request.unit}:
+          </span>{" "}
+          {data.request.committed} promised · {data.request.approved} approved · {data.request.waiting_approval} waiting for approval
+          {data.request.open_capacity ? ` · ${data.request.open_capacity} still open` : ""}
+        </p>
+      ) : null}
       {flash && FLASH[flash] ? <Toast message={FLASH[flash]} /> : null}
       {error ? (
         <div className="mb-4">
@@ -115,6 +146,21 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
                 </div>
                 <StatusPill status={a.no_show ? "no-show" : a.status} />
               </div>
+              {a.minor ? <p className="m-0 mt-1 text-sm font-medium text-primary">Under 18 · talk in messages; contact details stay hidden</p> : null}
+              {a.offered_amount != null ? (
+                <p className="m-0 mt-1 text-sm">
+                  <span className="font-medium">Offered:</span> {a.offered_amount} {data.request.unit}
+                  {a.accepted_amount != null ? ` · accepted ${a.accepted_amount} ${data.request.unit}` : ""}
+                </p>
+              ) : null}
+              {a.status === "offered" && a.offer_expires_at ? <p className="m-0 mt-1 text-sm text-muted">Offered a spot from the waitlist; they have until {formatInZone(a.offer_expires_at, tz)} to say yes.</p> : null}
+              {a.prerequisites && a.prerequisites.items.length ? (
+                <p className={`m-0 mt-1 text-sm ${a.prerequisites.status === "cleared" ? "text-success" : a.prerequisites.status === "blocked" ? "text-danger" : "text-warning"}`}>
+                  {a.prerequisites.status === "cleared"
+                    ? "Ready to check in: forms and consent done"
+                    : `Before check-in: ${a.prerequisites.items.filter((i) => i.state !== "done").map((i) => i.label.replace(/^(Form|Training): /, "") + (i.state === "stale" ? " (new version)" : i.state === "requested" ? " (asked)" : i.state === "declined" ? " (declined)" : "")).join(", ")}`}
+                </p>
+              ) : null}
               {a.message ? <p className="m-0 mt-2 max-w-[70ch] whitespace-pre-line">{a.message}</p> : null}
               {a.skills?.length ? <p className="m-0 mt-1 text-sm text-muted">Skills: {a.skills.join(", ")}</p> : null}
               {a.email || a.phone ? (
@@ -130,10 +176,25 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
               ) : null}
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                {a.status === "pending" || a.status === "waitlisted" ? (
+                {a.status === "pending" || a.status === "waitlisted" || a.status === "offered" ? (
                   <>
-                    <form action={act}>
+                    <form action={act} className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="action" value="accept" />
+                      {data.request.target != null && a.offered_amount != null ? (
+                        <label className="flex items-center gap-1.5 text-sm">
+                          <span className="sr-only">Amount to accept</span>
+                          <input
+                            name="acceptedAmount"
+                            type="number"
+                            min={0.25}
+                            step="any"
+                            max={a.offered_amount}
+                            defaultValue={data.request.allow_overfill || data.request.open_capacity == null ? a.offered_amount : Math.min(a.offered_amount, data.request.open_capacity)}
+                            className="h-9 w-24 rounded border border-line-strong bg-surface px-2 text-sm"
+                          />
+                          {data.request.unit}
+                        </label>
+                      ) : null}
                       <Button type="submit" size="sm">Accept</Button>
                     </form>
                     {a.status === "pending" ? (
@@ -161,7 +222,7 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
                 ) : null}
                 {a.status === "accepted" || a.status === "confirmed" ? (
                   <>
-                    {isOrg ? (
+                    {isOrg && (!a.prerequisites || a.prerequisites.status === "cleared" || openAttendance.has(a.volunteer_user_id)) ? (
                       openAttendance.has(a.volunteer_user_id) ? (
                         <form action={attendanceAction.bind(null, back, a.id, "check-out")}>
                           <Button type="submit" size="sm">Check out</Button>

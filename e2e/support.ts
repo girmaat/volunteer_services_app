@@ -55,6 +55,8 @@ export async function createUser(opts: {
   location?: { label: string; lat: number; lng: number };
   skills?: string[];
   hasCar?: boolean;
+  /** YYYY-MM-DD; adults by default. */
+  birthDate?: string;
 }): Promise<{ id: string; email: string; name: string }> {
   hash ??= await bcrypt.hash(PASSWORD, 6);
   const email = opts.email ?? uniqEmail(opts.name.split(" ")[0].toLowerCase());
@@ -69,9 +71,9 @@ export async function createUser(opts: {
   const id = String(u.rows[0].id);
   const loc = opts.location ?? { label: "Astoria, Queens, NY", lat: 40.7644, lng: -73.9235 };
   await db.query(
-    `INSERT INTO user_profiles (user_id, full_name, display_name, public_location, location, help_categories, experience_tags, service_radius_miles, has_car, geo_lat, geo_lng, geo_updated_at)
-     VALUES ($1, $2, $3, $4, $4, $5, $5, 25, $6, $7, $8, NOW())`,
-    [id, opts.name, opts.name.split(" ")[0], loc.label, opts.skills ?? ["lifting", "errands"], Boolean(opts.hasCar), loc.lat, loc.lng]
+    `INSERT INTO user_profiles (user_id, full_name, display_name, public_location, location, help_categories, experience_tags, service_radius_miles, has_car, geo_lat, geo_lng, geo_updated_at, birth_date)
+     VALUES ($1, $2, $3, $4, $4, $5, $5, 25, $6, $7, $8, NOW(), $9::date)`,
+    [id, opts.name, opts.name.split(" ")[0], loc.label, opts.skills ?? ["lifting", "errands"], Boolean(opts.hasCar), loc.lat, loc.lng, opts.birthDate ?? "1990-05-01"]
   );
   await db.query(
     `INSERT INTO user_availability (user_id, timezone, days, hours_per_week, remote_ok, in_person_ok)
@@ -126,7 +128,9 @@ export async function api(email: string, method: string, pathname: string, body?
 export async function postRequest(
   ownerEmail: string,
   fields: Partial<{ title: string; category: string; description: string; mode: string; publicArea: string; exactAddress: string; startsAt: string; volunteersNeeded: number; requiredSkills: string; durationMinutes: number }>,
-  as: "requester" | "org" = "requester"
+  as: "requester" | "org" = "requester",
+  /** Any other request fields (orgSlug, requiresGuardianConsent, targetValue…). */
+  extra: Record<string, unknown> = {}
 ): Promise<string> {
   const startsAt = fields.startsAt ?? new Date(Date.now() + 5 * 86400_000).toISOString();
   const created = await api(ownerEmail, "POST", "/v1/requests", {
@@ -143,7 +147,8 @@ export async function postRequest(
     mode: fields.mode ?? "in-person",
     publicArea: fields.publicArea ?? "Astoria, Queens, NY",
     exactAddress: fields.exactAddress ?? "31-10 Ditmars Blvd, Apt 2",
-    requiredSkills: fields.requiredSkills ?? ""
+    requiredSkills: fields.requiredSkills ?? "",
+    ...extra
   });
   await api(ownerEmail, "POST", `/v1/requests/${created.id}/transition`, { event: "publish" });
   return String(created.id);

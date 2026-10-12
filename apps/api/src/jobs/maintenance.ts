@@ -6,6 +6,7 @@ import { pool } from "../lib/db";
 import { logger } from "../lib/logger";
 import { hourlyMaintenance as archiveConversations } from "../modules/messaging/jobs";
 import { transitionRequest, TransitionError } from "../modules/requests/lifecycle";
+import { expireOffers } from "../modules/requests/offers";
 
 const extra = new Set<() => Promise<unknown>>();
 /** Lets other modules (reviews) add hourly work without import cycles. */
@@ -37,6 +38,7 @@ export async function runHourly() {
   const out: Record<string, unknown> = {};
   out.archived = (await archiveConversations()).archived;
   out.completed = await autoCompleteRequests();
+  out.offers_expired = await expireOffers();
   for (const fn of extra) await fn();
   logger.info(out, "hourly maintenance");
   return out;

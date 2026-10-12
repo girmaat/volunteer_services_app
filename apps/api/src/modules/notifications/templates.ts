@@ -9,6 +9,8 @@ export type EmailContent = {
   cta?: { label: string; url: string };
   /** Small print under the CTA (e.g. safety reminder). */
   note?: string;
+  /** Attached calendar invite or cancellation. */
+  icalEvent?: { method: "REQUEST" | "CANCEL" | "PUBLISH"; content: string; filename?: string };
 };
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

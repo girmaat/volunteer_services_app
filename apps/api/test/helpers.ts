@@ -55,7 +55,7 @@ export { pool };
 
 let hashCache: string | null = null;
 /** Creates a fully onboarded user with the given member roles (and optional org membership). */
-export async function createUser(opts: { email: string; roles?: ("volunteer" | "requester")[]; org?: { slug: string; role: "admin" | "manager" | "member" }; trusted?: boolean }) {
+export async function createUser(opts: { email: string; roles?: ("volunteer" | "requester")[]; org?: { slug: string; role: "admin" | "manager" | "member" }; trusted?: boolean; birthDate?: string | null }) {
   const bcrypt = (await import("bcryptjs")).default;
   hashCache ??= await bcrypt.hash(PASSWORD, 4);
   const roles = opts.roles ?? [];
@@ -67,9 +67,21 @@ export async function createUser(opts: { email: string; roles?: ("volunteer" | "
     [opts.email, hashCache, legacy, legacy === "requester" ? "individual_requester" : legacy === "org_admin" ? "org_team_member" : "volunteer", opts.trusted ? "approved" : "not_required"]
   );
   const id = String(u.rows[0].id);
-  await pool.query("INSERT INTO user_profiles (user_id, full_name, display_name, public_location) VALUES ($1, $2, $2, 'Jersey City, NJ') ON CONFLICT DO NOTHING", [id, opts.email.split("@")[0]]);
+  // Adults by default (the pilot's age gate needs a birth date to apply); pass birthDate to test minors.
+  await pool.query(
+    "INSERT INTO user_profiles (user_id, full_name, display_name, public_location, birth_date) VALUES ($1, $2, $2, 'Jersey City, NJ', $3::date) ON CONFLICT DO NOTHING",
+    [id, opts.email.split("@")[0], opts.birthDate === undefined ? "1990-05-01" : opts.birthDate]
+  );
   for (const r of roles) await pool.query("INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING", [id, r]);
   if (opts.org)
     await pool.query("INSERT INTO organization_members (org_slug, user_id, role, status, joined_at) VALUES ($1, $2, $3, 'active', NOW())", [opts.org.slug, id, opts.org.role]);
   return id;
+}
+
+/** A YYYY-MM-DD birth date that makes someone `years` old today (plus a month). */
+export function birthDateForAge(years: number) {
+  const d = new Date();
+  d.setUTCFullYear(d.getUTCFullYear() - years);
+  d.setUTCDate(d.getUTCDate() - 30);
+  return d.toISOString().slice(0, 10);
 }

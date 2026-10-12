@@ -10,6 +10,7 @@ import { pool } from "../../lib/db";
 import { submitReview, ReviewError } from "../reviews/service";
 import type { PolicyUser } from "../../lib/policy";
 import { afterApplicationUpdate } from "../requests/applications";
+import { commitmentIcs } from "../calendar/updates";
 import { wrap } from "../../lib/http";
 
 export function registerVolunteerApplicationsRoutes(app: Express) {
@@ -74,6 +75,12 @@ app.get(
         a.message,
         a.created_at,
         a.updated_at,
+        a.offer_expires_at,
+        a.offered_amount::float AS offered_amount,
+        a.accepted_amount::float AS accepted_amount,
+        o.target_unit,
+        o.requires_guardian_consent,
+        o.requester_org_slug,
         o.title,
         COALESCE(o.public_area, o.location_text, '') AS location,
         o.exact_address,
@@ -126,6 +133,12 @@ app.get(
       created_at: r.created_at,
       updated_at: r.updated_at,
       requester_user_id: r.requester_user_id ?? null,
+      offer_expires_at: r.offer_expires_at ?? null,
+      offered_amount: r.offered_amount ?? null,
+      accepted_amount: r.accepted_amount ?? null,
+      target_unit: r.target_unit ?? null,
+      requires_guardian_consent: Boolean(r.requires_guardian_consent),
+      is_org: Boolean(r.requester_org_slug),
       commitment,
       opportunity: {
         id: r.opportunity_id,
@@ -168,7 +181,7 @@ app.post(
     if (existing.rowCount === 0) return res.status(404).json({ message: "Application not found" });
 
     const status = String(existing.rows[0]?.status || "");
-    if (status !== "pending" && status !== "waitlisted") {
+    if (status !== "pending" && status !== "waitlisted" && status !== "offered") {
       return res.status(409).json({ message: `Cannot withdraw from status '${status}'` });
     }
 
@@ -281,62 +294,6 @@ app.post(
 
 
 
-app.post(
-  "/v1/volunteer/documents/:id/ack",
-  wrap(async (req, res) => {
-    const user = await requireVolunteerUser(req, res);
-    if (!user) return;
-
-    const idParsed = z.string().uuid().safeParse(req.params.id);
-    if (!idParsed.success) return res.status(400).json({ message: "Invalid document id" });
-    const docId = idParsed.data;
-
-    const body = z.object({ request_id: z.string().uuid() }).safeParse(req.body);
-    if (!body.success) return res.status(400).json({ message: "Invalid payload", errors: body.error.flatten() });
-
-    const requestId = String(body.data.request_id);
-
-    const reqRow = await pool.query("SELECT requester_org_slug FROM service_requests WHERE id = $1", [requestId]);
-    if ((reqRow.rowCount ?? 0) === 0) return res.status(404).json({ message: "Opportunity not found" });
-    const orgSlug = String(reqRow.rows[0]?.requester_org_slug || "");
-    if (!orgSlug) return res.status(404).json({ message: "No organization associated with this request" });
-
-    const hasApp = await pool.query(
-      "SELECT 1 FROM request_applications WHERE volunteer_user_id = $1 AND request_id = $2 LIMIT 1",
-      [user.id, requestId]
-    );
-    if ((hasApp.rowCount ?? 0) === 0) return res.status(403).json({ message: "You must apply to acknowledge documents for this request." });
-
-    const assigned = await pool.query(
-      `
-      SELECT 1
-      FROM org_document_assignments a
-      JOIN org_documents d ON d.id = a.org_document_id
-      WHERE d.org_slug = $1
-        AND d.id = $2
-        AND d.active = TRUE
-        AND (a.request_id = $3 OR a.request_id IS NULL)
-      LIMIT 1
-      `,
-      [orgSlug, docId, requestId]
-    );
-    if ((assigned.rowCount ?? 0) === 0) return res.status(404).json({ message: "Document not assigned to this request" });
-
-    await pool.query(
-      `
-      INSERT INTO volunteer_document_acks (org_document_id, volunteer_user_id, request_id)
-      VALUES ($1, $2, $3)
-      ON CONFLICT (org_document_id, volunteer_user_id, request_id) DO NOTHING
-      `,
-      [docId, user.id, requestId]
-    );
-
-    return res.status(200).json({ ok: true });
-  })
-);
-
-
-
 app.get(
   "/v1/volunteer/documents/:id/download",
   wrap(async (req, res) => {
@@ -356,8 +313,11 @@ app.get(
     const orgSlug = String(reqRow.rows[0]?.requester_org_slug || "");
     if (!orgSlug) return res.status(404).json({ message: "No organization associated with this request" });
 
+    // Applicants can read every form; anyone may read the forms a live request wants signed before applying.
     const hasApp = await pool.query(
-      "SELECT 1 FROM request_applications WHERE volunteer_user_id = $1 AND request_id = $2 LIMIT 1",
+      `SELECT 1 FROM request_applications WHERE volunteer_user_id = $1 AND request_id = $2
+       UNION ALL
+       SELECT 1 FROM service_requests r WHERE r.id = $2 AND r.status IN ('open', 'pending', 'filled') AND r.review_status = 'approved' LIMIT 1`,
       [user.id, requestId]
     );
     if ((hasApp.rowCount ?? 0) === 0) return res.status(403).json({ message: "You must apply to download documents for this request." });
@@ -493,29 +453,11 @@ app.get(
     if (!user) return;
     const id = z.string().uuid().safeParse(req.params.id);
     if (!id.success) return res.status(400).json({ message: "Invalid id" });
-    const r = await pool.query(
-      `SELECT c.id, c.start_at, c.end_at, r.id AS request_id, r.title, r.mode, r.public_area, r.exact_address, r.duration_minutes,
-              a.id AS application_id
-         FROM request_commitments c
-         JOIN service_requests r ON r.id = c.request_id
-         LEFT JOIN request_applications a ON a.request_id = c.request_id AND a.volunteer_user_id = c.volunteer_user_id
-        WHERE c.id = $1 AND c.volunteer_user_id = $2 AND c.start_at IS NOT NULL`,
-      [id.data, user.id]
-    );
-    const c = r.rows[0];
-    if (!c) return res.status(404).json({ message: "Commitment not found" });
-    const start = new Date(c.start_at);
-    const end = c.end_at ? new Date(c.end_at) : new Date(start.getTime() + (Number(c.duration_minutes) || 60) * 60_000);
-    const link = `${env.WEB_BASE_URL}/volunteer/applications/${c.application_id ?? ""}`;
-    const body = icsEvent({
-      uid: `commitment-${c.id}@thankyou`,
-      start,
-      end,
-      title: `Volunteering: ${c.title}`,
-      location: c.mode === "remote" ? "Remote" : c.exact_address || c.public_area || undefined,
-      description: `Details and messages: ${link}`,
-      url: link
-    });
+    const own = await pool.query("SELECT 1 FROM request_commitments WHERE id = $1 AND volunteer_user_id = $2", [id.data, user.id]);
+    if (!own.rowCount) return res.status(404).json({ message: "Commitment not found" });
+    const ics = await commitmentIcs(id.data);
+    if (!ics) return res.status(404).json({ message: "Commitment not found" });
+    const body = ics.body;
     res.setHeader("content-type", "text/calendar; charset=utf-8");
     res.setHeader("content-disposition", 'attachment; filename="thankyou-commitment.ics"');
     res.setHeader("cache-control", "private, no-store");

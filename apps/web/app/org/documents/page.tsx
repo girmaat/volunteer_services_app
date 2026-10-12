@@ -21,6 +21,7 @@ type OrgDocument = {
   active: boolean;
   created_at: string;
   assignment_count: number;
+  current_version?: number;
 };
 
 async function loadRequests(): Promise<OrgRequest[]> {
@@ -69,7 +70,7 @@ async function assignDocument(formData: FormData) {
   const request_id = String(formData.get("request_id") || "");
   if (!docId) return;
 
-  const payload: any = {};
+  const payload: any = { required_before: formData.get("required_before") === "apply" ? "apply" : "check_in" };
   if (request_id) payload.request_id = request_id;
 
   const res = await backendFetch(`/v1/org/documents/${docId}/assign`, { method: "POST", body: JSON.stringify(payload) });
@@ -80,7 +81,28 @@ async function assignDocument(formData: FormData) {
   redirect("/org/documents?assigned=1");
 }
 
-export default async function Page() {
+/**
+ * A new version of a form. When it changes what people agree to, earlier signatures stop counting:
+ * volunteers already assigned must sign again before they can check in (they and you are notified).
+ */
+async function uploadVersion(formData: FormData) {
+  "use server";
+  const docId = String(formData.get("docId") || "");
+  const file = formData.get("file");
+  if (!/^[0-9a-f-]{36}$/i.test(docId) || !file || !(file instanceof File) || !file.size) redirect("/org/documents?version=0");
+  const payload = new FormData();
+  payload.set("file", file, file.name);
+  payload.set("change_note", String(formData.get("change_note") || ""));
+  payload.set("requires_resign", formData.get("requires_resign") ? "true" : "false");
+  const res = await backendFetch(`/v1/org/documents/${docId}/versions`, { method: "POST", body: payload });
+  if (!res.ok) redirect("/org/documents?version=0");
+  const out = (await res.json()) as { version: number; volunteers_to_resign: number };
+  revalidatePath("/org/documents");
+  redirect(`/org/documents?version=${out.version}&resign=${out.volunteers_to_resign}`);
+}
+
+export default async function Page(props: { searchParams?: Promise<{ version?: string; resign?: string }> }) {
+  const sp = (await props.searchParams) || {};
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!inOrg(user)) redirect("/dashboard");
@@ -93,9 +115,19 @@ export default async function Page() {
   return (
     <div className={styles.mainFull}>
       <div className="flex justify-between items-baseline gap-3 flex-wrap">
-        <h1 className="m-0">Docs</h1>
-        <span className={styles.meta}>Upload waivers and training docs, then assign them to requests.</span>
+        <h1 className="m-0">Forms and waivers</h1>
+        <span className={styles.meta}>Upload waivers and training docs, assign them to requests, and choose whether people sign before applying or before check-in.</span>
       </div>
+      {sp.version && sp.version !== "0" ? (
+        <div className={`${styles.card} mt-3`} role="status">
+          Version {sp.version} uploaded.{" "}
+          {Number(sp.resign || 0) ? `${sp.resign} volunteer${sp.resign === "1" ? "" : "s"} must sign it again before check-in; we told them.` : "Nobody has to sign again yet."}
+        </div>
+      ) : sp.version === "0" ? (
+        <div className={`${styles.card} mt-3`} role="alert">
+          The new version didn’t upload. Use a PDF, JPG or PNG and say what changed.
+        </div>
+      ) : null}
 
       <div className={`${styles.card} mt-3`}>
         <h2 className="mt-0">Upload document</h2>
@@ -170,7 +202,9 @@ export default async function Page() {
                   </td>
                   <td>
                     <div className="flex flex-col">
-                      <strong>{d.title}</strong>
+                      <strong>
+                        {d.title} <span className={styles.muted}>· version {d.current_version ?? 1}</span>
+                      </strong>
                       {d.description ? <span className={styles.muted}>{d.description}</span> : null}
                     </div>
                   </td>
@@ -185,7 +219,11 @@ export default async function Page() {
                       </Link>
                       <form className="flex gap-2 items-center" action={assignDocument}>
                         <input type="hidden" name="docId" value={d.id} />
-                        <select className={styles.select} name="request_id" defaultValue="">
+                        <select className={styles.select} name="required_before" defaultValue="check_in" aria-label={`When ${d.title} must be signed`}>
+                          <option value="check_in">Sign before check-in</option>
+                          <option value="apply">Sign before applying</option>
+                        </select>
+                        <select className={styles.select} name="request_id" defaultValue="" aria-label={`Where to use ${d.title}`}>
                           <option value="">Assign org-wide</option>
                           {requests.map((r) => (
                             <option key={r.id} value={r.id}>
@@ -197,6 +235,20 @@ export default async function Page() {
                           Assign
                         </button>
                       </form>
+                      <details>
+                        <summary className={styles.smallLink}>New version</summary>
+                        <form action={uploadVersion} className="mt-2 grid gap-2">
+                          <input type="hidden" name="docId" value={d.id} />
+                          <input type="file" name="file" required accept="application/pdf,image/jpeg,image/png" aria-label={`New version of ${d.title}`} />
+                          <input className={styles.input} name="change_note" required minLength={3} maxLength={1000} placeholder="What changed?" aria-label="What changed" />
+                          <label className="flex items-center gap-2 text-sm">
+                            <input type="checkbox" name="requires_resign" defaultChecked /> Volunteers must sign again
+                          </label>
+                          <button className={styles.secondaryButton} type="submit">
+                            Upload version {(d.current_version ?? 1) + 1}
+                          </button>
+                        </form>
+                      </details>
                     </div>
                   </td>
                 </tr>

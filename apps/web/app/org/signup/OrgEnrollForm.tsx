@@ -115,6 +115,10 @@ export default function OrgEnrollForm({ action }: { action: ServerAction }) {
             At least 8 characters.
           </p>
         </div>
+        <label className="flex items-start gap-3 text-sm">
+          <input type="checkbox" name="adultConfirmed" value="yes" required className="mt-0.5 h-5 w-5 accent-[var(--primary)]" />
+          <span>I’m 18 or older and allowed to act for this organization.</span>
+        </label>
       </fieldset>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

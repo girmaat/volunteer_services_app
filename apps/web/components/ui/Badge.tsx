@@ -43,7 +43,23 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
   draft: { label: "Draft", tone: "neutral" },
   in_review: { label: "In review", tone: "warning" },
   "no-show": { label: "No-show", tone: "danger" },
-  pending_review: { label: "In review", tone: "warning" }
+  pending_review: { label: "In review", tone: "warning" },
+  offered: { label: "Spot offered", tone: "primary" },
+  awaiting_owner: { label: "Waiting for owner", tone: "warning" },
+  sent_back: { label: "Sent back", tone: "warning" },
+  offer_expired: { label: "Offer expired", tone: "neutral" }
+};
+
+/** Hours (contributions): approved, waiting and self-reported never look alike (REC-01). */
+const HOURS_STATUS: Record<string, { label: string; tone: Tone }> = {
+  pending: { label: "Waiting for approval", tone: "warning" },
+  approved: { label: "Approved", tone: "success" },
+  adjusted: { label: "Approved with a change", tone: "success" },
+  rejected: { label: "Not approved", tone: "danger" },
+  revision_requested: { label: "Sent back to you", tone: "warning" },
+  disputed: { label: "Disputed", tone: "warning" },
+  unverified: { label: "Couldn’t be verified", tone: "neutral" },
+  self_reported: { label: "Self-reported", tone: "neutral" }
 };
 
 /** One colour per request/application state, used everywhere a status is shown. */
@@ -53,8 +69,8 @@ const REQUEST_STATUS: Record<string, { label: string; tone: Tone }> = {
   paused: { label: "Paused", tone: "warning" }
 };
 
-export function StatusPill({ status, kind = "application" }: { status: string | null | undefined; kind?: "request" | "application" }) {
+export function StatusPill({ status, kind = "application" }: { status: string | null | undefined; kind?: "request" | "application" | "hours" }) {
   const key = String(status || "").toLowerCase();
-  const s = (kind === "request" ? REQUEST_STATUS[key] : undefined) ?? STATUS[key] ?? { label: key ? key[0].toUpperCase() + key.slice(1) : "Unknown", tone: "neutral" as Tone };
+  const s = (kind === "request" ? REQUEST_STATUS[key] : kind === "hours" ? HOURS_STATUS[key] : undefined) ?? STATUS[key] ?? { label: key ? key[0].toUpperCase() + key.slice(1) : "Unknown", tone: "neutral" as Tone };
   return <Badge tone={s.tone}>{s.label}</Badge>;
 }

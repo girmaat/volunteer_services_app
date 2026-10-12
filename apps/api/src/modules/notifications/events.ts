@@ -53,7 +53,8 @@ export async function onApplicationReceived({ applicationId }: { applicationId: 
 
 const STATUS_COPY: Record<string, { title: (t: string) => string; line: (t: string) => string }> = {
   accepted: { title: (t) => `You're in: “${t}”`, line: (t) => `Your application to “${t}” was accepted. The exact location and contact details are now in your application.` },
-  waitlisted: { title: (t) => `You're on the waitlist for “${t}”`, line: (t) => `“${t}” is full for now. If a spot opens you'll move up automatically and we'll let you know.` },
+  waitlisted: { title: (t) => `You're on the waitlist for “${t}”`, line: (t) => `“${t}” is full for now. If a spot opens we'll offer it to you, and you'll have 24 hours to say yes.` },
+  offered: { title: (t) => `A spot opened on “${t}”. Do you want it?`, line: (t) => `A spot opened on “${t}”. It's yours if you say yes within 24 hours; after that we offer it to the next person.` },
   rejected: { title: (t) => `Update on “${t}”`, line: (t) => `The organizer chose other volunteers for “${t}”. Thank you for offering — there are more opportunities waiting.` },
   canceled: { title: (t) => `“${t}” was canceled`, line: (t) => `“${t}” isn't going ahead.` }
 };
@@ -74,7 +75,7 @@ export async function onApplicationStatus({ applicationId, status, promoted }: {
       subject: copy.title(req.title),
       heading: copy.title(req.title),
       lines,
-      cta: { label: "Open your application", url: `/volunteer/applications/${a.id}` },
+      cta: { label: status === "offered" ? "Accept or decline" : "Open your application", url: `/volunteer/applications/${a.id}` },
       note: status === "accepted" ? SAFETY : undefined
     }
   });

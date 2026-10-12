@@ -24,6 +24,9 @@ export type OrgContext = {
     hours?: string | null;
     contact_phone?: string | null;
     preferred_contact_method?: string | null;
+    publication_policy?: "owner_all" | "owner_first_and_high_risk" | "delegated";
+    suspended_at?: string | null;
+    suspended_reason?: string | null;
   };
   membership: {
     role: "admin" | "manager" | "member";

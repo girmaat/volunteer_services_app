@@ -4,6 +4,7 @@ import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { getOrgContext } from "../../lib/org";
 import { redirect } from "next/navigation";
 import styles from "../org.module.css";
+import OrgTabs from "../../../components/org/OrgTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -140,6 +141,9 @@ export default async function Page(
             Volunteer hours PDF
           </Link>
         </div>
+      </div>
+      <div className="mt-4">
+        <OrgTabs />
       </div>
 
       <form className={`${styles.card} mt-3 grid grid-cols-[1fr_1fr_1fr_auto] gap-2.5 items-end`}>

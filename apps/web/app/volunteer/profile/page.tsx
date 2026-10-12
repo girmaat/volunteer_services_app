@@ -63,8 +63,8 @@ export default async function Page(
     payload.avatarUrl = avatarUrlRaw ? avatarUrlRaw : null;
     payload.publicLocation = publicLocationRaw ? publicLocationRaw : null;
 
-    const birthYearRaw = String(formData.get("birthYear") || "").trim();
-    payload.birthYear = /^\d{4}$/.test(birthYearRaw) ? Number(birthYearRaw) : null;
+    const birthDateRaw = String(formData.get("birthDate") || "").trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(birthDateRaw)) payload.birthDate = birthDateRaw;
 
     const radiusNum = serviceRadiusMilesRaw ? Number(serviceRadiusMilesRaw) : NaN;
     payload.serviceRadiusMiles = Number.isFinite(radiusNum) ? Math.min(Math.max(Math.floor(radiusNum), 1), 200) : null;
@@ -238,16 +238,9 @@ export default async function Page(
             </label>
 
             <label className={styles.label}>
-              Birth year (private)
-              <input
-                name="birthYear"
-                inputMode="numeric"
-                pattern="\d{4}"
-                className={styles.input}
-                defaultValue={(profile as any)?.birth_year ?? ""}
-                placeholder="1990"
-              />
-              <p className={styles.meta}>Only used to check minimum-age requirements. Never shown to anyone.</p>
+              Date of birth (private)
+              <input name="birthDate" type="date" autoComplete="bday" className={styles.input} defaultValue={(profile as any)?.birth_date ?? ""} />
+              <p className={styles.meta}>Only used to check age limits. Never shown to anyone.</p>
             </label>
 
             <div className={styles.label}>

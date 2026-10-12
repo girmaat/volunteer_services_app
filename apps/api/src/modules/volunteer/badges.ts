@@ -3,7 +3,6 @@
  * job after work is completed, never inside a GET request.
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { completedWork } from "./impact";
 import { pool } from "../../lib/db";
 import { notify } from "../notifications/service";
 
@@ -16,20 +15,14 @@ export async function computeBadges(userId: string) {
         `SELECT updated_at FROM request_applications WHERE volunteer_user_id = $1 AND status='completed' ORDER BY updated_at ASC`,
         [userId]
       ),
-      // Hour milestones use the same hours as Impact: completed engagements plus other logged time.
-      completedWork(userId).then(async (work) => {
-        const extra = await pool.query(
-          `SELECT d, hrs FROM (
-             SELECT impact_date::date AS d, COALESCE(hours,0)::float AS hrs, request_id FROM volunteer_impact_entries WHERE volunteer_user_id = $1
-             UNION ALL
-             SELECT task_date::date, COALESCE(duration_hours,0)::float, request_id FROM volunteer_task_entries WHERE volunteer_user_id = $1
-           ) x WHERE d IS NOT NULL AND (request_id IS NULL OR NOT (request_id = ANY($2::uuid[])))`,
-          [userId, work.map((w) => w.request_id)]
-        );
-        const rows = [...work.map((w) => ({ d: w.completed_at, hrs: w.hours })), ...extra.rows.map((r) => ({ d: String(r.d), hrs: Number(r.hrs) }))];
-        rows.sort((a, b) => new Date(a.d).getTime() - new Date(b.d).getTime());
-        return { rows };
-      }),
+      // Hour milestones count approved hours only, in the order they were approved.
+      pool
+        .query(
+          `SELECT COALESCE(decided_at, updated_at) AS d, approved_hours::float AS hrs FROM contributions
+            WHERE volunteer_user_id = $1 AND status IN ('approved', 'adjusted') AND approved_hours > 0 ORDER BY 1`,
+          [userId]
+        )
+        .then((r) => ({ rows: r.rows.map((x) => ({ d: new Date(x.d).toISOString(), hrs: Number(x.hrs) })) })),
       pool.query(`SELECT rating, created_at FROM visible_volunteer_reviews WHERE volunteer_user_id = $1 ORDER BY created_at ASC`, [userId])
     ]);
 

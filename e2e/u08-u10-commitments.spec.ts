@@ -9,7 +9,7 @@ async function ownerAct(owner: string, requestId: string, appId: string, action:
 
 // U8 · Volunteer: confirm attendance from the reminder; add to calendar (ICS); cancel late →
 // the waitlisted volunteer is promoted.
-test("U8 reminder → confirm attendance, ICS, late cancel promotes the waitlist", async ({ browser }) => {
+test("U8 reminder → confirm attendance, ICS, late cancel offers the spot to the waitlist", async ({ browser }) => {
   const owner = await createUser({ name: "Paula Owner", roles: ["requester"] });
   const ada = await createUser({ name: `Ada${run} Early`, roles: ["volunteer"] });
   const bo = await createUser({ name: `Bo${run} Waiting`, roles: ["volunteer"] });
@@ -59,9 +59,12 @@ test("U8 reminder → confirm attendance, ICS, late cancel promotes the waitlist
   const late = await db.query("SELECT late_cancel FROM request_commitments WHERE request_id = $1 AND volunteer_user_id = $2 ORDER BY updated_at DESC LIMIT 1", [id, ada.id]);
   expect(late.rows[0].late_cancel).toBe(true);
 
-  // Bo moves up from the waitlist.
+  // Bo is offered the spot (never placed without saying yes) and takes it.
   const w = await signedIn(browser, bo.email);
   await w.page.goto(`/volunteer/applications/${b.applicationId}`);
+  await expect(w.page.getByText("A spot opened up. Do you want it?")).toBeVisible();
+  await submit(w.page, w.page.getByRole("button", { name: "Yes, I'll take it" }));
+  await expect(w.page.getByText("The spot is yours.")).toBeVisible();
   await expect(w.page.locator("main")).toContainText("Accepted");
 });
 
@@ -111,8 +114,9 @@ test("U9 complete, double-blind reviews appear only when both are in", async ({ 
   await expect(v.page.getByText("Careful, tidy work.")).toBeVisible();
 });
 
-// U10 · Volunteer: the Impact page shows totals and completed work, takes a note; export CSV.
-test("U10 impact page shows completed work, takes a note and exports CSV", async ({ browser }) => {
+// U10 · Volunteer and organizer: hours wait for approval; approved hours show on Impact, on a
+// shareable record anyone can check, and in the CSV (CON-05, REC-01/02/03).
+test("U10 hours wait for approval, then count on Impact, a verified record and the CSV", async ({ browser }) => {
   const owner = await createUser({ name: "Iris Owner", roles: ["requester"] });
   const vol = await createUser({ name: `Ian${run} Impact`, roles: ["volunteer"] });
   const title = uniq("Sort a little free library");
@@ -122,35 +126,70 @@ test("U10 impact page shows completed work, takes a note and exports CSV", async
   await db.query("UPDATE service_requests SET starts_at = NOW() - INTERVAL '1 day' WHERE id = $1", [id]);
   await ownerAct(owner.email, id, a.applicationId, "complete");
 
-  const { page } = await signedIn(browser, vol.email);
-  await page.goto("/volunteer/history");
-  // One page: totals, the timeline of completed work, badges and reviews.
-  await expect(page.getByRole("heading", { name: "Your volunteering" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Badges" })).toBeVisible();
-  await expect(page.locator("main")).toContainText("Hours given");
-  const item = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: title }) });
-  await expect(item).toContainText("2 h (from the schedule)");
+  // Marked complete: the scheduled time waits for the organizer's approval and doesn't count yet.
+  const v = await signedIn(browser, vol.email);
+  await v.page.goto("/volunteer/history");
+  await expect(v.page.getByRole("heading", { name: "Your volunteering" })).toBeVisible();
+  const item = v.page.getByRole("listitem").filter({ has: v.page.getByRole("heading", { name: title }) });
+  await expect(item).toContainText("2 h reported");
+  await expect(item).toContainText("Waiting for approval");
 
-  // An optional note, with corrected hours, folds into that item and replaces the estimate.
-  await item.getByText("Add a note or correct the hours").click();
-  await item.getByLabel(/What happened/).fill("Shelved 40 books.");
-  await item.getByLabel(/Hours/).fill("3");
-  await submit(page, item.getByRole("button", { name: "Save" }));
-  await expect(page.getByText("Saved to your impact.")).toBeVisible();
-  await expect(item).toContainText("Shelved 40 books.");
-  await expect(item).toContainText("3 h");
+  // The volunteer reports extra time.
+  await item.getByText("Report time you gave").click();
+  await item.getByLabel("or hours").fill("1.5");
+  await item.getByLabel("What did you do?").fill("Shelved 40 books after closing.");
+  await submit(v.page, item.getByRole("button", { name: "Send for approval" }));
+  await expect(v.page.getByText(/Sent for approval/)).toBeVisible();
 
-  // The old tab URLs land on the right section.
-  await page.goto("/volunteer/history/hours");
-  await expect(page).toHaveURL(/\/volunteer\/history#hours$/);
+  // The organizer approves one and approves the other with a change and a note.
+  const o = await signedIn(browser, owner.email);
+  await o.page.goto("/requester/hours");
+  await expect(o.page.getByRole("heading", { name: "Volunteer hours" })).toBeVisible();
+  const entries = o.page.getByRole("listitem").filter({ hasText: title });
+  await expect(entries).toHaveCount(2);
+  await submit(o.page, entries.filter({ hasText: "Marked complete" }).getByRole("button", { name: "Approve 2 h" }));
+  await expect(o.page.getByText(/Approved\. It now counts/)).toBeVisible();
+  const extra = o.page.getByRole("listitem").filter({ hasText: "Shelved 40 books" });
+  await extra.getByText("Change, send back or decline").click();
+  await extra.getByLabel("Hours to approve").fill("1");
+  await extra.getByLabel("Note for the volunteer").fill("We closed at 6, so one hour.");
+  await submit(o.page, extra.getByRole("button", { name: "Approve with this change" }));
+  await expect(o.page.getByText(/Saved with your change/)).toBeVisible();
 
-  const href = await page.getByRole("link", { name: /CSV/ }).getAttribute("href");
-  const res = await page.request.get(href!);
+  // Only approved hours count; the volunteer sees the note.
+  await v.page.goto("/volunteer/history");
+  await expect(v.page.locator("main")).toContainText(/Approved hours\s*3(?!\d)/);
+  await expect(item).toContainText("Reviewer’s note: We closed at 6, so one hour.");
+
+  // A record to share: preview exactly what's shown, confirm, then anyone with the link can check it.
+  await v.page.goto("/volunteer/records/new");
+  await submit(v.page, v.page.getByRole("button", { name: "Preview" }));
+  await expect(v.page.getByRole("heading", { name: "Check what they’ll see" })).toBeVisible();
+  await expect(v.page.getByRole("table")).toContainText(title);
+  await v.page.getByRole("checkbox", { name: /I want to share this/ }).check();
+  await submit(v.page, v.page.getByRole("button", { name: "Create link" }));
+  await expect(v.page.getByText("Record ready.")).toBeVisible();
+  const recordUrl = await v.page.getByLabel("Record link").inputValue();
+  const anon = await browser.newContext();
+  const pub = await anon.newPage();
+  await pub.goto(recordUrl.replace(/^https?:\/\/[^/]+/, ""));
+  await expect(pub.getByText("Valid record, issued by ThankYou")).toBeVisible();
+  await expect(pub.getByRole("table")).toContainText(title);
+  // Turning the link off leaves nothing to see.
+  await submit(v.page, v.page.getByRole("button", { name: "Turn off link" }));
+  await pub.reload();
+  await expect(pub.getByRole("heading", { name: "This record was turned off" })).toBeVisible();
+  await expect(pub.getByRole("table")).toHaveCount(0);
+  await anon.close();
+
+  // The CSV keeps each entry with its status.
+  await v.page.goto("/volunteer/history");
+  const href = await v.page.getByRole("link", { name: /CSV/ }).getAttribute("href");
+  const res = await v.page.request.get(href!);
   expect(res.status()).toBe(200);
   expect(res.headers()["content-type"]).toContain("text/csv");
-  expect(res.headers()["content-disposition"]).toContain("attachment");
   const csv = await res.text();
-  expect(csv.split("\n")[0]).toMatch(/title|date|hours/i);
+  expect(csv.split("\n")[0]).toMatch(/date.*status.*approved_hours/i);
   expect(csv).toContain(title);
-  expect(csv).toContain("Shelved 40 books.");
+  expect(csv).toContain("approved (adjusted)");
 });

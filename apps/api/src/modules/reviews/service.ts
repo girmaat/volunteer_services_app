@@ -2,6 +2,7 @@
  * Reviews (Phase 4.7): structured, double-blind, and locked once published; reliability from
  * late cancellations and no-shows; disputes either side can open.
  */
+import { calendarChanged } from "../calendar/updates";
 import { pool } from "../../lib/db";
 import { orgMembership, type PolicyUser } from "../../lib/policy";
 
@@ -177,16 +178,19 @@ export async function reliabilityOf(userId: string) {
  * start is a late cancellation (shown on their reliability).
  */
 export async function recordCommitmentCancel(applicationId: string, by: "volunteer" | "owner" | "system") {
-  await pool.query(
+  const canceled = await pool.query(
     `UPDATE request_commitments c
         SET status = 'canceled', canceled_at = NOW(), canceled_by = $2, updated_at = NOW(),
             late_cancel = ($2 = 'volunteer' AND COALESCE(c.start_at, r.starts_at) IS NOT NULL
                            AND COALESCE(c.start_at, r.starts_at) - NOW() < INTERVAL '24 hours')
        FROM request_applications a, service_requests r
       WHERE a.id = $1 AND c.request_id = a.request_id AND c.volunteer_user_id = a.volunteer_user_id AND r.id = a.request_id
-        AND c.status IN ('scheduled', 'confirmed')`,
+        AND c.status IN ('scheduled', 'confirmed')
+      RETURNING c.id, c.start_at`,
     [applicationId, by]
   );
+  // Calendars that had this shift get a cancellation (same UID, next SEQUENCE).
+  await calendarChanged(canceled.rows.filter((r) => r.start_at).map((r) => String(r.id)), "cancel");
   // A volunteer who cancels with no commitment row yet but inside 24 h of the start still counts.
   if (by === "volunteer") {
     await pool.query(

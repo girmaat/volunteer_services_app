@@ -4,12 +4,13 @@
  *
  *   draft ──publish──▶ open ──(first accept)──▶ pending ──(all slots)──▶ filled
  *     ▲  (sensitive: review first)   ▲  │                    ▲   │
- *     └──reject/approve (admin)      │  └──────pause/resume───┘   └─(a volunteer cancels: auto-promote waitlist)
+ *     └──reject/approve (admin)      │  └──────pause/resume───┘   └─(a spot opens: offered to the next waitlisted person)
  *   any live state ──cancel / take_down──▶ canceled          pending|filled ──complete──▶ completed
  */
 import type { Pool, PoolClient } from "pg";
 import { pool as defaultPool } from "../../lib/db";
 import { enqueue } from "../../jobs/queue";
+import { calendarChanged } from "../calendar/updates";
 
 export type RequestStatus = "draft" | "open" | "pending" | "filled" | "paused" | "completed" | "canceled";
 export type RequestEvent =
@@ -63,25 +64,50 @@ export class TransitionError extends Error {
 
 type Db = Pool | PoolClient;
 
-export type StaffingCounts = { accepted: number; needed: number; waitlisted: number };
+export type StaffingCounts = {
+  accepted: number;
+  needed: number;
+  waitlisted: number;
+  /** Spots offered to waitlisted volunteers, waiting for their answer (they hold the spot). */
+  offered: number;
+  /** Target and unit (REQ-05/06): accepted commitments in the target unit, kept apart from delivered work. */
+  target: number | null;
+  unit: string | null;
+  committed: number;
+  allowOverfill: boolean;
+};
 
 export async function staffingCounts(db: Db, requestId: string): Promise<StaffingCounts> {
   const r = await db.query(
-    `SELECT r.volunteers_needed AS needed,
+    `SELECT r.volunteers_needed AS needed, r.target_value::float AS target, r.target_unit AS unit, r.allow_overfill,
             COUNT(a.id) FILTER (WHERE a.status IN ('accepted', 'confirmed', 'completed'))::int AS accepted,
-            COUNT(a.id) FILTER (WHERE a.status = 'waitlisted')::int AS waitlisted
+            COUNT(a.id) FILTER (WHERE a.status = 'waitlisted')::int AS waitlisted,
+            COUNT(a.id) FILTER (WHERE a.status = 'offered')::int AS offered,
+            COALESCE(SUM(COALESCE(a.accepted_amount, a.offered_amount)) FILTER (WHERE a.status IN ('accepted', 'confirmed', 'completed')), 0)::float AS committed
        FROM service_requests r
        LEFT JOIN request_applications a ON a.request_id = r.id
       WHERE r.id = $1
       GROUP BY r.id`,
     [requestId]
   );
-  const row = r.rows[0] || { needed: 1, accepted: 0, waitlisted: 0 };
-  return { needed: Number(row.needed), accepted: Number(row.accepted), waitlisted: Number(row.waitlisted) };
+  const row = r.rows[0] || { needed: 1, accepted: 0, waitlisted: 0, offered: 0, target: null, unit: null, committed: 0, allow_overfill: false };
+  return {
+    needed: Number(row.needed),
+    accepted: Number(row.accepted),
+    waitlisted: Number(row.waitlisted),
+    offered: Number(row.offered),
+    target: row.target == null ? null : Number(row.target),
+    unit: row.unit ?? null,
+    committed: Number(row.committed || 0),
+    allowOverfill: Boolean(row.allow_overfill)
+  };
 }
 
+/** The target is met and no more is wanted. */
+export const targetMet = (c: StaffingCounts) => c.target != null && !c.allowOverfill && c.committed >= c.target;
+
 function staffedStatus(c: StaffingCounts): RequestStatus {
-  if (c.accepted >= c.needed) return "filled";
+  if (c.accepted >= c.needed || targetMet(c)) return "filled";
   if (c.accepted > 0) return "pending";
   return "open";
 }
@@ -243,18 +269,26 @@ async function afterTransition(res: TransitionResult, actor: Actor, reason: stri
     if (l && l.mode !== "remote" && l.public_area && l.location_lat == null) await enqueue("geocode.request", { requestId: res.id, locationText: String(l.public_area) });
   }
   if (res.to === "filled" && res.from !== "filled") await enqueue("notify.request_filled", { requestId: res.id });
-  if (res.to === "canceled") await enqueue("notify.request_canceled", { requestId: res.id, reason, byAdmin: actor.kind === "admin" });
+  if (res.to === "canceled") {
+    await enqueue("notify.request_canceled", { requestId: res.id, reason, byAdmin: actor.kind === "admin" });
+    const shifts = await defaultPool.query(
+      "SELECT id FROM request_commitments WHERE request_id = $1 AND status = 'canceled' AND start_at IS NOT NULL AND updated_at > NOW() - INTERVAL '5 minutes'",
+      [res.id]
+    );
+    await calendarChanged(shifts.rows.map((r) => String(r.id)), "cancel");
+  }
   if (res.event === "publish" && res.review_status === "pending_review") await enqueue("notify.request_needs_review", { requestId: res.id });
   if (res.event === "approve" || res.event === "reject") await enqueue("notify.request_reviewed", { requestId: res.id, approved: res.event === "approve", reason });
 }
 
 /**
- * Call after any application/commitment change. Promotes the oldest waitlisted applicant while
- * slots are open, then moves the request between open / pending / filled.
+ * Call after any application/commitment change. While spots are open, offers the oldest waitlisted
+ * applicant a spot (they have 24 hours to accept; nobody is placed without saying yes, REQ-07), then
+ * moves the request between open / pending / filled.
  */
 export async function syncStaffing(requestId: string, actor: Actor = { userId: null, kind: "system" }): Promise<TransitionResult | null> {
   const c = await defaultPool.connect();
-  const promoted: string[] = [];
+  const offered: string[] = [];
   let res: TransitionResult | null = null;
   try {
     await c.query("BEGIN");
@@ -269,16 +303,16 @@ export async function syncStaffing(requestId: string, actor: Actor = { userId: n
       return null;
     }
     let counts = await staffingCounts(c, requestId);
-    while (counts.accepted < counts.needed && counts.waitlisted > 0) {
+    while (counts.accepted + counts.offered < counts.needed && !targetMet(counts) && counts.waitlisted > 0) {
       const next = await c.query(
-        `UPDATE request_applications SET status = 'accepted', status_updated_at = NOW(), status_updated_by_user_id = NULL, updated_at = NOW()
+        `UPDATE request_applications SET status = 'offered', offer_expires_at = NOW() + INTERVAL '24 hours', status_updated_at = NOW(), status_updated_by_user_id = NULL, updated_at = NOW()
           WHERE id = (SELECT id FROM request_applications WHERE request_id = $1 AND status = 'waitlisted' ORDER BY created_at LIMIT 1)
           RETURNING id`,
         [requestId]
       );
       if (!next.rowCount) break;
-      promoted.push(String(next.rows[0].id));
-      await audit(c, requestId, "waitlist_promoted", status, status, { userId: null, kind: "system" }, `Application ${next.rows[0].id} moved up from the waitlist`);
+      offered.push(String(next.rows[0].id));
+      await audit(c, requestId, "waitlist_offered", status, status, { userId: null, kind: "system" }, `A spot was offered to application ${next.rows[0].id}`);
       counts = await staffingCounts(c, requestId);
     }
     res = await transitionWithClient(c, requestId, "staffing", actor, null);
@@ -289,7 +323,7 @@ export async function syncStaffing(requestId: string, actor: Actor = { userId: n
   } finally {
     c.release();
   }
-  for (const id of promoted) await enqueue("notify.application_status", { applicationId: id, status: "accepted", promoted: true });
+  for (const id of offered) await enqueue("notify.application_status", { applicationId: id, status: "offered" });
   if (res?.changed) await afterTransition(res, actor, null);
   return res;
 }
@@ -297,7 +331,7 @@ export async function syncStaffing(requestId: string, actor: Actor = { userId: n
 /** Guard used before accepting: refuses when every slot is already taken. */
 export async function hasOpenSlot(requestId: string): Promise<boolean> {
   const c = await staffingCounts(defaultPool, requestId);
-  return c.accepted < c.needed;
+  return c.accepted + c.offered < c.needed;
 }
 
 /**
@@ -306,5 +340,6 @@ export async function hasOpenSlot(requestId: string): Promise<boolean> {
  */
 export function discoverableSql(alias = "r") {
   return `${alias}.status IN ('open', 'pending') AND ${alias}.review_status = 'approved' AND ${alias}.removed_at IS NULL
-    AND NOT EXISTS (SELECT 1 FROM users sb WHERE sb.id = ${alias}.requester_user_id AND sb.shadow_banned)`;
+    AND NOT EXISTS (SELECT 1 FROM users sb WHERE sb.id = ${alias}.requester_user_id AND sb.shadow_banned)
+    AND NOT EXISTS (SELECT 1 FROM organizations so WHERE so.slug = ${alias}.requester_org_slug AND (so.suspended_at IS NOT NULL OR so.verification_status = 'suspended'))`;
 }

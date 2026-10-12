@@ -26,6 +26,8 @@ export type OpportunityDetailData = OpportunitySummary & {
   saved: boolean;
   can_apply: boolean;
   eligibility: { code: string; message: string }[];
+  requires_guardian_consent?: boolean;
+  target?: { value: number; unit: string; min: number | null; committed: number; open: number; allow_overfill: boolean } | null;
 };
 
 type Viewer = "anon" | "volunteer" | "member"; // member = signed in without the volunteer role
@@ -42,7 +44,8 @@ export default function OpportunityDetail({
   applyAction,
   saveAction,
   flash,
-  error
+  error,
+  beforeApply
 }: {
   o: OpportunityDetailData;
   viewer: Viewer;
@@ -52,12 +55,15 @@ export default function OpportunityDetail({
   saveAction?: (fd: FormData) => Promise<void>;
   flash?: string;
   error?: string;
+  /** Forms to sign before applying (server-rendered panel). */
+  beforeApply?: React.ReactNode;
 }) {
   const requirements = [
     o.min_age ? `${o.min_age}+ years old` : null,
     o.requires_car ? "Has a car" : null,
     o.requires_background_check ? "Cleared background check" : null,
     o.requires_training ? "Training before the first shift" : null,
+    o.requires_guardian_consent ? "Under 18: a parent or guardian’s consent" : null,
     o.requires_waiver ? "Signs a waiver" : null
   ].filter(Boolean) as string[];
 
@@ -165,6 +171,18 @@ export default function OpportunityDetail({
               {typeof o.spots_left === "number" ? <span className="text-muted"> · {o.spots_left === 0 ? "full, waitlist open" : `${o.spots_left} left`}</span> : null}
             </span>
           </p>
+          {o.target ? (
+            <div className="grid gap-1.5">
+              <p className="m-0 text-sm">
+                <span className="font-medium">Goal: {o.target.value} {o.target.unit}</span>
+                <span className="text-muted"> · {o.target.committed} promised · {o.target.open} still needed</span>
+              </p>
+              <span className="block h-2 overflow-hidden rounded-full bg-wash" aria-hidden>
+                <span className="block h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.round((o.target.committed / o.target.value) * 100))}%` }} />
+              </span>
+              <span className="text-xs text-muted">You can offer part of it{o.target.min ? ` (at least ${o.target.min} ${o.target.unit})` : ""}.</span>
+            </div>
+          ) : null}
           <p className="m-0 flex items-start gap-2">
             <Lock aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
             {o.exact_address ? (
@@ -216,6 +234,21 @@ export default function OpportunityDetail({
               </>
             ) : o.can_apply && applyAction ? (
               <form action={applyAction} className="grid gap-2">
+                {o.target ? (
+                  <label className="grid gap-1 text-sm font-medium">
+                    How much can you offer? ({o.target.unit})
+                    <input
+                      name="offeredAmount"
+                      type="number"
+                      required
+                      min={o.target.min ?? 0.25}
+                      step="any"
+                      inputMode="decimal"
+                      defaultValue={o.target.min ?? undefined}
+                      className="h-10 w-40 rounded border border-line-strong bg-surface px-3 font-normal"
+                    />
+                  </label>
+                ) : null}
                 <label htmlFor="apply-msg" className="text-sm font-medium">
                   Message to the organizer
                 </label>
@@ -231,6 +264,7 @@ export default function OpportunityDetail({
               </form>
             ) : (
               <div className="grid gap-2">
+                {beforeApply}
                 <p className="m-0 font-medium">You can&apos;t apply yet</p>
                 <ul className="m-0 grid gap-1.5 p-0">
                   {o.eligibility.map((p) => (

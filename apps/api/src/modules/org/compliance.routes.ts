@@ -2,6 +2,7 @@
 import type { Express } from "express";
 import type { Application, Request } from "express";
 import { z } from "zod";
+import { contributionFromAttendance } from "../contributions/service";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { requireAdminOrManager, requireOrg } from "./context";
@@ -197,7 +198,8 @@ export function registerOrgComplianceRoutes(app: Express) {
         [ok.ctx.org.slug, requestId, body.data.application_id, volunteerUserId, checkIn.toISOString(), checkOut ? checkOut.toISOString() : null, derivedHours, body.data.notes ?? null, String((ok.user as any).id)]
       );
 
-      return res.status(201).json({ attendance: inserted.rows[0] });
+      const contributionId = checkOut ? await contributionFromAttendance(String(inserted.rows[0].id), "manual_attendance", String((ok.user as any).id)) : null;
+      return res.status(201).json({ attendance: inserted.rows[0], contribution_id: contributionId });
     })
   );
 

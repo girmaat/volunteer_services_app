@@ -51,26 +51,22 @@ export default async function Page(
   const ok = searchParams?.ok === "1";
   const error = searchParams?.error ? decodeURIComponent(String(searchParams.error)) : "";
 
-  async function approveOrg(formData: FormData) {
+  /** One decision per submit: approve, ask for more, decline, suspend or reinstate. Everything but approve needs a reason. */
+  async function decideOrg(formData: FormData) {
     "use server";
-    const slug = String(formData.get("slug") || "");
-    const notes = String(formData.get("notes") || "");
-    const res = await backendFetch(`/v1/admin/org-verification/${encodeURIComponent(slug)}/approve`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ notes: notes || undefined })
-    });
-    const json = (await res.json().catch(() => ({}))) as any;
-    if (!res.ok) redirect(`/admin/verification?tab=organizations&error=${encodeURIComponent(String(json?.message || "Failed"))}`);
-    revalidatePath("/admin/verification");
-    redirect("/admin/verification?tab=organizations&ok=1");
-  }
-
-  async function rejectOrg(formData: FormData) {
-    "use server";
-    const slug = String(formData.get("slug") || "");
-    const notes = String(formData.get("notes") || "");
-    const res = await backendFetch(`/v1/admin/org-verification/${encodeURIComponent(slug)}/reject`, {
+    const slug = String(formData.get("slug") || "").trim();
+    const decision = String(formData.get("decision") || "");
+    const notes = String(formData.get("notes") || "").trim();
+    if (!["approve", "needs-info", "reject", "suspend", "reinstate"].includes(decision) || !slug) redirect("/admin/verification?tab=organizations");
+    const s = encodeURIComponent(slug);
+    const path = {
+      approve: `/v1/admin/org-verification/${s}/approve`,
+      "needs-info": `/v1/admin/org-verification/${s}/needs-info`,
+      reject: `/v1/admin/org-verification/${s}/reject`,
+      suspend: `/v1/admin/org-verification/${s}/suspend`,
+      reinstate: `/v1/admin/org-verification/${s}/reinstate`
+    }[decision as "approve"];
+    const res = await backendFetch(path, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ notes: notes || undefined })
@@ -178,15 +174,19 @@ export default async function Page(
                   <td className="muted text-xs">{o.verification_submitted_at ? new Date(o.verification_submitted_at).toLocaleString() : "—"}</td>
                   <td>
                     <div className="adminActions">
-                      <form action={approveOrg}>
+                      <form action={decideOrg} className="flex flex-wrap items-center gap-2">
                         <input type="hidden" name="slug" value={o.slug} />
-                        <input className="input w-[180px]" name="notes" aria-label="Notes" placeholder="Notes" />
-                        <button className="btn" type="submit">Approve</button>
-                      </form>
-                      <form action={rejectOrg}>
-                        <input type="hidden" name="slug" value={o.slug} />
-                        <input className="input w-[180px]" name="notes" aria-label="Notes" placeholder="Notes" />
-                        <button className="btn btnDanger" type="submit">Reject</button>
+                        <input className="input w-[220px]" name="notes" aria-label={`Reason or notes for ${o.name}`} placeholder="Reason (the org sees it)" />
+                        {o.verification_status === "suspended" ? (
+                          <button className="btn" type="submit" name="decision" value="reinstate">Reinstate</button>
+                        ) : (
+                          <>
+                            <button className="btn" type="submit" name="decision" value="approve">Approve</button>
+                            <button className="btn" type="submit" name="decision" value="needs-info">Ask for more</button>
+                            <button className="btn btnDanger" type="submit" name="decision" value="reject">Decline</button>
+                            <button className="btn btnDanger" type="submit" name="decision" value="suspend">Suspend</button>
+                          </>
+                        )}
                       </form>
                       <a className="btn" href={`/organizations/${encodeURIComponent(o.slug)}`}>View</a>
                     </div>
@@ -195,6 +195,18 @@ export default async function Page(
               ))}
             </tbody>
           </table>
+          <form action={decideOrg} className="mt-4 flex flex-wrap items-end gap-2 border-t border-line pt-4">
+            <input type="hidden" name="decision" value="suspend" />
+            <label className="grid gap-1 text-xs font-medium">
+              Suspend a verified organization (address)
+              <input className="input w-[220px]" name="slug" required placeholder="harbor-food-bank" />
+            </label>
+            <label className="grid gap-1 text-xs font-medium">
+              Reason
+              <input className="input w-[260px]" name="notes" required placeholder="What happened" />
+            </label>
+            <button className="btn btnDanger" type="submit">Suspend</button>
+          </form>
         </div>
       ) : null}
     </div>

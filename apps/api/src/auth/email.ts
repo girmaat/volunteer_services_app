@@ -10,6 +10,8 @@ type SendEmailArgs = {
   html?: string;
   /** Extra headers, e.g. List-Unsubscribe. */
   headers?: Record<string, string>;
+  /** A calendar invitation (REQUEST) or cancellation (CANCEL) the mail client can apply (CAL-02). */
+  icalEvent?: { method: "REQUEST" | "CANCEL" | "PUBLISH"; content: string; filename?: string };
 };
 
 function isTruthy(v: string | undefined) {
@@ -33,14 +35,14 @@ function transportMode(): "smtp" | "log" | "disabled" {
   return isProduction() ? "smtp" : "log";
 }
 
-export async function sendEmail({ to, subject, text, html, headers }: SendEmailArgs): Promise<{ delivery: EmailDelivery; error?: string }> {
+export async function sendEmail({ to, subject, text, html, headers, icalEvent }: SendEmailArgs): Promise<{ delivery: EmailDelivery; error?: string }> {
   const mode = transportMode();
 
   if (mode === "disabled") return { delivery: "disabled" };
 
   if (mode === "log") {
     // eslint-disable-next-line no-console
-    console.log(`\n[email:log] To: ${to}\n[email:log] Subject: ${subject}\n${text}\n[email:log] ---\n`);
+    console.log(`\n[email:log] To: ${to}\n[email:log] Subject: ${subject}\n${text}\n${icalEvent ? `[email:log] + calendar ${icalEvent.method}\n` : ""}[email:log] ---\n`);
     return { delivery: "logged" };
   }
 
@@ -64,7 +66,7 @@ export async function sendEmail({ to, subject, text, html, headers }: SendEmailA
       secure: port === 465,
       auth: user ? { user, pass } : undefined
     });
-    await transporter.sendMail({ from, to, subject, text, html, headers });
+    await transporter.sendMail({ from, to, subject, text, html, headers, ...(icalEvent ? { icalEvent: { method: icalEvent.method, content: icalEvent.content, filename: icalEvent.filename ?? "invite.ics" } } : {}) });
     return { delivery: "smtp" };
   } catch (e) {
     // eslint-disable-next-line no-console

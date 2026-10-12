@@ -14,7 +14,10 @@ export const NOTIFICATION_TYPES = {
   review_requested: { label: "Leave a review after something is completed", email: true },
   request_updates: { label: "Your request is approved, declined, canceled or filled", email: true },
   moderation: { label: "Moderation queue: requests waiting for review (staff)", email: true },
-  disputes: { label: "Disputes you opened or are part of", email: true }
+  disputes: { label: "Disputes you opened or are part of", email: true },
+  hours: { label: "Hours to approve, and decisions on hours you gave", email: true },
+  calendar: { label: "Calendar updates when a shift moves or is canceled", email: true },
+  prerequisites: { label: "Forms and consent needed before a shift", email: true }
 } as const;
 export type NotificationType = keyof typeof NOTIFICATION_TYPES;
 
@@ -132,7 +135,8 @@ async function emailUser(userId: string, type: NotificationType, content: NonNul
     subject: rendered.subject,
     text: rendered.text,
     html: rendered.html,
-    headers: { "List-Unsubscribe": `<${oneClick}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
+    headers: { "List-Unsubscribe": `<${oneClick}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+    icalEvent: content.icalEvent
   });
   try {
     await pool.query("INSERT INTO email_log (user_id, type, subject, delivery, dedupe_key) VALUES ($1, $2, $3, $4, $5)", [

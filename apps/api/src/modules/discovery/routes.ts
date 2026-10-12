@@ -126,6 +126,9 @@ export async function sendDetail(res: import("express").Response, user: PolicyUs
     requires_training: row.requires_training,
     requires_waiver: row.requires_waiver,
     requires_car: row.requires_car,
+    requires_guardian_consent: Boolean(row.requires_guardian_consent),
+    // Target and unit (REQ-01/05): what's still open, in the request's own unit.
+    target: row.target_value != null ? { value: row.target_value, unit: row.target_unit, min: row.min_contribution, committed: row.committed_amount, open: Math.max(0, Math.round((row.target_value - row.committed_amount) * 100) / 100), allow_overfill: row.allow_overfill } : null,
     // 4.5: the exact address is shared only with accepted volunteers.
     exact_address: accepted ? row.exact_address ?? null : null,
     address_hidden: Boolean(row.exact_address) && !accepted,

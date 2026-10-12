@@ -149,6 +149,17 @@ export default async function OnboardingPage(props: { searchParams?: Promise<{ s
                 </label>
                 <input id="ob-phone" name="phone" type="tel" autoComplete="tel" defaultValue={profile?.phone || ""} className={input} />
               </div>
+              {!profile?.birth_date ? (
+                <div className="grid gap-1.5">
+                  <label htmlFor="ob-dob" className={labelCls}>
+                    Date of birth
+                  </label>
+                  <input id="ob-dob" name="birthDate" type="date" required autoComplete="bday" className={input} aria-describedby="ob-dob-hint" />
+                  <p id="ob-dob-hint" className="m-0 text-sm text-muted">
+                    Never shown. It keeps you to opportunities you’re old enough for; ThankYou is for people 16 and older.
+                  </p>
+                </div>
+              ) : null}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <Link prefetch={false} href="/onboarding?step=role" className="text-sm font-medium text-muted">
                   ← Change how I’ll use it

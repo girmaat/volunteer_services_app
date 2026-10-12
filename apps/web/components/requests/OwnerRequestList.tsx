@@ -7,6 +7,7 @@ type Row = {
   title: string;
   status: string;
   review_status: string;
+  owner_approval?: string | null;
   mode: string;
   public_area: string | null;
   starts_at: string | null;
@@ -63,7 +64,7 @@ export default async function OwnerRequestList({ as, base, tab, title, descripti
               <Link prefetch={false} href={`${base}/${r.id}`} className="block px-1 py-4 text-ink no-underline hover:text-ink">
                 <div className="flex items-start justify-between gap-3">
                   <span className="font-semibold">{r.title || "Untitled draft"}</span>
-                  <StatusPill kind="request" status={r.review_status === "pending_review" ? "in_review" : r.status} />
+                  <StatusPill kind="request" status={r.owner_approval === "pending" ? "awaiting_owner" : r.owner_approval === "rejected" && r.status === "draft" ? "sent_back" : r.review_status === "pending_review" ? "in_review" : r.status} />
                 </div>
                 <p className="m-0 mt-0.5 text-sm text-muted">
                   {r.mode === "remote" ? "Remote" : r.public_area || "Area not set"} · {r.accepted}/{r.volunteers_needed} volunteers

@@ -73,6 +73,8 @@ export type VolunteerProfile = {
 export type OnboardingProfile = {
   // Account identity (private)
   full_name: string;
+  /** YYYY-MM-DD; never shown publicly. */
+  birth_date?: string | null;
   phone: string | null;
 
   // Public profile (shown to others)

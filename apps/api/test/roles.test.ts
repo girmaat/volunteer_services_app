@@ -137,8 +137,11 @@ describe("organization sign-up", () => {
   it("generates a unique address from the name and defaults the contact email", async () => {
     const body = (n: number) => ({
       org: { name: "Riverside Mutual Aid", summary: "Neighbors helping neighbors along the river.", location: "Astoria, NY" },
-      admin: { fullName: "Riley Admin", email: `riley.${n}@example.org`, password: "Long-Enough-123!" }
+      admin: { fullName: "Riley Admin", email: `riley.${n}@example.org`, password: "Long-Enough-123!", adultConfirmed: true as const }
     });
+    // Staff confirm they're adults (they don't give a birth date).
+    const noAttest = await anon().post("/v1/orgs/enroll").send({ ...body(9), admin: { ...body(9).admin, adultConfirmed: undefined } });
+    expect(noAttest.status).toBe(400);
     const a = await anon().post("/v1/orgs/enroll").send(body(1));
     expect(a.status, JSON.stringify(a.body)).toBe(202);
     const b = await anon().post("/v1/orgs/enroll").send(body(2));
@@ -147,8 +150,12 @@ describe("organization sign-up", () => {
     const org = await pool.query("SELECT contact_email FROM organizations WHERE slug = 'riverside-mutual-aid'");
     expect(org.rows[0].contact_email).toBe("riley.1@example.org");
     // Org-only accounts aren't held at a personal verification step.
-    const u = await pool.query("SELECT onboarding_completed, verification_required FROM users WHERE email = 'riley.1@example.org'");
+    const u = await pool.query("SELECT onboarding_completed, verification_required, adult_attested_at FROM users WHERE email = 'riley.1@example.org'");
     expect(u.rows[0]).toMatchObject({ onboarding_completed: true, verification_required: false });
+    expect(u.rows[0].adult_attested_at).toBeTruthy();
+    // New organizations start unverified: they can't publish until ThankYou verifies them.
+    const o = await pool.query("SELECT verification_status FROM organizations WHERE slug = 'riverside-mutual-aid'");
+    expect(o.rows[0].verification_status).toBe("required");
   });
 
   it("a volunteer can start an organization and keeps volunteering", async () => {

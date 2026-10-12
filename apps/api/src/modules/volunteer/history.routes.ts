@@ -46,20 +46,19 @@ app.get(
       [user.id]
     );
 
-    // Completed engagements count toward hours (what they logged for it, else the scheduled
-    // length), plus anything logged that isn't tied to a completed engagement.
-    const { work, hours: allHours } = await totalHours(user.id);
-    const completedHours = work.filter((w) => w.auto_hours).reduce((n, w) => n + w.hours, 0);
-    const done = { rows: work };
+    // Hours count once a reviewer approves them; waiting and self-reported hours are reported separately.
+    const { work, hours: allHours, summary } = await totalHours(user.id);
 
     return res.json({
-      recent_completed: done.rows.slice(0, 5).map((d) => ({ application_id: d.application_id, title: d.title, completed_at: d.completed_at, hours: d.hours })),
-      completed_hours: completedHours,
+      recent_completed: work.slice(0, 5).map((d) => ({ application_id: d.application_id, title: d.title, completed_at: d.completed_at, hours: d.hours, pending_hours: d.pending_hours })),
+      completed_hours: allHours,
       completed_count: completed.rows[0]?.count ?? 0,
       impact_count: impact.rows[0]?.count ?? 0,
       tasks_count: tasks.rows[0]?.count ?? 0,
       outcomes_count: outcomes.rows[0]?.count ?? 0,
-      total_hours: allHours
+      total_hours: allHours,
+      pending_hours: summary.pending,
+      self_reported_hours: summary.self_reported
     });
   })
 );
@@ -466,23 +465,19 @@ app.post(
   })
 );
 
-// The Impact page in one call: totals, completed work (with any notes they logged), badges and
-// what people said.
+// The Impact page in one call: approved / waiting / self-reported hours, the timeline of work with
+// each contribution and its decision, badges and what people said.
 app.get(
   "/v1/volunteer/impact",
   wrap(async (req, res) => {
     const user = await requireVolunteerUser(req, res);
     if (!user) return;
     const uid = String(user.id);
-    const [{ work, hours }, notes, badgeState, reviews] = await Promise.all([
+    const [{ work, summary }, outside, badgeState, reviews] = await Promise.all([
       totalHours(uid),
       pool.query(
-        `SELECT id, 'note' AS kind, request_id, impact_date AS date, hours::float AS hours, notes AS text, NULL::text AS quantity FROM volunteer_impact_entries WHERE volunteer_user_id = $1
-         UNION ALL
-         SELECT id, 'task', request_id, task_date, duration_hours::float, task, NULL FROM volunteer_task_entries WHERE volunteer_user_id = $1
-         UNION ALL
-         SELECT id, 'outcome', request_id, outcome_date, NULL, outcome, NULLIF(TRIM(CONCAT(quantity, ' ', unit)), '') FROM volunteer_outcome_entries WHERE volunteer_user_id = $1
-         ORDER BY date DESC`,
+        `SELECT c.id, c.status, c.started_at, c.reported_hours::float AS hours, c.description AS text, c.created_at
+           FROM contributions c WHERE c.volunteer_user_id = $1 AND c.application_id IS NULL ORDER BY COALESCE(c.started_at, c.created_at) DESC`,
         [uid]
       ),
       computeBadges(uid),
@@ -498,26 +493,20 @@ app.get(
         [uid]
       )
     ]);
-    const byRequest = new Map<string, unknown[]>();
-    const other: unknown[] = [];
-    for (const n of notes.rows) {
-      const item = { id: n.id, kind: n.kind, date: n.date ? new Date(n.date).toISOString().slice(0, 10) : null, hours: n.hours, text: n.text, quantity: n.quantity };
-      if (n.request_id && work.some((w) => w.request_id === n.request_id)) {
-        const k = String(n.request_id);
-        byRequest.set(k, [...(byRequest.get(k) ?? []), item]);
-      } else other.push(item);
-    }
     const ratings = reviews.rows.map((r) => Number(r.rating || 0));
     return res.json({
       totals: {
-        hours,
-        completed: work.length,
+        hours: summary.approved,
+        pending_hours: summary.pending,
+        self_reported_hours: summary.self_reported,
+        units: summary.units,
+        completed: work.filter((w) => w.application_status === "completed").length,
         organizations: new Set(work.filter((w) => w.org_slug).map((w) => w.org_slug)).size,
         people: new Set(work.filter((w) => w.requester_user_id).map((w) => w.requester_user_id)).size,
         badges: badgeState.badges.filter((b: { earned: boolean }) => b.earned).length
       },
-      timeline: work.map(({ requester_user_id: _r, org_slug: _o, ...w }) => ({ ...w, notes: byRequest.get(w.request_id) ?? [] })),
-      other_notes: other,
+      timeline: work.map(({ requester_user_id: _r, org_slug: _o, ...w }) => w),
+      outside: outside.rows,
       badges: badgeState.badges,
       reviews: {
         count: ratings.length,

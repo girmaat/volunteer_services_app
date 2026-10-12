@@ -8,6 +8,7 @@ export async function signUpAndOnboardVolunteer(page: Page, name = "Vera Newcome
   await page.getByLabel("Email").fill(email);
   await page.getByLabel(/^Password/).fill(PASSWORD);
   await page.getByLabel("Confirm password").fill(PASSWORD);
+  await page.getByLabel("Date of birth").fill("1994-06-15");
   await page.getByRole("button", { name: "Create account" }).click();
 
   // Outside production the verification link is shown on the page instead of being emailed.

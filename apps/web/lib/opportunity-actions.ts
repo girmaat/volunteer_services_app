@@ -8,10 +8,11 @@ const back = (base: string, id: string) => (base === "/volunteer/opportunities" 
 
 export async function applyToOpportunity(base: string, id: string, fd: FormData) {
   const message = String(fd.get("message") || "").trim();
+  const amount = String(fd.get("offeredAmount") || "").trim();
   const res = await backendFetch(`/v1/volunteer/opportunities/${encodeURIComponent(id)}/apply`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ message })
+    body: JSON.stringify({ message, ...(amount ? { offeredAmount: Number(amount) } : {}) })
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as { message?: string } | null;

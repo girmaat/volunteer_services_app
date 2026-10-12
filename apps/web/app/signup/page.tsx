@@ -78,7 +78,7 @@ async function signupOrResendAction(prevState: SignupState, formData: FormData):
   const res = await fetch(`${API_BASE_URL_SERVER}/v1/auth/signup`, {
     method: "POST",
     headers: { "content-type": "application/json", ...(await forwardHeaders()) },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, birthDate: String(formData.get("birthDate") || "") }),
     cache: "no-store"
   });
 

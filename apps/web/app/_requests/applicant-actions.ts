@@ -14,10 +14,11 @@ export async function applicantAction(requestId: string, back: string, appId: st
   const action = String(fd.get("action") || "");
   const tz = String(fd.get("tz") || "America/New_York");
   const startAt = zonedLocalToIso(String(fd.get("startAt") || ""), tz);
+  const amount = String(fd.get("acceptedAmount") || "").trim();
   const r = await backendFetch(`/v1/requests/${requestId}/applicants/${appId}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ action, ...(startAt ? { startAt } : {}) })
+    body: JSON.stringify({ action, ...(startAt ? { startAt } : {}), ...(amount ? { acceptedAmount: Number(amount) } : {}) })
   });
   redirect(`${back}?${r.ok ? `flash=${action}` : `error=${encodeURIComponent(await msg(r))}`}#a-${appId}`);
 }

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { pool } from "../../lib/db";
 import { applyLegacyStatus, createAndPublishLegacy } from "../requests/legacy";
 import { transitionRequest, TransitionError } from "../requests/lifecycle";
+import { needsOwnerApproval, orgStanding, standingMessage } from "../requests/governance";
 import { wrap } from "../../lib/http";
 import { requireAdminOrManager, requireOrg } from "./context";
 
@@ -112,6 +113,16 @@ export function registerOrgRequestsRoutes(app: Express) {
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
       const p = parsed.data;
+      // Same rules as the request wizard: verified organizations only, and the owner's publication policy.
+      const standing = await orgStanding(ok.ctx.org.slug);
+      if (!standing?.verified) {
+        const message = standing ? standingMessage(standing) : "Organization not found";
+        return res.status(403).json({ error: { code: "org_not_verified", message }, message });
+      }
+      if (await needsOwnerApproval(ok.user as any, { id: null, requester_org_slug: ok.ctx.org.slug }, standing.policy)) {
+        const message = "Your organization's owner approves new requests. Post it from the request form so they can review it.";
+        return res.status(403).json({ error: { code: "owner_approval_required", message }, message });
+      }
       const id = await createAndPublishLegacy({
         userId: String((ok.user as any).id),
         orgSlug: ok.ctx.org.slug,

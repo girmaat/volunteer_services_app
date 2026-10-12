@@ -46,6 +46,7 @@ Seed data is for local/staging only; the seed script refuses to run in productio
 | Individual requester | requester@thankyou.test |
 | Dual-role user (volunteer and requester) | dual.role@thankyou.test |
 | Moderator (works queues, can't change settings) | moderator@thankyou.test |
+| 17-year-old volunteer (minor protections, guardian consent) | teen.volunteer@thankyou.test |
 
 ## Everyday commands
 

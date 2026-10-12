@@ -6,6 +6,8 @@ import { Button, ButtonLink, Card, Notice, PageHeader, StatusPill } from "../../
 import ReviewPanel, { type ReviewState } from "../../../../components/reviews/ReviewPanel";
 import { confirmAttendanceAction, disputeAction, volunteerCancelAction, volunteerWithdrawAction } from "../../../_requests/applicant-actions";
 import { describeRrule, formatInZone } from "../../../../lib/time";
+import PrereqPanel from "../../../../components/prerequisites/PrereqPanel";
+import { offerAction } from "../../../_prereq/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,11 @@ type Detail = {
   message: string | null;
   created_at: string;
   commitment: { id: string; status: string; start_at: string | null; end_at: string | null; volunteer_confirmed_at?: string | null } | null;
+  offer_expires_at: string | null;
+  offered_amount: number | null;
+  accepted_amount: number | null;
+  target_unit: string | null;
+  is_org: boolean;
   opportunity: {
     id: string;
     title: string;
@@ -36,10 +43,14 @@ const FLASH: Record<string, string> = {
   attending: "Thanks for confirming. See you there!",
   canceled: "You've canceled. The organizer was told and the next person on the waitlist moved up.",
   reviewed: "Review saved.",
-  disputed: "Dispute sent. Our team will look at it and get back to you."
+  disputed: "Dispute sent. Our team will look at it and get back to you.",
+  signed: "Signed. Thank you.",
+  guardian: "We emailed your parent or guardian. You’ll get a notification when they answer.",
+  offer_accepted: "The spot is yours. See you there!",
+  offer_declined: "No problem. We’ve offered it to the next person."
 };
 
-export default async function Page(props: { params: Promise<{ id: string }>; searchParams?: Promise<{ flash?: string; error?: string }> }) {
+export default async function Page(props: { params: Promise<{ id: string }>; searchParams?: Promise<{ flash?: string; error?: string; dev?: string }> }) {
   const { id } = await props.params;
   const sp = (await props.searchParams) || {};
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
@@ -86,6 +97,31 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
           <Notice tone="danger">{sp.error}</Notice>
         </div>
       ) : null}
+      {sp.dev && sp.dev.includes("/guardian/consent/") ? (
+        <div className="mb-4">
+          <Notice tone="info">
+            Development only: the guardian&apos;s link is <a href={sp.dev}>{sp.dev}</a>
+          </Notice>
+        </div>
+      ) : null}
+      {a.status === "offered" && a.offer_expires_at ? (
+        <div className="mb-5 rounded-md border-2 border-primary bg-primary-tint p-4">
+          <p className="m-0 font-semibold">A spot opened up. Do you want it?</p>
+          <p className="m-0 mt-1 text-sm">
+            It&apos;s held for you until {formatInZone(a.offer_expires_at, tz, { withZone: true })}. After that we offer it to the next person.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <form action={offerAction.bind(null, id, true)}>
+              <Button type="submit">Yes, I&apos;ll take it</Button>
+            </form>
+            <form action={offerAction.bind(null, id, false)}>
+              <Button type="submit" variant="secondary">
+                No thanks
+              </Button>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="grid content-start gap-5">
@@ -106,17 +142,29 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
                 </span>
               )}
             </p>
+            {a.offered_amount != null ? (
+              <p className="m-0 text-sm">
+                <span className="font-medium">Your offer:</span> {a.offered_amount} {a.target_unit}
+                {a.accepted_amount != null ? ` · accepted ${a.accepted_amount} ${a.target_unit}` : ""}
+              </p>
+            ) : null}
             {a.message ? (
               <p className="m-0 text-sm text-muted">
                 Your message: <span className="text-ink">{a.message}</span>
               </p>
             ) : null}
           </Card>
+          {a.is_org && ["pending", "waitlisted", "offered", "accepted", "confirmed"].includes(a.status) ? <PrereqPanel requestId={o.id} back={back} stage="assignment" /> : null}
+          {["accepted", "confirmed", "completed"].includes(a.status) ? (
+            <p className="m-0 text-sm text-muted">
+              Hours you give here show on your <Link href="/volunteer/history">Impact</Link> page once the organizer approves them.
+            </p>
+          ) : null}
           {review ? <ReviewPanel applicationId={id} back={back} state={review} otherName={otherName} /> : null}
         </div>
 
         <aside aria-label="Application actions" className="grid content-start gap-4">
-          {a.status === "pending" || a.status === "waitlisted" ? (
+          {a.status === "pending" || a.status === "waitlisted" || a.status === "offered" ? (
             <form action={volunteerWithdrawAction.bind(null, id)}>
               <Button type="submit" variant="secondary" className="w-full">
                 Withdraw application

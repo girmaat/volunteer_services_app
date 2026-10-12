@@ -92,7 +92,7 @@ describe("org application decisions (waitlist workflow)", () => {
     expect(wl.status, JSON.stringify(wl.body)).toBe(200);
     expect(wl.body.status).toBe("waitlisted");
     const acc = await org.patch(`/v1/org/applications/${appId}`, { status: "accepted" });
-    expect(acc.body.status).toBe("accepted");
+    expect(acc.body.status, JSON.stringify(acc.body)).toBe("accepted");
     const bad = await org.patch(`/v1/org/applications/${appId}`, { status: "pending" });
     expect(bad.status).toBe(409);
 

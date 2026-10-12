@@ -2,6 +2,9 @@
 import type { Express } from "express";
 import type { Application } from "express";
 import { z } from "zod";
+import { contributionFromAttendance } from "../contributions/service";
+import { minorSql } from "../../lib/age";
+import { outstanding, prerequisites } from "../prerequisites/service";
 import { pool } from "../../lib/db";
 import { afterApplicationUpdate, applicationHasSlot, FULL_MESSAGE } from "../requests/applications";
 import { wrap } from "../../lib/http";
@@ -38,7 +41,8 @@ export function registerOrgApplicationsRoutes(app: Express) {
           r.id AS request_id,
           r.title AS request_title,
           v.id AS volunteer_user_id,
-          CASE WHEN a.status IN ('accepted','confirmed','completed') THEN v.email END AS volunteer_email,
+          CASE WHEN a.status IN ('accepted','confirmed','completed') AND NOT ${minorSql("a.volunteer_user_id")} THEN v.email END AS volunteer_email,
+          ${minorSql("a.volunteer_user_id")} AS volunteer_minor,
           vp.display_name AS volunteer_display_name,
           vp.avatar_url AS volunteer_avatar_url,
           COALESCE(vp.public_location, vp.location) AS volunteer_public_location,
@@ -108,6 +112,12 @@ export function registerOrgApplicationsRoutes(app: Express) {
 
       const requestId = String(appRow.rows[0]?.request_id);
       const volunteerUserId = String(appRow.rows[0]?.volunteer_user_id);
+
+      // Forms, guardian consent and checks must be complete and current before anyone checks in (FORM-04).
+      const pre = await prerequisites(volunteerUserId, requestId);
+      if (pre.status !== "cleared") {
+        return res.status(409).json({ error: { code: `prerequisites_${pre.status}`, message: outstanding(pre) }, message: outstanding(pre), prerequisites: pre });
+      }
 
       const open = await pool.query(
         `SELECT id FROM org_attendance_logs WHERE org_slug=$1 AND request_id=$2 AND volunteer_user_id=$3 AND check_out_at IS NULL LIMIT 1`,
@@ -180,8 +190,9 @@ export function registerOrgApplicationsRoutes(app: Express) {
         `,
         [logId]
       );
+      const contributionId = await contributionFromAttendance(logId, "staff_check_in", String((ok.user as any).id));
 
-      return res.json({ attendance: updated.rows[0] });
+      return res.json({ attendance: updated.rows[0], contribution_id: contributionId });
     })
   );
 
@@ -223,7 +234,7 @@ export function registerOrgApplicationsRoutes(app: Express) {
         const toStatus = String(p.status);
       
         if (fromStatus !== toStatus) {
-          const decisionable = fromStatus === "pending" || fromStatus === "waitlisted";
+          const decisionable = fromStatus === "pending" || fromStatus === "waitlisted" || fromStatus === "offered";
           if (!decisionable) {
             return res.status(409).json({ message: `Cannot change status from '${fromStatus}' to '${toStatus}'` });
           }
@@ -237,7 +248,11 @@ export function registerOrgApplicationsRoutes(app: Express) {
           if (fromStatus === "waitlisted" && !allowedFromWaitlisted.has(toStatus)) {
             return res.status(409).json({ message: `Cannot change status from '${fromStatus}' to '${toStatus}'` });
           }
-          if (toStatus === "accepted" && !(await applicationHasSlot(params.data.id))) {
+          // Someone holding an offered spot can be accepted (the spot is already theirs) or declined.
+          if (fromStatus === "offered" && !["accepted", "rejected"].includes(toStatus)) {
+            return res.status(409).json({ message: `Cannot change status from '${fromStatus}' to '${toStatus}'` });
+          }
+          if (toStatus === "accepted" && fromStatus !== "offered" && !(await applicationHasSlot(params.data.id))) {
             return res.status(409).json({ error: { code: "full", message: FULL_MESSAGE }, message: FULL_MESSAGE });
           }
         }

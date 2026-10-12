@@ -100,8 +100,16 @@ export function registerOrgDashboardRoutes(app: Express) {
         )
       ]);
 
+      // Hours waiting for a decision, and coordinators' requests waiting for an owner.
+      const extra = await pool.query(
+        `SELECT (SELECT COUNT(*)::int FROM contributions WHERE org_slug = $1 AND status IN ('pending', 'disputed')) AS hours_waiting,
+                (SELECT COUNT(*)::int FROM service_requests WHERE requester_org_slug = $1 AND owner_approval = 'pending') AS owner_waiting`,
+        [orgSlug]
+      );
       return res.json({
         org: ok.ctx.org,
+        hoursWaiting: Number(extra.rows[0]?.hours_waiting ?? 0),
+        ownerApprovalsWaiting: Number(extra.rows[0]?.owner_waiting ?? 0),
         openRequests: Number(openReq.rows[0]?.c ?? 0),
         pendingApplications: Number(pendingApps.rows[0]?.c ?? 0),
         unreadMessages: Number(unread.rows[0]?.c ?? 0),

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { getOrgContext } from "../../lib/org";
 import { redirect } from "next/navigation";
+import OrgTabs from "../../../components/org/OrgTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -155,6 +156,7 @@ export default async function Page(
           Add teammates to help manage requests and messages. Invited members must accept the email invite before they can access the org area.
         </p>
       </header>
+      <OrgTabs />
 
       {error ? (
         <div className="border border-danger bg-danger-tint rounded-lg p-3">

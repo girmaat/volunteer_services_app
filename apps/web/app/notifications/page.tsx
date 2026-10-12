@@ -70,8 +70,8 @@ export default async function NotificationsPage(props: { searchParams?: Promise<
       <LinkTabs
         label="Filter notifications"
         items={[
-          { href: "/notifications", label: "All", exact: true },
-          { href: "/notifications?filter=unread", label: `Unread${data?.unread_count ? ` (${data.unread_count})` : ""}` }
+          { href: "/notifications", label: "All", active: !unreadOnly },
+          { href: "/notifications?filter=unread", label: `Unread${data?.unread_count ? ` (${data.unread_count})` : ""}`, active: unreadOnly }
         ]}
       />
       {!data ? <Notice tone="danger">Notifications couldn’t load. Refresh to try again.</Notice> : null}

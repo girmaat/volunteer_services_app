@@ -58,12 +58,13 @@ async function enrollAction(_prev: OrgEnrollState, fd: FormData): Promise<OrgEnr
   for (const k of ["orgName", "orgSummary", "orgLocation", "adminFullName", "adminEmail"]) values[k] = String(fd.get(k) || "").trim();
   const password = String(fd.get("password") || "");
   if (password.length < 8) return { view: "form", values, error: "Choose a password with at least 8 characters." };
+  if (fd.get("adultConfirmed") !== "yes") return { view: "form", values, error: "Confirm you’re 18 or older and allowed to act for the organization." };
   const res = await fetch(`${API_BASE_URL_SERVER}/v1/orgs/enroll`, {
     method: "POST",
     headers: { "content-type": "application/json", ...(await forwardHeaders()) },
     body: JSON.stringify({
       org: { name: values.orgName, summary: values.orgSummary, location: values.orgLocation },
-      admin: { fullName: values.adminFullName, email: values.adminEmail.toLowerCase(), password }
+      admin: { fullName: values.adminFullName, email: values.adminEmail.toLowerCase(), password, adultConfirmed: fd.get("adultConfirmed") === "yes" }
     }),
     cache: "no-store"
   });

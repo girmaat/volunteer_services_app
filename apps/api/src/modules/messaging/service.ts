@@ -4,6 +4,7 @@ import { enqueue } from "../../jobs/queue";
 import { isBlockedBetween } from "../safety/permissions";
 import { publish } from "./realtime";
 import { holdReason, maskContacts } from "./safety";
+import { minorSql } from "../../lib/age";
 
 export type Conversation = {
   id: string;
@@ -19,19 +20,25 @@ export type Conversation = {
   last_message_at: string | null;
   created_at: string;
   application_status: string | null;
+  volunteer_minor?: boolean | null;
   request_title: string | null;
   request_status: string | null;
 };
 
 export type Side = "volunteer" | "owner";
 
-const CONV_SELECT = `SELECT c.*, a.status AS application_status, r.title AS request_title, r.status AS request_status
+const CONV_SELECT = `SELECT c.*, a.status AS application_status, r.title AS request_title, r.status AS request_status,
+       ${minorSql("c.volunteer_user_id")} AS volunteer_minor
   FROM conversations c
   LEFT JOIN request_applications a ON a.id = c.application_id
   LEFT JOIN service_requests r ON r.id = c.request_id`;
 
-/** Contact details stay masked until the volunteer is accepted. */
-export const contactsUnlocked = (c: Pick<Conversation, "application_status">) => ["accepted", "confirmed", "completed"].includes(String(c.application_status || ""));
+/**
+ * Contact details stay masked until the volunteer is accepted, and always when the volunteer is
+ * under 18: minors and adults talk only inside the request thread the organization's staff can see (SAFE-04).
+ */
+export const contactsUnlocked = (c: Pick<Conversation, "application_status"> & { volunteer_minor?: boolean | null }) =>
+  !c.volunteer_minor && ["accepted", "confirmed", "completed"].includes(String(c.application_status || ""));
 
 /** Which side the user is on, or null if they can't see the conversation. Org admins/managers act for the organization. */
 export function sideOf(user: PolicyUser, c: Conversation): Side | null {
@@ -91,7 +98,7 @@ export async function listConversations(user: PolicyUser, scope: ListScope) {
   const manageable = (user.orgs || []).filter((o) => o.role === "admin" || o.role === "manager").map((o) => o.slug);
   const r = await pool.query(
     `SELECT c.id, c.kind, c.status, c.request_id, c.org_slug, c.volunteer_user_id, c.owner_user_id, c.last_message_at, c.created_at,
-            a.status AS application_status, r.title AS request_title,
+            a.status AS application_status, r.title AS request_title, ${minorSql("c.volunteer_user_id")} AS volunteer_minor,
             vp.display_name AS volunteer_name, op.display_name AS owner_name, o.name AS org_name,
             vp.avatar_url AS volunteer_avatar, op.avatar_url AS owner_avatar, o.logo_url AS org_logo,
             lm.body AS last_body, lm.sender_user_id AS last_sender_id,

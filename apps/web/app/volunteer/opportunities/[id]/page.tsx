@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { backendFetch } from "../../../lib/backend";
 import OpportunityDetail, { type OpportunityDetailData } from "../../../../components/opportunities/OpportunityDetail";
 import { applyToOpportunity, toggleSave } from "../../../../lib/opportunity-actions";
+import PrereqPanel from "../../../../components/prerequisites/PrereqPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
         saveAction={toggleSave.bind(null, "/volunteer/opportunities", id)}
         flash={sp.flash}
         error={sp.error}
+        beforeApply={o.eligibility.some((p) => p.code === "sign_first") ? <PrereqPanel requestId={id} back={`/volunteer/opportunities/${id}`} stage="apply" /> : null}
       />
     </>
   );

@@ -62,7 +62,7 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
     expect((await (await as(EMAILS.volunteer)).get(`/v1/volunteer/calendar/commitments/${cid}/ics`)).status).toBe(404);
   });
 
-  it("completed work counts toward impact hours", async () => {
+  it("completed work becomes pending hours; only the reviewer's approval counts (CON-05, REC-01, DATA-04)", async () => {
     await createUser({ email: "hours.vol@thankyou.test", roles: ["volunteer"] });
     const owner = await as(EMAILS.requester);
     const d = await owner.post("/v1/requests", { title: "Hours: shift", description: "Impact hours test request.", category: "errands", mode: "remote", scheduleType: "one_time", startsAt: soon(40), durationMinutes: 90 });
@@ -71,29 +71,81 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
     const ap = await v.post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
     await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "accept" });
     await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "complete" });
-    const sum = await v.get("/v1/volunteer/history/summary");
-    expect(sum.body.completed_count).toBe(1);
-    expect(sum.body.total_hours).toBe(1.5);
-    expect(sum.body.recent_completed[0].title).toBe("Hours: shift");
 
-    // The Impact page: same totals, the engagement on the timeline, an optional note folded into it.
+    // Marking complete sends the scheduled time to the reviewer; nothing counts yet.
+    const sum = await v.get("/v1/volunteer/history/summary");
+    expect(sum.body).toMatchObject({ completed_count: 1, total_hours: 0, pending_hours: 1.5 });
     const imp = await v.get("/v1/volunteer/impact");
-    expect(imp.status).toBe(200);
-    expect(imp.body.totals).toMatchObject({ hours: 1.5, completed: 1 });
-    expect(imp.body.timeline[0]).toMatchObject({ title: "Hours: shift", hours: 1.5, auto_hours: true, notes: [] });
-    const noted = await v.post("/v1/volunteer/history/impact", { request_id: d.body.id, request_application_id: ap.body.applicationId, impact_date: new Date().toISOString().slice(0, 10), hours: 2, notes: "Stayed late to help." });
-    expect(noted.status).toBeLessThan(300);
+    expect(imp.body.totals).toMatchObject({ hours: 0, pending_hours: 1.5, completed: 1 });
+    const c = imp.body.timeline[0].contributions[0];
+    expect(c).toMatchObject({ status: "pending", reported_hours: 1.5, source: "completion" });
+
+    // The volunteer can't approve their own hours, and an outsider can't see them.
+    const self = await v.post(`/v1/contributions/${c.id}/decide`, { action: "approve" });
+    expect(self.status).toBe(403);
+    expect(self.body.error.code).toBe("self_approval");
+    expect((await (await as(EMAILS.volunteer)).post(`/v1/contributions/${c.id}/decide`, { action: "approve" })).status).toBe(404);
+
+    // The person who asked for help reviews it.
+    const queue = await owner.get("/v1/contributions/review?as=requester");
+    expect(queue.body.items.find((x: { id: string }) => x.id === c.id)).toMatchObject({ can_decide: true, volunteer_name: "hours.vol" });
+    const ok = await owner.post(`/v1/contributions/${c.id}/decide`, { action: "approve" });
+    expect(ok.body).toMatchObject({ status: "approved", approved_hours: 1.5 });
+    expect((await v.get("/v1/volunteer/history/summary")).body.total_hours).toBe(1.5);
+
+    // The volunteer reports extra time; the reviewer approves less, with a reason the volunteer sees.
+    const rep = await v.post("/v1/volunteer/contributions", { applicationId: ap.body.applicationId, hours: 2, description: "Stayed late to help." });
+    expect(rep.status, JSON.stringify(rep.body)).toBe(201);
+    expect(rep.body.status).toBe("pending");
+    expect((await owner.post(`/v1/contributions/${rep.body.id}/decide`, { action: "adjust", hours: 1 })).status).toBe(422); // reason required
+    const adj = await owner.post(`/v1/contributions/${rep.body.id}/decide`, { action: "adjust", hours: 1, reason: "We closed at 6, so one extra hour." });
+    expect(adj.body).toMatchObject({ status: "adjusted", approved_hours: 1 });
     const after = await v.get("/v1/volunteer/impact");
-    expect(after.body.totals.hours).toBe(2); // logged hours replace the scheduled estimate, never add to it
-    expect(after.body.timeline[0]).toMatchObject({ hours: 2, auto_hours: false });
-    expect(after.body.timeline[0].notes[0].text).toBe("Stayed late to help.");
-    expect(after.body.other_notes).toEqual([]);
+    expect(after.body.totals).toMatchObject({ hours: 2.5, pending_hours: 0 });
+    const reported = after.body.timeline[0].contributions.find((x: { id: string }) => x.id === rep.body.id);
+    expect(reported).toMatchObject({ reported_hours: 2, approved_hours: 1, last_reason: "We closed at 6, so one extra hour." });
+
+    // History is append-only: both the report and the adjustment are kept, and can't be edited.
+    const detail = await v.get(`/v1/contributions/${rep.body.id}`);
+    expect(detail.body.history.map((h: { action: string }) => h.action)).toEqual(["created", "adjusted"]);
+    await expect(pool.query("UPDATE contribution_decisions SET hours = 9 WHERE contribution_id = $1", [rep.body.id])).rejects.toThrow(/append-only/);
+
+    // Outside service with no request stays self-reported and never counts as approved.
+    const outside = await v.post("/v1/volunteer/contributions", { hours: 3, description: "Beach clean-up on my own" });
+    expect(outside.body.status).toBe("self_reported");
+    expect((await v.get("/v1/volunteer/impact")).body.totals).toMatchObject({ hours: 2.5, self_reported_hours: 3 });
+
+    // The CSV keeps each entry and its status separate.
     const csv = await v.get("/v1/volunteer/history/export.csv");
-    const row = csv.text.split("\r\n").find((l: string) => l.includes("Hours: shift"));
-    expect(row).toContain('"completed"');
-    expect(row).toContain('"2"');
-    expect(row).toContain("Stayed late to help.");
-    expect(csv.text.split("\r\n").filter((l: string) => l.includes("Hours: shift"))).toHaveLength(1);
+    const lines = csv.text.split("\r\n");
+    expect(lines.find((l: string) => l.includes("Stayed late")), JSON.stringify(lines)).toMatch(/"approved \(adjusted\)","2","1"/);
+    expect(lines.find((l: string) => l.includes("Beach clean-up"))).toContain('"self-reported"');
+  });
+
+  it("the volunteer can dispute a decision; another reviewer or platform staff look again (CON-06)", async () => {
+    await createUser({ email: "dispute.vol@thankyou.test", roles: ["volunteer"] });
+    const owner = await as(EMAILS.requester);
+    const d = await owner.post("/v1/requests", { title: "Hours: dispute", description: "Dispute test request here.", category: "errands", mode: "remote", scheduleType: "one_time", startsAt: soon(40), durationMinutes: 120 });
+    await owner.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
+    const v = await as("dispute.vol@thankyou.test");
+    const ap = await v.post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
+    await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "accept" });
+    await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "complete" });
+    const cid = (await v.get("/v1/volunteer/impact")).body.timeline[0].contributions[0].id;
+    await owner.post(`/v1/contributions/${cid}/decide`, { action: "reject", reason: "They didn't come." });
+    const dsp = await v.post(`/v1/volunteer/contributions/${cid}/dispute`, { reason: "I was there the whole time; ask the front desk." });
+    expect(dsp.body).toMatchObject({ status: "disputed", second_reviewers: 0 });
+    // The person who decided can't decide the dispute.
+    expect((await owner.post(`/v1/contributions/${cid}/decide`, { action: "approve" })).body.error.code).toBe("second_reviewer");
+    // Platform staff can't approve service they didn't see: they let it stand or mark it unverifiable.
+    const disputeId = dsp.body.dispute_id;
+    const mod = await as(EMAILS.moderator);
+    const r = await mod.post(`/v1/admin/disputes/${disputeId}/decide`, { status: "overturned", notes: "No evidence either way." });
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
+    const c = await v.get(`/v1/contributions/${cid}`);
+    expect(c.body.status).toBe("unverified");
+    expect(c.body.approved_hours).toBeNull();
+    expect(c.body.history.map((h: { action: string }) => h.action)).toEqual(["created", "rejected", "disputed", "marked_unverified"]);
   });
 
   it("exports impact as CSV safe for spreadsheets", async () => {
@@ -102,7 +154,7 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
     const r = await (await as(EMAILS.volunteer)).get("/v1/volunteer/history/export.csv");
     expect(r.status).toBe(200);
     expect(r.headers["content-type"]).toContain("text/csv");
-    expect(r.text).toContain('"type","date","request","with","hours","detail","quantity"');
+    expect(r.text).toContain('"date","activity","organization","status","reported_hours","approved_hours"');
     expect(r.text).toContain(`"'=HYPERLINK(""x"")"`);
   });
 });

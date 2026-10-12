@@ -32,6 +32,11 @@ import { registerApplicantRoutes } from "./modules/requests/applicants";
 import { registerAccountRoutes } from "./modules/account/routes";
 import { revealDueReviews } from "./modules/reviews/service";
 import { registerDocsRoutes } from "./openapi/docs";
+import { registerContributionRoutes } from "./modules/contributions/routes";
+import { registerRecordRoutes } from "./modules/records/routes";
+import { registerPrerequisiteRoutes } from "./modules/prerequisites/routes";
+import { registerOfferRoutes } from "./modules/requests/offers";
+import { registerCheckinRoutes } from "./modules/requests/checkin";
 
 export function createApp(): Express {
   const app = express();
@@ -106,6 +111,11 @@ export function createApp(): Express {
   registerReviewRoutes(app);
   registerApplicantRoutes(app);
   registerAccountRoutes(app);
+  registerContributionRoutes(app);
+  registerRecordRoutes(app);
+  registerPrerequisiteRoutes(app);
+  registerOfferRoutes(app);
+  registerCheckinRoutes(app);
   onHourly(revealDueReviews);
   app.use("/v1/admin", adminAudit);
   registerAdminRoutes(app);

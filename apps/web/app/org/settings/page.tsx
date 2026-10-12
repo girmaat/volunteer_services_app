@@ -4,6 +4,7 @@ import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { getOrgContext } from "../../lib/org";
 import { redirect } from "next/navigation";
 import { Button, Card, Notice, PageHeader, VerifiedBadge } from "../../../components/ui";
+import OrgTabs from "../../../components/org/OrgTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +96,18 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
     redirect("/org/settings?saved=1");
   }
 
+  async function savePolicyAction(formData: FormData) {
+    "use server";
+    const policy = String(formData.get("publication_policy") || "");
+    const res = await backendFetch(`/v1/orgs/${encodeURIComponent(orgSlug)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ publication_policy: policy })
+    });
+    if (!res.ok) redirect(`/org/settings?error=${encodeURIComponent("The publishing rule didn’t save.")}#publishing`);
+    redirect("/org/settings?saved=1#publishing");
+  }
+
   const saved = searchParams?.saved === "1";
   const error = searchParams?.error ? decodeURIComponent(String(searchParams.error)) : "";
 
@@ -103,12 +116,14 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
     status === "approved" || status === "verified"
       ? "Verified"
       : status === "submitted"
-        ? "Pending review"
-        : status === "rejected"
-          ? "Rejected"
-          : org.verification_required
-            ? "Required"
-            : "Not verified";
+        ? "Being reviewed"
+        : status === "needs_info"
+          ? "More information needed"
+          : status === "rejected"
+            ? "Declined: you can update and resubmit"
+            : status === "suspended"
+              ? "Suspended"
+              : "Not verified yet";
 
   const label = "grid gap-1.5 text-sm font-medium text-ink";
   const input = "h-11 w-full rounded border border-line-strong bg-surface px-3 text-base font-normal";
@@ -119,6 +134,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
   return (
     <div className="grid max-w-3xl gap-6">
       <PageHeader title="Organization settings" description="Your public profile, how volunteers reach you, and verification." />
+      <OrgTabs />
       {saved ? <Notice tone="success">Saved.</Notice> : null}
       {error ? <Notice tone="danger">Couldn&apos;t save changes: {error}</Notice> : null}
 
@@ -200,13 +216,22 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
         <h2 id="verification" className="m-0 mb-2 flex items-center gap-2 text-lg">
           Verification {verified ? <VerifiedBadge /> : <span className="text-sm font-normal text-muted">· {statusLabel}</span>}
         </h2>
-        <p className="m-0 text-sm text-muted">Verified organizations get a badge, rank higher, and can post in sensitive categories.</p>
+        <p className="m-0 text-sm text-muted">
+          Only verified organizations can publish requests and approve volunteer hours. You can write drafts while you wait. Verified organizations also get a badge and can post in sensitive categories.
+        </p>
+        {org.suspended_at ? (
+          <div className="mt-3">
+            <Notice tone="danger">
+              Suspended{org.suspended_reason ? `: ${org.suspended_reason}` : "."} Your requests are hidden and hours can’t be approved. Reply to the email from ThankYou to ask for a review.
+            </Notice>
+          </div>
+        ) : null}
         {org.verification_notes ? (
           <div className="mt-3">
             <Notice tone="info">Reviewer notes: {org.verification_notes}</Notice>
           </div>
         ) : null}
-        {!canEdit || verified ? null : (
+        {!canEdit || verified || status === "suspended" ? null : (
           <form action={submitVerificationAction} className="mt-4 grid gap-3">
             <label className={label}>
               Notes for the reviewer <span className={hint}>(public website, EIN, a contact person…)</span>
@@ -214,10 +239,43 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
             </label>
             <div>
               <Button type="submit" variant="secondary">
-                {status === "submitted" ? "Update submission" : "Submit for verification"}
+                {status === "submitted" ? "Update submission" : status === "needs_info" || status === "rejected" ? "Send for another review" : "Submit for verification"}
               </Button>
             </div>
           </form>
+        )}
+      </Card>
+
+      <Card>
+        <h2 id="publishing" className="m-0 mb-2 text-lg">
+          Who can publish requests
+        </h2>
+        <p className="m-0 text-sm text-muted">Admins (owners) always publish directly. Choose when coordinators need an owner to approve first.</p>
+        {canEdit ? (
+          <form action={savePolicyAction} className="mt-4 grid gap-3">
+            {[
+              ["owner_first_and_high_risk", "The organization’s first request, and high-risk ones (recommended)", "High-risk: sensitive categories, under-18 consent or a background check."],
+              ["owner_all", "Every request", "An owner approves everything before it goes public."],
+              ["delegated", "None: coordinators publish on their own", "Use when your coordinators are experienced."]
+            ].map(([v, l, h]) => (
+              <label key={v} className="flex items-start gap-3 text-sm">
+                <input type="radio" name="publication_policy" value={v} defaultChecked={(org.publication_policy || "owner_first_and_high_risk") === v} className="mt-0.5 h-5 w-5 accent-[var(--primary)]" />
+                <span>
+                  <span className="font-medium">{l}</span>
+                  <span className="block text-muted">{h}</span>
+                </span>
+              </label>
+            ))}
+            <div>
+              <Button type="submit" variant="secondary">
+                Save
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <p className="m-0 mt-2 text-sm">
+            {org.publication_policy === "delegated" ? "Coordinators publish on their own." : org.publication_policy === "owner_all" ? "An owner approves every request." : "An owner approves the first request and high-risk ones."}
+          </p>
         )}
       </Card>
 

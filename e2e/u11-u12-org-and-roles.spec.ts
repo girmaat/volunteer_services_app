@@ -1,4 +1,4 @@
-import { api, createUser, db, expect, expectAccessible, PASSWORD, run, signedIn, submit, test, uniq, uniqEmail } from "./support";
+import { api, createUser, db, expect, expectAccessible, PERSONAS, PASSWORD, run, signedIn, submit, test, uniq, uniqEmail } from "./support";
 
 // U11 · Org admin: sign up an org, submit verification, invite a team member, post a recurring
 // request, take attendance, export the roster.
@@ -12,6 +12,7 @@ test("U11 org admin: sign up, verify, invite, recurring request, attendance, ros
   await page.getByLabel("Your name").fill("Riley Admin");
   await page.getByLabel("Work email").fill(uniqEmail("riley"));
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await page.getByLabel(/I’m 18 or older/).check();
   await page.getByRole("button", { name: "Create organization account" }).click();
   await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
   const verify = page.locator('a[href*="verify-email?token="]').first();
@@ -37,6 +38,8 @@ test("U11 org admin: sign up, verify, invite, recurring request, attendance, ros
   await page.getByLabel(/Notes for the reviewer/).fill(`EIN 12-${run.slice(-7)}; website riverside.example.org`);
   await page.getByRole("button", { name: "Submit for verification" }).click();
   await expect(page.getByRole("button", { name: "Update submission" })).toBeVisible();
+  // Only verified organizations publish: ThankYou staff approve the submission.
+  await api(PERSONAS.admin, "POST", `/v1/admin/org-verification/${slug}/approve`, { notes: "EIN checked" });
 
   // Invite a teammate.
   await page.goto("/org/team");

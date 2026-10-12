@@ -1,68 +1,130 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { Award, Download, MessageSquareQuote, NotebookPen, Star } from "lucide-react";
+import { Award, BadgeCheck, Clock, Download, MessageSquareQuote, NotebookPen, Star } from "lucide-react";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import ShareButton from "../../_components/share/ShareButton";
-import { ButtonLink, EmptyState, Notice, PageHeader, StatStrip, SubmitButton, Toast } from "../../../components/ui";
+import { Button, ButtonLink, EmptyState, Notice, PageHeader, StatStrip, StatusPill, SubmitButton, Toast } from "../../../components/ui";
+import { disputeAction, outsideAction, reportAction, resubmitAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Impact" };
 
-type Note = { id: string; kind: "note" | "task" | "outcome"; date: string | null; hours: number | null; text: string | null; quantity: string | null };
+type Contribution = {
+  id: string;
+  status: string;
+  source: string;
+  method_label: string;
+  started_at: string | null;
+  ended_at: string | null;
+  reported_hours: number | null;
+  approved_hours: number | null;
+  reported_units: number | null;
+  approved_units: number | null;
+  unit: string | null;
+  description: string | null;
+  last_reason: string | null;
+};
 type Work = {
   application_id: string;
   request_id: string;
   title: string;
   organization_name: string | null;
   requester_name: string | null;
+  application_status: string;
   completed_at: string;
   hours: number;
-  auto_hours: boolean;
-  notes: Note[];
+  pending_hours: number;
+  contributions: Contribution[];
 };
 type Badge = { id: string; title: string; description: string; earned: boolean; earned_at: string | null; progress: number; goal: number };
 type Impact = {
-  totals: { hours: number; completed: number; organizations: number; people: number; badges: number };
+  totals: { hours: number; pending_hours: number; self_reported_hours: number; units: { unit: string; approved: number; pending: number }[]; completed: number; organizations: number; people: number; badges: number };
   timeline: Work[];
-  other_notes: Note[];
+  outside: { id: string; status: string; started_at: string | null; hours: number | null; text: string | null; created_at: string }[];
   badges: Badge[];
   reviews: { count: number; average: number | null; latest: { rating: number; comment: string | null; created_at: string; request_title: string | null; reviewer_name: string }[] };
 };
 
-const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-const hrs = (n: number) => `${Math.round(n * 10) / 10} h`;
+const FLASH: Record<string, string> = {
+  reported: "Sent for approval. It counts once the organizer approves it.",
+  outside: "Saved as self-reported.",
+  resubmitted: "Sent back for approval.",
+  disputed: "Dispute sent. Someone who wasn’t part of the decision will look at it."
+};
 
-/** Optional note (and corrected hours) on one completed engagement. */
-async function addNote(fd: FormData) {
-  "use server";
-  const requestId = String(fd.get("requestId") || "");
-  const applicationId = String(fd.get("applicationId") || "");
-  const text = String(fd.get("notes") || "").trim();
-  const hoursRaw = String(fd.get("hours") || "").trim();
-  if (!/^[0-9a-f-]{36}$/i.test(requestId)) redirect("/volunteer/history");
-  if (!text && !hoursRaw) redirect(`/volunteer/history?error=${encodeURIComponent("Write a note or enter the hours.")}#w-${applicationId}`);
-  const r = await backendFetch("/v1/volunteer/history/impact", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      request_id: requestId,
-      request_application_id: /^[0-9a-f-]{36}$/i.test(applicationId) ? applicationId : undefined,
-      impact_date: new Date().toISOString().slice(0, 10),
-      hours: hoursRaw ? Math.max(0, Math.min(1000, Number(hoursRaw) || 0)) : 0,
-      notes: text || undefined
-    })
-  });
-  redirect(r.ok ? `/volunteer/history?flash=noted#w-${applicationId}` : `/volunteer/history?error=${encodeURIComponent("That note didn’t save. Try again.")}#w-${applicationId}`);
+const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+const time = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+const hrs = (n: number | null | undefined) => `${Math.round((n ?? 0) * 100) / 100} h`;
+const field = "h-10 rounded border border-line-strong bg-surface px-3 font-normal";
+
+/** Date + start/end, or just hours. Shared by reporting, resubmitting and outside service. */
+function TimeInputs({ prefix }: { prefix: string }) {
+  return (
+    <div className="flex flex-wrap gap-3">
+      <label className="grid gap-1 text-sm font-medium">
+        Date
+        <input name="date" type="date" className={field} id={`${prefix}-date`} />
+      </label>
+      <label className="grid gap-1 text-sm font-medium">
+        From
+        <input name="start" type="time" className={field} />
+      </label>
+      <label className="grid gap-1 text-sm font-medium">
+        To
+        <input name="end" type="time" className={field} />
+      </label>
+      <label className="grid gap-1 text-sm font-medium">
+        or hours
+        <input name="hours" type="number" min={0.25} max={24} step={0.25} inputMode="decimal" className={`${field} w-24`} />
+      </label>
+    </div>
+  );
 }
 
-function NoteLine({ n }: { n: Note }) {
-  const label = n.kind === "outcome" ? "Outcome" : n.kind === "task" ? "Task" : "Note";
+function ContributionLine({ c, anchor }: { c: Contribution; anchor: string }) {
+  const when = c.started_at ? `${day(c.started_at)}${c.ended_at ? `, ${time(c.started_at)}–${time(c.ended_at)}` : ""}` : null;
   return (
-    <li className="list-none text-sm">
-      <span className="font-medium text-ink">{label}:</span> {n.text || (n.hours ? `${hrs(n.hours)} logged` : "")}
-      {n.quantity ? <span className="text-muted"> · {n.quantity}</span> : null}
-      {n.kind !== "outcome" && n.hours ? <span className="text-muted"> · {hrs(n.hours)}</span> : null}
-      {n.date ? <span className="text-muted"> · {day(n.date)}</span> : null}
+    <li className="list-none rounded-md border border-line bg-surface px-3 py-2.5 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span>
+          {when ? <span className="font-medium">{when} · </span> : null}
+          {c.approved_hours != null ? `${hrs(c.approved_hours)} approved` : `${hrs(c.reported_hours)} reported`}
+          {c.approved_hours != null && c.reported_hours != null && c.approved_hours !== c.reported_hours ? ` (you reported ${hrs(c.reported_hours)})` : ""}
+          {c.approved_units != null ? ` · ${c.approved_units} ${c.unit}` : c.reported_units != null ? ` · ${c.reported_units} ${c.unit} reported` : ""}
+        </span>
+        <StatusPill kind="hours" status={c.status} />
+      </div>
+      <p className="m-0 mt-1 text-xs text-muted">{c.method_label}</p>
+      {c.description ? <p className="m-0 mt-1 text-muted">“{c.description}”</p> : null}
+      {c.last_reason ? <p className="m-0 mt-1">Reviewer’s note: {c.last_reason}</p> : null}
+      {c.status === "revision_requested" ? (
+        <form action={resubmitAction.bind(null, c.id, anchor)} className="mt-2 grid gap-2 rounded-md border border-line p-3">
+          <p className="m-0 text-sm font-medium">Fix and send it back</p>
+          <TimeInputs prefix={`r-${c.id}`} />
+          <label className="grid gap-1 text-sm font-medium">
+            Note <span className="font-normal text-muted">(optional)</span>
+            <input name="description" maxLength={1000} className={field} />
+          </label>
+          <div>
+            <SubmitButton size="sm">Send for approval</SubmitButton>
+          </div>
+        </form>
+      ) : null}
+      {c.status === "adjusted" || c.status === "rejected" ? (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-sm font-medium text-primary">Disagree with this?</summary>
+          <form action={disputeAction.bind(null, c.id, anchor)} className="mt-2 grid gap-2 rounded-md border border-line p-3">
+            <label className="grid gap-1 text-sm font-medium">
+              What’s wrong?
+              <textarea name="reason" required minLength={10} maxLength={1000} rows={2} className="rounded border border-line-strong bg-surface px-3 py-2 font-normal" placeholder="e.g. I stayed until 6 — the front desk saw me leave." />
+            </label>
+            <div>
+              <SubmitButton size="sm" variant="secondary">
+                Ask for a second look
+              </SubmitButton>
+            </div>
+          </form>
+        </details>
+      ) : null}
     </li>
   );
 }
@@ -78,9 +140,12 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
     <>
       <PageHeader
         title="Impact"
-        description="What you’ve done, the time you’ve given and what people said."
+        description="Hours count once the organizer approves them. Waiting and self-reported hours are shown separately."
         actions={
           <>
+            <ButtonLink href="/volunteer/records" variant="secondary" prefetch={false} icon={<BadgeCheck aria-hidden className="h-4 w-4" />}>
+              Share a verified record
+            </ButtonLink>
             <ButtonLink href="/api/download?what=impact-csv" variant="secondary" prefetch={false} icon={<Download aria-hidden className="h-4 w-4" />}>
               Export CSV
             </ButtonLink>
@@ -88,7 +153,7 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
           </>
         }
       />
-      {sp.flash === "noted" ? <Toast message="Saved to your impact." /> : null}
+      {sp.flash && FLASH[sp.flash] ? <Toast message={FLASH[sp.flash]} /> : null}
       {sp.error ? (
         <div className="mb-5">
           <Notice tone="danger">{sp.error}</Notice>
@@ -100,12 +165,19 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
         <>
           <StatStrip
             stats={[
-              { label: "Hours given", value: Math.round(data.totals.hours * 10) / 10 },
+              { label: "Approved hours", value: Math.round(data.totals.hours * 10) / 10 },
+              { label: "Waiting for approval", value: `${Math.round(data.totals.pending_hours * 10) / 10} h` },
               { label: "Times you helped", value: data.totals.completed },
-              { label: "People and organizations", value: data.totals.people + data.totals.organizations },
               { label: "Badges", value: data.totals.badges }
             ]}
           />
+          {data.totals.units.length || data.totals.self_reported_hours ? (
+            <p className="m-0 mt-3 text-sm text-muted">
+              {data.totals.units.map((u) => `${u.approved} ${u.unit} approved${u.pending ? ` (${u.pending} waiting)` : ""}`).join(" · ")}
+              {data.totals.units.length && data.totals.self_reported_hours ? " · " : ""}
+              {data.totals.self_reported_hours ? `${Math.round(data.totals.self_reported_hours * 10) / 10} h self-reported (not confirmed by anyone)` : ""}
+            </p>
+          ) : null}
 
           <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_300px]">
             <section aria-labelledby="timeline-h" id="completed">
@@ -119,8 +191,8 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
               {!data.timeline.length ? (
                 <div className="mt-3">
                   <EmptyState
-                    title="Nothing completed yet"
-                    body="When an organizer marks something you helped with as done, it shows up here with its hours."
+                    title="Nothing yet"
+                    body="When you check out of a shift or an organizer marks your work complete, the hours show up here for approval."
                     action={<ButtonLink href="/volunteer/opportunities/recommended">Find something to do</ButtonLink>}
                   />
                 </div>
@@ -136,27 +208,29 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
                         </Link>
                       </h3>
                       <p className="m-0 mt-0.5 text-sm text-muted">
-                        {w.organization_name || (w.requester_name ? `Helped ${w.requester_name}` : "Helped a neighbor")} · {hrs(w.hours)}
-                        {w.auto_hours ? " (from the schedule)" : ""}
+                        {w.organization_name || (w.requester_name ? `Helped ${w.requester_name}` : "Helped a neighbor")} · {hrs(w.hours)} approved
+                        {w.pending_hours ? ` · ${hrs(w.pending_hours)} waiting` : ""}
                       </p>
-                      {w.notes.length ? <ul className="m-0 mt-2 grid gap-1 p-0">{w.notes.map((n) => <NoteLine key={n.id} n={n} />)}</ul> : null}
+                      {w.contributions.length ? (
+                        <ul className="m-0 mt-2 grid gap-2 p-0">
+                          {w.contributions.map((c) => (
+                            <ContributionLine key={c.id} c={c} anchor={`#w-${w.application_id}`} />
+                          ))}
+                        </ul>
+                      ) : null}
                       <details className="mt-2">
                         <summary className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-primary">
-                          <NotebookPen aria-hidden className="h-4 w-4" /> {w.notes.length ? "Add another note" : "Add a note or correct the hours"}
+                          <NotebookPen aria-hidden className="h-4 w-4" /> Report time you gave
                         </summary>
-                        <form action={addNote} className="mt-2 grid max-w-lg gap-2 rounded-md border border-line bg-surface p-3">
-                          <input type="hidden" name="requestId" value={w.request_id} />
-                          <input type="hidden" name="applicationId" value={w.application_id} />
+                        <form action={reportAction.bind(null, w.application_id)} className="mt-2 grid max-w-xl gap-2 rounded-md border border-line bg-surface p-3">
+                          <TimeInputs prefix={`w-${w.application_id}`} />
                           <label className="grid gap-1 text-sm font-medium">
-                            What happened? <span className="font-normal text-muted">(optional)</span>
-                            <textarea name="notes" rows={2} maxLength={1000} placeholder="e.g. Delivered 12 meals; Mr. Lee asked for me again." className="rounded border border-line-strong bg-surface px-3 py-2 font-normal" />
+                            What did you do?
+                            <textarea name="description" required rows={2} maxLength={1000} placeholder="e.g. Sorted coats; stayed an extra hour to pack up." className="rounded border border-line-strong bg-surface px-3 py-2 font-normal" />
                           </label>
-                          <label className="grid w-40 gap-1 text-sm font-medium">
-                            Hours <span className="font-normal text-muted">(if different)</span>
-                            <input name="hours" type="number" min={0} max={1000} step={0.25} inputMode="decimal" className="h-10 rounded border border-line-strong bg-surface px-3 font-normal" />
-                          </label>
+                          <p className="m-0 text-xs text-muted">The organizer approves it before it counts.</p>
                           <div>
-                            <SubmitButton size="sm">Save</SubmitButton>
+                            <SubmitButton size="sm">Send for approval</SubmitButton>
                           </div>
                         </form>
                       </details>
@@ -164,12 +238,40 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
                   ))}
                 </ol>
               )}
-              {data.other_notes.length ? (
-                <div className="mt-8">
-                  <h3 className="m-0 text-base">Other notes you logged</h3>
-                  <ul className="m-0 mt-2 grid gap-1 p-0">{data.other_notes.map((n) => <NoteLine key={n.id} n={n} />)}</ul>
-                </div>
-              ) : null}
+
+              <section id="outside" aria-labelledby="outside-h" className="mt-10">
+                <h3 id="outside-h" className="m-0 flex items-center gap-2 text-base">
+                  <Clock aria-hidden className="h-4 w-4 text-muted" /> Service outside ThankYou
+                </h3>
+                <p className="m-0 mt-1 text-sm text-muted">Keep a note of other volunteering here. It stays marked self-reported because nobody on ThankYou can confirm it.</p>
+                {data.outside.length ? (
+                  <ul className="m-0 mt-3 grid gap-2 p-0">
+                    {data.outside.map((o) => (
+                      <li key={o.id} className="flex list-none flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface px-3 py-2.5 text-sm">
+                        <span>
+                          {day(o.started_at || o.created_at)} · {hrs(o.hours)} · {o.text}
+                        </span>
+                        <StatusPill kind="hours" status={o.status} />
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-sm font-medium text-primary">Add service from elsewhere</summary>
+                  <form action={outsideAction} className="mt-2 grid max-w-xl gap-2 rounded-md border border-line bg-surface p-3">
+                    <TimeInputs prefix="outside" />
+                    <label className="grid gap-1 text-sm font-medium">
+                      What and where?
+                      <input name="description" required maxLength={1000} className={field} placeholder="e.g. Beach clean-up with my school" />
+                    </label>
+                    <div>
+                      <Button type="submit" size="sm" variant="secondary">
+                        Save as self-reported
+                      </Button>
+                    </div>
+                  </form>
+                </details>
+              </section>
             </section>
 
             <aside className="grid content-start gap-8">

@@ -41,7 +41,8 @@ export async function saveAbout(fd: FormData) {
       fullName,
       displayName: str(fd, "displayName") || fullName.split(/\s+/)[0],
       ...(area ? { publicLocation: area } : {}),
-      ...(str(fd, "phone") ? { phone: str(fd, "phone") } : {})
+      ...(str(fd, "phone") ? { phone: str(fd, "phone") } : {}),
+      ...(str(fd, "birthDate") ? { birthDate: str(fd, "birthDate") } : {})
     },
     "/onboarding?step=about"
   );

@@ -10,7 +10,10 @@ export const NOTIFICATION_ACTION: Record<string, string> = {
   review_requested: "Leave a review",
   request_updates: "View request",
   moderation: "Open queue",
-  disputes: "View dispute"
+  disputes: "View dispute",
+  hours: "Review hours",
+  calendar: "See the new time",
+  prerequisites: "Finish before your shift"
 };
 
 /** Only same-site paths are followed from a notification. */

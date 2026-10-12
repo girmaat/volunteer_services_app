@@ -133,9 +133,10 @@ describe("unified applicants API (requesters and organizations)", () => {
     const after = await admin.get(`/v1/requests/${d.body.id}/applicants`);
     expect(after.body.applicants.find((x: { id: string }) => x.id === a1.body.applicationId).email).toBe("appl.a@thankyou.test");
     expect((await go(a1.body.applicationId, "cancel")).body.status).toBe("canceled");
-    // The waitlisted applicant moved up.
+    // The waitlisted applicant is offered the spot; the organizer can accept them straight away.
     const st = await pool.query("SELECT status FROM request_applications WHERE id = $1", [a2.body.applicationId]);
-    expect(st.rows[0].status).toBe("accepted");
+    expect(st.rows[0].status).toBe("offered");
+    expect((await go(a2.body.applicationId, "accept")).body.status).toBe("accepted");
     expect((await (await as(EMAILS.orgMember)).post(`/v1/requests/${d.body.id}/applicants/${a2.body.applicationId}`, { action: "decline" })).status).toBe(404);
     expect((await (await as(EMAILS.orgMember)).get(`/v1/requests/${d.body.id}/applicants`)).status).toBe(200);
   });

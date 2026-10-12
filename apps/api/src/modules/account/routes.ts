@@ -6,7 +6,7 @@ import type { Express } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { pool } from "../../lib/db";
-import { completedWork } from "../volunteer/impact";
+import { METHOD_LABEL, type Method } from "../contributions/service";
 import { wrap } from "../../lib/http";
 import type { PolicyUser } from "../../lib/policy";
 import { requireAuthedUser, requireVolunteerUser } from "../../middleware/auth";
@@ -94,7 +94,7 @@ export function registerAccountRoutes(app: Express) {
           if (!(e instanceof TransitionError)) throw e;
         }
       }
-      const apps = await pool.query("SELECT id, status, request_id FROM request_applications WHERE volunteer_user_id = $1 AND status IN ('pending','waitlisted','accepted','confirmed')", [user.id]);
+      const apps = await pool.query("SELECT id, status, request_id FROM request_applications WHERE volunteer_user_id = $1 AND status IN ('pending','waitlisted','offered','accepted','confirmed')", [user.id]);
       for (const a of apps.rows) {
         if (a.status === "accepted" || a.status === "confirmed") await recordCommitmentCancel(String(a.id), "system");
         await pool.query("UPDATE request_applications SET status = $2, updated_at = NOW() WHERE id = $1", [a.id, a.status === "accepted" || a.status === "confirmed" ? "canceled" : "withdrawn"]);
@@ -164,30 +164,38 @@ export function registerAccountRoutes(app: Express) {
     wrap(async (req, res) => {
       const user = await requireVolunteerUser(req, res);
       if (!user) return;
-      // Same numbers as the Impact page: one row per completed engagement (credited hours),
-      // then anything logged that isn't tied to a completed engagement.
-      const work = await completedWork(user.id);
-      const done = work.map((w) => w.request_id);
-      const notes = await pool.query(
-        `SELECT 'note' AS kind, i.impact_date AS date, r.title AS request, i.request_id, i.hours AS hours, i.notes AS detail, NULL::text AS quantity
-           FROM volunteer_impact_entries i LEFT JOIN service_requests r ON r.id = i.request_id WHERE i.volunteer_user_id = $1
-         UNION ALL
-         SELECT 'task', t.task_date, r.title, t.request_id, t.duration_hours, t.task, NULL FROM volunteer_task_entries t LEFT JOIN service_requests r ON r.id = t.request_id WHERE t.volunteer_user_id = $1
-         UNION ALL
-         SELECT 'outcome', o.outcome_date, r.title, o.request_id, NULL, o.outcome, CONCAT(o.quantity, ' ', o.unit) FROM volunteer_outcome_entries o LEFT JOIN service_requests r ON r.id = o.request_id WHERE o.volunteer_user_id = $1
-         ORDER BY date DESC NULLS LAST`,
+      // One row per contribution, with its status, so self-reported, waiting and approved service
+      // are never mixed (PRIV-02, OPS-05). Units stay in their own columns.
+      const rows = await pool.query(
+        `SELECT COALESCE(c.started_at, c.created_at) AS date, COALESCE(r.title, '') AS activity,
+                COALESCE(o.name, CASE WHEN r.id IS NOT NULL AND r.requester_org_slug IS NULL THEN 'Individual request' END, '') AS org,
+                c.status, c.reported_hours::float AS reported_hours, c.approved_hours::float AS approved_hours, c.reported_units::float AS reported_units,
+                c.approved_units::float AS approved_units, c.unit, c.verification_method, c.decided_by_role, c.description,
+                (SELECT d.reason FROM contribution_decisions d WHERE d.contribution_id = c.id AND d.reason IS NOT NULL
+                    AND d.action IN ('adjusted', 'rejected', 'revision_requested', 'corrected', 'disputed', 'marked_unverified', 'dispute_upheld')
+                  ORDER BY d.created_at DESC LIMIT 1) AS reason
+           FROM contributions c LEFT JOIN service_requests r ON r.id = c.request_id LEFT JOIN organizations o ON o.slug = c.org_slug
+          WHERE c.volunteer_user_id = $1 ORDER BY 1 DESC`,
         [user.id]
       );
+      const legacy = await pool.query(
+        `SELECT i.impact_date AS date, COALESCE(r.title, '') AS activity, i.hours::float AS hours, i.notes AS detail FROM volunteer_impact_entries i LEFT JOIN service_requests r ON r.id = i.request_id WHERE i.volunteer_user_id = $1
+         UNION ALL
+         SELECT t.task_date, COALESCE(r.title, ''), t.duration_hours::float, t.task FROM volunteer_task_entries t LEFT JOIN service_requests r ON r.id = t.request_id WHERE t.volunteer_user_id = $1
+         ORDER BY 1 DESC NULLS LAST`,
+        [user.id]
+      );
+      const STATUS: Record<string, string> = { approved: "approved", adjusted: "approved (adjusted)", pending: "waiting for approval", revision_requested: "sent back", disputed: "disputed", rejected: "not approved", unverified: "unverifiable", self_reported: "self-reported" };
       const d = (v: unknown) => (v ? new Date(v as string).toISOString().slice(0, 10) : "");
-      const lines = [["type", "date", "request", "with", "hours", "detail", "quantity"].map(csvCell).join(",")];
-      for (const w of work) {
-        const detail = notes.rows.filter((n) => n.request_id === w.request_id && n.detail).map((n) => String(n.detail)).join(" | ");
-        lines.push(["completed", d(w.completed_at), w.title, w.organization_name || w.requester_name || "", w.hours, detail, ""].map(csvCell).join(","));
+      const lines = [["date", "activity", "organization", "status", "reported_hours", "approved_hours", "reported_units", "approved_units", "unit", "verified_by", "approver_role", "note"].map(csvCell).join(",")];
+      for (const c of rows.rows) {
+        lines.push(
+          [d(c.date), c.activity, c.org, STATUS[c.status] ?? c.status, c.reported_hours ?? "", c.approved_hours ?? "", c.reported_units ?? "", c.approved_units ?? "", c.unit ?? "", METHOD_LABEL[c.verification_method as Method] ?? "", c.decided_by_role ?? "", [c.description, c.reason].filter(Boolean).join(" | ")]
+            .map(csvCell)
+            .join(",")
+        );
       }
-      for (const n of notes.rows) {
-        if (n.request_id && done.includes(String(n.request_id))) continue;
-        lines.push([n.kind, d(n.date), n.request || "", "", n.hours ?? "", n.detail, n.quantity].map(csvCell).join(","));
-      }
+      for (const n of legacy.rows) lines.push([d(n.date), n.activity, "", "self-reported", n.hours ?? "", "", "", "", "", METHOD_LABEL.self_reported, "", n.detail ?? ""].map(csvCell).join(","));
       res.setHeader("content-type", "text/csv; charset=utf-8");
       res.setHeader("content-disposition", 'attachment; filename="thankyou-impact.csv"');
       return res.send("﻿" + lines.join("\r\n"));

@@ -228,6 +228,40 @@ export default function RequestWizard({
                 </div>
               </fieldset>
             </div>
+            <fieldset className="m-0 grid gap-3 rounded-md border border-line p-4">
+              <legend className={cn(label, "px-1")}>
+                A goal to reach <span className="font-normal text-muted">(optional)</span>
+              </legend>
+              <p className="m-0 -mt-1 text-sm text-muted">For work measured in an amount, like 40 tutoring hours or 200 meals. Volunteers can offer part of it, and you can accept all or part of each offer.</p>
+              <div className="flex flex-wrap gap-4">
+                <div className="grid gap-1.5">
+                  <label htmlFor="w-target" className={label}>
+                    Amount
+                  </label>
+                  <input id="w-target" name="targetValue" type="number" min={1} step="any" defaultValue={d?.target_value ?? ""} className={cn(input, "w-32")} />
+                </div>
+                <div className="grid gap-1.5">
+                  <label htmlFor="w-unit" className={label}>
+                    Counted in
+                  </label>
+                  <input id="w-unit" name="targetUnit" list="w-units" maxLength={40} defaultValue={d?.target_unit ?? "hours"} className={cn(input, "w-40")} />
+                  <datalist id="w-units">
+                    <option value="hours" />
+                    <option value="meals" />
+                    <option value="items" />
+                    <option value="deliveries" />
+                    <option value="pages" />
+                  </datalist>
+                </div>
+                <div className="grid gap-1.5">
+                  <label htmlFor="w-min" className={label}>
+                    Smallest useful offer
+                  </label>
+                  <input id="w-min" name="minContribution" type="number" min={0.25} step="any" defaultValue={d?.min_contribution ?? ""} className={cn(input, "w-32")} />
+                </div>
+              </div>
+              <Checkbox id="w-overfill" name="allowOverfill" defaultChecked={Boolean(d?.allow_overfill)} label="Accept offers beyond the goal" />
+            </fieldset>
             <Nav step={1} live={live} />
           </form>
         </>
@@ -369,7 +403,8 @@ export default function RequestWizard({
               ["requiresCar", "Have a car", d.requires_car],
               ["requiresBackgroundCheck", "Have a cleared background check", d.requires_background_check],
               ["requiresTraining", "Complete training first", d.requires_training],
-              ["requiresWaiver", "Sign a waiver", d.requires_waiver]
+              ["requiresWaiver", "Sign a waiver", d.requires_waiver],
+              ...(owner === "org" ? [["requiresGuardianConsent", "If under 18, have a parent or guardian’s consent", d.requires_guardian_consent]] : [])
             ].map(([n, l, v]) => (
               <Checkbox key={String(n)} id={`w-${String(n)}`} name={String(n)} defaultChecked={Boolean(v)} label={String(l)} />
             ))}

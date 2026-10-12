@@ -5,6 +5,7 @@
  */
 import type { Express, Response } from "express";
 import { z } from "zod";
+import { resolveDisputeAsStaff } from "../contributions/service";
 import { requireModerator, requirePlatformAdmin } from "../../admin/auth";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
@@ -200,6 +201,8 @@ export function registerAdminQueueRoutes(app: Express) {
           );
         }
       }
+      // Hours: staff let the decision stand or mark the entry unverifiable; they never approve service they didn't see (CON-06).
+      if (d.kind === "hours" && d.contribution_id) await resolveDisputeAsStaff(String(d.contribution_id), body.data.status, m.user.id, body.data.notes);
       await pool.query("UPDATE disputes SET status = $2, decision_notes = $3, decided_by_user_id = $4, decided_at = NOW() WHERE id = $1", [
         id.data,
         body.data.status,

@@ -1,5 +1,6 @@
 
 import { HttpUrl } from "@thankyou/contracts";
+import { ageOn, MIN_ACCOUNT_AGE, parseBirthDate } from "../lib/age";
 import type { Request, Response } from "express";
 import type { Pool } from "pg";
 import bcrypt from "bcryptjs";
@@ -68,11 +69,19 @@ export async function signup(pool: Pool, req: Request, res: Response) {
   const schema = z.object({
     email: z.string().email(),
     password: z.string().min(8),
-    fullName: z.string().min(1).optional()
+    fullName: z.string().min(1).optional(),
+    birthDate: z.string()
   });
 
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+
+  // Pilot age gate (SAFE-01): a real birth date, 16 or older. Never shown publicly (ID-01).
+  const birthDate = parseBirthDate(parsed.data.birthDate);
+  if (!birthDate) return res.status(400).json({ message: "Enter your date of birth", errors: { fieldErrors: { birthDate: ["Enter a real date"] } } });
+  if ((ageOn(birthDate) ?? 0) < MIN_ACCOUNT_AGE) {
+    return res.status(422).json({ error: { code: "too_young", message: `ThankYou is for people ${MIN_ACCOUNT_AGE} and older.` }, message: `ThankYou is for people ${MIN_ACCOUNT_AGE} and older.` });
+  }
 
   const email = parsed.data.email.toLowerCase().trim();
 
@@ -132,21 +141,13 @@ If you didn't create this account, you can ignore this email.`
 
   const fullName = String((parsed.data as any).fullName || "").trim();
 
-  if (fullName) {
-    await pool.query(
-      `INSERT INTO user_profiles (user_id, full_name)
-       VALUES ($1, $2)
-       ON CONFLICT (user_id) DO UPDATE SET full_name=EXCLUDED.full_name, updated_at=NOW()`,
-      [userId, fullName]
-    );
-  } else {
-    await pool.query(
-      `INSERT INTO user_profiles (user_id)
-       VALUES ($1)
-       ON CONFLICT (user_id) DO NOTHING`,
-      [userId]
-    );
-  }
+  await pool.query(
+    `INSERT INTO user_profiles (user_id, full_name, birth_date, birth_year)
+     VALUES ($1, $2, $3::date, $4)
+     ON CONFLICT (user_id) DO UPDATE SET full_name = COALESCE(EXCLUDED.full_name, user_profiles.full_name), birth_date = EXCLUDED.birth_date,
+       birth_year = EXCLUDED.birth_year, updated_at = NOW()`,
+    [userId, fullName || null, birthDate, Number(birthDate.slice(0, 4))]
+  );
 
   const token = randomTokenUrlSafe(32);
   const tokenHash = sha256(token);
@@ -517,6 +518,7 @@ export async function setProfile(pool: Pool, req: Request, res: Response) {
     petFriendly: z.boolean().optional().nullable(),
     serviceRadiusMiles: z.number().int().positive().optional().nullable(),
     birthYear: z.number().int().min(1900).max(new Date().getFullYear()).optional().nullable(),
+    birthDate: z.string().optional(),
     experience: z.string().optional().nullable(),
     experienceTags: z.array(z.string().min(1)).optional().nullable(),
 
@@ -543,6 +545,12 @@ export async function setProfile(pool: Pool, req: Request, res: Response) {
   if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
   const d = parsed.data;
+  let birthDate: string | null = null;
+  if (d.birthDate !== undefined) {
+    birthDate = parseBirthDate(d.birthDate);
+    if (!birthDate) return res.status(400).json({ message: "Enter your date of birth as a real date", errors: { fieldErrors: { birthDate: ["Invalid date"] } } });
+    if ((ageOn(birthDate) ?? 0) < MIN_ACCOUNT_AGE) return res.status(422).json({ error: { code: "too_young", message: `ThankYou is for people ${MIN_ACCOUNT_AGE} and older.` }, message: `ThankYou is for people ${MIN_ACCOUNT_AGE} and older.` });
+  }
 
   // Ensure a profile row exists.
   await pool.query(
@@ -601,7 +609,11 @@ export async function setProfile(pool: Pool, req: Request, res: Response) {
   if (has("stairsOk")) add("stairs_ok", d.stairsOk ?? null);
   if (has("petFriendly")) add("pet_friendly", d.petFriendly ?? null);
   if (has("serviceRadiusMiles")) add("service_radius_miles", d.serviceRadiusMiles ?? null);
-  if (has("birthYear")) add("birth_year", d.birthYear ?? null);
+  if (has("birthYear") && !birthDate) add("birth_year", d.birthYear ?? null);
+  if (birthDate) {
+    add("birth_date", birthDate);
+    add("birth_year", Number(birthDate.slice(0, 4)));
+  }
   if (has("experience")) add("experience", d.experience ?? null);
   if (has("experienceTags")) add("experience_tags", d.experienceTags ?? [], "text[]");
 

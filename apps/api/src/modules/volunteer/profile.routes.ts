@@ -68,7 +68,7 @@ app.get(
     if (!user) return;
 
     const prof = await pool.query(
-      "SELECT full_name, display_name, avatar_url, phone, public_location, location, bio, languages, interaction_styles, availability_windows, help_categories, has_car, can_lift_heavy, stairs_ok, pet_friendly, service_radius_miles, experience, experience_tags, need_categories, need_help_prompt, parking_available, elevator_available, stairs_present, pickup_vs_dropoff, time_flexibility, pets_at_home, smoke_free, accessibility_needs, meet_in_public_first, someone_else_present, mask_preferred, birth_year, background_check_status, background_check_updated_at, updated_at FROM user_profiles WHERE user_id = $1",
+      "SELECT full_name, display_name, avatar_url, phone, public_location, location, bio, languages, interaction_styles, availability_windows, help_categories, has_car, can_lift_heavy, stairs_ok, pet_friendly, service_radius_miles, experience, experience_tags, need_categories, need_help_prompt, parking_available, elevator_available, stairs_present, pickup_vs_dropoff, time_flexibility, pets_at_home, smoke_free, accessibility_needs, meet_in_public_first, someone_else_present, mask_preferred, birth_year, to_char(birth_date, 'YYYY-MM-DD') AS birth_date, background_check_status, background_check_updated_at, updated_at FROM user_profiles WHERE user_id = $1",
       [user.id]
     );
 
