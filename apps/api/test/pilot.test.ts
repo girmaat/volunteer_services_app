@@ -485,3 +485,59 @@ describe("calendar updates and QR check-in (CAL-01/02, CON-04)", () => {
     expect((await v.get(`/v1/checkin/${code.body.token}`)).status).toBe(404);
   });
 });
+
+describe("organization reports on approved hours (OPS-02, OPS-05)", () => {
+  it("separates approved, waiting and declined hours, keeps units apart, and measures approval delay", async () => {
+    const o = await makeOrg();
+    const admin = await as(o.admin);
+    const { createContribution } = await import("../src/modules/contributions/service");
+    const s = await staffed(o);
+    const meals = await orgRequest(o.admin, o.slug, { targetValue: 100, targetUnit: "meals", title: uniq("Meals") });
+    await publish(o.admin, meals);
+    const teen = `${uniq("teen")}@thankyou.test`;
+    await createUser({ email: teen, roles: ["volunteer"], birthDate: birthDateForAge(17) });
+    const tApp = (await (await as(teen)).post(`/v1/volunteer/opportunities/${meals}/apply`, { message: "hi", offeredAmount: 30 })).body.applicationId;
+    await admin.post(`/v1/requests/${meals}/applicants/${tApp}`, { action: "accept", acceptedAmount: 25 });
+    const vid = await userId(s.volunteer);
+    const tid = await userId(teen);
+    const at = (iso: string, h: number) => ({ startedAt: new Date(iso), endedAt: new Date(new Date(iso).getTime() + h * 3_600_000) });
+    const mk = (volunteer: string, app: string, req: string, t: { startedAt: Date; endedAt: Date }, units?: number) =>
+      createContribution({ volunteerUserId: volunteer, requestId: req, applicationId: app, source: "volunteer_report", method: "volunteer_report", ...t, units: units ?? null, description: "x", actorUserId: volunteer, actorRole: "volunteer" });
+    const a = await mk(vid, s.appId, s.id, at("2026-09-02T14:00:00Z", 3)); // approved as reported
+    const b = await mk(vid, s.appId, s.id, at("2026-09-03T14:00:00Z", 2)); // adjusted to 1.5
+    const c = await mk(vid, s.appId, s.id, at("2026-09-04T14:00:00Z", 4)); // declined
+    await mk(vid, s.appId, s.id, at("2026-09-05T14:00:00Z", 1)); // waiting
+    const m = await mk(tid, tApp, meals, at("2026-09-06T14:00:00Z", 2), 20); // 20 meals, approved
+    await admin.post(`/v1/contributions/${a}/decide`, { action: "approve" });
+    await admin.post(`/v1/contributions/${b}/decide`, { action: "adjust", hours: 1.5, reason: "Left early" });
+    await admin.post(`/v1/contributions/${c}/decide`, { action: "reject", reason: "Not this shift" });
+    await admin.post(`/v1/contributions/${m}/decide`, { action: "approve" });
+
+    const r = await admin.get("/v1/org/reports/impact?from=2026-09-01&to=2026-09-30");
+    expect(r.status).toBe(200);
+    expect(r.body.hours).toMatchObject({ approved: 6.5, waiting: 1, declined: 4, approved_entries: 3, adjusted_entries: 1, volunteers: 2 });
+    expect(r.body.units).toEqual([{ unit: "meals", approved: 20, waiting: 0 }]);
+    expect(r.body.approval_delay.decided).toBe(4);
+    expect(r.body.approval_delay.median_hours).not.toBeNull();
+    const mealsRow = r.body.per_request.find((x: { request_id: string }) => x.request_id === meals);
+    expect(mealsRow).toMatchObject({ target: 100, unit: "meals", promised: 25, approved_in_unit: 20, approved_hours: 2 });
+    const shiftRow = r.body.per_request.find((x: { request_id: string }) => x.request_id === s.id);
+    expect(shiftRow).toMatchObject({ approved_hours: 4.5, waiting_hours: 1, target: null });
+
+    // `to` covers the whole day; earlier ranges leave the work out.
+    expect((await admin.get("/v1/org/reports/impact?from=2026-09-02&to=2026-09-02")).body.hours.approved).toBe(3);
+    expect((await admin.get("/v1/org/reports/impact?to=2026-08-31")).body.hours.approved).toBe(0);
+
+    // Per volunteer: approved and waiting apart; a minor's email isn't in the report.
+    const v = await admin.get("/v1/org/reports/volunteer-hours?from=2026-09-01&to=2026-09-30");
+    expect(v.body).toMatchObject({ approved_hours: 6.5, waiting_hours: 1, total_hours: 6.5 });
+    const adult = v.body.volunteers.find((x: { volunteer_user_id: string }) => x.volunteer_user_id === vid);
+    expect(adult).toMatchObject({ approved_hours: 4.5, waiting_hours: 1, declined_hours: 4, approved_entries: 2 });
+    expect(adult.volunteer_email).toBe(s.volunteer);
+    const minor = v.body.volunteers.find((x: { volunteer_user_id: string }) => x.volunteer_user_id === tid);
+    expect(minor).toMatchObject({ minor: true, volunteer_email: null, approved_hours: 2 });
+
+    // Only this organization's people see it.
+    expect((await (await as(EMAILS.volunteer)).get("/v1/org/reports/impact")).status).toBe(403);
+  });
+});

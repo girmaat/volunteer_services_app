@@ -88,64 +88,52 @@ export async function GET(req: Request) {
     if (!res.ok) return new Response("Failed to load impact report", { status: 500 });
     const data = (await res.json()) as any;
 
+    const per = Array.isArray(data?.per_request) ? data.per_request : [];
     if (format === "csv") {
-      const lines = [
-        [csvEscape("metric"), csvEscape("value")].join(","),
-        [csvEscape("requests_total"), csvEscape(data?.requests?.total ?? 0)].join(","),
-        [csvEscape("requests_open"), csvEscape(data?.requests?.open ?? 0)].join(","),
-        [csvEscape("requests_paused"), csvEscape(data?.requests?.paused ?? 0)].join(","),
-        [csvEscape("requests_closed"), csvEscape(data?.requests?.closed ?? 0)].join(","),
-        [csvEscape("applications_total"), csvEscape(data?.applications?.total ?? 0)].join(","),
-        [csvEscape("applications_pending"), csvEscape(data?.applications?.pending ?? 0)].join(","),
-        [csvEscape("applications_accepted"), csvEscape(data?.applications?.accepted ?? 0)].join(","),
-        [csvEscape("applications_waitlisted"), csvEscape(data?.applications?.waitlisted ?? 0)].join(","),
-        [csvEscape("applications_confirmed"), csvEscape(data?.applications?.confirmed ?? 0)].join(","),
-        [csvEscape("applications_completed"), csvEscape(data?.applications?.completed ?? 0)].join(","),
-        [csvEscape("outcomes_total_hours"), csvEscape(data?.outcomes?.total_hours ?? 0)].join(","),
-        [csvEscape("outcomes_unique_volunteers"), csvEscape(data?.outcomes?.unique_volunteers ?? 0)].join(","),
-        [csvEscape("outcomes_completed_engagements"), csvEscape(data?.outcomes?.completed_engagements ?? 0)].join(",")
-      ];
-
-      const csv = lines.join("\n") + "\n";
-      const filename = `impact_${today}.csv`;
-
-      return new Response(csv, {
+      // One row per request: goal, promised, approved and waiting kept apart, in the request's unit.
+      const header = ["request_id", "request", "status", "goal", "unit", "promised", "approved_in_unit", "waiting_in_unit", "approved_hours", "waiting_hours", "volunteers_accepted", "volunteers_with_approved_hours"];
+      const lines = [header.map(csvEscape).join(",")];
+      for (const r of per) {
+        lines.push(
+          [r.request_id, r.request_title, r.status, r.target ?? "", r.unit ?? (r.target != null ? "hours" : ""), r.promised ?? "", r.approved_in_unit ?? "", r.waiting_in_unit ?? "", r.approved_hours, r.waiting_hours, r.volunteers_accepted, r.volunteers_approved]
+            .map(csvEscape)
+            .join(",")
+        );
+      }
+      return new Response("\uFEFF" + lines.join("\r\n") + "\r\n", {
         status: 200,
-        headers: {
-          "content-type": "text/csv; charset=utf-8",
-          "content-disposition": `attachment; filename="${filename}"`
-        }
+        headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="requests_${today}.csv"` }
       });
     }
 
     if (format === "pdf") {
+      const hrs = data?.hours ?? {};
       const lines: string[] = [];
-      lines.push(`Range: ${from || "—"} to ${to || "—"}`);
+      lines.push(`Range: ${from || "start"} to ${to || "today"}`);
+      lines.push("Hours count once approved. Waiting and not-approved hours are shown separately.");
       lines.push("");
-      lines.push(`Requests: total=${data?.requests?.total ?? 0}, open=${data?.requests?.open ?? 0}, paused=${data?.requests?.paused ?? 0}, closed=${data?.requests?.closed ?? 0}`);
+      lines.push(`Approved hours: ${hrs.approved ?? 0} (${hrs.volunteers ?? 0} volunteers, ${hrs.adjusted_entries ?? 0} approved with a change)`);
+      lines.push(`Waiting for approval: ${hrs.waiting ?? 0} h (${hrs.waiting_entries ?? 0} entries)`);
+      lines.push(`Not approved: ${hrs.declined ?? 0} h`);
+      for (const u of Array.isArray(data?.units) ? data.units : []) lines.push(`${u.unit}: ${u.approved} approved, ${u.waiting} waiting`);
+      lines.push(`Typical time to decide (median): ${data?.approval_delay?.median_hours ?? "-"} h over ${data?.approval_delay?.decided ?? 0} decisions`);
       lines.push(
-        `Applications: total=${data?.applications?.total ?? 0}, pending=${data?.applications?.pending ?? 0}, accepted=${data?.applications?.accepted ?? 0}, waitlisted=${data?.applications?.waitlisted ?? 0}, confirmed=${data?.applications?.confirmed ?? 0}, completed=${data?.applications?.completed ?? 0}`
-      );
-      lines.push(
-        `Outcomes (attendance): total_hours=${data?.outcomes?.total_hours ?? 0}, unique_volunteers=${data?.outcomes?.unique_volunteers ?? 0}, completed_engagements=${data?.outcomes?.completed_engagements ?? 0}`
+        `Requests published: ${data?.requests?.published ?? 0}; applications: ${data?.applications?.total ?? 0}; accepted: ${data?.applications?.accepted ?? 0}; checked in: ${data?.applications?.attended ?? 0}; completed: ${data?.applications?.completed ?? 0}`
       );
       lines.push("");
-      lines.push("Top opportunities by hours:");
-      const top = Array.isArray(data?.top_opportunities_by_hours) ? data.top_opportunities_by_hours : [];
-      for (const r of top.slice(0, 20)) {
-        lines.push(`- ${r.request_title} (${r.total_hours} hrs, ${r.sessions} sessions)`);
+      lines.push("By request (goal / promised / approved / waiting):");
+      for (const r of per.slice(0, 30)) {
+        const unit = r.unit && r.unit !== "hours" ? r.unit : "h";
+        lines.push(
+          r.target != null
+            ? `- ${r.request_title}: ${r.target} / ${r.promised} / ${r.approved_in_unit} / ${r.waiting_in_unit} ${unit}`
+            : `- ${r.request_title}: ${r.approved_hours} h approved, ${r.waiting_hours} h waiting`
+        );
       }
-
-      const pdf = buildSimplePdf("Impact & Outcomes Report", lines);
-      const filename = `impact_${today}.pdf`;
-
-      const body = Buffer.from(pdf as unknown as Uint8Array);
-      return new Response(body, {
+      const pdf = buildSimplePdf("Volunteer Hours and Outcomes", lines);
+      return new Response(Buffer.from(pdf as unknown as Uint8Array), {
         status: 200,
-        headers: {
-          "content-type": "application/pdf",
-          "content-disposition": `attachment; filename="${filename}"`
-        }
+        headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="report_${today}.pdf"` }
       });
     }
 
@@ -159,57 +147,33 @@ export async function GET(req: Request) {
     const rows = Array.isArray(data?.volunteers) ? data.volunteers : [];
 
     if (format === "csv") {
-      const header = ["volunteer_user_id", "volunteer_email", "volunteer_display_name", "closed_sessions", "open_sessions", "total_hours", "last_activity_at"];
+      const header = ["volunteer_user_id", "volunteer", "email", "approved_hours", "waiting_hours", "not_approved_hours", "approved_entries", "waiting_entries", "last_activity_at"];
       const lines = [header.map(csvEscape).join(",")];
       for (const r of rows) {
         lines.push(
-          [
-            r.volunteer_user_id,
-            r.volunteer_email || "",
-            r.volunteer_display_name || "",
-            r.closed_sessions ?? 0,
-            r.open_sessions ?? 0,
-            r.total_hours ?? 0,
-            r.last_activity_at || ""
-          ]
+          [r.volunteer_user_id, r.volunteer_display_name || "", r.minor ? "(under 18, hidden)" : r.volunteer_email || "", r.approved_hours ?? 0, r.waiting_hours ?? 0, r.declined_hours ?? 0, r.approved_entries ?? 0, r.waiting_entries ?? 0, r.last_activity_at || ""]
             .map(csvEscape)
             .join(",")
         );
       }
-      const csv = lines.join("\n") + "\n";
-      const filename = `volunteer_hours_${today}.csv`;
-
-      return new Response(csv, {
+      return new Response("\uFEFF" + lines.join("\r\n") + "\r\n", {
         status: 200,
-        headers: {
-          "content-type": "text/csv; charset=utf-8",
-          "content-disposition": `attachment; filename="${filename}"`
-        }
+        headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="volunteer_hours_${today}.csv"` }
       });
     }
 
     if (format === "pdf") {
       const lines: string[] = [];
-      lines.push(`Range: ${from || "—"} to ${to || "—"}`);
-      if (requestId) lines.push(`Request filter: ${requestId}`);
-      lines.push(`Total hours: ${data?.total_hours ?? 0}`);
+      lines.push(`Range: ${from || "start"} to ${to || "today"}`);
+      lines.push(`Approved hours: ${data?.approved_hours ?? 0}; waiting for approval: ${data?.waiting_hours ?? 0}`);
       lines.push("");
-      lines.push("Volunteer hours:");
       for (const r of rows.slice(0, 40)) {
-        const name = r.volunteer_display_name || (r.volunteer_user_id || "").slice(0, 8);
-        lines.push(`- ${name} (${r.volunteer_email || "—"}): ${r.total_hours ?? 0} hrs, closed=${r.closed_sessions ?? 0}, open=${r.open_sessions ?? 0}`);
+        lines.push(`- ${r.volunteer_display_name || "Volunteer"}: ${r.approved_hours ?? 0} h approved, ${r.waiting_hours ?? 0} h waiting, ${r.declined_hours ?? 0} h not approved`);
       }
-
-      const pdf = buildSimplePdf("Volunteer Hours Summary", lines);
-      const filename = `volunteer_hours_${today}.pdf`;
-
-      const body = Buffer.from(pdf as unknown as Uint8Array);
-      return new Response(body, {
+      const pdf = buildSimplePdf("Volunteer Hours", lines);
+      return new Response(Buffer.from(pdf as unknown as Uint8Array), {
         status: 200,
-        headers: {
-          "content-type": "application/pdf",
-          "content-disposition": `attachment; filename="${filename}"`
-        }
+        headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="volunteer_hours_${today}.pdf"` }
       });
     }
 

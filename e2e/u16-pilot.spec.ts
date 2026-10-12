@@ -69,4 +69,16 @@ test("U16 minor with guardian consent, QR check-in and hours approval", async ({
   await expect(org.page.getByText(/Approved\. It now counts/)).toBeVisible();
   await t.page.goto("/volunteer/history");
   await expect(t.page.locator("main")).toContainText(/Approved hours\s*1\.5/);
+
+  // Reports are built on approved hours, by request and by volunteer; a minor's contact stays hidden.
+  await org.page.goto(`/org/reports?requestId=${id}`);
+  await expectAccessible(org.page, "/org/reports");
+  const row = org.page.getByRole("row").filter({ hasText: title });
+  await expect(row).toContainText("1.5 h");
+  await expect(org.page.getByRole("row").filter({ hasText: `Tia${run}` })).toContainText("Under 18 · contact hidden");
+  const csv = await org.page.request.get((await org.page.getByRole("link", { name: "Requests CSV" }).getAttribute("href"))!);
+  expect(csv.headers()["content-type"]).toContain("text/csv");
+  const text = await csv.text();
+  expect(text).toMatch(/approved_hours/);
+  expect(text.split("\r\n").find((l) => l.includes(title))).toContain('"1.5"');
 });

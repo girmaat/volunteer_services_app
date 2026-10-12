@@ -295,5 +295,16 @@ twice in a row, including new U16 (minor, guardian consent, QR check-in, hours a
 rewritten U10 (hours approval → Impact → verified record → CSV); the axe/375 px gate covers the new pages.
 
 Not done (from the same document): school coordinator features, in-kind goods and deliverables,
-CSV import, embeds, MFA for staff, duplicate-account merge, and organization metrics by approved
-hours (org reports still use attendance hours).
+CSV import, embeds, MFA for staff, duplicate-account merge.
+
+### Organization reports on approved hours (OPS-02, OPS-05)
+
+`/org/reports` and its exports now read contributions instead of raw attendance logs, so they agree
+with volunteers' Impact pages and shared records. Totals are approved hours; hours waiting for a
+decision and hours not approved are shown beside them. Per request: goal, promised, approved and
+waiting in the request's unit (meals stay meals). Also: typical (median) time to decide, a warning
+when hours have waited 7+ days, a posting → application → accepted → checked in → completed funnel,
+and per-volunteer approved / waiting / not approved (minors' emails left out). The date filter now
+includes the whole "to" day (it used to stop at midnight before it) and filters by when the work
+happened. Exports: Requests CSV, Volunteers CSV, Summary PDF. Covered by an API test with known
+numbers and the extended U16 E2E.

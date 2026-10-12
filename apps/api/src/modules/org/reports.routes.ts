@@ -1,200 +1,230 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Organization reports (OPS-02, OPS-05), built on contributions so they agree with what volunteers
+ * see: hours count once approved; hours waiting for a decision and hours not approved are reported
+ * separately; units ("meals") are never added to hours. Per request: goal, promised (accepted
+ * commitments), approved and waiting, in the request's own unit. Approval delay is the time from a
+ * contribution being recorded to its first decision.
+ *
+ * Dates filter by when the work happened (start time, else when it was recorded). `to` includes
+ * the whole day.
+ */
 import type { Express } from "express";
 import { z } from "zod";
+import { minorSql } from "../../lib/age";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { requireOrg } from "./context";
 
-export function registerOrgReportsRoutes(app: Express) {
+const CREDITED = "('approved', 'adjusted')";
+const WAITING = "('pending', 'disputed', 'revision_requested')";
+const DECLINED = "('rejected', 'unverified')";
 
-  // Phase 4.4: Reporting (impact/outcomes + volunteer hours summary)
+/** A YYYY-MM-DD (or ISO) range; a date-only `to` covers that whole day. */
+function range(query: unknown) {
+  const q = z.object({ from: z.string().optional(), to: z.string().optional(), requestId: z.string().uuid().optional() }).safeParse(query);
+  const parse = (v: string | undefined, endOfDay: boolean) => {
+    if (!v) return null;
+    const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v}T00:00:00Z` : v);
+    if (Number.isNaN(d.getTime())) return null;
+    if (endOfDay && /^\d{4}-\d{2}-\d{2}$/.test(v)) d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString();
+  };
+  return {
+    from: q.success ? parse(q.data.from, false) : null,
+    // Exclusive upper bound.
+    to: q.success ? parse(q.data.to, true) : null,
+    requestId: q.success && q.data.requestId ? q.data.requestId : null
+  };
+}
+
+const r2 = (v: unknown) => Math.round(Number(v || 0) * 100) / 100;
+const r1 = (v: unknown) => (v == null ? null : Math.round(Number(v) * 10) / 10);
+
+/** Contributions of this organization in range: the CTE every report reads. */
+const INRANGE = `
+  WITH c AS (
+    SELECT c.* FROM contributions c
+     WHERE c.org_slug = $1
+       AND ($2::timestamptz IS NULL OR COALESCE(c.started_at, c.created_at) >= $2::timestamptz)
+       AND ($3::timestamptz IS NULL OR COALESCE(c.started_at, c.created_at) < $3::timestamptz)
+       AND ($4::uuid IS NULL OR c.request_id = $4::uuid)
+  )`;
+
+export function registerOrgReportsRoutes(app: Express) {
   app.get(
     "/v1/org/reports/impact",
     wrap(async (req: any, res: any) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
+      const { from, to, requestId } = range(req.query);
+      const params = [ok.ctx.org.slug, from, to, requestId];
 
-      const q = z
-        .object({
-          from: z.string().optional(),
-          to: z.string().optional()
-        })
-        .safeParse(req.query);
-
-      const from = q.success && q.data.from ? new Date(String(q.data.from)) : null;
-      const to = q.success && q.data.to ? new Date(String(q.data.to)) : null;
-
-      const fromIso = from && !Number.isNaN(from.getTime()) ? from.toISOString() : null;
-      const toIso = to && !Number.isNaN(to.getTime()) ? to.toISOString() : null;
-
-      const [reqCounts, appCounts, attendanceCounts, topRequests, completedApps] = await Promise.all([
+      const [hours, units, delay, perRequest, requests, applications, attendance] = await Promise.all([
         pool.query(
-          `
-          SELECT
-            COUNT(*)::int AS total,
-            COUNT(*) FILTER (WHERE status = 'open')::int AS open,
-            COUNT(*) FILTER (WHERE status = 'paused')::int AS paused,
-            COUNT(*) FILTER (WHERE status = 'closed')::int AS closed
-          FROM service_requests
-          WHERE requester_org_slug = $1
-            AND ($2::timestamptz IS NULL OR created_at >= $2::timestamptz)
-            AND ($3::timestamptz IS NULL OR created_at <= $3::timestamptz)
-          `,
-          [ok.ctx.org.slug, fromIso, toIso]
+          `${INRANGE}
+           SELECT COALESCE(SUM(approved_hours) FILTER (WHERE status IN ${CREDITED}), 0)::float AS approved,
+                  COALESCE(SUM(reported_hours) FILTER (WHERE status IN ${WAITING}), 0)::float AS waiting,
+                  COALESCE(SUM(reported_hours) FILTER (WHERE status IN ${DECLINED}), 0)::float AS declined,
+                  COALESCE(SUM(reported_hours) FILTER (WHERE status IN ${CREDITED}), 0)::float AS reported_of_approved,
+                  COUNT(*) FILTER (WHERE status IN ${CREDITED})::int AS approved_entries,
+                  COUNT(*) FILTER (WHERE status IN ${WAITING})::int AS waiting_entries,
+                  COUNT(*) FILTER (WHERE status IN ${DECLINED})::int AS declined_entries,
+                  COUNT(*) FILTER (WHERE status = 'adjusted')::int AS adjusted_entries,
+                  COUNT(DISTINCT volunteer_user_id) FILTER (WHERE status IN ${CREDITED})::int AS volunteers,
+                  MIN(created_at) FILTER (WHERE status IN ${WAITING}) AS oldest_waiting_at
+             FROM c`,
+          params
         ),
         pool.query(
-          `
-          SELECT
-            COUNT(*)::int AS total,
-            COUNT(*) FILTER (WHERE a.status = 'pending')::int AS pending,
-            COUNT(*) FILTER (WHERE a.status = 'accepted')::int AS accepted,
-            COUNT(*) FILTER (WHERE a.status = 'waitlisted')::int AS waitlisted,
-            COUNT(*) FILTER (WHERE a.status = 'rejected')::int AS rejected,
-            COUNT(*) FILTER (WHERE a.status = 'withdrawn')::int AS withdrawn,
-            COUNT(*) FILTER (WHERE a.status = 'confirmed')::int AS confirmed,
-            COUNT(*) FILTER (WHERE a.status = 'completed')::int AS completed
-          FROM request_applications a
-          JOIN service_requests r ON r.id = a.request_id
-          WHERE r.requester_org_slug = $1
-            AND ($2::timestamptz IS NULL OR a.created_at >= $2::timestamptz)
-            AND ($3::timestamptz IS NULL OR a.created_at <= $3::timestamptz)
-          `,
-          [ok.ctx.org.slug, fromIso, toIso]
+          `${INRANGE}
+           SELECT unit, COALESCE(SUM(approved_units) FILTER (WHERE status IN ${CREDITED}), 0)::float AS approved,
+                  COALESCE(SUM(reported_units) FILTER (WHERE status IN ${WAITING}), 0)::float AS waiting
+             FROM c WHERE unit IS NOT NULL GROUP BY unit ORDER BY unit`,
+          params
         ),
         pool.query(
-          `
-          SELECT
-            COUNT(*) FILTER (WHERE check_out_at IS NULL)::int AS open_sessions,
-            COUNT(*) FILTER (WHERE check_out_at IS NOT NULL)::int AS closed_sessions,
-            ROUND(COALESCE(SUM(COALESCE(hours, 0)), 0)::numeric, 2) AS total_hours,
-            COUNT(DISTINCT volunteer_user_id)::int AS unique_volunteers
-          FROM org_attendance_logs
-          WHERE org_slug = $1
-            AND ($2::timestamptz IS NULL OR check_in_at >= $2::timestamptz)
-            AND ($3::timestamptz IS NULL OR check_in_at <= $3::timestamptz)
-          `,
-          [ok.ctx.org.slug, fromIso, toIso]
+          `${INRANGE}
+           , first_decision AS (
+             SELECT c.id, c.created_at, MIN(d.created_at) AS decided_at
+               FROM c JOIN contribution_decisions d ON d.contribution_id = c.id
+                AND d.action IN ('approved', 'adjusted', 'rejected', 'revision_requested')
+              GROUP BY c.id, c.created_at)
+           SELECT COUNT(*)::int AS decided,
+                  percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (decided_at - created_at)) / 3600.0) AS median_hours,
+                  AVG(EXTRACT(EPOCH FROM (decided_at - created_at)) / 3600.0) AS average_hours
+             FROM first_decision`,
+          params
         ),
         pool.query(
-          `
-          SELECT
-            r.id AS request_id,
-            r.title AS request_title,
-            ROUND(COALESCE(SUM(COALESCE(l.hours, 0)), 0)::numeric, 2) AS total_hours,
-            COUNT(*)::int AS sessions
-          FROM org_attendance_logs l
-          JOIN service_requests r ON r.id = l.request_id
-          WHERE l.org_slug = $1
-            AND ($2::timestamptz IS NULL OR l.check_in_at >= $2::timestamptz)
-            AND ($3::timestamptz IS NULL OR l.check_in_at <= $3::timestamptz)
-          GROUP BY r.id, r.title
-          ORDER BY total_hours DESC NULLS LAST, sessions DESC
-          LIMIT 10
-          `,
-          [ok.ctx.org.slug, fromIso, toIso]
+          `${INRANGE}
+           SELECT r.id AS request_id, r.title AS request_title, r.status, r.target_value::float AS target, r.target_unit AS unit,
+                  (SELECT COALESCE(SUM(COALESCE(a.accepted_amount, a.offered_amount)), 0)::float FROM request_applications a
+                    WHERE a.request_id = r.id AND a.status IN ('accepted', 'confirmed', 'completed')) AS promised,
+                  (SELECT COUNT(*)::int FROM request_applications a WHERE a.request_id = r.id AND a.status IN ('accepted', 'confirmed', 'completed')) AS volunteers_accepted,
+                  COALESCE(SUM(c.approved_hours) FILTER (WHERE c.status IN ${CREDITED}), 0)::float AS approved_hours,
+                  COALESCE(SUM(c.reported_hours) FILTER (WHERE c.status IN ${WAITING}), 0)::float AS waiting_hours,
+                  COALESCE(SUM(c.approved_units) FILTER (WHERE c.status IN ${CREDITED}), 0)::float AS approved_units,
+                  COALESCE(SUM(c.reported_units) FILTER (WHERE c.status IN ${WAITING}), 0)::float AS waiting_units,
+                  COUNT(DISTINCT c.volunteer_user_id) FILTER (WHERE c.status IN ${CREDITED})::int AS volunteers_approved
+             FROM service_requests r
+             LEFT JOIN c ON c.request_id = r.id
+            WHERE r.requester_org_slug = $1 AND ($4::uuid IS NULL OR r.id = $4::uuid)
+              AND (c.id IS NOT NULL OR (r.target_value IS NOT NULL AND r.status IN ('open', 'pending', 'filled', 'paused')))
+            GROUP BY r.id
+            ORDER BY approved_hours DESC, waiting_hours DESC, r.title
+            LIMIT 100`,
+          params
         ),
         pool.query(
-          `
-          SELECT COUNT(*)::int AS completed_engagements
-          FROM request_applications a
-          JOIN service_requests r ON r.id = a.request_id
-          WHERE r.requester_org_slug = $1
-            AND a.status = 'completed'
-            AND ($2::timestamptz IS NULL OR COALESCE(a.status_updated_at, a.updated_at) >= $2::timestamptz)
-            AND ($3::timestamptz IS NULL OR COALESCE(a.status_updated_at, a.updated_at) <= $3::timestamptz)
-          `,
-          [ok.ctx.org.slug, fromIso, toIso]
-        )
+          `SELECT COUNT(*) FILTER (WHERE published_at IS NOT NULL)::int AS published,
+                  COUNT(*) FILTER (WHERE status IN ('open', 'pending'))::int AS open,
+                  COUNT(*) FILTER (WHERE status = 'filled')::int AS filled,
+                  COUNT(*) FILTER (WHERE status = 'paused')::int AS paused,
+                  COUNT(*) FILTER (WHERE status = 'completed')::int AS completed,
+                  COUNT(*) FILTER (WHERE status = 'draft')::int AS drafts
+             FROM service_requests
+            WHERE requester_org_slug = $1
+              AND ($2::timestamptz IS NULL OR COALESCE(published_at, created_at) >= $2::timestamptz)
+              AND ($3::timestamptz IS NULL OR COALESCE(published_at, created_at) < $3::timestamptz)
+              AND ($4::uuid IS NULL OR id = $4::uuid)`,
+          params
+        ),
+        pool.query(
+          `SELECT COUNT(*)::int AS total,
+                  COUNT(*) FILTER (WHERE a.status IN ('pending', 'waitlisted', 'offered'))::int AS waiting,
+                  COUNT(*) FILTER (WHERE a.status IN ('accepted', 'confirmed', 'completed'))::int AS accepted,
+                  COUNT(*) FILTER (WHERE a.status = 'completed')::int AS completed,
+                  COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM org_attendance_logs l WHERE l.request_application_id = a.id))::int AS attended,
+                  COUNT(*) FILTER (WHERE a.status IN ('rejected', 'withdrawn', 'canceled', 'offer_expired'))::int AS closed
+             FROM request_applications a JOIN service_requests r ON r.id = a.request_id
+            WHERE r.requester_org_slug = $1
+              AND ($2::timestamptz IS NULL OR a.created_at >= $2::timestamptz)
+              AND ($3::timestamptz IS NULL OR a.created_at < $3::timestamptz)
+              AND ($4::uuid IS NULL OR r.id = $4::uuid)`,
+          params
+        ),
+        pool.query("SELECT COUNT(*)::int AS open_checkins FROM org_attendance_logs WHERE org_slug = $1 AND check_out_at IS NULL", [ok.ctx.org.slug])
       ]);
 
-      const requests = reqCounts.rows?.[0] || {};
-      const applications = appCounts.rows?.[0] || {};
-      const attendance = attendanceCounts.rows?.[0] || {};
-      const completedEngagements = Number(completedApps.rows?.[0]?.completed_engagements || 0);
-
+      const h = hours.rows[0] ?? {};
+      const d = delay.rows[0] ?? {};
       return res.json({
-        range: { from: fromIso, to: toIso },
-        requests: {
-          total: Number(requests.total || 0),
-          open: Number(requests.open || 0),
-          paused: Number(requests.paused || 0),
-          closed: Number(requests.closed || 0)
+        range: { from, to, request_id: requestId },
+        hours: {
+          approved: r2(h.approved),
+          waiting: r2(h.waiting),
+          declined: r2(h.declined),
+          reported_of_approved: r2(h.reported_of_approved),
+          approved_entries: Number(h.approved_entries || 0),
+          waiting_entries: Number(h.waiting_entries || 0),
+          declined_entries: Number(h.declined_entries || 0),
+          adjusted_entries: Number(h.adjusted_entries || 0),
+          volunteers: Number(h.volunteers || 0),
+          oldest_waiting_at: h.oldest_waiting_at ?? null
         },
-        applications: {
-          total: Number(applications.total || 0),
-          pending: Number(applications.pending || 0),
-          accepted: Number(applications.accepted || 0),
-          waitlisted: Number(applications.waitlisted || 0),
-          rejected: Number(applications.rejected || 0),
-          withdrawn: Number(applications.withdrawn || 0),
-          confirmed: Number(applications.confirmed || 0),
-          completed: Number(applications.completed || 0)
-        },
-        outcomes: {
-          completed_engagements: completedEngagements,
-          unique_volunteers: Number(attendance.unique_volunteers || 0),
-          open_checkins: Number(attendance.open_sessions || 0),
-          closed_sessions: Number(attendance.closed_sessions || 0),
-          total_hours: Number(attendance.total_hours || 0)
-        },
-        top_opportunities_by_hours: topRequests.rows || []
+        units: units.rows.map((u) => ({ unit: u.unit, approved: r2(u.approved), waiting: r2(u.waiting) })),
+        approval_delay: { decided: Number(d.decided || 0), median_hours: r1(d.median_hours), average_hours: r1(d.average_hours) },
+        requests: requests.rows[0],
+        applications: applications.rows[0],
+        open_checkins: Number(attendance.rows[0]?.open_checkins || 0),
+        per_request: perRequest.rows.map((r) => {
+          const inHours = !r.unit || r.unit === "hours";
+          const approved = inHours ? r2(r.approved_hours) : r2(r.approved_units);
+          return {
+            request_id: r.request_id,
+            request_title: r.request_title,
+            status: r.status,
+            target: r.target,
+            unit: r.unit ?? null,
+            promised: r.target != null ? r2(r.promised) : null,
+            approved_in_unit: r.target != null ? approved : null,
+            waiting_in_unit: r.target != null ? (inHours ? r2(r.waiting_hours) : r2(r.waiting_units)) : null,
+            approved_hours: r2(r.approved_hours),
+            waiting_hours: r2(r.waiting_hours),
+            volunteers_accepted: Number(r.volunteers_accepted || 0),
+            volunteers_approved: Number(r.volunteers_approved || 0)
+          };
+        })
       });
     })
   );
-
 
   app.get(
     "/v1/org/reports/volunteer-hours",
     wrap(async (req: any, res: any) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
-
-      const q = z
-        .object({
-          requestId: z.string().uuid().optional(),
-          from: z.string().optional(),
-          to: z.string().optional()
-        })
-        .safeParse(req.query);
-
-      const requestId = q.success && q.data.requestId ? String(q.data.requestId) : null;
-      const from = q.success && q.data.from ? new Date(String(q.data.from)) : null;
-      const to = q.success && q.data.to ? new Date(String(q.data.to)) : null;
-
-      const fromIso = from && !Number.isNaN(from.getTime()) ? from.toISOString() : null;
-      const toIso = to && !Number.isNaN(to.getTime()) ? to.toISOString() : null;
-
+      const { from, to, requestId } = range(req.query);
       const rows = await pool.query(
-        `
-        SELECT
-          l.volunteer_user_id,
-          u.email AS volunteer_email,
-          up.display_name AS volunteer_display_name,
-          COUNT(*) FILTER (WHERE l.check_out_at IS NULL)::int AS open_sessions,
-          COUNT(*) FILTER (WHERE l.check_out_at IS NOT NULL)::int AS closed_sessions,
-          ROUND(COALESCE(SUM(COALESCE(l.hours, 0)), 0)::numeric, 2) AS total_hours,
-          MAX(COALESCE(l.check_out_at, l.check_in_at)) AS last_activity_at
-        FROM org_attendance_logs l
-        LEFT JOIN users u ON u.id = l.volunteer_user_id
-        LEFT JOIN user_profiles up ON up.user_id = l.volunteer_user_id
-        WHERE l.org_slug = $1
-          AND ($2::uuid IS NULL OR l.request_id = $2::uuid)
-          AND ($3::timestamptz IS NULL OR l.check_in_at >= $3::timestamptz)
-          AND ($4::timestamptz IS NULL OR l.check_in_at <= $4::timestamptz)
-        GROUP BY l.volunteer_user_id, u.email, up.display_name
-        ORDER BY total_hours DESC NULLS LAST, last_activity_at DESC NULLS LAST, volunteer_email ASC
-        LIMIT 500
-        `,
-        [ok.ctx.org.slug, requestId, fromIso, toIso]
+        `${INRANGE}
+         SELECT c.volunteer_user_id,
+                CASE WHEN ${minorSql("c.volunteer_user_id")} THEN NULL ELSE u.email END AS volunteer_email,
+                COALESCE(NULLIF(up.display_name, ''), split_part(COALESCE(up.full_name, ''), ' ', 1)) AS volunteer_display_name,
+                ${minorSql("c.volunteer_user_id")} AS minor,
+                COALESCE(SUM(c.approved_hours) FILTER (WHERE c.status IN ${CREDITED}), 0)::float AS approved_hours,
+                COALESCE(SUM(c.reported_hours) FILTER (WHERE c.status IN ${WAITING}), 0)::float AS waiting_hours,
+                COALESCE(SUM(c.reported_hours) FILTER (WHERE c.status IN ${DECLINED}), 0)::float AS declined_hours,
+                COUNT(*) FILTER (WHERE c.status IN ${CREDITED})::int AS approved_entries,
+                COUNT(*) FILTER (WHERE c.status IN ${WAITING})::int AS waiting_entries,
+                MAX(COALESCE(c.ended_at, c.started_at, c.created_at)) AS last_activity_at
+           FROM c
+           LEFT JOIN users u ON u.id = c.volunteer_user_id
+           LEFT JOIN user_profiles up ON up.user_id = c.volunteer_user_id
+          GROUP BY c.volunteer_user_id, u.email, up.display_name, up.full_name
+          ORDER BY approved_hours DESC, waiting_hours DESC, last_activity_at DESC NULLS LAST
+          LIMIT 500`,
+        [ok.ctx.org.slug, from, to, requestId]
       );
-
-      const total = rows.rows.reduce((s: number, r: any) => s + Number(r.total_hours || 0), 0);
-
+      const sum = (k: string) => r2(rows.rows.reduce((s: number, r: any) => s + Number(r[k] || 0), 0));
       return res.json({
-        range: { from: fromIso, to: toIso },
+        range: { from, to },
         request_id: requestId,
-        total_hours: Math.round(total * 100) / 100,
-        volunteers: rows.rows
+        // `total_hours` is approved hours (kept for older callers).
+        total_hours: sum("approved_hours"),
+        approved_hours: sum("approved_hours"),
+        waiting_hours: sum("waiting_hours"),
+        volunteers: rows.rows.map((r: any) => ({ ...r, approved_hours: r2(r.approved_hours), waiting_hours: r2(r.waiting_hours), declined_hours: r2(r.declined_hours) }))
       });
     })
   );
