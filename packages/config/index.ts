@@ -1,5 +1,5 @@
 export const API_BASE_URL_PUBLIC =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4202";
 
 /**
  * Server-only override.

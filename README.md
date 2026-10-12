@@ -4,7 +4,7 @@ A volunteer-services marketplace: organizations and individuals post needs, volu
 
 ```
 apps/web            Next.js 15 (App Router) web app            → http://localhost:3202
-apps/api            Express + Postgres REST API (/v1)          → http://localhost:4000
+apps/api            Express + Postgres REST API (/v1)          → http://localhost:4202
 packages/contracts  Shared zod schemas and types (web ⇄ api)
 packages/config     Shared runtime config (API base URLs)
 docs/               Plans, progress log, runbooks
@@ -26,7 +26,7 @@ cp apps/api/.env.example apps/api/.env        # then set DATABASE_URL (database 
 cp apps/web/.env.example apps/web/.env.local
 
 pnpm db:setup     # creates the database if missing, applies migrations, seeds test accounts
-pnpm dev          # runs API (4000) and web (3202) together
+pnpm dev          # runs API (4202) and web (3202) together
 ```
 
 Open http://localhost:3202.
@@ -88,7 +88,7 @@ volunteers can't reach admin/org routes, and no route answers 500 for any role.
 
 ## API documentation
 
-With the API running: http://localhost:4000/v1/docs (OpenAPI JSON at `/v1/openapi.json`).
+With the API running: http://localhost:4202/v1/docs (OpenAPI JSON at `/v1/openapi.json`).
 
 ## Database migrations
 

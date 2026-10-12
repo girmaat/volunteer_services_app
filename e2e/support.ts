@@ -23,7 +23,7 @@ function envFromApiDotenv(key: string): string | undefined {
   }
 }
 
-export const API = process.env.E2E_API_URL || "http://localhost:4000";
+export const API = process.env.E2E_API_URL || "http://localhost:4202";
 export const DATABASE_URL = process.env.E2E_DATABASE_URL || process.env.DATABASE_URL || envFromApiDotenv("DATABASE_URL") || "postgres://postgres@localhost:5433/ty_dev";
 export const db = new pg.Pool({ connectionString: DATABASE_URL, max: 3 });
 

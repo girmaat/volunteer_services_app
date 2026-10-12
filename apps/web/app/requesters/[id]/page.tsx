@@ -60,7 +60,7 @@ type PublicRequester = {
 };
 
 async function getRequester(id: string): Promise<PublicRequester | null> {
-  const base = process.env.API_BASE_URL_SERVER || "http://localhost:4000";
+  const base = process.env.API_BASE_URL_SERVER || "http://localhost:4202";
   const res = await fetch(`${base}/v1/public/requesters/${id}`, { cache: "no-store" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("Failed to load requester profile");

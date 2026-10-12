@@ -32,7 +32,7 @@ and loads ready-made situations to test (applications waiting, hours to approve,
 
 ```bash
 pnpm db:uat
-pnpm dev          # API on http://localhost:4000, web app on http://localhost:3202
+pnpm dev          # API on http://localhost:4202, web app on http://localhost:3202
 ```
 
 Open **http://localhost:3202**. If the web app was already running (especially `pnpm build` + `start`),

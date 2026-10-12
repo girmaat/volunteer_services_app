@@ -5,13 +5,13 @@
  *   pnpm --filter @thankyou/api perf:check            # add 1,000 copies, time the endpoints, remove them
  *   pnpm --filter @thankyou/api perf:check -- --keep  # leave the copies in place afterwards
  *
- * Needs the API running (API_URL, default http://localhost:4000) and the dev seed
+ * Needs the API running (API_URL, default http://localhost:4202) and the dev seed
  * (it signs in as volunteer.local@thankyou.test). Never run against production.
  */
 import "dotenv/config";
 import { Pool } from "pg";
 
-const API = process.env.API_URL || "http://localhost:4000";
+const API = process.env.API_URL || "http://localhost:4202";
 const N = Number(process.env.PERF_ROWS || 1000);
 const BUDGET_MS = 300;
 const MARK = " [perf]";

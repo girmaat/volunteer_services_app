@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * End-to-end UAT scripts (U1–U15) plus the accessibility sweep.
  *
- *   pnpm e2e                 # against a running local stack (web :3202, API :4000, seeded DB)
+ *   pnpm e2e                 # against a running local stack (web :3202, API :4202, seeded DB)
  *   E2E_WEBKIT=1 pnpm e2e    # also in iPhone Safari (WebKit), where WebKit is installed
  *   E2E_BASE_URL=https://staging.example.org E2E_API_URL=... E2E_DATABASE_URL=... pnpm e2e
  *

@@ -15,14 +15,14 @@ const bool = (def: boolean) =>
 const EnvSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    PORT: z.coerce.number().int().positive().default(4000),
+    PORT: z.coerce.number().int().positive().default(4202),
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     DATABASE_URL_MIGRATIONS: z.string().optional(),
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
     CORS_ORIGIN: z.string().default("http://localhost:3202"),
     WEB_BASE_URL: HttpUrl.default("http://localhost:3202"),
     /** Public URL of this API (used in List-Unsubscribe one-click links). */
-    API_PUBLIC_URL: HttpUrl.default("http://localhost:4000"),
+    API_PUBLIC_URL: HttpUrl.default("http://localhost:4202"),
     /** HMAC secret for unsubscribe links; required in production. */
     NOTIFICATION_SECRET: z.string().min(16).optional(),
     TRUST_PROXY: z.string().optional(),

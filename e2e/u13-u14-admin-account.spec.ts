@@ -33,7 +33,7 @@ test("U13 admin works a report: strike, suspend, take down; all audited", async 
     .toBeGreaterThan(Date.now());
 
   // The suspended account can't use the API.
-  const banned = await fetch(`${process.env.E2E_API_URL || "http://localhost:4000"}/v1/requests/mine`, { headers: { authorization: `Bearer ${(await db.query("WITH t AS (SELECT gen_random_uuid()::text AS raw) INSERT INTO sessions (user_id, session_token, expires_at) SELECT $1, session_key(t.raw), NOW() + INTERVAL '1 hour' FROM t RETURNING (SELECT raw FROM t) AS session_token", [offender.id])).rows[0].session_token}` } });
+  const banned = await fetch(`${process.env.E2E_API_URL || "http://localhost:4202"}/v1/requests/mine`, { headers: { authorization: `Bearer ${(await db.query("WITH t AS (SELECT gen_random_uuid()::text AS raw) INSERT INTO sessions (user_id, session_token, expires_at) SELECT $1, session_key(t.raw), NOW() + INTERVAL '1 hour' FROM t RETURNING (SELECT raw FROM t) AS session_token", [offender.id])).rows[0].session_token}` } });
   expect(banned.status).toBe(403);
 
   // Take the listing down.
