@@ -32,10 +32,10 @@ and loads ready-made situations to test (applications waiting, hours to approve,
 
 ```bash
 pnpm db:uat
-pnpm dev          # API on http://localhost:4000, web app on http://localhost:3002
+pnpm dev          # API on http://localhost:4000, web app on http://localhost:3202
 ```
 
-Open **http://localhost:3002**. If the web app was already running (especially `pnpm build` + `start`),
+Open **http://localhost:3202**. If the web app was already running (especially `pnpm build` + `start`),
 restart it after `pnpm db:uat` so no page shows data from before the reset.
 
 > If `pnpm db:uat` stops with *"must be owner of schema public"*, a Postgres superuser needs to run once:
@@ -152,7 +152,7 @@ Each case looks like this:
 - **ID and title** — `TC-AREA-NNN`. The priority follows the title: **P1** must work for launch, **P2**
   important, **P3** nice to have.
 - **Tester** — which seed user to sign in as (or *Visitor* = signed out, or a *new account* you create).
-- **Page** — the address to open (after `http://localhost:3002`) and how to get there from the menu.
+- **Page** — the address to open (after `http://localhost:3202`) and how to get there from the menu.
 - **Before you start** — anything that must already be true (often a ready-made situation above, or
   another case).
 - **Test data** — exactly what to type or pick. Use it as written so results are comparable.

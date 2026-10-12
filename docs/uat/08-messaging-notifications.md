@@ -212,7 +212,7 @@ Setup: `pnpm db:uat`. S1 = Valerie ⇄ Rose conversation on the groceries reques
 ### TC-MSG-018 · One-click unsubscribe from an email — P2
 
 - **Tester:** Valerie
-- **Page:** the unsubscribe link at the bottom of any email to Valerie in the API terminal ("Unsubscribe from these emails: http://localhost:3002/unsubscribe?token=…")
+- **Page:** the unsubscribe link at the bottom of any email to Valerie in the API terminal ("Unsubscribe from these emails: http://localhost:3202/unsubscribe?token=…")
 - **Steps:** Open the link (no sign-in needed) and click **Unsubscribe**.
 - **Expected result:** "Stop emails for <type>?" then "You won't get emails for “<type>” any more. In-app notifications are
   unchanged." Settings → Notifications shows that email turned off.

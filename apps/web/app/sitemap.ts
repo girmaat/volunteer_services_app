@@ -3,7 +3,7 @@ import { listPublicOpportunities, listPublicOrganizations } from "../lib/public-
 
 export const revalidate = 3600;
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3002";
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3202";
 const STATIC = ["/", "/opportunities", "/organizations", "/how-it-works", "/about", "/impact-stories", "/examples", "/help", "/contact", "/trust-safety", "/code-of-conduct", "/terms", "/privacy", "/signup", "/org/signup"];
 
 /** Public pages plus every open opportunity and organization profile. */

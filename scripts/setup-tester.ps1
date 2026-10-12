@@ -44,5 +44,5 @@ pnpm db:uat
 
 Write-Host ""
 Write-Host "Setup done. Start the app with:  pnpm dev" -ForegroundColor Green
-Write-Host "Then open http://localhost:3002 and sign in with any seed user (password: Password!)."
+Write-Host "Then open http://localhost:3202 and sign in with any seed user (password: Password!)."
 Write-Host "Test cases: docs\uat\README.md"

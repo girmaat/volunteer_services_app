@@ -108,6 +108,6 @@ test("U17 join request approved by an admin, logo upload, CSP and safe sign-in r
   await p2.getByLabel("Email").fill(asker.email);
   await p2.getByLabel("Password").fill(PASSWORD);
   await p2.getByRole("button", { name: "Log in" }).click();
-  await expect(p2).toHaveURL(/^http:\/\/localhost:3002\//);
+  await expect(p2).toHaveURL(/^http:\/\/localhost:3202\//);
   await ctx.close();
 });

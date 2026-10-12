@@ -10,6 +10,6 @@ process.env.RATE_LIMIT_DISABLED = "true";
 process.env.GEOCODING_DISABLED = "true";
 process.env.EMAIL_TRANSPORT = "disabled";
 process.env.DEV_EMAIL_LINKS = "true";
-process.env.WEB_BASE_URL = "http://localhost:3002";
+process.env.WEB_BASE_URL = "http://localhost:3202";
 process.env.LOG_LEVEL = "silent";
 process.env.SEED_PASSWORD = "Test-Password-123!";

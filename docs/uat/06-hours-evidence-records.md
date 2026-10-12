@@ -275,7 +275,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
   3. Click **Create link**.
 - **Expected result:**
   - 2: a table with the request, organizer, date and approved hours (2) and the name **Diego Alvarez**.
-  - 3: "Record ready. Copy the link and send it." with a **Record link** box (`http://localhost:3002/verify/…`).
+  - 3: "Record ready. Copy the link and send it." with a **Record link** box (`http://localhost:3202/verify/…`).
   - Verified records lists it with status "Anyone with the link can see it."
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 

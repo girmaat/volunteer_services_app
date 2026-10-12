@@ -3,7 +3,7 @@
 A volunteer-services marketplace: organizations and individuals post needs, volunteers find and apply, both sides coordinate, complete and review.
 
 ```
-apps/web            Next.js 15 (App Router) web app            → http://localhost:3002
+apps/web            Next.js 15 (App Router) web app            → http://localhost:3202
 apps/api            Express + Postgres REST API (/v1)          → http://localhost:4000
 packages/contracts  Shared zod schemas and types (web ⇄ api)
 packages/config     Shared runtime config (API base URLs)
@@ -26,10 +26,10 @@ cp apps/api/.env.example apps/api/.env        # then set DATABASE_URL (database 
 cp apps/web/.env.example apps/web/.env.local
 
 pnpm db:setup     # creates the database if missing, applies migrations, seeds test accounts
-pnpm dev          # runs API (4000) and web (3002) together
+pnpm dev          # runs API (4000) and web (3202) together
 ```
 
-Open http://localhost:3002.
+Open http://localhost:3202.
 
 ### Seeded test accounts
 
@@ -67,7 +67,7 @@ Seed data is for local/staging only; the seed script refuses to run in productio
 
 ```bash
 pnpm test        # API: unit + integration (~1,600 tests, ~50 s)
-pnpm e2e         # Playwright: U1–U15 + accessibility, against http://localhost:3002
+pnpm e2e         # Playwright: U1–U15 + accessibility, against http://localhost:3202
 ```
 
 API integration tests need a local Postgres. They create and reset a database named `thankyou_test`

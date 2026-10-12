@@ -64,8 +64,8 @@ jobs:
       E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/thankyou_e2e
       NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
       API_BASE_URL: http://localhost:4000
-      WEB_BASE_URL: http://localhost:3002
-      CORS_ORIGIN: http://localhost:3002
+      WEB_BASE_URL: http://localhost:3202
+      CORS_ORIGIN: http://localhost:3202
       DEV_EMAIL_LINKS: "true"
       EMAIL_TRANSPORT: log
       GEOCODING_DISABLED: "true"
@@ -88,7 +88,7 @@ jobs:
         run: |
           pnpm --filter @thankyou/api start > api.log 2>&1 &
           pnpm --filter @thankyou/web start > web.log 2>&1 &
-          for i in $(seq 1 60); do curl -sf http://localhost:4000/v1/public/categories > /dev/null && curl -sf http://localhost:3002/ > /dev/null && break; sleep 2; done
+          for i in $(seq 1 60); do curl -sf http://localhost:4000/v1/public/categories > /dev/null && curl -sf http://localhost:3202/ > /dev/null && break; sleep 2; done
       - run: pnpm e2e
       - name: Upload report
         if: failure()

@@ -19,8 +19,8 @@ const EnvSchema = z
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     DATABASE_URL_MIGRATIONS: z.string().optional(),
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
-    CORS_ORIGIN: z.string().default("http://localhost:3002"),
-    WEB_BASE_URL: HttpUrl.default("http://localhost:3002"),
+    CORS_ORIGIN: z.string().default("http://localhost:3202"),
+    WEB_BASE_URL: HttpUrl.default("http://localhost:3202"),
     /** Public URL of this API (used in List-Unsubscribe one-click links). */
     API_PUBLIC_URL: HttpUrl.default("http://localhost:4000"),
     /** HMAC secret for unsubscribe links; required in production. */

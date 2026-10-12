@@ -76,7 +76,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 - **Page:** *Saturday distribution shift* → On-site check-in
 - **Steps:** Click **Show check-in code**.
 - **Expected result:** "Show or print this code at the site. Volunteers scan it with their phone to check in and out; their hours come to
-  you for approval." A QR code labelled "Check-in code for this request", the link under it (`http://localhost:3002/check-in/…`), and
+  you for approval." A QR code labelled "Check-in code for this request", the link under it (`http://localhost:3202/check-in/…`), and
   **Make a new code**.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 

@@ -34,5 +34,5 @@ pnpm db:uat
 
 echo
 echo "Setup done. Start the app with:  pnpm dev"
-echo "Then open http://localhost:3002 and sign in with any seed user (password: Password!)."
+echo "Then open http://localhost:3202 and sign in with any seed user (password: Password!)."
 echo "Test cases: docs/uat/README.md"

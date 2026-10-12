@@ -15,7 +15,7 @@ Run these signed out (a private/incognito window is easiest). Setup: `pnpm db:ua
 - **Before you start:** none
 - **Test data:** none
 - **Steps:**
-  1. Open `http://localhost:3002/`.
+  1. Open `http://localhost:3202/`.
   2. Read the top of the page, the "Open right now" list and the sections below it.
   3. Check the header and the footer.
 - **Expected result:**
@@ -217,7 +217,7 @@ Run these signed out (a private/incognito window is easiest). Setup: `pnpm db:ua
 - **Tester:** Visitor, then Valerie (`volunteer.local@thankyou.test` / `Password!`)
 - **Page:** `/does-not-exist`, then `/`
 - **Steps:**
-  1. Signed out, open `http://localhost:3002/does-not-exist`.
+  1. Signed out, open `http://localhost:3202/does-not-exist`.
   2. Sign in as Valerie, then open `/` again.
 - **Expected result:**
   - Step 1: "Page not found" with **Go home** (no technical error).

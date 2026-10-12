@@ -8,7 +8,7 @@ import MarketingFooter from "../components/shell/MarketingFooter";
 const inter = localFont({ src: "./fonts/Inter-Variable.woff2", variable: "--font-inter", display: "swap", weight: "100 900" });
 const jakarta = localFont({ src: "./fonts/PlusJakartaSans-Variable.woff2", variable: "--font-jakarta", display: "swap", weight: "200 800" });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3002";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3202";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

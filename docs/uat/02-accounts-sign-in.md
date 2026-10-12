@@ -29,7 +29,7 @@ seed accounts keep `Password!`.
   - Before submitting, the page explains "ThankYou is for people 16 and older. We never show your birth date…".
   - After submitting: "Account created. Please verify your email to continue." and "Check your inbox for a
     verification email to finish creating your account."
-  - A line "Development only — verification link: http://localhost:3002/verify-email?token=…" is shown, plus a
+  - A line "Development only — verification link: http://localhost:3202/verify-email?token=…" is shown, plus a
     **Resend verification** button.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
@@ -372,14 +372,14 @@ seed accounts keep `Password!`.
 
 - **Tester:** Valerie
 - **Page:** Volunteer home
-- **Steps:** Refresh the page; open `http://localhost:3002/volunteer/applications` in a new tab of the same window.
+- **Steps:** Refresh the page; open `http://localhost:3202/volunteer/applications` in a new tab of the same window.
 - **Expected result:** Still signed in as Valerie in both tabs; no second sign-in.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-ACC-027 · Sign-in can't be redirected to another website — P2
 
 - **Tester:** Valerie
-- **Page:** `http://localhost:3002/login?returnTo=//evil.example`
+- **Page:** `http://localhost:3202/login?returnTo=//evil.example`
 - **Steps:** Sign in as Valerie from that address.
 - **Expected result:** You land on a ThankYou page (your home); the browser never goes to evil.example.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:

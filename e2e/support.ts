@@ -97,7 +97,7 @@ const openContexts = new Set<BrowserContext>();
 /** A browser context signed in as `email` (closed automatically after the test). */
 export async function signedIn(browser: Browser, email: string, opts: Parameters<Browser["newContext"]>[0] = {}): Promise<{ context: BrowserContext; page: Page }> {
   const context = await browser.newContext({ timezoneId: "America/New_York", locale: "en-US", ...opts });
-  const baseURL = process.env.E2E_BASE_URL || "http://localhost:3002";
+  const baseURL = process.env.E2E_BASE_URL || "http://localhost:3202";
   await context.addCookies([{ name: "ty_session", value: await sessionFor(email), url: baseURL }]);
   const page = await context.newPage();
   trackRequests(page);

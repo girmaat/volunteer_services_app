@@ -13,7 +13,7 @@ export function authHeaderToken(req: Request): string | null {
 }
 
 export function webBaseUrl() {
-  return (process.env.WEB_BASE_URL || "http://localhost:3002").replace(/\/$/, "");
+  return (process.env.WEB_BASE_URL || "http://localhost:3202").replace(/\/$/, "");
 }
 
 export function slugifyOrgSlug(input: string) {
