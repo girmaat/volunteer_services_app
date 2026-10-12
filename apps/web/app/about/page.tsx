@@ -19,7 +19,7 @@ type PageLoad = {
 };
 
 const DEFAULT_ABOUT_BODY = `## Our mission
-GiveBack connects volunteers, neighbors, and organizations so help reaches the right place—quickly and safely.
+ThankYou connects volunteers, neighbors, and organizations so help reaches the right place—quickly and safely.
 
 We’re designed for real-world coordination: clear expectations, simple communication, and follow‑through you can measure.
 
@@ -29,7 +29,7 @@ We’re designed for real-world coordination: clear expectations, simple communi
 - Organizations coordinating volunteers and opportunities
 - Administrators supporting trust & safety and policy enforcement
 
-## What you can do on GiveBack
+## What you can do on ThankYou
 - Browse opportunities and service requests (sign in to view full details)
 - Apply, message, and confirm logistics in one place
 - Track volunteer hours and outcomes over time
@@ -37,7 +37,7 @@ We’re designed for real-world coordination: clear expectations, simple communi
 - Share impact stories (optional) to celebrate results
 
 ## Trust, safety, and privacy
-GiveBack includes blocking, reporting, and privacy controls. You decide whether your public profile is visible and who can message you. If something doesn’t look right, use “Report” from any profile.
+ThankYou includes blocking, reporting, and privacy controls. You decide whether your public profile is visible and who can message you. If something doesn’t look right, use “Report” from any profile.
 
 ## Built for training and real-world use
 This environment may include demo content for training and smoke testing. Before production use, review your organization’s policies and update public pages (Terms/Privacy) to match your requirements.`;
@@ -70,7 +70,7 @@ export default async function Page() {
   return (
     <section className={styles.page}>
       <header className={styles.header}>
-        <h1 className={styles.title}>{page?.title ?? "About GiveBack"}</h1>
+        <h1 className={styles.title}>{page?.title ?? "About ThankYou"}</h1>
         <span className={styles.badge}>Public</span>
       </header>
       <div className={styles.content}>

@@ -33,7 +33,7 @@ Open http://localhost:3002.
 
 ### Seeded test accounts
 
-All seeded accounts share one password: the value of `SEED_PASSWORD`, or **`ThankYou-Local-2026!`** locally when it isn't set.
+All seeded accounts share one password: the value of `SEED_PASSWORD`, or **`Password!`** locally when it isn't set.
 Seed data is for local/staging only; the seed script refuses to run in production.
 
 | Persona | Email |

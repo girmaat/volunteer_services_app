@@ -52,7 +52,7 @@ const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: 
 export default async function Page(props: { searchParams?: Promise<{ error?: string; status?: string }> }) {
   const sp = (await props.searchParams) || {};
   const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/org/applications");
+  if (!user) redirect("/login?returnTo=/org/applications");
   const ctx = await getOrgContext();
   if (!ctx) redirect("/org/signup");
   if (!ctx.org.onboarding_completed) redirect("/org/onboarding");

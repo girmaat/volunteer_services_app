@@ -12,6 +12,8 @@
     "db:migrate": "tsx src/db/migrate-cli.ts up",
     "db:status": "tsx src/db/migrate-cli.ts status",
     "db:seed": "tsx src/db/seed.ts",
+    "db:seed:uat": "tsx src/db/seed-uat.ts",
+    "db:uat": "tsx src/db/migrate-cli.ts reset && tsx src/db/seed.ts && tsx src/db/seed-uat.ts",
     "db:reset": "tsx src/db/migrate-cli.ts reset && tsx src/db/seed.ts",
     "db:create": "tsx src/db/create-db.ts",
     "perf:check": "tsx src/db/perf-check.ts",

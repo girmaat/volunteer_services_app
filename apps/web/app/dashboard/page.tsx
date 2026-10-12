@@ -12,7 +12,7 @@ type OrgMeResponse = {
 export default async function Page() {
   const user = await getCurrentUser();
 
-  if (!user) redirect("/login?next=/dashboard");
+  if (!user) redirect("/login?returnTo=/dashboard");
 
   const accountType = String(user.account_type || "");
   const requesterMode = String(user.requester_mode || "");

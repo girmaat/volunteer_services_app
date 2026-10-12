@@ -28,6 +28,7 @@ async function loadOrgs(params: { q: string; status: string; required: string; s
 
   const url = qp.toString() ? `/v1/admin/organizations?${qp.toString()}` : "/v1/admin/organizations";
   const res = await backendFetch(url, { method: "GET" });
+  if (res.status === 403) redirect("/403");
   if (!res.ok) throw new Error("Failed to load organizations");
   const json = (await res.json()) as { organizations: OrgRow[] };
   return json.organizations || [];

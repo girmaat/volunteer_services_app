@@ -47,6 +47,9 @@ const PERSONAS: Persona[] = [
   { key: "requester", email: `requester@${DOMAIN}`, fullName: "Rose Martin", displayName: "Rose", role: "requester", accountType: "individual_requester", requesterMode: "individual", location: "Manhattan, NY", lat: 40.7831, lng: -73.9712 },
   { key: "dual", email: `dual.role@${DOMAIN}`, fullName: "Diego Alvarez", displayName: "Diego", role: "volunteer", accountType: "volunteer", location: "Newark, NJ", lat: 40.7357, lng: -74.1724, helpCategories: ["community", "food"], experienceTags: ["event setup"], remoteOk: true, inPersonOk: true, hasCar: true, radius: 20, roles: ["volunteer", "requester"] },
   { key: "moderator", email: `moderator@${DOMAIN}`, fullName: "Maya Moderator", displayName: "Maya (Moderator)", role: "volunteer", accountType: "volunteer", location: "Brooklyn, NY", lat: 40.6782, lng: -73.9442, platformAdmin: "moderator" },
+  { key: "org_manager", email: `org.manager@${DOMAIN}`, fullName: "Nora Bennett", displayName: "Nora", role: "org_admin", accountType: "org_team_member", location: "Queens, NY", lat: 40.7282, lng: -73.7949 },
+  { key: "school_admin", email: `school.admin@${DOMAIN}`, fullName: "Samuel Okafor", displayName: "Sam", role: "org_admin", accountType: "org_team_member", location: "Jersey City, NJ", lat: 40.7178, lng: -74.0431 },
+  { key: "school_coord", email: `school.coordinator@${DOMAIN}`, fullName: "Cora Lindqvist", displayName: "Cora", role: "org_admin", accountType: "org_team_member", location: "Jersey City, NJ", lat: 40.7178, lng: -74.0431 },
   // A 17-year-old: minors' protections, guardian consent and age limits.
   { key: "teen", email: `teen.volunteer@${DOMAIN}`, fullName: "Tara Young", displayName: "Tara", role: "volunteer", accountType: "volunteer", location: "Jersey City, NJ", lat: 40.7178, lng: -74.0431, helpCategories: ["education", "food"], experienceTags: ["tutoring"], remoteOk: true, inPersonOk: true, radius: 10, birthDate: "minor" }
 ];
@@ -61,7 +64,8 @@ function birthDateFor(p: Persona) {
 
 const ORGS = [
   { slug: "harbor-food-bank", name: "Harbor Food Bank", summary: "Neighborhood food pantry serving Queens families.", location: "Queens, NY", mission: "No neighbor goes hungry.", website: "https://example.org/harbor", verified: true },
-  { slug: "bright-futures-tutoring", name: "Bright Futures Tutoring", summary: "Free online tutoring for middle and high school students.", location: "Remote", mission: "Every student deserves a mentor.", website: "https://example.org/bright", verified: false }
+  { slug: "bright-futures-tutoring", name: "Bright Futures Tutoring", summary: "Free online tutoring for middle and high school students.", location: "Remote", mission: "Every student deserves a mentor.", website: "https://example.org/bright", verified: false },
+  { slug: "lincoln-high-school", name: "Lincoln High School", summary: "Public high school; students volunteer for community service credit.", location: "Jersey City, NJ", mission: "Learning through service.", website: "https://example.org/lincoln", verified: true, type: "school" }
 ];
 
 type Req = {
@@ -121,6 +125,7 @@ const REQUESTS: Req[] = [
   { title: "Event setup crew", description: "Set up tables and chairs for a neighborhood fundraiser.", mode: "in-person", location: "Newark, NJ", lat: 40.7357, lng: -74.1724, tags: ["community", "event setup", "lifting"], daysOut: 11, owner: "org", org: "harbor-food-bank" },
   { title: "Mock job interview practice", description: "30-minute video mock interviews for teens applying to summer jobs.", mode: "remote", location: null, tags: ["education", "careers"], daysOut: 15, owner: "org", org: "bright-futures-tutoring" },
   { title: "Weekly ESL conversation circle", description: "Lead a friendly 1-hour English conversation group for adult learners every Tuesday and Thursday evening.", mode: "remote", location: null, tags: ["education", "translation"], daysOut: 2, owner: "org", org: "bright-futures-tutoring", recurring: "FREQ=WEEKLY;BYDAY=TU,TH", needed: 3, nice: ["spanish"] },
+  { title: "After-school homework club helpers", description: "Help Lincoln High students with homework in the school library, Mondays and Wednesdays 3:30–5:00 pm. Sign in at the front office.", mode: "in-person", location: "Jersey City, NJ", lat: 40.7178, lng: -74.0431, tags: ["education", "tutoring"], daysOut: 4, owner: "org", org: "lincoln-high-school", recurring: "FREQ=WEEKLY;BYDAY=MO,WE", needed: 4, address: "100 Lincoln Ave, Jersey City, NJ" },
   { title: "Help hanging curtains and a shelf", description: "Two curtain rods and one shelf in my apartment. I have a drill and anchors.", mode: "in-person", location: "Upper West Side, Manhattan, NY", lat: 40.787, lng: -73.9754, tags: ["home repair"], daysOut: 6, owner: "requester", category: "home-access", address: "250 W 85th St, Apt 3F, New York, NY", review: "pending_review", status: "draft" },
   { title: "Draft: garden cleanup (not published)", description: "Rake leaves in the shared backyard.", mode: "in-person", location: "Manhattan, NY", tags: ["outdoors"], daysOut: 12, owner: "requester", status: "draft" }
 ];
@@ -177,7 +182,7 @@ async function upsertUser(c: PoolClient, p: Persona, passwordHash: string): Prom
 
 async function main() {
   const isProd = process.env.NODE_ENV === "production";
-  const password = process.env.SEED_PASSWORD || (isProd ? "" : "ThankYou-Local-2026!");
+  const password = process.env.SEED_PASSWORD || (isProd ? "" : "Password!");
   if (!password) throw new Error("SEED_PASSWORD is required when NODE_ENV=production");
   if (isProd && process.env.ALLOW_PRODUCTION_SEED !== "true") throw new Error("Refusing to seed production (set ALLOW_PRODUCTION_SEED=true to override)");
 
@@ -194,19 +199,22 @@ async function main() {
     for (const o of ORGS) {
       await c.query(
         `INSERT INTO organizations (slug, name, summary, location, mission, website_url, contact_email, created_by_user_id,
-                                    onboarding_completed, verification_status, verified_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE,$9,$10)
+                                    onboarding_completed, verification_status, verified_at, org_type)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE,$9,$10,$11)
          ON CONFLICT (slug) DO UPDATE SET name=EXCLUDED.name, summary=EXCLUDED.summary, location=EXCLUDED.location,
            mission=EXCLUDED.mission, website_url=EXCLUDED.website_url, verification_status=EXCLUDED.verification_status,
-           verified_at=EXCLUDED.verified_at, onboarding_completed=TRUE, updated_at=NOW()`,
-        [o.slug, o.name, o.summary, o.location, o.mission, o.website, `hello@${o.slug}.example.org`, ids.org_admin,
-         o.verified ? "approved" : "required", o.verified ? new Date() : null]
+           verified_at=EXCLUDED.verified_at, org_type=EXCLUDED.org_type, onboarding_completed=TRUE, updated_at=NOW()`,
+        [o.slug, o.name, o.summary, o.location, o.mission, o.website, `hello@${o.slug}.example.org`, o.type === "school" ? ids.school_admin : ids.org_admin,
+         o.verified ? "approved" : "required", o.verified ? new Date() : null, o.type ?? "nonprofit"]
       );
     }
     const members: [string, string, string][] = [
       ["harbor-food-bank", ids.org_admin, "admin"],
       ["harbor-food-bank", ids.org_member, "member"],
-      ["bright-futures-tutoring", ids.org_admin, "admin"]
+      ["harbor-food-bank", ids.org_manager, "manager"],
+      ["bright-futures-tutoring", ids.org_admin, "admin"],
+      ["lincoln-high-school", ids.school_admin, "admin"],
+      ["lincoln-high-school", ids.school_coord, "coordinator"]
     ];
     for (const [slug, userId, role] of members) {
       await c.query(
@@ -219,7 +227,7 @@ async function main() {
 
     await c.query("DELETE FROM service_requests WHERE title = ANY($1::text[])", [REQUESTS.map((r) => r.title)]);
     for (const r of REQUESTS) {
-      const owner = r.owner === "org" ? ids.org_admin : ids.requester;
+      const owner = r.owner === "org" ? (r.org === "lincoln-high-school" ? ids.school_admin : ids.org_admin) : ids.requester;
       const status = r.status ?? "open";
       const ins = await c.query(
         `INSERT INTO service_requests (requester_user_id, requester_org_slug, title, description, status, location_text, public_area, exact_address,

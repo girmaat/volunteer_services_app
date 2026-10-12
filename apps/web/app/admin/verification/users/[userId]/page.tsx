@@ -10,6 +10,7 @@ type UserRow = { id: string; email: string; display_name: string | null; verific
 
 async function loadUser(userId: string): Promise<UserRow> {
   const res = await backendFetch("/v1/admin/user-verification/queue", { method: "GET" });
+  if (res.status === 403) redirect("/403");
   if (!res.ok) throw new Error("Failed to load queue");
   const json = (await res.json()) as any;
   const found = (Array.isArray(json?.users) ? json.users : []).find((u: any) => u.id === userId);
@@ -19,6 +20,7 @@ async function loadUser(userId: string): Promise<UserRow> {
 
 async function loadDocs(userId: string): Promise<Doc[]> {
   const res = await backendFetch(`/v1/admin/user-verification/${encodeURIComponent(userId)}/documents`, { method: "GET" });
+  if (res.status === 403) redirect("/403");
   if (!res.ok) throw new Error("Failed to load documents");
   const json = (await res.json()) as { documents: Doc[] };
   return json.documents || [];

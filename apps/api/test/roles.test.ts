@@ -158,6 +158,19 @@ describe("organization sign-up", () => {
     expect(o.rows[0].verification_status).toBe("required");
   });
 
+  it("answers the same for an email that already has an account, and tells its owner instead", async () => {
+    const before = await pool.query("SELECT COUNT(*)::int AS n FROM organizations");
+    const r = await anon().post("/v1/orgs/enroll").send({
+      org: { name: "Duplicate Email Org", summary: "Testing duplicate email sign-up.", location: "Queens, NY" },
+      admin: { fullName: "Someone", email: EMAILS.volunteer, password: "Long-Enough-123!", adultConfirmed: true }
+    });
+    expect(r.status).toBe(202);
+    expect(JSON.stringify(r.body)).not.toMatch(/already|in use|exists/i);
+    expect((await pool.query("SELECT COUNT(*)::int AS n FROM organizations")).rows[0].n).toBe(before.rows[0].n);
+    // The account's password is unchanged.
+    expect((await anon().post("/v1/auth/login").send({ email: EMAILS.volunteer, password: PASSWORD })).status).toBe(200);
+  });
+
   it("a volunteer can start an organization and keeps volunteering", async () => {
     await createUser({ email: "vol.founder@thankyou.test", roles: ["volunteer"] });
     const v = await as("vol.founder@thankyou.test");

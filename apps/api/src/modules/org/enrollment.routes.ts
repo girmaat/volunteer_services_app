@@ -62,7 +62,20 @@ export function registerOrgEnrollmentRoutes(app: Express) {
       const contactEmail = parsed.data.org.contact_email || email;
 
       const existingUser = await pool.query("SELECT id, email_verified_at FROM users WHERE email=$1", [email]);
-      if ((existingUser.rowCount ?? 0) > 0) return res.status(409).json({ message: "Email already in use" });
+      if ((existingUser.rowCount ?? 0) > 0) {
+        // Don't reveal that the address has an account (the same answer as a new sign-up); tell its owner instead.
+        await sendEmail({
+          to: email,
+          subject: "You already have a ThankYou account",
+          text: `Someone (maybe you) tried to register an organization on ThankYou with this email address, which already has an account.
+
+To add an organization to your account, sign in and open: ${webBaseUrl()}/org/signup
+Forgot your password? ${webBaseUrl()}/forgot-password
+
+If this wasn't you, you can ignore this email.`
+        });
+        return res.status(202).json({ status: "accepted" });
+      }
 
       const existingOrg = await pool.query("SELECT slug FROM organizations WHERE slug=$1", [orgSlug]);
       if ((existingOrg.rowCount ?? 0) > 0) return res.status(409).json({ message: "Organization slug already in use" });

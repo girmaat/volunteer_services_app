@@ -25,6 +25,7 @@ async function loadIncidents(status: string, severity: string): Promise<Incident
   if (severity) params.set("severity", severity);
   const url = params.toString() ? `/v1/admin/incidents?${params.toString()}` : "/v1/admin/incidents";
   const res = await backendFetch(url, { method: "GET" });
+  if (res.status === 403) redirect("/403");
   if (!res.ok) throw new Error("Failed to load incidents");
   const json = (await res.json()) as { incidents: IncidentRow[] };
   return json.incidents || [];

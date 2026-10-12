@@ -28,7 +28,7 @@ export const DATABASE_URL = process.env.E2E_DATABASE_URL || process.env.DATABASE
 export const db = new pg.Pool({ connectionString: DATABASE_URL, max: 3 });
 
 export const PASSWORD = "E2e-Password-2026!";
-export const SEED_PASSWORD = process.env.SEED_PASSWORD || "ThankYou-Local-2026!";
+export const SEED_PASSWORD = process.env.SEED_PASSWORD || "Password!";
 export const PERSONAS = {
   admin: "admin@thankyou.test",
   moderator: "moderator@thankyou.test",

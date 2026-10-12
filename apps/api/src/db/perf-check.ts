@@ -60,7 +60,7 @@ async function main() {
     const login = await fetch(`${API}/v1/auth/login`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: "volunteer.local@thankyou.test", password: process.env.SEED_PASSWORD || "ThankYou-Local-2026!" })
+      body: JSON.stringify({ email: "volunteer.local@thankyou.test", password: process.env.SEED_PASSWORD || "Password!" })
     });
     const token = ((await login.json()) as { sessionToken?: string }).sessionToken;
     if (!token) throw new Error(`Sign-in failed (${login.status}). Is the API running and the dev seed loaded?`);

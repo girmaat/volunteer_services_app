@@ -28,6 +28,7 @@ type UserQueueRow = {
 
 async function loadOrgQueue(): Promise<OrgQueueRow[]> {
   const res = await backendFetch("/v1/admin/org-verification/queue", { method: "GET" });
+  if (res.status === 403) redirect("/403");
   if (!res.ok) throw new Error("Failed to load org queue");
   const json = (await res.json()) as { orgs: OrgQueueRow[] };
   return json.orgs || [];
@@ -35,6 +36,7 @@ async function loadOrgQueue(): Promise<OrgQueueRow[]> {
 
 async function loadUserQueue(): Promise<UserQueueRow[]> {
   const res = await backendFetch("/v1/admin/user-verification/queue", { method: "GET" });
+  if (res.status === 403) redirect("/403");
   if (!res.ok) throw new Error("Failed to load user queue");
   const json = (await res.json()) as { users: UserQueueRow[] };
   return json.users || [];
