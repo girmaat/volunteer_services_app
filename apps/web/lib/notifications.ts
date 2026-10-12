@@ -13,7 +13,8 @@ export const NOTIFICATION_ACTION: Record<string, string> = {
   disputes: "View dispute",
   hours: "Review hours",
   calendar: "See the new time",
-  prerequisites: "Finish before your shift"
+  prerequisites: "Finish before your shift",
+  alerts: "See new requests"
 };
 
 /** Only same-site paths are followed from a notification. */

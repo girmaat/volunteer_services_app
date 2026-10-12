@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MapPin, Monitor, Shuffle, CalendarClock, Sparkles, AlertCircle } from "lucide-react";
 import { VerifiedBadge } from "../ui/Badge";
-import { describeRrule, formatInZone } from "../../lib/time";
+import { describeRrule, formatInZone, zoneOr } from "../../lib/time";
 import { miles } from "../../lib/format";
 
 export type OpportunitySummary = {
@@ -48,7 +48,7 @@ export function formatNeededBy(d?: string | null) {
  * organizer's local time is in the tooltip ("their time").
  */
 export function WhenText({ o, viewerTz }: { o: OpportunitySummary; viewerTz?: string | null }) {
-  const reqTz = o.timezone || "America/New_York";
+  const reqTz = zoneOr(o.timezone);
   const tz = viewerTz || reqTz;
   if (o.schedule_type === "flexible_window" || (!o.starts_at && !o.needed_by)) {
     return o.apply_by ? <>Flexible · by {formatInZone(o.apply_by, tz, { dateOnly: true })}</> : <>Flexible</>;

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 type RosterRow = {
   volunteer_user_id: string;
-  volunteer_email: string;
+  volunteer_email: string | null;
   volunteer_display_name: string | null;
   volunteer_avatar_url: string | null;
   volunteer_public_location: string | null;
@@ -44,6 +44,8 @@ export default async function OrgRosterPage(
   const ctx = await getOrgContext();
   if (!ctx) redirect("/org/signup");
   if (!ctx.org.onboarding_completed) redirect("/org/onboarding");
+  // Volunteers' contact details and attendance are for admins and managers.
+  if (ctx.membership.role === "member") redirect("/org/documents");
 
   const status = searchParams?.status || "active";
   const requestId = searchParams?.requestId || "";
@@ -106,7 +108,7 @@ export default async function OrgRosterPage(
       ) : (
         <ul className="grid gap-2.5 pl-4">
           {rows.map((r) => {
-            const name = r.volunteer_display_name || r.volunteer_email;
+            const name = r.volunteer_display_name || r.volunteer_email || "Volunteer";
             const titles = (r.request_titles || []).slice(0, 3);
             return (
               <li className="p-2.5 border border-line rounded-md" key={r.volunteer_user_id}>

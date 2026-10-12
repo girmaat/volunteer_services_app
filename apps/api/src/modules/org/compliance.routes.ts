@@ -3,6 +3,8 @@ import type { Express } from "express";
 import type { Application, Request } from "express";
 import { z } from "zod";
 import { contributionFromAttendance } from "../contributions/service";
+import { minorSql } from "../../lib/age";
+import { outstanding, prerequisites } from "../prerequisites/service";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { requireAdminOrManager, requireOrg } from "./context";
@@ -15,6 +17,8 @@ export function registerOrgComplianceRoutes(app: Express) {
     wrap(async (req: any, res: any) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
+      // Volunteers' contact details and attendance: admins and managers only.
+      if (!requireAdminOrManager(ok.ctx, res)) return;
 
       const q = z
         .object({
@@ -41,7 +45,7 @@ export function registerOrgComplianceRoutes(app: Express) {
         `
         SELECT
           v.id AS volunteer_user_id,
-          CASE WHEN COUNT(*) FILTER (WHERE a.status IN ('accepted','confirmed','completed')) > 0 THEN v.email END AS volunteer_email,
+          CASE WHEN COUNT(*) FILTER (WHERE a.status IN ('accepted','confirmed','completed')) > 0 AND NOT ${minorSql("v.id")} THEN v.email END AS volunteer_email,
           vp.display_name AS volunteer_display_name,
           vp.avatar_url AS volunteer_avatar_url,
           COALESCE(vp.public_location, vp.location) AS volunteer_public_location,
@@ -84,6 +88,8 @@ export function registerOrgComplianceRoutes(app: Express) {
     wrap(async (req: any, res: any) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
+      // Volunteers' contact details and attendance: admins and managers only.
+      if (!requireAdminOrManager(ok.ctx, res)) return;
 
       const q = z
         .object({
@@ -110,7 +116,7 @@ export function registerOrgComplianceRoutes(app: Express) {
           r.title AS request_title,
           l.request_application_id,
           l.volunteer_user_id,
-          u.email AS volunteer_email,
+          CASE WHEN ${minorSql("u.id")} THEN NULL ELSE u.email END AS volunteer_email,
           up.display_name AS volunteer_display_name,
           l.check_in_at,
           l.check_out_at,
@@ -169,7 +175,7 @@ export function registerOrgComplianceRoutes(app: Express) {
 
       const appRow = await pool.query(
         `
-        SELECT a.id, a.request_id, a.volunteer_user_id
+        SELECT a.id, a.request_id, a.volunteer_user_id, a.status
         FROM request_applications a
         JOIN service_requests r ON r.id = a.request_id
         WHERE a.id = $1 AND r.requester_org_slug = $2
@@ -181,6 +187,15 @@ export function registerOrgComplianceRoutes(app: Express) {
 
       const requestId = String(appRow.rows[0]?.request_id);
       const volunteerUserId = String(appRow.rows[0]?.volunteer_user_id);
+      if (!["accepted", "confirmed", "completed"].includes(String(appRow.rows[0]?.status))) {
+        return res.status(409).json({ message: "Only accepted volunteers can have attendance recorded" });
+      }
+      if (checkOut && checkOut < checkIn) return res.status(400).json({ message: "Check-out must be after check-in" });
+      // Same rule as live check-in: forms, guardian consent and checks come first (FORM-04).
+      const pre = await prerequisites(volunteerUserId, requestId);
+      if (pre.status !== "cleared") {
+        return res.status(409).json({ error: { code: `prerequisites_${pre.status}`, message: outstanding(pre) }, message: outstanding(pre), prerequisites: pre });
+      }
 
       const derivedHours =
         typeof body.data.hours === "number"
@@ -230,7 +245,7 @@ export function registerOrgComplianceRoutes(app: Express) {
         SELECT
           i.*,
           r.title AS request_title,
-          u.email AS volunteer_email,
+          CASE WHEN ${minorSql("u.id")} THEN NULL ELSE u.email END AS volunteer_email,
           up.display_name AS volunteer_display_name
         FROM org_incident_reports i
         LEFT JOIN service_requests r ON r.id = i.request_id
@@ -340,7 +355,7 @@ export function registerOrgComplianceRoutes(app: Express) {
         SELECT
           i.*,
           r.title AS request_title,
-          u.email AS volunteer_email,
+          CASE WHEN ${minorSql("u.id")} THEN NULL ELSE u.email END AS volunteer_email,
           up.display_name AS volunteer_display_name
         FROM org_incident_reports i
         LEFT JOIN service_requests r ON r.id = i.request_id

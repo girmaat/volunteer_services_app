@@ -2,10 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { backendFetch } from "../../lib/backend";
-import { zonedLocalToIso } from "../../../lib/time";
+import { zonedLocalToIso, zoneOr } from "../../../lib/time";
 
 const ok = (s: string) => /^[0-9a-f-]{36}$/i.test(s);
-const TZ = "America/New_York";
 const msg = async (r: Response) => ((await r.json().catch(() => null)) as { message?: string } | null)?.message || "That didn’t save. Try again.";
 const go = (q: string, anchor: string) => redirect(`/volunteer/history?${q}${anchor}`);
 
@@ -15,6 +14,8 @@ function timeFields(fd: FormData) {
   const start = String(fd.get("start") || "").trim();
   const end = String(fd.get("end") || "").trim();
   const hours = String(fd.get("hours") || "").trim();
+  // The times were typed in the volunteer's own zone (sent by the form).
+  const TZ = zoneOr(fd.get("tz") as string | null);
   const out: Record<string, unknown> = {};
   if (date && start && end) {
     out.startedAt = zonedLocalToIso(`${date}T${start}`, TZ);

@@ -1,5 +1,5 @@
 import { pool } from "../../lib/db";
-import { afterApplicationUpdate, applicationHasSlot } from "../requests/applications";
+import { afterApplicationUpdate, checkAccept } from "../requests/applications";
 
 // Requester area: service requests (Step 4.4 + Step 4.5)
 
@@ -96,11 +96,16 @@ export async function updateApplicationDecision(
   if (currentStatus !== "pending" && currentStatus !== "waitlisted") {
     return { kind: "conflict" as const, status: currentStatus };
   }
-  if (nextStatus === "accepted" && !(await applicationHasSlot(applicationId))) return { kind: "full" as const, status: currentStatus };
+  let acceptedAmount: number | null = null;
+  if (nextStatus === "accepted") {
+    const check = await checkAccept(applicationId);
+    if (!check.ok) return { kind: "refused" as const, status: currentStatus, check };
+    acceptedAmount = check.acceptedAmount;
+  }
 
   const updated = await pool.query(
-    "UPDATE request_applications SET status = $2, status_updated_at = NOW(), status_updated_by_user_id = $3, updated_at = NOW() WHERE id = $1 RETURNING id, status, updated_at",
-    [applicationId, nextStatus, requesterUserId]
+    "UPDATE request_applications SET status = $2, status_updated_at = NOW(), status_updated_by_user_id = $3, accepted_amount = COALESCE($4, accepted_amount), updated_at = NOW() WHERE id = $1 RETURNING id, status, updated_at",
+    [applicationId, nextStatus, requesterUserId, acceptedAmount]
   );
   await afterApplicationUpdate(applicationId, nextStatus, requesterUserId);
 

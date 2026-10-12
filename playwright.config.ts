@@ -4,6 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
  * End-to-end UAT scripts (U1–U15) plus the accessibility sweep.
  *
  *   pnpm e2e                 # against a running local stack (web :3002, API :4000, seeded DB)
+ *   E2E_WEBKIT=1 pnpm e2e    # also in iPhone Safari (WebKit), where WebKit is installed
  *   E2E_BASE_URL=https://staging.example.org E2E_API_URL=... E2E_DATABASE_URL=... pnpm e2e
  *
  * Specs create their own users and requests with unique names, so they can run repeatedly
@@ -29,7 +30,11 @@ export default defineConfig({
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1366, height: 900 } }, testIgnore: /mobile\.spec\.ts/ },
-    // U15 and the 375 px checks. CI can add a WebKit project (devices["iPhone 13"]) where WebKit is installed.
-    { name: "mobile", use: { ...devices["Pixel 5"], viewport: { width: 375, height: 812 } }, testMatch: /mobile\.spec\.ts/ }
+    // U15 and the 375 px checks.
+    { name: "mobile", use: { ...devices["Pixel 5"], viewport: { width: 375, height: 812 } }, testMatch: /mobile\.spec\.ts/ },
+    // iPhone Safari: E2E_WEBKIT=1 runs every script in WebKit at iPhone size (needs `npx playwright install webkit`).
+    ...(process.env.E2E_WEBKIT === "1"
+      ? [{ name: "iphone-safari", use: { ...devices["iPhone 13"] } }]
+      : [])
   ]
 });

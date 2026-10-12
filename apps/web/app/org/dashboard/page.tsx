@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CheckCircle2, ChevronRight, Circle } from "lucide-react";
-import { backendFetch } from "../../lib/backend";
+import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { getOrgContext } from "../../lib/org";
 import { ButtonLink, Card, EmptyState, Notice, PageHeader, StatStrip, StatusPill, Toast } from "../../../components/ui";
 
@@ -69,7 +69,7 @@ function SetupChecklist({ steps }: { steps: { done: boolean; label: string; href
 export default async function OrgDashboardPage(props: { searchParams?: Promise<{ welcome?: string }> }) {
   const welcome = (await props.searchParams)?.welcome === "1";
   // /v1/me (cached) carries the org context, so this page still makes two backend calls.
-  const org = await getOrgContext();
+  const [org, me] = await Promise.all([getOrgContext(), getCurrentUser()]);
   const res = await backendFetch("/v1/org/dashboard");
   const data = res.ok ? ((await res.json()) as OrgDashboard) : null;
 
@@ -104,6 +104,16 @@ export default async function OrgDashboardPage(props: { searchParams?: Promise<{
             ]}
           />
 
+          {me && !me.mfa_enabled && (org?.membership.role === "admin" || org?.membership.role === "manager") ? (
+            <div className="mb-5">
+              <Notice tone="info">
+                You approve volunteers’ hours, so protect your account with two-step sign-in.{" "}
+                <Link prefetch={false} href="/settings/account#two-step">
+                  Turn it on
+                </Link>
+              </Notice>
+            </div>
+          ) : null}
           {data.ownerApprovalsWaiting && org?.membership.role === "admin" ? (
             <div className="mb-5">
               <Notice tone="warning">

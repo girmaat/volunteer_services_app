@@ -33,7 +33,14 @@ export function icsEvent(e: {
   sequence?: number;
   method?: "PUBLISH" | "REQUEST" | "CANCEL";
   canceled?: boolean;
+  /** A repeating shift: RRULE (e.g. FREQ=WEEKLY;BYDAY=SA,SU) with local times in `timezone`. */
+  rrule?: string | null;
+  timezone?: string | null;
 }) {
+  const rrule = e.rrule && /^[A-Z0-9=;,:+-]+$/.test(e.rrule) ? e.rrule : null;
+  // Repeating events keep their wall-clock time across daylight saving changes, so they use TZID.
+  const tz = rrule && e.timezone && validZone(e.timezone) ? e.timezone : null;
+  const when = (k: "DTSTART" | "DTEND", d: Date) => (tz ? `${k};TZID=${tz}:${localStamp(d, tz)}` : `${k}:${stamp(d)}`);
   const method = e.method ?? (e.canceled ? "CANCEL" : "PUBLISH");
   const lines = [
     "BEGIN:VCALENDAR",
@@ -46,8 +53,9 @@ export function icsEvent(e: {
     `SEQUENCE:${e.sequence ?? 0}`,
     `STATUS:${e.canceled ? "CANCELLED" : "CONFIRMED"}`,
     `DTSTAMP:${stamp(new Date())}`,
-    `DTSTART:${stamp(e.start)}`,
-    `DTEND:${stamp(e.end)}`,
+    when("DTSTART", e.start),
+    when("DTEND", e.end),
+    ...(rrule ? [`RRULE:${rrule}`] : []),
     `SUMMARY:${esc(e.title)}`,
     ...(e.description ? [`DESCRIPTION:${esc(e.description)}`] : []),
     ...(e.location ? [`LOCATION:${esc(e.location)}`] : []),
@@ -57,4 +65,23 @@ export function icsEvent(e: {
     "END:VCALENDAR"
   ];
   return lines.map(fold).join("\r\n") + "\r\n";
+}
+
+function validZone(tz: string) {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** YYYYMMDDTHHMMSS in the given time zone (no Z). */
+function localStamp(d: Date, tz: string) {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })
+      .formatToParts(d)
+      .map((x) => [x.type, x.value])
+  );
+  return `${p.year}${p.month}${p.day}T${p.hour}${p.minute}${p.second}`;
 }

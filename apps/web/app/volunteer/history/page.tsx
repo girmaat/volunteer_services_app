@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Award, BadgeCheck, Clock, Download, MessageSquareQuote, NotebookPen, Star } from "lucide-react";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
+import { zoneOr } from "../../../lib/time";
 import ShareButton from "../../_components/share/ShareButton";
 import { Button, ButtonLink, EmptyState, Notice, PageHeader, StatStrip, StatusPill, SubmitButton, Toast } from "../../../components/ui";
 import { disputeAction, outsideAction, reportAction, resubmitAction } from "./actions";
@@ -51,15 +52,17 @@ const FLASH: Record<string, string> = {
   disputed: "Dispute sent. Someone who wasn’t part of the decision will look at it."
 };
 
-const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
-const time = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+// Dates and times show in the volunteer's own time zone (from their availability).
+const day = (iso: string, tz: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: tz });
+const time = (iso: string, tz: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: tz });
 const hrs = (n: number | null | undefined) => `${Math.round((n ?? 0) * 100) / 100} h`;
 const field = "h-10 rounded border border-line-strong bg-surface px-3 font-normal";
 
 /** Date + start/end, or just hours. Shared by reporting, resubmitting and outside service. */
-function TimeInputs({ prefix }: { prefix: string }) {
+function TimeInputs({ prefix, tz }: { prefix: string; tz: string }) {
   return (
     <div className="flex flex-wrap gap-3">
+      <input type="hidden" name="tz" value={tz} />
       <label className="grid gap-1 text-sm font-medium">
         Date
         <input name="date" type="date" className={field} id={`${prefix}-date`} />
@@ -80,8 +83,8 @@ function TimeInputs({ prefix }: { prefix: string }) {
   );
 }
 
-function ContributionLine({ c, anchor }: { c: Contribution; anchor: string }) {
-  const when = c.started_at ? `${day(c.started_at)}${c.ended_at ? `, ${time(c.started_at)}–${time(c.ended_at)}` : ""}` : null;
+function ContributionLine({ c, anchor, tz }: { c: Contribution; anchor: string; tz: string }) {
+  const when = c.started_at ? `${day(c.started_at, tz)}${c.ended_at ? `, ${time(c.started_at, tz)}–${time(c.ended_at, tz)}` : ""}` : null;
   return (
     <li className="list-none rounded-md border border-line bg-surface px-3 py-2.5 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -99,7 +102,7 @@ function ContributionLine({ c, anchor }: { c: Contribution; anchor: string }) {
       {c.status === "revision_requested" ? (
         <form action={resubmitAction.bind(null, c.id, anchor)} className="mt-2 grid gap-2 rounded-md border border-line p-3">
           <p className="m-0 text-sm font-medium">Fix and send it back</p>
-          <TimeInputs prefix={`r-${c.id}`} />
+          <TimeInputs prefix={`r-${c.id}`} tz={tz} />
           <label className="grid gap-1 text-sm font-medium">
             Note <span className="font-normal text-muted">(optional)</span>
             <input name="description" maxLength={1000} className={field} />
@@ -132,6 +135,7 @@ function ContributionLine({ c, anchor }: { c: Contribution; anchor: string }) {
 export default async function ImpactPage(props: { searchParams?: Promise<{ flash?: string; error?: string }> }) {
   const sp = (await props.searchParams) || {};
   const [me, res] = await Promise.all([getCurrentUser(), backendFetch("/v1/volunteer/impact")]);
+  const tz = zoneOr(me?.timezone);
   const data = res.ok ? ((await res.json()) as Impact) : null;
   const earned = data?.badges.filter((b) => b.earned) ?? [];
   const next = data?.badges.filter((b) => !b.earned).sort((a, b) => b.progress / b.goal - a.progress / a.goal)[0];
@@ -201,7 +205,7 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
                   {data.timeline.map((w) => (
                     <li key={w.application_id} id={`w-${w.application_id}`} className="relative list-none pb-7 last:pb-0">
                       <span aria-hidden className="absolute -left-[27px] top-1.5 h-3 w-3 rounded-full border-2 border-surface bg-primary" />
-                      <p className="m-0 text-xs font-medium text-muted">{day(w.completed_at)}</p>
+                      <p className="m-0 text-xs font-medium text-muted">{day(w.completed_at, tz)}</p>
                       <h3 className="m-0 mt-0.5 text-base font-semibold">
                         <Link prefetch={false} href={`/volunteer/applications/${w.application_id}`} className="text-ink no-underline hover:text-primary hover:underline">
                           {w.title}
@@ -214,7 +218,7 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
                       {w.contributions.length ? (
                         <ul className="m-0 mt-2 grid gap-2 p-0">
                           {w.contributions.map((c) => (
-                            <ContributionLine key={c.id} c={c} anchor={`#w-${w.application_id}`} />
+                            <ContributionLine key={c.id} c={c} anchor={`#w-${w.application_id}`} tz={tz} />
                           ))}
                         </ul>
                       ) : null}
@@ -223,7 +227,7 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
                           <NotebookPen aria-hidden className="h-4 w-4" /> Report time you gave
                         </summary>
                         <form action={reportAction.bind(null, w.application_id)} className="mt-2 grid max-w-xl gap-2 rounded-md border border-line bg-surface p-3">
-                          <TimeInputs prefix={`w-${w.application_id}`} />
+                          <TimeInputs prefix={`w-${w.application_id}`} tz={tz} />
                           <label className="grid gap-1 text-sm font-medium">
                             What did you do?
                             <textarea name="description" required rows={2} maxLength={1000} placeholder="e.g. Sorted coats; stayed an extra hour to pack up." className="rounded border border-line-strong bg-surface px-3 py-2 font-normal" />
@@ -249,7 +253,7 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
                     {data.outside.map((o) => (
                       <li key={o.id} className="flex list-none flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface px-3 py-2.5 text-sm">
                         <span>
-                          {day(o.started_at || o.created_at)} · {hrs(o.hours)} · {o.text}
+                          {day(o.started_at || o.created_at, tz)} · {hrs(o.hours)} · {o.text}
                         </span>
                         <StatusPill kind="hours" status={o.status} />
                       </li>
@@ -259,7 +263,7 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
                 <details className="mt-3">
                   <summary className="cursor-pointer text-sm font-medium text-primary">Add service from elsewhere</summary>
                   <form action={outsideAction} className="mt-2 grid max-w-xl gap-2 rounded-md border border-line bg-surface p-3">
-                    <TimeInputs prefix="outside" />
+                    <TimeInputs prefix="outside" tz={tz} />
                     <label className="grid gap-1 text-sm font-medium">
                       What and where?
                       <input name="description" required maxLength={1000} className={field} placeholder="e.g. Beach clean-up with my school" />
@@ -284,7 +288,7 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
                     {earned.map((b) => (
                       <li key={b.id} className="list-none rounded-md border border-line bg-surface px-3 py-2.5">
                         <span className="block text-sm font-semibold">{b.title}</span>
-                        {b.earned_at ? <span className="block text-xs text-muted">Earned {day(b.earned_at)}</span> : null}
+                        {b.earned_at ? <span className="block text-xs text-muted">Earned {day(b.earned_at, tz)}</span> : null}
                       </li>
                     ))}
                   </ul>

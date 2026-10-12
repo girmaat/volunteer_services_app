@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../lib/backend";
 import AppShell from "../../components/shell/AppShell";
+import { ButtonLink, Notice } from "../../components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <AppShell user={user} context="admin">
-      {children}
+      {user.mfa_setup_required ? (
+        <div className="grid max-w-xl gap-4">
+          <h1 className="m-0 text-2xl">Turn on two-step sign-in</h1>
+          <Notice tone="warning">Admin tools need two-step sign-in. It takes a minute with an authenticator app on your phone.</Notice>
+          <ButtonLink href="/settings/account#two-step">Set it up</ButtonLink>
+        </div>
+      ) : (
+        children
+      )}
     </AppShell>
   );
 }

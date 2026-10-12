@@ -10,7 +10,7 @@ type Props = {
 };
 
 /**
- * Lightweight QR generator (byte mode, error correction L, versions 1-4).
+ * Lightweight QR generator (byte mode, error correction L, versions 1-5: up to 106 bytes).
  * Intended for short share URLs (typically well under 80 bytes).
  */
 export default function QrCode({ text, size = 200, className, title = "QR code" }: Props) {
@@ -40,9 +40,9 @@ export default function QrCode({ text, size = 200, className, title = "QR code" 
 
 type QrOut = { modules: boolean[][]; moduleCount: number };
 
-const CAPACITY_BYTES_L = [0, 17, 32, 53, 78];
-const DATA_CODEWORDS_L = [0, 19, 34, 55, 80];
-const EC_CODEWORDS_L = [0, 7, 10, 15, 20];
+const CAPACITY_BYTES_L = [0, 17, 32, 53, 78, 106];
+const DATA_CODEWORDS_L = [0, 19, 34, 55, 80, 108];
+const EC_CODEWORDS_L = [0, 7, 10, 15, 20, 26];
 
 function generateQr(input: string): QrOut {
   const bytes = new TextEncoder().encode(input);
@@ -72,9 +72,9 @@ function generateQr(input: string): QrOut {
 }
 
 function pickVersion(byteLen: number) {
-  for (let v = 1; v <= 4; v++) if (byteLen <= CAPACITY_BYTES_L[v]) return v;
-  // For unexpectedly long URLs, still render something: truncate to v4 capacity.
-  return 4;
+  for (let v = 1; v <= 5; v++) if (byteLen <= CAPACITY_BYTES_L[v]) return v;
+  // For unexpectedly long text, still render something: truncate to v5 capacity.
+  return 5;
 }
 
 class BitBuffer {
@@ -194,8 +194,8 @@ function placeFunctionPatterns(modules: boolean[][], reserved: boolean[][], vers
   // Dark module
   setModule(modules, reserved, 8, size - 8, true);
 
-  // Alignment patterns (versions 2-4 only)
-  const alignPos = version === 1 ? [] : version === 2 ? [6, 18] : version === 3 ? [6, 22] : [6, 26];
+  // Alignment patterns (versions 2-5; all single-block at level L)
+  const alignPos = version === 1 ? [] : version === 2 ? [6, 18] : version === 3 ? [6, 22] : version === 4 ? [6, 26] : [6, 30];
   for (let i = 0; i < alignPos.length; i++) {
     for (let j = 0; j < alignPos.length; j++) {
       const cx = alignPos[i];

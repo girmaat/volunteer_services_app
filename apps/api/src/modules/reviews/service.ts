@@ -23,7 +23,7 @@ export type ReviewInput = {
   improvements?: string | null;
 };
 
-type AppRow = {
+export type AppRow = {
   id: string;
   status: string;
   request_id: string;
@@ -138,6 +138,32 @@ export async function reviewsFor(user: PolicyUser, applicationId: string) {
     theirs_submitted: Boolean(theirs),
     reveal_at: revealAt
   };
+}
+
+/** `reviewsFor` from the request owner's side for many completed applications at once. */
+export async function ownerReviewStates(apps: { id: string; status: string; completed_at: string | Date | null }[]) {
+  const out = new Map<string, Awaited<ReturnType<typeof reviewsFor>>>();
+  if (!apps.length) return out;
+  const ids = apps.map((a) => String(a.id));
+  const cols = "request_application_id, id, rating AS overall, reliability, communication, comment, strengths, would_work_again, visible_at, created_at";
+  const v = await pool.query(`SELECT ${cols}, skill FROM volunteer_reviews WHERE request_application_id = ANY($1::uuid[]) AND removed_at IS NULL`, [ids]);
+  const r = await pool.query(`SELECT ${cols}, clarity FROM requester_reviews WHERE request_application_id = ANY($1::uuid[]) AND removed_at IS NULL`, [ids]);
+  const strip = ({ request_application_id: _x, ...rest }: Record<string, any>) => rest;
+  const mineBy = new Map(v.rows.map((x) => [String(x.request_application_id), strip(x)]));
+  const theirsBy = new Map(r.rows.map((x) => [String(x.request_application_id), strip(x)]));
+  for (const a of apps) {
+    const mine = mineBy.get(String(a.id));
+    const theirs = theirsBy.get(String(a.id));
+    out.set(String(a.id), {
+      side: "owner",
+      can_review: a.status === "completed" && !mine?.visible_at,
+      mine: mine ?? null,
+      theirs: theirs && theirs.visible_at && new Date(theirs.visible_at) <= new Date() ? theirs : null,
+      theirs_submitted: Boolean(theirs),
+      reveal_at: a.completed_at ? new Date(new Date(a.completed_at).getTime() + REVIEW_WINDOW_DAYS * 86400_000).toISOString() : null
+    } as Awaited<ReturnType<typeof reviewsFor>>);
+  }
+  return out;
 }
 
 /** Publishes reviews whose 14-day window has passed (hourly). */

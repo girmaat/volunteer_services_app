@@ -36,7 +36,11 @@ const EnvSchema = z
     JOBS_DISABLED: bool(false),
     RATE_LIMIT_DISABLED: bool(false),
     /** Sign-in/sign-up/reset attempts per minute per IP (plan: 5). Raise only for test stacks. */
-    AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).max(1000).default(5)
+    AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).max(1000).default(5),
+    /** Encrypts two-step sign-in secrets at rest; required in production. */
+    MFA_SECRET_KEY: z.string().min(16).optional(),
+    /** Platform staff must turn on two-step sign-in before using admin tools. Default: on in production. */
+    MFA_REQUIRED_FOR_STAFF: z.string().optional()
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production") {
@@ -48,6 +52,7 @@ const EnvSchema = z
       }
       if (!env.NOTIFICATION_SECRET) ctx.addIssue({ code: "custom", message: "NOTIFICATION_SECRET (16+ chars) is required in production" });
       if (env.RATE_LIMIT_DISABLED) ctx.addIssue({ code: "custom", message: "RATE_LIMIT_DISABLED is not allowed in production" });
+      if (!env.MFA_SECRET_KEY) ctx.addIssue({ code: "custom", message: "MFA_SECRET_KEY (16+ chars) is required in production" });
       if (env.AUTH_RATE_LIMIT_PER_MINUTE > 10) ctx.addIssue({ code: "custom", message: "AUTH_RATE_LIMIT_PER_MINUTE above 10 is not allowed in production" });
     }
   });
@@ -68,3 +73,10 @@ function load(): Env {
 export const env = load();
 export const isProduction = env.NODE_ENV === "production";
 export const isTest = env.NODE_ENV === "test";
+/** Two-step sign-in for platform staff: MFA_REQUIRED_FOR_STAFF=true/false, else on only in production. */
+export const mfaRequiredForStaff = () => {
+  const v = process.env.MFA_REQUIRED_FOR_STAFF ?? env.MFA_REQUIRED_FOR_STAFF;
+  return v === undefined || v === "" ? isProduction : ["1", "true", "yes", "on"].includes(String(v).toLowerCase());
+};
+/** Development falls back to a fixed key so local accounts keep working across restarts. */
+export const mfaKey = () => env.MFA_SECRET_KEY || "thankyou-dev-only-mfa-key";

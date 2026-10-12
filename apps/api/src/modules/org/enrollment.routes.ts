@@ -6,6 +6,7 @@ import { z } from "zod";
 import { randomTokenUrlSafe, sha256 } from "../../auth/crypto";
 import { devEmailLink, sendEmail } from "../../auth/email";
 import { requireUserBySession } from "../../auth/session";
+import { staffAdultCheck } from "../../lib/age";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { authHeaderToken, buildInsertSql, buildUpdateSql, getOrgContextForUser, getPublicColumns, pgErrorCode, publicTableExists, requireAdmin, requireOrg, slugifyOrgSlug, webBaseUrl } from "./context";
@@ -163,11 +164,13 @@ If you didn't create this account, you can ignore this email.`
           website_url: HttpUrl.optional().nullable(),
           contact_email: z.string().email().optional().nullable()
         }),
-        admin: z.object({ fullName: z.string().trim().min(1).optional(), phone: z.string().trim().max(40).optional() }).optional()
+        admin: z.object({ fullName: z.string().trim().min(1).optional(), phone: z.string().trim().max(40).optional(), adultConfirmed: z.boolean().optional() }).optional()
       });
 
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+      const notAdult = await staffAdultCheck(String((user as any).id), parsed.data.admin?.adultConfirmed);
+      if (notAdult) return res.status(403).json({ message: notAdult, code: "adult_required" });
 
       const orgSlug = parsed.data.org.slug ? slugifyOrgSlug(parsed.data.org.slug) : await uniqueOrgSlug(parsed.data.org.name);
       if (!orgSlug) return res.status(400).json({ message: "Invalid org slug" });
@@ -319,11 +322,14 @@ app.post(
     }
 
     const schema = z.object({
-      orgSlug: z.string().min(2)
+      orgSlug: z.string().min(2),
+      adultConfirmed: z.boolean().optional()
     });
 
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+    const notAdult = await staffAdultCheck(String((user as any).id), parsed.data.adultConfirmed);
+    if (notAdult) return res.status(403).json({ message: notAdult, code: "adult_required" });
 
     const orgSlug = slugifyOrgSlug(parsed.data.orgSlug);
     if (!orgSlug) return res.status(400).json({ message: "Invalid org slug" });

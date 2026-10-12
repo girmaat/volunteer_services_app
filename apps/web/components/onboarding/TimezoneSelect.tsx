@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { COMMON_TIMEZONES } from "../../lib/time";
+import { COMMON_TIMEZONES, zoneOr } from "../../lib/time";
 
 /** Time zone picker that starts on the browser's own zone (no typing "America/New_York"). */
 export default function TimezoneSelect({ name, defaultValue, id }: { name: string; defaultValue?: string | null; id: string }) {
-  const [value, setValue] = useState(defaultValue || "America/New_York");
+  const [value, setValue] = useState(zoneOr(defaultValue));
   const [zones, setZones] = useState<string[]>(COMMON_TIMEZONES as unknown as string[]);
   useEffect(() => {
     if (defaultValue) return;

@@ -14,7 +14,7 @@ import { z } from "zod";
 import { minorSql } from "../../lib/age";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
-import { requireOrg } from "./context";
+import { requireAdminOrManager, requireOrg } from "./context";
 
 const CREDITED = "('approved', 'adjusted')";
 const WAITING = "('pending', 'disputed', 'revision_requested')";
@@ -22,7 +22,7 @@ const DECLINED = "('rejected', 'unverified')";
 
 /** A YYYY-MM-DD (or ISO) range; a date-only `to` covers that whole day. */
 function range(query: unknown) {
-  const q = z.object({ from: z.string().optional(), to: z.string().optional(), requestId: z.string().uuid().optional() }).safeParse(query);
+  const q = z.object({ from: z.string().optional(), to: z.string().optional(), requestId: z.string().uuid().optional(), all: z.enum(["1", "true"]).optional() }).safeParse(query);
   const parse = (v: string | undefined, endOfDay: boolean) => {
     if (!v) return null;
     const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v}T00:00:00Z` : v);
@@ -34,9 +34,14 @@ function range(query: unknown) {
     from: q.success ? parse(q.data.from, false) : null,
     // Exclusive upper bound.
     to: q.success ? parse(q.data.to, true) : null,
-    requestId: q.success && q.data.requestId ? q.data.requestId : null
+    requestId: q.success && q.data.requestId ? q.data.requestId : null,
+    // Exports ask for every row; screens show the top rows and say how many there are.
+    all: q.success && Boolean(q.data.all)
   };
 }
+
+/** Practical ceiling for an "all rows" export. */
+const EXPORT_MAX = 20_000;
 
 const r2 = (v: unknown) => Math.round(Number(v || 0) * 100) / 100;
 const r1 = (v: unknown) => (v == null ? null : Math.round(Number(v) * 10) / 10);
@@ -57,7 +62,9 @@ export function registerOrgReportsRoutes(app: Express) {
     wrap(async (req: any, res: any) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
-      const { from, to, requestId } = range(req.query);
+      // Reports name volunteers and their hours: admins and managers only.
+      if (!requireAdminOrManager(ok.ctx, res)) return;
+      const { from, to, requestId, all } = range(req.query);
       const params = [ok.ctx.org.slug, from, to, requestId];
 
       const [hours, units, delay, perRequest, requests, applications, attendance] = await Promise.all([
@@ -106,15 +113,16 @@ export function registerOrgReportsRoutes(app: Express) {
                   COALESCE(SUM(c.reported_hours) FILTER (WHERE c.status IN ${WAITING}), 0)::float AS waiting_hours,
                   COALESCE(SUM(c.approved_units) FILTER (WHERE c.status IN ${CREDITED}), 0)::float AS approved_units,
                   COALESCE(SUM(c.reported_units) FILTER (WHERE c.status IN ${WAITING}), 0)::float AS waiting_units,
-                  COUNT(DISTINCT c.volunteer_user_id) FILTER (WHERE c.status IN ${CREDITED})::int AS volunteers_approved
+                  COUNT(DISTINCT c.volunteer_user_id) FILTER (WHERE c.status IN ${CREDITED})::int AS volunteers_approved,
+                  COUNT(*) OVER ()::int AS total_rows
              FROM service_requests r
              LEFT JOIN c ON c.request_id = r.id
             WHERE r.requester_org_slug = $1 AND ($4::uuid IS NULL OR r.id = $4::uuid)
               AND (c.id IS NOT NULL OR (r.target_value IS NOT NULL AND r.status IN ('open', 'pending', 'filled', 'paused')))
             GROUP BY r.id
             ORDER BY approved_hours DESC, waiting_hours DESC, r.title
-            LIMIT 100`,
-          params
+            LIMIT $5`,
+          [...params, all ? EXPORT_MAX : 100]
         ),
         pool.query(
           `SELECT COUNT(*) FILTER (WHERE published_at IS NOT NULL)::int AS published,
@@ -168,6 +176,7 @@ export function registerOrgReportsRoutes(app: Express) {
         requests: requests.rows[0],
         applications: applications.rows[0],
         open_checkins: Number(attendance.rows[0]?.open_checkins || 0),
+        per_request_total: perRequest.rows.length ? Number(perRequest.rows[0].total_rows) : 0,
         per_request: perRequest.rows.map((r) => {
           const inHours = !r.unit || r.unit === "hours";
           const approved = inHours ? r2(r.approved_hours) : r2(r.approved_units);
@@ -195,7 +204,8 @@ export function registerOrgReportsRoutes(app: Express) {
     wrap(async (req: any, res: any) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
-      const { from, to, requestId } = range(req.query);
+      if (!requireAdminOrManager(ok.ctx, res)) return;
+      const { from, to, requestId, all } = range(req.query);
       const rows = await pool.query(
         `${INRANGE}
          SELECT c.volunteer_user_id,
@@ -207,24 +217,29 @@ export function registerOrgReportsRoutes(app: Express) {
                 COALESCE(SUM(c.reported_hours) FILTER (WHERE c.status IN ${DECLINED}), 0)::float AS declined_hours,
                 COUNT(*) FILTER (WHERE c.status IN ${CREDITED})::int AS approved_entries,
                 COUNT(*) FILTER (WHERE c.status IN ${WAITING})::int AS waiting_entries,
-                MAX(COALESCE(c.ended_at, c.started_at, c.created_at)) AS last_activity_at
+                MAX(COALESCE(c.ended_at, c.started_at, c.created_at)) AS last_activity_at,
+                COUNT(*) OVER ()::int AS total_rows,
+                SUM(COALESCE(SUM(c.approved_hours) FILTER (WHERE c.status IN ${CREDITED}), 0)) OVER ()::float AS all_approved,
+                SUM(COALESCE(SUM(c.reported_hours) FILTER (WHERE c.status IN ${WAITING}), 0)) OVER ()::float AS all_waiting
            FROM c
            LEFT JOIN users u ON u.id = c.volunteer_user_id
            LEFT JOIN user_profiles up ON up.user_id = c.volunteer_user_id
           GROUP BY c.volunteer_user_id, u.email, up.display_name, up.full_name
           ORDER BY approved_hours DESC, waiting_hours DESC, last_activity_at DESC NULLS LAST
-          LIMIT 500`,
-        [ok.ctx.org.slug, from, to, requestId]
+          LIMIT $5`,
+        [ok.ctx.org.slug, from, to, requestId, all ? EXPORT_MAX : 500]
       );
-      const sum = (k: string) => r2(rows.rows.reduce((s: number, r: any) => s + Number(r[k] || 0), 0));
+      // Totals cover every volunteer, not only the rows returned.
+      const first = rows.rows[0] ?? {};
       return res.json({
         range: { from, to },
         request_id: requestId,
         // `total_hours` is approved hours (kept for older callers).
-        total_hours: sum("approved_hours"),
-        approved_hours: sum("approved_hours"),
-        waiting_hours: sum("waiting_hours"),
-        volunteers: rows.rows.map((r: any) => ({ ...r, approved_hours: r2(r.approved_hours), waiting_hours: r2(r.waiting_hours), declined_hours: r2(r.declined_hours) }))
+        total_hours: r2(first.all_approved),
+        approved_hours: r2(first.all_approved),
+        waiting_hours: r2(first.all_waiting),
+        volunteers_total: Number(first.total_rows || 0),
+        volunteers: rows.rows.map(({ total_rows: _t, all_approved: _a, all_waiting: _w, ...r }: any) => ({ ...r, approved_hours: r2(r.approved_hours), waiting_hours: r2(r.waiting_hours), declined_hours: r2(r.declined_hours) }))
       });
     })
   );

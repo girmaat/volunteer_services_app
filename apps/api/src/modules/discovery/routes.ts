@@ -6,27 +6,7 @@ import { can, type PolicyUser } from "../../lib/policy";
 import { optionalAuthedUser } from "../../middleware/auth";
 import { applyEligibility } from "../requests/eligibility";
 import { discover, discoverOne, loadViewer, present, type Viewer } from "./query";
-
-const csv = z
-  .string()
-  .max(500)
-  .transform((s) => s.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean).slice(0, 20));
-
-const Query = z.object({
-  q: z.string().trim().max(100).optional(),
-  category: csv.optional(),
-  skills: csv.optional(),
-  mode: z.enum(["in-person", "remote", "hybrid"]).optional(),
-  radius: z.coerce.number().min(1).max(200).optional(),
-  starts_after: z.string().datetime({ offset: true }).optional(),
-  starts_before: z.string().datetime({ offset: true }).optional(),
-  verified_org: z.enum(["true", "false"]).optional(),
-  urgency: z.enum(["low", "normal", "high"]).optional(),
-  tab: z.enum(["recommended", "nearby", "remote", "all"]).optional(),
-  org: z.string().max(80).optional(),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
-  cursor: z.string().max(40).optional()
-});
+import { DiscoveryQuery, filtersFrom } from "./filters";
 
 const encodeCursor = (offset: number) => Buffer.from(JSON.stringify({ o: offset })).toString("base64url");
 const decodeCursor = (c?: string) => {
@@ -53,7 +33,7 @@ export function registerDiscoveryRoutes(app: Express) {
   app.get(
     "/v1/discovery/opportunities",
     wrap(async (req, res) => {
-      const parsed = Query.safeParse(req.query);
+      const parsed = DiscoveryQuery.safeParse(req.query);
       if (!parsed.success) return res.status(400).json({ message: "Invalid query", errors: parsed.error.flatten() });
       const qy = parsed.data;
       const { user, viewer } = await viewerFor(req);
@@ -61,21 +41,7 @@ export function registerDiscoveryRoutes(app: Express) {
         return res.status(401).json({ message: "Sign in as a volunteer for personalised results" });
       }
       const offset = decodeCursor(qy.cursor);
-      const result = await discover(viewer, {
-        q: qy.q || undefined,
-        categories: qy.category,
-        skills: qy.skills,
-        mode: qy.mode,
-        radius: qy.radius,
-        startsAfter: qy.starts_after,
-        startsBefore: qy.starts_before,
-        verifiedOrg: qy.verified_org === "true",
-        urgency: qy.urgency,
-        tab: qy.tab,
-        orgSlug: qy.org,
-        limit: qy.limit,
-        offset
-      });
+      const result = await discover(viewer, filtersFrom(qy, offset));
       if (!user) res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
       return res.json({
         items: result.items,

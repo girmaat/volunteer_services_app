@@ -2,7 +2,7 @@ import { API_BASE_URL_SERVER } from "@thankyou/config";
 import { redirect } from "next/navigation";
 import { CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
 import { Button, Card, Notice } from "../../../../components/ui";
-import { formatInZone } from "../../../../lib/time";
+import { formatInZone, zoneOr } from "../../../../lib/time";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Parent or guardian consent", robots: { index: false, follow: false } };
@@ -82,7 +82,7 @@ export default async function GuardianConsentPage(props: { params: Promise<{ tok
             <p className="m-0 text-sm text-muted">
               {c.org_name}
               {c.org_verified ? " · verified organization" : ""}
-              {c.starts_at ? ` · ${formatInZone(c.starts_at, c.timezone || "America/New_York", { withZone: true })}` : ""}
+              {c.starts_at ? ` · ${formatInZone(c.starts_at, zoneOr(c.timezone), { withZone: true })}` : ""}
               {` · ${c.mode === "remote" ? "Remote" : c.public_area || "In person"}`}
             </p>
             <p className="m-0 whitespace-pre-line">{c.description}</p>

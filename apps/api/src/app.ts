@@ -12,6 +12,8 @@ import { authEmailLimiter, authIpLimiter, publicFormLimiter, writeLimiter } from
 import { registerPlatformRoutes } from "./modules/platform/routes";
 import { registerPublicRoutes } from "./modules/public/routes";
 import { registerAuthRoutes } from "./modules/auth/routes";
+import { registerMfaRoutes } from "./modules/mfa/routes";
+import { registerAlertRoutes } from "./modules/alerts/routes";
 import { registerShareRoutes } from "./modules/share/routes";
 import { registerVolunteerRoutes } from "./modules/volunteer";
 import { registerRequesterRoutes } from "./modules/requester";
@@ -89,6 +91,7 @@ export function createApp(): Express {
 
   // Rate limits
   app.use(["/v1/auth/login", "/v1/auth/signup", "/v1/auth/forgot-password", "/v1/auth/resend-verification", "/v1/auth/reset-password", "/v1/auth/change-password"], authIpLimiter, authEmailLimiter);
+  app.use(["/v1/auth/mfa", "/v1/me/mfa/setup", "/v1/me/mfa/disable"], authIpLimiter);
   app.use(["/v1/public/contact", "/v1/shares/:token/report", "/v1/orgs/enroll"], publicFormLimiter);
   app.use("/v1", writeLimiter);
 
@@ -96,6 +99,7 @@ export function createApp(): Express {
   registerDocsRoutes(app);
   registerPublicRoutes(app);
   registerAuthRoutes(app);
+  registerMfaRoutes(app);
   registerShareRoutes(app);
   registerVolunteerRoutes(app);
   registerRequesterRoutes(app);
@@ -104,6 +108,7 @@ export function createApp(): Express {
   registerRequestRoutes(app);
   registerNotificationRoutes(app);
   registerDiscoveryRoutes(app);
+  registerAlertRoutes(app);
   registerMessagingRoutes(app);
   registerJobHandler("notify.message_received", onMessageReceived);
   registerJobHandler("maintenance.hourly", runHourly);

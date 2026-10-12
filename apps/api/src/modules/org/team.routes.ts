@@ -4,6 +4,7 @@ import { z } from "zod";
 import { randomTokenUrlSafe, sha256 } from "../../auth/crypto";
 import { sendEmail } from "../../auth/email";
 import { requireUserBySession } from "../../auth/session";
+import { staffAdultCheck } from "../../lib/age";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { authHeaderToken, requireAdmin, requireAdminOrManager, requireOrg, webBaseUrl } from "./context";
@@ -240,7 +241,7 @@ export function registerOrgTeamRoutes(app: Express) {
       const user = await requireUserBySession(pool, sessionToken);
       if (!user) return res.status(401).json({ message: "Not authenticated" });
 
-      const schema = z.object({ token: z.string().min(8) });
+      const schema = z.object({ token: z.string().min(8), adultConfirmed: z.boolean().optional() });
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
@@ -265,25 +266,29 @@ export function registerOrgTeamRoutes(app: Express) {
         return res.status(403).json({ message: "This invite was sent to a different email address." });
       }
 
+      const notAdult = await staffAdultCheck(String((user as any).id), parsed.data.adultConfirmed);
+      if (notAdult) return res.status(403).json({ message: notAdult, code: "adult_required" });
+
       // One account, multiple roles: volunteers and requesters can also join an organization's team.
       const hasMemberRoles = ((user as any).roles || []).length > 0;
 
-      await pool.query("BEGIN");
+      const c = await pool.connect();
+      await c.query("BEGIN");
       try {
         // If user already has membership, update it; otherwise, convert the invite row to the active membership.
-        const existing = await pool.query(
+        const existing = await c.query(
           "SELECT id FROM organization_members WHERE org_slug=$1 AND user_id=$2 LIMIT 1",
           [String(inv.org_slug), String((user as any).id)]
         );
 
         if ((existing.rowCount ?? 0) > 0) {
-          await pool.query(
+          await c.query(
             "UPDATE organization_members SET role=$2, status='active', joined_at=COALESCE(joined_at, NOW()), updated_at=NOW() WHERE id=$1",
             [String(existing.rows[0].id), String(inv.role)]
           );
-          await pool.query("DELETE FROM organization_members WHERE id=$1", [String(inv.id)]);
+          await c.query("DELETE FROM organization_members WHERE id=$1", [String(inv.id)]);
         } else {
-          await pool.query(
+          await c.query(
             `
             UPDATE organization_members
             SET user_id=$2,
@@ -301,7 +306,7 @@ export function registerOrgTeamRoutes(app: Express) {
         }
 
         // Accounts that only exist for the org become org-team accounts; others keep their roles.
-        if (!hasMemberRoles) await pool.query(
+        if (!hasMemberRoles) await c.query(
           `UPDATE users
              SET role='org_admin',
                  account_type='org_team_member',
@@ -315,10 +320,12 @@ export function registerOrgTeamRoutes(app: Express) {
           [String((user as any).id)]
         );
 
-        await pool.query("COMMIT");
+        await c.query("COMMIT");
       } catch (e) {
-        await pool.query("ROLLBACK");
+        await c.query("ROLLBACK");
         throw e;
+      } finally {
+        c.release();
       }
 
       return res.json({ ok: true, org: { slug: String(inv.org_slug), name: String(inv.org_name) } });

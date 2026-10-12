@@ -55,6 +55,26 @@ export function registerAccountRoutes(app: Express) {
           tasks: await q("SELECT task_date, task, duration_hours FROM volunteer_task_entries WHERE volunteer_user_id = $1"),
           outcomes: await q("SELECT outcome_date, outcome, quantity, unit FROM volunteer_outcome_entries WHERE volunteer_user_id = $1")
         },
+        // Hours as reviewed by organizations, with every decision (the record of service).
+        contributions: await q(
+          `SELECT c.id, c.request_id, r.title AS request_title, c.org_slug, c.source, c.started_at, c.ended_at, c.break_minutes, c.reported_hours::float, c.reported_units::float,
+                  c.unit, c.approved_hours::float, c.approved_units::float, c.status, c.verification_method, c.description, c.decided_at, c.created_at
+             FROM contributions c LEFT JOIN service_requests r ON r.id = c.request_id WHERE c.volunteer_user_id = $1 ORDER BY c.created_at`
+        ),
+        contribution_decisions: await q(
+          `SELECT d.contribution_id, d.actor_role, d.action, d.hours::float, d.units::float, d.reason, d.created_at
+             FROM contribution_decisions d JOIN contributions c ON c.id = d.contribution_id WHERE c.volunteer_user_id = $1 ORDER BY d.created_at`
+        ),
+        service_records: await q(
+          "SELECT id, name_mode, contribution_ids, snapshot, issued_at, expires_at, revoked_at, replaced_by_id, superseded_at, view_count, last_viewed_at FROM service_records WHERE volunteer_user_id = $1 ORDER BY issued_at"
+        ),
+        guardian_consents: await q(
+          "SELECT request_id, guardian_name, guardian_email, relationship, status, signed_name, requested_at, responded_at, expires_at FROM guardian_consents WHERE volunteer_user_id = $1 ORDER BY requested_at"
+        ),
+        signed_documents: await q(
+          `SELECT k.org_document_id, d.org_slug, COALESCE(k.presented_title, d.title) AS title, k.request_id, k.document_version, k.sha256, k.signer_name, k.signature_method, k.acknowledged_at
+             FROM volunteer_document_acks k LEFT JOIN org_documents d ON d.id = k.org_document_id WHERE k.volunteer_user_id = $1 ORDER BY k.acknowledged_at`
+        ),
         notifications: await q("SELECT type, title, created_at, read_at FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 500"),
         notification_preferences: await q("SELECT type, email, in_app FROM notification_preferences WHERE user_id = $1"),
         reports_filed: await q("SELECT category, details, status, created_at FROM user_reports WHERE reporter_user_id = $1"),
@@ -119,6 +139,15 @@ export function registerAccountRoutes(app: Express) {
         for (const t of ["sessions", "user_roles", "notification_preferences", "notifications", "user_availability", "verification_documents", "password_reset_tokens", "email_verification_tokens"]) {
           await c.query(`DELETE FROM ${t} WHERE user_id = $1`, [user.id]);
         }
+        // Shared service records stop verifying, and their stored copy loses the person's name.
+        await c.query(
+          `UPDATE service_records SET revoked_at = COALESCE(revoked_at, NOW()),
+                  snapshot = jsonb_set(snapshot, '{volunteer_name}', '"Deleted member"'::jsonb, true)
+            WHERE volunteer_user_id = $1`,
+          [user.id]
+        );
+        await c.query("UPDATE guardian_consents SET status = 'replaced', responded_at = NOW() WHERE volunteer_user_id = $1 AND status = 'pending'", [user.id]);
+        await c.query("UPDATE user_profiles SET birth_date = NULL WHERE user_id = $1", [user.id]);
         await c.query("DELETE FROM organization_members WHERE user_id = $1", [user.id]);
         await c.query("UPDATE platform_admins SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL", [user.id]);
         await c.query("COMMIT");

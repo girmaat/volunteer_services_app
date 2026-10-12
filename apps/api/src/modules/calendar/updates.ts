@@ -11,7 +11,7 @@ import { notify } from "../notifications/service";
 
 export async function commitmentIcs(commitmentId: string) {
   const r = await pool.query(
-    `SELECT c.id, c.start_at, c.end_at, c.status, c.ics_sequence, r.title, r.mode, r.public_area, r.exact_address, r.duration_minutes, r.timezone,
+    `SELECT c.id, c.start_at, c.end_at, c.status, c.ics_sequence, r.title, r.mode, r.public_area, r.exact_address, r.duration_minutes, r.timezone, r.schedule_type, r.recurrence_rule,
             c.volunteer_user_id, a.id AS application_id
        FROM request_commitments c
        JOIN service_requests r ON r.id = c.request_id
@@ -38,7 +38,9 @@ export async function commitmentIcs(commitmentId: string) {
       url: link,
       sequence: Number(c.ics_sequence) || 0,
       canceled,
-      method: canceled ? "CANCEL" : "REQUEST"
+      method: canceled ? "CANCEL" : "REQUEST",
+      rrule: c.schedule_type === "recurring" ? c.recurrence_rule : null,
+      timezone: c.timezone
     })
   };
 }

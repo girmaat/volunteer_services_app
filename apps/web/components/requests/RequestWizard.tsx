@@ -3,7 +3,7 @@ import { AlertTriangle, Check, Lock } from "lucide-react";
 import { Button, Card, Checkbox, Notice, SubmitButton, buttonClass } from "../ui";
 import { cn } from "../../lib/cn";
 import type { Category, OwnerRequest } from "../../lib/requests";
-import { COMMON_TIMEZONES, DAY_LABELS, WEEK_DAYS, describeRrule, formatInZone, isoToZonedLocal, rruleDays } from "../../lib/time";
+import { COMMON_TIMEZONES, DAY_LABELS, WEEK_DAYS, describeRrule, formatInZone, isoToZonedLocal, rruleDays, zoneOr } from "../../lib/time";
 
 const STEPS = ["Basics", "When", "Where", "Requirements", "Review"] as const;
 
@@ -106,7 +106,7 @@ export default function RequestWizard({
   canPostSensitive: boolean;
 }) {
   const d = draft;
-  const tz = d?.timezone || "America/New_York";
+  const tz = zoneOr(d?.timezone);
   const id = d?.id;
   // Editing a request that is already live: changes save per step; there's nothing to publish.
   const live = Boolean(d?.status && !["draft"].includes(d.status) && d.review_status !== "rejected");
@@ -402,13 +402,23 @@ export default function RequestWizard({
             {[
               ["requiresCar", "Have a car", d.requires_car],
               ["requiresBackgroundCheck", "Have a cleared background check", d.requires_background_check],
-              ["requiresTraining", "Complete training first", d.requires_training],
-              ["requiresWaiver", "Sign a waiver", d.requires_waiver],
-              ...(owner === "org" ? [["requiresGuardianConsent", "If under 18, have a parent or guardian’s consent", d.requires_guardian_consent]] : [])
+              // Training and waivers are forms the organization attaches under Documents; individuals have none.
+              ...(owner === "org"
+                ? [
+                    ["requiresTraining", "Complete training first", d.requires_training],
+                    ["requiresWaiver", "Sign a waiver", d.requires_waiver],
+                    ["requiresGuardianConsent", "If under 18, have a parent or guardian’s consent", d.requires_guardian_consent]
+                  ]
+                : [])
             ].map(([n, l, v]) => (
               <Checkbox key={String(n)} id={`w-${String(n)}`} name={String(n)} defaultChecked={Boolean(v)} label={String(l)} />
             ))}
           </fieldset>
+          {owner === "org" ? (
+            <p className="m-0 -mt-2 text-sm text-muted">
+              A waiver or training needs a matching form in <Link href="/org/documents" className="font-semibold text-primary underline">Documents</Link>, assigned to all requests or this one.
+            </p>
+          ) : null}
           <div className="grid gap-1.5">
             <label htmlFor="w-eq" className={label}>
               Equipment or what to bring <span className="font-normal text-muted">(optional)</span>

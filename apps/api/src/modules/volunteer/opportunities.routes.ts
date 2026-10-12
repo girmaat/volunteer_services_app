@@ -4,6 +4,7 @@ import { z } from "zod";
 import { cachedUserGeo } from "../../lib/geoRuntime";
 import { requireVolunteerUser } from "../../middleware/auth";
 import { listVolunteerSavedOpportunities, volunteerOpportunityRowsForUser } from "./helpers";
+import { visibleToViewerAgeSql } from "../../lib/age";
 import { pool } from "../../lib/db";
 import { discoverableSql } from "../requests/lifecycle";
 import { applyEligibility } from "../requests/eligibility";
@@ -109,7 +110,7 @@ export async function recommendedFor(user: { id: string }): Promise<{ rows: any[
           LIMIT 1
         ) a ON TRUE
         WHERE
-          ${discoverableSql("o")} AND NOT o.is_sensitive
+          ${discoverableSql("o")} AND NOT o.is_sensitive AND ${visibleToViewerAgeSql("o", "$1")}
           AND COALESCE(o.mode, 'remote') = ANY($7::text[])
       )
       SELECT

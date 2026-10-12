@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { backendFetch } from "../lib/backend";
-import { zonedLocalToIso } from "../../lib/time";
+import { zonedLocalToIso, zoneOr } from "../../lib/time";
 import { ReviewBody } from "@thankyou/contracts";
 
 const ok = (s: string) => /^[0-9a-f-]{36}$/i.test(s);
@@ -12,7 +12,7 @@ const msg = async (r: Response) => ((await r.json().catch(() => null)) as { mess
 export async function applicantAction(requestId: string, back: string, appId: string, fd: FormData) {
   if (!ok(requestId) || !ok(appId) || !backOk(back)) redirect("/dashboard");
   const action = String(fd.get("action") || "");
-  const tz = String(fd.get("tz") || "America/New_York");
+  const tz = zoneOr(fd.get("tz") as string | null);
   const startAt = zonedLocalToIso(String(fd.get("startAt") || ""), tz);
   const amount = String(fd.get("acceptedAmount") || "").trim();
   const r = await backendFetch(`/v1/requests/${requestId}/applicants/${appId}`, {

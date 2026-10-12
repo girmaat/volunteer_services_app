@@ -308,3 +308,52 @@ and per-volunteer approved / waiting / not approved (minors' emails left out). T
 includes the whole "to" day (it used to stop at midnight before it) and filters by when the work
 happened. Exports: Requests CSV, Volunteers CSV, Summary PDF. Covered by an API test with known
 numbers and the extended U16 E2E.
+
+### Review fixes (app review of 2026-10-11)
+
+**Fixed first**
+- Deleting an account now revokes every shared service record (the public page shows "revoked" and
+  no name) and withdraws pending guardian requests.
+- Organization staff must be adults: starting, joining or accepting an invite to an organization
+  refuses a known minor; with no birth date on file the person confirms they're 18+ (checkbox on all
+  three forms).
+- One accept rule for all three accept paths (owner view, team PATCH, requester inbox): a free spot
+  and, on requests with a goal, an amount that fits the offer and what's left.
+- Minors' emails are hidden in the roster and attendance lists; manual attendance needs an accepted
+  volunteer, a sensible time range and cleared prerequisites, like live check-in.
+
+**Gaps closed**
+- Listings for a signed-in minor leave out individual requests and ones with a higher minimum age
+  (the detail page still opens and explains why).
+- "Waiver required" / "training required" need a matching form attached before publishing;
+  individuals can't set them (the wizard hides them).
+- Data export adds contributions, decisions, shared records, guardian consents and signed forms.
+- Material edits to a live request (details, area, address, mode, accessibility, what to bring,
+  requirements) are logged, accepted volunteers are told what changed and confirm again.
+- Calendar updates for repeating shifts too (RRULE with the request's time zone).
+- Organizations asked for more information, rejected or suspended drop out of listings.
+- Hours review pages through entries with a total; reports say "showing N of M" and their CSV
+  exports carry every row; volunteer-hours totals cover every volunteer.
+- **Two-step sign-in** (SAFE-05): authenticator app (TOTP, RFC 6238, no new dependencies), secrets
+  encrypted at rest, 10 single-use recovery codes, replay and 5-try limits; required for platform
+  staff when `MFA_REQUIRED_FOR_STAFF` is on (default in production); org admins and managers get a
+  prompt on their dashboard. Settings → Account; sign-in asks for the code at `/login/code`.
+- **Saved-search alerts** (VOL-03): "Save search" on the opportunity feeds; daily or weekly
+  notifications about requests that went live since the last check; manage under Saved.
+
+**Inconsistencies**
+- Times use the request's zone or the viewer's own (now on `/v1/me`); the leftover fixed
+  "America/New_York" spots are gone, and anything formatted without a zone uses `APP_TIMEZONE`
+  (default America/New_York) instead of the server's UTC.
+- The retired free-form volunteer log endpoints (impact, tasks, outcomes, hours) are removed; hours
+  go through contributions. Old entries stay in the data export.
+- Reports, the roster and attendance lists are for admins and managers only (members are redirected).
+
+**Performance** (migration 0013 adds the indexes)
+- Applicants list at 300 accepted volunteers: 250 ms → 37 ms median (prerequisites and review state
+  are batched; the page no longer makes one review call per volunteer).
+- Discovery skips the goal subquery for requests without a goal: 12 ms median.
+
+**Testing**: 1,830 API tests (new `test/review-fixes.test.ts`, `test/mfa.test.ts`) and 21 E2E
+scripts (new U17: two-step sign-in, saved-search alerts) pass twice in a row. `E2E_WEBKIT=1 pnpm e2e`
+adds an iPhone Safari (WebKit) project where WebKit is installed; it wasn't run here.

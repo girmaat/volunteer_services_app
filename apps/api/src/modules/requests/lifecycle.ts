@@ -151,7 +151,8 @@ export async function transitionRequest(
 async function transitionWithClient(c: PoolClient, requestId: string, event: RequestEvent, actor: Actor, reason: string | null): Promise<TransitionResult> {
   const cur = await c.query(
     `SELECT r.id, r.status, r.review_status, r.is_sensitive, r.category, r.requester_user_id, r.requester_org_slug,
-            r.title, r.description, r.mode, r.public_area, r.starts_at, r.ends_at, r.schedule_type, r.removed_at
+            r.title, r.description, r.mode, r.public_area, r.starts_at, r.ends_at, r.schedule_type, r.removed_at,
+            r.requires_waiver, r.requires_training
        FROM service_requests r WHERE r.id = $1 FOR UPDATE`,
     [requestId]
   );
@@ -171,6 +172,8 @@ async function transitionWithClient(c: PoolClient, requestId: string, event: Req
     case "publish": {
       const missing = publishProblems(row);
       if (missing.length) throw new TransitionError(422, "incomplete", `Add ${missing.join(", ")} before publishing`);
+      const forms = await formProblems(c, row);
+      if (forms.length) throw new TransitionError(422, "forms_missing", forms.join("; "));
       if (review === "pending_review") throw new TransitionError(409, "in_review", "This request is already waiting for review");
       if (row.is_sensitive) {
         // Sensitive categories wait for an admin; status stays draft until approved.
@@ -261,6 +264,23 @@ export function publishProblems(row: Record<string, any>): string[] {
   return missing;
 }
 
+/**
+ * "Waiver required" and "training required" must point at a real form the volunteer signs; otherwise
+ * the flag promises a check nobody can complete. Individual requests have no forms, so they can't set them.
+ */
+export async function formProblems(db: Db, row: Record<string, any>): Promise<string[]> {
+  const need = [row.requires_waiver ? "waiver" : null, row.requires_training ? "training" : null].filter(Boolean) as string[];
+  if (!need.length) return [];
+  if (!row.requester_org_slug) return ["Only organizations can require a waiver or training. Turn those off, or describe what you need in the details"];
+  const have = await db.query(
+    `SELECT DISTINCT d.doc_type FROM org_documents d JOIN org_document_assignments a ON a.org_document_id = d.id
+      WHERE d.org_slug = $1 AND d.active AND d.require_ack AND d.doc_type = ANY($2::text[]) AND (a.request_id = $3 OR a.request_id IS NULL)`,
+    [row.requester_org_slug, need, row.id]
+  );
+  const got = new Set(have.rows.map((r: { doc_type: string }) => r.doc_type));
+  return need.filter((t) => !got.has(t)).map((t) => (t === "waiver" ? "Attach a waiver form under Organization → Documents (this request says a waiver is required)" : "Attach a training document under Organization → Documents (this request says training is required)"));
+}
+
 async function afterTransition(res: TransitionResult, actor: Actor, reason: string | null) {
   if ((res.event === "publish" || res.event === "approve") && res.to === "open") {
     // Geocode the public area (never the exact address) so "Near you" and distances work.
@@ -341,5 +361,5 @@ export async function hasOpenSlot(requestId: string): Promise<boolean> {
 export function discoverableSql(alias = "r") {
   return `${alias}.status IN ('open', 'pending') AND ${alias}.review_status = 'approved' AND ${alias}.removed_at IS NULL
     AND NOT EXISTS (SELECT 1 FROM users sb WHERE sb.id = ${alias}.requester_user_id AND sb.shadow_banned)
-    AND NOT EXISTS (SELECT 1 FROM organizations so WHERE so.slug = ${alias}.requester_org_slug AND (so.suspended_at IS NOT NULL OR so.verification_status = 'suspended'))`;
+    AND NOT EXISTS (SELECT 1 FROM organizations so WHERE so.slug = ${alias}.requester_org_slug AND (so.suspended_at IS NOT NULL OR so.verification_status IN ('needs_info', 'rejected', 'suspended')))`;
 }

@@ -1,5 +1,7 @@
 
 import { HttpUrl } from "@thankyou/contracts";
+import { startMfaChallenge } from "../modules/mfa/routes";
+import { mfaRequiredForStaff } from "../lib/env";
 import { ageOn, MIN_ACCOUNT_AGE, parseBirthDate } from "../lib/age";
 import type { Request, Response } from "express";
 import type { Pool } from "pg";
@@ -41,9 +43,15 @@ export async function me(pool: Pool, req: Request, res: Response) {
     can(user as PolicyUser, "org:act")
       ? getOrgContextForUser(pool, String(user.id), contextOrgSlug((user as any).active_context)).catch(() => null)
       : Promise.resolve(null),
-    pool.query("SELECT display_name, full_name, avatar_url FROM user_profiles WHERE user_id = $1", [user.id]).catch(() => ({ rows: [] as any[] }))
+    pool
+      .query(
+        `SELECT p.display_name, p.full_name, p.avatar_url, a.timezone, u.mfa_enabled_at
+           FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id LEFT JOIN user_availability a ON a.user_id = u.id WHERE u.id = $1`,
+        [user.id]
+      )
+      .catch(() => ({ rows: [] as any[] }))
   ]);
-  const prof = (profile.rows[0] ?? {}) as { display_name?: string | null; full_name?: string | null; avatar_url?: string | null };
+  const prof = (profile.rows[0] ?? {}) as { display_name?: string | null; full_name?: string | null; avatar_url?: string | null; timezone?: string | null; mfa_enabled_at?: string | null };
   const contexts = availableContexts(user as PolicyUser);
   const active = user.active_context && (contexts as string[]).includes(user.active_context) ? user.active_context : null;
   return res.json({
@@ -60,7 +68,12 @@ export async function me(pool: Pool, req: Request, res: Response) {
       org_context: orgContext,
       // How to greet them: display name, else first name. Never derived from the email address.
       display_name: (prof.display_name || "").trim() || (prof.full_name || "").trim().split(/\s+/)[0] || null,
-      avatar_url: prof.avatar_url ?? null
+      avatar_url: prof.avatar_url ?? null,
+      // The time zone they picked (availability); pages show times in it.
+      timezone: prof.timezone ?? null,
+      mfa_enabled: Boolean(prof.mfa_enabled_at),
+      // Staff who must turn on two-step sign-in before the admin tools open.
+      mfa_setup_required: !prof.mfa_enabled_at && (flags.isPlatformAdmin || flags.isModerator) && mfaRequiredForStaff()
     }
   });
 }
@@ -283,6 +296,10 @@ export async function login(pool: Pool, req: Request, res: Response) {
   if (!row.email_verified_at) {
     return res.status(403).json({ message: "Please verify your email to log in" });
   }
+
+  // Two-step sign-in: no session until the code checks out (POST /v1/auth/mfa).
+  const mfaToken = await startMfaChallenge(String(row.id));
+  if (mfaToken) return res.json({ mfa_required: true, mfa_token: mfaToken });
 
   const session = await createSession(pool, String(row.id));
   const user = await requireUserBySession(pool, session.sessionToken);

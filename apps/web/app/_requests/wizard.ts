@@ -1,7 +1,7 @@
 import "server-only";
 
 import { backendFetch } from "../lib/backend";
-import { zonedLocalToIso } from "../../lib/time";
+import { zonedLocalToIso, zoneOr } from "../../lib/time";
 import { RequestFields } from "@thankyou/contracts";
 
 const LABELS: Record<string, string> = {
@@ -27,7 +27,7 @@ export function errorText(body: unknown): string {
 
 /** Reads one wizard step from the form into API fields. */
 function fieldsForStep(step: number, fd: FormData): Record<string, unknown> {
-  const tz = str(fd, "timezone") || "America/New_York";
+  const tz = zoneOr(str(fd, "timezone"));
   switch (step) {
     case 1:
       return {

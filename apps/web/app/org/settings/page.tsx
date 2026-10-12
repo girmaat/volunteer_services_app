@@ -134,7 +134,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
   return (
     <div className="grid max-w-3xl gap-6">
       <PageHeader title="Organization settings" description="Your public profile, how volunteers reach you, and verification." />
-      <OrgTabs />
+      <OrgTabs role={ctx?.membership.role} />
       {saved ? <Notice tone="success">Saved.</Notice> : null}
       {error ? <Notice tone="danger">Couldn&apos;t save changes: {error}</Notice> : null}
 

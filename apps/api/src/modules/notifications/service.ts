@@ -8,7 +8,7 @@ import { renderEmail, type EmailContent } from "./templates";
 /** Every notification type, its settings label, and whether email is on by default. */
 export const NOTIFICATION_TYPES = {
   application_received: { label: "Someone applies to your request", email: true },
-  application_status: { label: "Your application is accepted, waitlisted or declined", email: true },
+  application_status: { label: "Your application is accepted, waitlisted or declined, or a request you’re in changes", email: true },
   attendance_reminder: { label: "Reminders to confirm before a shift (48 h and 2 h)", email: true },
   message_received: { label: "New messages (email at most once an hour)", email: true },
   review_requested: { label: "Leave a review after something is completed", email: true },
@@ -17,7 +17,8 @@ export const NOTIFICATION_TYPES = {
   disputes: { label: "Disputes you opened or are part of", email: true },
   hours: { label: "Hours to approve, and decisions on hours you gave", email: true },
   calendar: { label: "Calendar updates when a shift moves or is canceled", email: true },
-  prerequisites: { label: "Forms and consent needed before a shift", email: true }
+  prerequisites: { label: "Forms and consent needed before a shift", email: true },
+  alerts: { label: "New requests matching your saved searches", email: true }
 } as const;
 export type NotificationType = keyof typeof NOTIFICATION_TYPES;
 

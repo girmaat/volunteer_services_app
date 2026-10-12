@@ -4,7 +4,7 @@ import { backendFetch } from "../../app/lib/backend";
 import { applicantAction, attendanceAction, noShowAction } from "../../app/_requests/applicant-actions";
 import { Button, EmptyState, Notice, PageHeader, StatusPill, Toast, VerifiedBadge } from "../ui";
 import ReviewPanel, { type ReviewState } from "../reviews/ReviewPanel";
-import { formatInZone, isoToZonedLocal } from "../../lib/time";
+import { formatInZone, isoToZonedLocal, zoneOr } from "../../lib/time";
 
 type Applicant = {
   id: string;
@@ -32,6 +32,7 @@ type Applicant = {
   accepted_amount?: number | null;
   offer_expires_at?: string | null;
   prerequisites?: { status: "cleared" | "pending" | "blocked"; items: { label: string; state: string; detail: string | null }[] };
+  review?: ReviewState | null;
 };
 
 const FLASH: Record<string, string> = {
@@ -65,6 +66,7 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
   if (!res.ok) return <Notice tone="danger">Applicants couldn&apos;t load.</Notice>;
   const data = (await res.json()) as {
     request: {
+      timezone?: string | null;
       id: string;
       title: string;
       status: string;
@@ -82,7 +84,8 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
     applicants: Applicant[];
   };
   const back = `${base}/${requestId}/applications`;
-  const tz = "America/New_York";
+  // Times show in the request's own zone (where the work happens).
+  const tz = zoneOr(data.request.timezone);
   const accepted = data.applicants.filter((a) => ["accepted", "confirmed", "completed"].includes(a.status)).length;
   // Organizations take attendance here: who is checked in right now.
   const isOrg = base === "/org/requests";
@@ -91,13 +94,8 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
     const r = await backendFetch(`/v1/org/attendance?requestId=${requestId}&status=open`);
     if (r.ok) for (const row of ((await r.json()) as { attendance?: { volunteer_user_id: string }[] }).attendance ?? []) openAttendance.add(row.volunteer_user_id);
   }
-  const reviews = await Promise.all(
-    data.applicants.map(async (a) => {
-      if (a.status !== "completed") return null;
-      const r = await backendFetch(`/v1/reviews/applications/${a.id}`);
-      return r.ok ? ((await r.json()) as ReviewState) : null;
-    })
-  );
+  // The applicants response carries each completed volunteer's review state (no per-person calls).
+  const reviews = data.applicants.map((a) => (a.status === "completed" ? (a.review ?? null) : null));
 
   return (
     <>

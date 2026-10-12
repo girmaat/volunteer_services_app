@@ -4,7 +4,7 @@
  */
 import { pool } from "../../lib/db";
 import { enqueue } from "../../jobs/queue";
-import { hasOpenSlot, syncStaffing } from "./lifecycle";
+import { hasOpenSlot, staffingCounts, syncStaffing } from "./lifecycle";
 import { contributionFromCompletion } from "../contributions/service";
 
 export async function afterApplicationUpdate(applicationId: string, status: string, actorUserId: string | null) {
@@ -31,3 +31,33 @@ export async function applicationHasSlot(applicationId: string) {
 }
 
 export const FULL_MESSAGE = "Every spot is filled or offered. Waitlist this volunteer, or raise the number of volunteers needed first.";
+
+export type AcceptCheck =
+  | { ok: true; acceptedAmount: number | null }
+  | { ok: false; status: 404 | 409 | 422; code: string; message: string };
+
+/**
+ * The one rule for accepting a volunteer, used by every accept path (owner view, org team PATCH,
+ * requester inbox): a free spot (unless the spot was already offered to them), and on requests with a
+ * goal, an accepted amount that fits what they offered and what's left of the goal (REQ-05).
+ */
+export async function checkAccept(applicationId: string, requestedAmount?: number | null): Promise<AcceptCheck> {
+  const a = (await pool.query("SELECT status, request_id, offered_amount::float AS offered_amount FROM request_applications WHERE id = $1", [applicationId])).rows[0];
+  if (!a) return { ok: false, status: 404, code: "not_found", message: "Applicant not found" };
+  if (a.status !== "offered" && !(await hasOpenSlot(String(a.request_id)))) return { ok: false, status: 409, code: "full", message: FULL_MESSAGE };
+  const s = await staffingCounts(pool, String(a.request_id));
+  if (s.target == null) return { ok: true, acceptedAmount: null };
+  const remaining = Math.max(0, Math.round((s.target - s.committed) * 100) / 100);
+  const offered = a.offered_amount as number | null;
+  const amount = requestedAmount ?? (offered != null ? (s.allowOverfill ? offered : Math.min(offered, remaining)) : null);
+  if (amount == null || amount <= 0) {
+    return { ok: false, status: 409, code: "target_met", message: `The goal of ${s.target} ${s.unit} is already committed. Turn on “accept more than the goal” to take more.` };
+  }
+  if (offered != null && amount > offered) return { ok: false, status: 422, code: "over_offer", message: `They offered ${offered} ${s.unit}; you can accept that much or less` };
+  if (!s.allowOverfill && amount > remaining) {
+    return { ok: false, status: 409, code: "over_target", message: `Only ${remaining} ${s.unit} of the goal ${remaining === 1 ? "is" : "are"} left. Accept part of their offer.` };
+  }
+  return { ok: true, acceptedAmount: amount };
+}
+
+export const acceptError = (c: Extract<AcceptCheck, { ok: false }>) => ({ error: { code: c.code, message: c.message }, message: c.message });

@@ -45,21 +45,22 @@ export function registerContributionRoutes(app: Express) {
       const user = (await requireAuthedUser(req, res)) as PolicyUser | null;
       if (!user) return;
       const q = z
-        .object({ as: z.enum(["org", "requester"]).default("org"), status: z.enum(["waiting", "disputed", "decided"]).default("waiting"), requestId: uuid.optional() })
+        .object({ as: z.enum(["org", "requester"]).default("org"), status: z.enum(["waiting", "disputed", "decided"]).default("waiting"), requestId: uuid.optional(),
+                   limit: z.coerce.number().int().min(1).max(200).default(100), offset: z.coerce.number().int().min(0).max(100_000).default(0) })
         .safeParse(req.query);
       if (!q.success) return res.status(400).json({ message: "Invalid query" });
       const org = q.data.as === "org" ? orgMembership(user) : null;
       if (q.data.as === "org" && (!org || (org.role !== "admin" && org.role !== "manager"))) return res.status(403).json({ message: "Only organization admins and managers review hours" });
       const statuses = q.data.status === "waiting" ? ["pending"] : q.data.status === "disputed" ? ["disputed"] : ["approved", "adjusted", "rejected", "revision_requested", "unverified"];
       const r = await pool.query(
-        `SELECT ${LIST_COLUMNS}
+        `SELECT ${LIST_COLUMNS}, COUNT(*) OVER () AS total_count
            FROM contributions c
            JOIN service_requests r ON r.id = c.request_id
            LEFT JOIN user_profiles vp ON vp.user_id = c.volunteer_user_id
           WHERE ${org ? "c.org_slug = $1" : "c.org_slug IS NULL AND r.requester_user_id = $1"}
             AND c.status = ANY($2::text[]) AND ($3::uuid IS NULL OR c.request_id = $3)
-          ORDER BY ${q.data.status === "decided" ? "c.decided_at DESC" : "c.created_at"} LIMIT 200`,
-        [org ? org.slug : user.id, statuses, q.data.requestId ?? null]
+          ORDER BY ${q.data.status === "decided" ? "c.decided_at DESC" : "c.created_at"}, c.id LIMIT $4 OFFSET $5`,
+        [org ? org.slug : user.id, statuses, q.data.requestId ?? null, q.data.limit, q.data.offset]
       );
       const conflicts = org
         ? new Set((await pool.query("SELECT volunteer_user_id FROM staff_conflicts WHERE org_slug = $1 AND staff_user_id = $2", [org.slug, user.id])).rows.map((x) => String(x.volunteer_user_id)))
@@ -67,7 +68,12 @@ export function registerContributionRoutes(app: Express) {
       const orgOk = org
         ? Boolean((await pool.query("SELECT 1 FROM organizations WHERE slug = $1 AND verification_status = 'approved' AND suspended_at IS NULL", [org.slug])).rowCount)
         : true;
-      const items = r.rows.map((c) => {
+      const total = r.rows.length ? Number(r.rows[0].total_count) : q.data.offset ? Number((await pool.query(
+        `SELECT COUNT(*)::int AS n FROM contributions c JOIN service_requests r ON r.id = c.request_id
+          WHERE ${org ? "c.org_slug = $1" : "c.org_slug IS NULL AND r.requester_user_id = $1"} AND c.status = ANY($2::text[]) AND ($3::uuid IS NULL OR c.request_id = $3)`,
+        [org ? org.slug : user.id, statuses, q.data.requestId ?? null]
+      )).rows[0].n) : 0;
+      const items = r.rows.map(({ total_count: _t, ...c }) => {
         let why: string | null = null;
         if (String(c.volunteer_user_id) === user.id) why = "Your own hours: another reviewer approves these";
         else if (conflicts.has(String(c.volunteer_user_id))) why = "You declared a conflict with this volunteer";
@@ -87,7 +93,12 @@ export function registerContributionRoutes(app: Express) {
         [org ? org.slug : user.id]
       );
       const n = Object.fromEntries(counts.rows.map((x) => [x.status, x.n]));
-      return res.json({ items, counts: { waiting: n.pending ?? 0, disputed: n.disputed ?? 0 }, org_verified: orgOk });
+      return res.json({
+        items,
+        page: { total, offset: q.data.offset, limit: q.data.limit, next_offset: q.data.offset + items.length < total ? q.data.offset + items.length : null },
+        counts: { waiting: n.pending ?? 0, disputed: n.disputed ?? 0 },
+        org_verified: orgOk
+      });
     })
   );
 

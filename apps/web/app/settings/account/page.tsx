@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { Button, ButtonLink, Card, Notice } from "../../../components/ui";
+import TwoStep from "./TwoStep";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,12 @@ export default async function AccountPage(props: { searchParams?: Promise<{ ok?:
             </Link>
           </div>
         </form>
+      </Card>
+
+      <Card id="two-step" className="grid gap-3">
+        <h2 className="m-0 text-lg">Two-step sign-in</h2>
+        {user?.mfa_setup_required ? <Notice tone="warning">Admin tools need two-step sign-in. Set it up below.</Notice> : null}
+        <TwoStep enabled={Boolean(user?.mfa_enabled)} required={Boolean(user?.is_platform_admin || user?.platform_admin_role === "moderator")} />
       </Card>
 
       <Card className="grid gap-3">

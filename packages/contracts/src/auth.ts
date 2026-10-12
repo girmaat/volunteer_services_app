@@ -32,7 +32,9 @@ export const CurrentUser = z.object({
   banned_until: z.string().nullable(),
   is_platform_admin: z.boolean().optional(),
   is_super_admin: z.boolean().optional(),
-  platform_admin_role: z.enum(["admin", "super"]).nullable().optional()
+  platform_admin_role: z.enum(["admin", "super"]).nullable().optional(),
+  timezone: z.string().nullable().optional(),
+  mfa_enabled: z.boolean().optional()
 });
 export type CurrentUser = z.infer<typeof CurrentUser>;
 

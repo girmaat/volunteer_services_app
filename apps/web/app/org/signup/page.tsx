@@ -26,7 +26,7 @@ async function createOrgAction(fd: FormData) {
   const res = await backendFetch("/v1/orgs/create", {
     method: "POST",
     headers: { "content-type": "application/json", ...(await forwardHeaders()) },
-    body: JSON.stringify({ org: { name: s("name"), summary: s("summary"), location: s("location") }, admin: { fullName: s("fullName") || undefined } }),
+    body: JSON.stringify({ org: { name: s("name"), summary: s("summary"), location: s("location") }, admin: { fullName: s("fullName") || undefined, adultConfirmed: fd.get("adultConfirmed") === "yes" } }),
     cache: "no-store"
   });
   if (res.status === 401) redirect("/login?returnTo=/org/signup");
@@ -43,7 +43,7 @@ async function joinOrgAction(fd: FormData) {
   const res = await backendFetch("/v1/orgs/join", {
     method: "POST",
     headers: { "content-type": "application/json", ...(await forwardHeaders()) },
-    body: JSON.stringify({ orgSlug }),
+    body: JSON.stringify({ orgSlug, adultConfirmed: fd.get("adultConfirmed") === "yes" }),
     cache: "no-store"
   });
   if (res.status === 401) redirect("/login?returnTo=/org/signup");
@@ -124,6 +124,10 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
                   <input id="c-you" name="fullName" required autoComplete="name" className={input} />
                 </div>
               ) : null}
+              <label htmlFor="c-adult" className="flex items-start gap-2 text-sm">
+                <input id="c-adult" name="adultConfirmed" value="yes" type="checkbox" required className="mt-1 h-4 w-4" />
+                <span>I’m 18 or older. Organization team members must be adults.</span>
+              </label>
               <div>
                 <Button type="submit" size="lg">
                   Create organization
@@ -144,6 +148,10 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
                 </label>
                 <input id="j-slug" name="orgSlug" required placeholder="e.g. thankyou.org/organizations/harbor-food-bank" className={input} />
               </div>
+              <label htmlFor="j-adult" className="flex items-start gap-2 text-sm">
+                <input id="j-adult" name="adultConfirmed" value="yes" type="checkbox" required className="mt-1 h-4 w-4" />
+                <span>I’m 18 or older. Organization team members must be adults.</span>
+              </label>
               <div>
                 <Button type="submit" variant="secondary">
                   Ask to join

@@ -30,6 +30,10 @@ export type CurrentUser = {
   unread_notifications?: number;
   display_name?: string | null;
   avatar_url?: string | null;
+  /** The time zone they picked (null until they set availability). */
+  timezone?: string | null;
+  mfa_enabled?: boolean;
+  mfa_setup_required?: boolean;
 
   // Platform admin flags (present when returned from /v1/me)
   is_platform_admin?: boolean;

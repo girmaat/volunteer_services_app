@@ -1,5 +1,22 @@
 /** Time-zone helpers (no dependencies): wall-clock ⇄ UTC for a named IANA zone, and display formatting. */
 
+/** Used only when neither the request nor the viewer has a time zone (the pilot runs in New York). */
+export const DEFAULT_TZ = "America/New_York";
+
+/** A usable IANA zone: the first valid candidate, else DEFAULT_TZ. */
+export function zoneOr(...candidates: (string | null | undefined)[]): string {
+  for (const c of candidates) {
+    if (!c) continue;
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: c });
+      return c;
+    } catch {
+      /* not a zone */
+    }
+  }
+  return DEFAULT_TZ;
+}
+
 export const COMMON_TIMEZONES = [
   "America/New_York",
   "America/Chicago",

@@ -34,6 +34,7 @@ type Impact = {
     closed: number;
   };
   open_checkins: number;
+  per_request_total?: number;
   per_request: {
     request_id: string;
     request_title: string;
@@ -50,6 +51,7 @@ type Impact = {
   }[];
 };
 type Volunteers = {
+  volunteers_total?: number;
   approved_hours: number;
   waiting_hours: number;
   volunteers: {
@@ -90,6 +92,17 @@ export default async function ReportsPage(props: {
   const ctx = await getOrgContext();
   if (!ctx) redirect("/org/signup");
   if (!ctx.org.onboarding_completed) redirect("/org/onboarding");
+  if (ctx.membership.role === "member") {
+    return (
+      <>
+        <PageHeader title="Reports" />
+        <OrgTabs role="member" />
+        <div className="mt-6">
+          <Notice tone="info">Reports show volunteers’ names and hours, so only admins and managers can open them.</Notice>
+        </div>
+      </>
+    );
+  }
 
   const one = (k: string) => (typeof sp[k] === "string" ? String(sp[k]) : "");
   const from = /^\d{4}-\d{2}-\d{2}$/.test(one("from")) ? one("from") : "";
@@ -145,7 +158,7 @@ export default async function ReportsPage(props: {
           </>
         }
       />
-      <OrgTabs />
+      <OrgTabs role={ctx.membership.role} />
 
       <form method="get" className="mb-6 flex flex-wrap items-end gap-3">
         <label className="grid gap-1 text-sm font-medium">
@@ -333,6 +346,14 @@ export default async function ReportsPage(props: {
                 </Card>
               </>
             )}
+            {(impact.per_request_total ?? 0) > impact.per_request.length ? (
+              <p className="m-0 mt-3 text-sm text-muted">
+                Showing the top {impact.per_request.length} of {impact.per_request_total} requests.{" "}
+                <a href={exp("impact", "csv")} className="font-semibold text-primary underline">
+                  Download all as CSV
+                </a>
+              </p>
+            ) : null}
           </section>
 
           <section aria-labelledby="flow-h" className="mt-10">
@@ -441,6 +462,14 @@ export default async function ReportsPage(props: {
             </Card>
           </>
         )}
+        {vols && (vols.volunteers_total ?? 0) > vols.volunteers.length ? (
+          <p className="m-0 mt-3 text-sm text-muted">
+            Showing the top {vols.volunteers.length} of {vols.volunteers_total} volunteers.{" "}
+            <a href={exp("volunteer_hours", "csv")} className="font-semibold text-primary underline">
+              Download all as CSV
+            </a>
+          </p>
+        ) : null}
         <p className="m-0 mt-3 text-xs text-muted">
           Service volunteers log outside ThankYou is self-reported and never included here.
         </p>

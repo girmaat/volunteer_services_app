@@ -31,12 +31,12 @@ export default async function Page(props: { searchParams?: Promise<{ token?: str
 
   const invite = await lookupInvite(token);
 
-  async function acceptInviteAction() {
+  async function acceptInviteAction(fd: FormData) {
     "use server";
     const res = await backendFetch("/v1/org/invites/accept", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ token })
+      body: JSON.stringify({ token, adultConfirmed: fd.get("adultConfirmed") === "yes" })
     });
 
     const json = (await res.json().catch(() => ({}))) as any;
@@ -101,10 +101,12 @@ export default async function Page(props: { searchParams?: Promise<{ token?: str
           </div>
         </div>
       ) : (
-        <form action={acceptInviteAction}>
-          <button className="py-2.5 px-3.5 rounded-md border border-line bg-surface font-extrabold"
-            type="submit" 
-          >
+        <form action={acceptInviteAction} className="grid gap-3">
+          <label htmlFor="inv-adult" className="flex items-start gap-2 text-sm">
+            <input id="inv-adult" name="adultConfirmed" value="yes" type="checkbox" required className="mt-1 h-4 w-4" />
+            <span>I’m 18 or older. Organization team members must be adults.</span>
+          </label>
+          <button className="justify-self-start py-2.5 px-3.5 rounded-md border border-line bg-surface font-extrabold" type="submit">
             Accept invite
           </button>
         </form>

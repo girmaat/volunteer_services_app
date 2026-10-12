@@ -7,6 +7,7 @@
  * people they've blocked. Only `public_area` leaves this module — exact addresses and coordinates
  * are never returned (distance is).
  */
+import { visibleToViewerAgeSql } from "../../lib/age";
 import { pool } from "../../lib/db";
 import type { PolicyUser } from "../../lib/policy";
 import { discoverableSql } from "../requests/lifecycle";
@@ -25,6 +26,8 @@ export type DiscoveryFilters = {
   urgency?: "low" | "normal" | "high";
   tab?: Tab;
   orgSlug?: string;
+  /** Only requests that went live after this time (saved-search alerts). */
+  publishedAfter?: string;
   limit: number;
   offset: number;
 };
@@ -102,7 +105,8 @@ const SELECT = `
   r.volunteers_needed, r.urgency, r.required_skills, r.nice_to_have_skills, r.min_age, r.requires_background_check,
   r.requires_training, r.requires_waiver, r.requires_car, mask_contacts(r.accessibility_notes) AS accessibility_notes, mask_contacts(r.equipment_notes) AS equipment_notes, r.is_sensitive,
   r.target_value::float AS target_value, r.target_unit, r.min_contribution::float AS min_contribution, r.allow_overfill, r.requires_guardian_consent,
-  (SELECT COALESCE(SUM(COALESCE(x.accepted_amount, x.offered_amount)), 0)::float FROM request_applications x WHERE x.request_id = r.id AND x.status IN ('accepted','confirmed','completed')) AS committed_amount,
+  CASE WHEN r.target_value IS NULL THEN 0::float
+       ELSE (SELECT COALESCE(SUM(COALESCE(x.accepted_amount, x.offered_amount)), 0)::float FROM request_applications x WHERE x.request_id = r.id AND x.status IN ('accepted','confirmed','completed')) END AS committed_amount,
   r.status, r.published_at, r.updated_at,
   org.name AS organization_name, org.slug AS organization_slug,
   COALESCE(org.verification_status IN ('approved', 'verified'), FALSE) AS organization_verified,
@@ -155,7 +159,8 @@ const SCORE = `(
 
 export async function discover(viewer: Viewer, f: DiscoveryFilters) {
   const params: unknown[] = viewerParams(viewer);
-  const where: string[] = [VISIBLE];
+  // Lists leave out what a minor can't take part in; the detail page stays reachable and explains why.
+  const where: string[] = [VISIBLE, visibleToViewerAgeSql("r", "$1::uuid")];
   const add = (sql: (n: number) => string, value: unknown) => {
     params.push(value);
     where.push(sql(params.length));
@@ -175,6 +180,7 @@ export async function discover(viewer: Viewer, f: DiscoveryFilters) {
   if (f.startsBefore) add((n) => `(r.starts_at IS NULL OR r.starts_at <= $${n}::timestamptz)`, f.startsBefore);
   if (f.urgency) add((n) => `r.urgency = $${n}`, f.urgency);
   if (f.orgSlug) add((n) => `r.requester_org_slug = $${n}`, f.orgSlug);
+  if (f.publishedAfter) add((n) => `r.published_at > $${n}::timestamptz`, f.publishedAfter);
   if (f.verifiedOrg) where.push(`org.verification_status IN ('approved', 'verified')`);
 
   const tab = f.tab ?? "all";

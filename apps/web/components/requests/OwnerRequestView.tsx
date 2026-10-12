@@ -4,7 +4,7 @@ import { requestAction, deleteDraft, ownerApprovalAction, checkinCodeAction } fr
 import QrCode from "../../app/_components/share/QrCode";
 import { Button, ButtonLink, Card, Notice, PageHeader, StatusPill, Toast } from "../ui";
 import { STATUS_HELP, type Category, type OwnerRequest } from "../../lib/requests";
-import { describeRrule, formatInZone } from "../../lib/time";
+import { describeRrule, formatInZone, zoneOr } from "../../lib/time";
 
 const FLASH: Record<string, string> = {
   published: "Your request is live. We'll let you know when someone applies.",
@@ -37,7 +37,8 @@ const EVENT_LABEL: Record<string, string> = {
   cancel: "Canceled",
   take_down: "Removed by a moderator",
   restore: "Restored by a moderator",
-  migrated: "Imported"
+  migrated: "Imported",
+  material_edit: "Edited (volunteers asked to re-confirm)"
 };
 
 export default function OwnerRequestView({
@@ -61,7 +62,7 @@ export default function OwnerRequestView({
   error?: string;
   extraLinks?: { href: string; label: string }[];
 }) {
-  const tz = r.timezone || "America/New_York";
+  const tz = zoneOr(r.timezone);
   const cat = categories.find((c) => c.slug === r.category);
   const detail = `${base}/${r.id}`;
   const editable = !["completed", "canceled"].includes(r.status);

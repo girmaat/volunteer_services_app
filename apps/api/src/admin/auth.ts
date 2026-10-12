@@ -1,3 +1,4 @@
+import { mfaRequiredForStaff } from "../lib/env";
 import type { Request, Response } from "express";
 import type { Pool } from "pg";
 
@@ -91,6 +92,16 @@ export async function requireAuthedUser(pool: Pool, req: Request, res: Response)
   return user;
 }
 
+/** Platform staff must have two-step sign-in on when the deployment requires it (SAFE-05). */
+async function staffMfaMissing(pool: Pool, userId: string, res: Response) {
+  if (!mfaRequiredForStaff()) return false;
+  const r = await pool.query("SELECT mfa_enabled_at FROM users WHERE id = $1", [userId]);
+  if (r.rows[0]?.mfa_enabled_at) return false;
+  const message = "Turn on two-step sign-in in Settings → Account to use the admin tools.";
+  res.status(403).json({ error: { code: "mfa_required", message }, message });
+  return true;
+}
+
 export async function requirePlatformAdmin(pool: Pool, req: Request, res: Response) {
   const user = await requireAuthedUser(pool, req, res);
   if (!user) return null;
@@ -100,6 +111,7 @@ export async function requirePlatformAdmin(pool: Pool, req: Request, res: Respon
     res.status(403).json({ message: "Forbidden" });
     return null;
   }
+  if (await staffMfaMissing(pool, String((user as any).id), res)) return null;
   return { user, flags };
 }
 
@@ -112,6 +124,7 @@ export async function requireModerator(pool: Pool, req: Request, res: Response) 
     res.status(403).json({ message: "Forbidden" });
     return null;
   }
+  if (await staffMfaMissing(pool, String((user as any).id), res)) return null;
   return { user, flags };
 }
 

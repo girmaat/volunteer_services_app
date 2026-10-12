@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { saveSearchAction } from "../../app/_alerts/actions";
 import { SlidersHorizontal } from "lucide-react";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 import { backendFetch } from "../../app/lib/backend";
@@ -106,6 +107,16 @@ export default async function FindOpportunities({
   // (?filters=open), not a script toggle, so it works without JavaScript.
   const filtersOpen = one(sp.filters) === "open";
   const viewerTz = data?.viewer?.timezone ?? null;
+  // A saved search keeps the lasting filters (not the date window or the page).
+  const savable = new URLSearchParams();
+  if (tab !== "all") savable.set("tab", tab);
+  if (q) savable.set("q", q);
+  if (category) savable.set("category", category);
+  if (mode) savable.set("mode", mode);
+  if (radius && tab === "nearby") savable.set("radius", radius);
+  if (verified) savable.set("verified_org", "true");
+  if (org) savable.set("org", org);
+  const searchName = q || categories.find((c) => c.slug === category)?.label || (verified ? "Verified organizations" : mode ? `${mode} opportunities` : "");
 
   return (
     <div className="grid gap-6">
@@ -201,6 +212,35 @@ export default async function FindOpportunities({
             Results
           </h2>
           {!data ? <Notice tone="danger">Opportunities are unavailable right now. Try again in a moment.</Notice> : null}
+          {one(sp.saved_search) === "1" ? (
+            <div className="mb-4">
+              <Notice tone="success">
+                Search saved. We’ll tell you about new matches once a day.{" "}
+                <Link prefetch={false} href="/volunteer/opportunities/saved#searches">
+                  Manage alerts
+                </Link>
+              </Notice>
+            </div>
+          ) : null}
+          {one(sp.saved_search_error) ? (
+            <div className="mb-4">
+              <Notice tone="danger">{one(sp.saved_search_error)}</Notice>
+            </div>
+          ) : null}
+          {personalized && filtered && searchName && one(sp.saved_search) !== "1" ? (
+            <form action={saveSearchAction} className="mb-4 flex flex-wrap items-end gap-2 rounded-md border border-line bg-surface px-4 py-3">
+              <input type="hidden" name="back" value={keep({})} />
+              <input type="hidden" name="query" value={savable.toString()} />
+              <input type="hidden" name="alerts" value="on" />
+              <label className="grid min-w-0 flex-1 gap-1 text-sm font-medium">
+                Get alerts for this search
+                <input name="name" defaultValue={searchName.slice(0, 80)} maxLength={80} className="h-10 w-full rounded border border-line-strong bg-surface px-3 font-normal" />
+              </label>
+              <button type="submit" className={buttonClass("secondary", "md")}>
+                Save search
+              </button>
+            </form>
+          ) : null}
           {data?.needsLocation ? (
             <EmptyState
               title="Add your location to see what's near you"

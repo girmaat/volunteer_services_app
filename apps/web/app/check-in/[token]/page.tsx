@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { CheckCircle2, LogIn, LogOut } from "lucide-react";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { Button, Card, Notice } from "../../../components/ui";
-import { formatInZone } from "../../../lib/time";
+import { formatInZone, zoneOr } from "../../../lib/time";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Check in", robots: { index: false, follow: false } };
@@ -44,7 +44,7 @@ export default async function CheckInPage(props: { params: Promise<{ token: stri
             {s.request.title}
             <span className="block text-base text-muted">
               {s.request.org_name}
-              {s.request.starts_at ? ` · ${formatInZone(s.request.starts_at, s.request.timezone || "America/New_York")}` : ""}
+              {s.request.starts_at ? ` · ${formatInZone(s.request.starts_at, zoneOr(s.request.timezone))}` : ""}
             </span>
           </p>
           {sp.done === "out" ? (
@@ -63,7 +63,7 @@ export default async function CheckInPage(props: { params: Promise<{ token: stri
             ) : s.checked_in_at ? (
               <>
                 <p className="m-0 flex items-center gap-2 text-lg font-semibold text-success">
-                  <CheckCircle2 aria-hidden className="h-6 w-6" /> Checked in at {new Date(s.checked_in_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: s.request.timezone || "America/New_York" })}
+                  <CheckCircle2 aria-hidden className="h-6 w-6" /> Checked in at {new Date(s.checked_in_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: zoneOr(s.request.timezone) })}
                 </p>
                 <form action={act.bind(null, token, "out")}>
                   <Button type="submit" size="lg" className="w-full" icon={<LogOut aria-hidden className="h-5 w-5" />}>

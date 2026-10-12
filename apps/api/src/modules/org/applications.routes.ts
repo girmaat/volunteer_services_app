@@ -6,7 +6,7 @@ import { contributionFromAttendance } from "../contributions/service";
 import { minorSql } from "../../lib/age";
 import { outstanding, prerequisites } from "../prerequisites/service";
 import { pool } from "../../lib/db";
-import { afterApplicationUpdate, applicationHasSlot, FULL_MESSAGE } from "../requests/applications";
+import { acceptError, afterApplicationUpdate, checkAccept } from "../requests/applications";
 import { wrap } from "../../lib/http";
 import { requireAdminOrManager, requireOrg } from "./context";
 
@@ -209,13 +209,15 @@ export function registerOrgApplicationsRoutes(app: Express) {
 
       const schema = z.object({
         status: z.enum(["pending", "accepted", "waitlisted", "rejected", "withdrawn", "confirmed", "completed", "canceled"]).optional(),
-        assigned_to_user_id: z.string().uuid().optional().nullable()
+        assigned_to_user_id: z.string().uuid().optional().nullable(),
+        accepted_amount: z.coerce.number().positive().max(1_000_000).optional()
       });
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
       const p = parsed.data;
       
+      let acceptedAmount: number | null = null;
       // Validate status transitions for org-side decisions (waitlist workflow).
       if (p.status) {
         const cur = await pool.query(
@@ -252,8 +254,10 @@ export function registerOrgApplicationsRoutes(app: Express) {
           if (fromStatus === "offered" && !["accepted", "rejected"].includes(toStatus)) {
             return res.status(409).json({ message: `Cannot change status from '${fromStatus}' to '${toStatus}'` });
           }
-          if (toStatus === "accepted" && fromStatus !== "offered" && !(await applicationHasSlot(params.data.id))) {
-            return res.status(409).json({ error: { code: "full", message: FULL_MESSAGE }, message: FULL_MESSAGE });
+          if (toStatus === "accepted") {
+            const check = await checkAccept(params.data.id, p.accepted_amount);
+            if (!check.ok) return res.status(check.status).json(acceptError(check));
+            acceptedAmount = check.acceptedAmount;
           }
         }
       }
@@ -267,6 +271,7 @@ export function registerOrgApplicationsRoutes(app: Express) {
           assigned_to_user_id = COALESCE($4::uuid, a.assigned_to_user_id),
           status_updated_at = CASE WHEN $3::text IS NULL THEN a.status_updated_at ELSE NOW() END,
           status_updated_by_user_id = CASE WHEN $3::text IS NULL THEN a.status_updated_by_user_id ELSE $2::uuid END,
+          accepted_amount = COALESCE($6::numeric, a.accepted_amount),
           updated_at = NOW()
         FROM service_requests r
         WHERE a.id = $1
@@ -274,7 +279,7 @@ export function registerOrgApplicationsRoutes(app: Express) {
           AND r.requester_org_slug = $5
         RETURNING a.*
         `,
-        [params.data.id, String((ok.user as any).id), p.status ?? null, p.assigned_to_user_id ?? null, ok.ctx.org.slug]
+        [params.data.id, String((ok.user as any).id), p.status ?? null, p.assigned_to_user_id ?? null, ok.ctx.org.slug, acceptedAmount]
       );
 
       if ((upd.rowCount ?? 0) === 0) return res.status(404).json({ message: "Not found" });

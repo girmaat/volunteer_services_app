@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { backendFetch } from "../lib/backend";
+import { zoneOr } from "../../lib/time";
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const list = (fd: FormData, k: string) => fd.getAll(k).map((v) => String(v).trim()).filter(Boolean);
@@ -75,7 +76,7 @@ export async function saveSchedule(fd: FormData) {
   if (!remoteOk && !inPersonOk) redirect("/onboarding?step=schedule&error=" + encodeURIComponent("Choose in person, remote, or both."));
   await post(
     "/v1/onboarding/availability",
-    { timezone: str(fd, "timezone") || "America/New_York", days, hoursPerWeek: Number(str(fd, "hours")) || 2, remoteOk, inPersonOk },
+    { timezone: zoneOr(str(fd, "timezone")), days, hoursPerWeek: Number(str(fd, "hours")) || 2, remoteOk, inPersonOk },
     "/onboarding?step=schedule"
   );
   redirect("/onboarding/welcome");

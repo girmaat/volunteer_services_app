@@ -3,6 +3,7 @@ import type { Express } from "express";
 import { z } from "zod";
 import { setProfile } from "../../auth/handlers";
 import { requireVolunteerUser } from "../../middleware/auth";
+import { visibleToViewerAgeSql } from "../../lib/age";
 import { pool } from "../../lib/db";
 import { discoverableSql } from "../requests/lifecycle";
 import { recommendedFor } from "./opportunities.routes";
@@ -28,7 +29,7 @@ app.get(
        )
        SELECT
          (SELECT COUNT(*)::int FROM service_requests sr, a
-           WHERE ${discoverableSql("sr")} AND NOT sr.is_sensitive
+           WHERE ${discoverableSql("sr")} AND NOT sr.is_sensitive AND ${visibleToViewerAgeSql("sr", "$1")}
              AND (sr.mode IS NULL
                   OR (a.remote_ok AND sr.mode IN ('remote','hybrid'))
                   OR (a.in_person_ok AND sr.mode IN ('in-person','hybrid')))) AS recommended,

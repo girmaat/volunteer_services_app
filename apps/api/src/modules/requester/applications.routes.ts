@@ -6,7 +6,7 @@ import { updateApplicationDecision } from "./helpers";
 import { pool } from "../../lib/db";
 import { submitReview, ReviewError } from "../reviews/service";
 import type { PolicyUser } from "../../lib/policy";
-import { afterApplicationUpdate, FULL_MESSAGE } from "../requests/applications";
+import { acceptError, afterApplicationUpdate } from "../requests/applications";
 import { wrap } from "../../lib/http";
 
 export function registerRequesterApplicationsRoutes(app: Express) {
@@ -69,7 +69,7 @@ app.post(
     if (result.kind === "conflict") {
       return res.status(409).json({ message: `Cannot accept an application in status '${result.status}'` });
     }
-    if (result.kind === "full") return res.status(409).json({ error: { code: "full", message: FULL_MESSAGE }, message: FULL_MESSAGE });
+    if (result.kind === "refused") return res.status(result.check.status).json(acceptError(result.check));
 
     return res.status(200).json({ id: applicationId, status: result.status });
   })

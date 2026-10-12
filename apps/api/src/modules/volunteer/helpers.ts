@@ -1,3 +1,4 @@
+import { visibleToViewerAgeSql } from "../../lib/age";
 import { pool } from "../../lib/db";
 import { discoverableSql } from "../requests/lifecycle";
 
@@ -19,7 +20,7 @@ export type VolunteerOpportunityRow = {
 };
 
 /** Live requests a volunteer may see (sensitive ones only once Phase 4.4 discovery checks trust tier). */
-const LIVE = `${discoverableSql("o")} AND NOT o.is_sensitive`;
+const LIVE = `${discoverableSql("o")} AND NOT o.is_sensitive AND ${visibleToViewerAgeSql("o", "$1")}`;
 
 export async function volunteerOpportunityRowsForUser(
   userId: string,

@@ -5,7 +5,7 @@ import { backendFetch } from "../../../lib/backend";
 import { Button, ButtonLink, Card, Notice, PageHeader, StatusPill } from "../../../../components/ui";
 import ReviewPanel, { type ReviewState } from "../../../../components/reviews/ReviewPanel";
 import { confirmAttendanceAction, disputeAction, volunteerCancelAction, volunteerWithdrawAction } from "../../../_requests/applicant-actions";
-import { describeRrule, formatInZone } from "../../../../lib/time";
+import { describeRrule, formatInZone, zoneOr } from "../../../../lib/time";
 import PrereqPanel from "../../../../components/prerequisites/PrereqPanel";
 import { offerAction } from "../../../_prereq/actions";
 
@@ -58,7 +58,7 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
   if (!res.ok) notFound();
   const a = (await res.json()) as Detail;
   const o = a.opportunity;
-  const tz = o.timezone || "America/New_York";
+  const tz = zoneOr(o.timezone);
   const start = a.commitment?.start_at || o.starts_at;
   const within24h = Boolean(start && new Date(start).getTime() - Date.now() < 24 * 3600_000 && new Date(start).getTime() > Date.now());
   const rv = a.status === "completed" ? await backendFetch(`/v1/reviews/applications/${id}`) : null;

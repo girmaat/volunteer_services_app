@@ -80,12 +80,14 @@ export async function GET(req: Request) {
   if (from) qs.set("from", from);
   if (to) qs.set("to", to);
   if (requestId) qs.set("requestId", requestId);
+  // Exports carry every row, not the on-screen top rows.
+  qs.set("all", "1");
 
   const today = new Date().toISOString().slice(0, 10);
 
   if (type === "impact") {
     const res = await backendFetch(`/v1/org/reports/impact?${qs.toString()}`, { method: "GET" });
-    if (!res.ok) return new Response("Failed to load impact report", { status: 500 });
+    if (!res.ok) return new Response(res.status === 403 ? "Only organization admins and managers can export reports" : "Failed to load impact report", { status: res.status === 403 ? 403 : 500 });
     const data = (await res.json()) as any;
 
     const per = Array.isArray(data?.per_request) ? data.per_request : [];
@@ -142,7 +144,7 @@ export async function GET(req: Request) {
 
   if (type === "volunteer_hours") {
     const res = await backendFetch(`/v1/org/reports/volunteer-hours?${qs.toString()}`, { method: "GET" });
-    if (!res.ok) return new Response("Failed to load volunteer-hours report", { status: 500 });
+    if (!res.ok) return new Response(res.status === 403 ? "Only organization admins and managers can export reports" : "Failed to load volunteer-hours report", { status: res.status === 403 ? 403 : 500 });
     const data = (await res.json()) as any;
     const rows = Array.isArray(data?.volunteers) ? data.volunteers : [];
 

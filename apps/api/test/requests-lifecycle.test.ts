@@ -32,7 +32,7 @@ describe("posting wizard: drafts saved step by step", () => {
     expect(r.body.actions).toContain("publish");
     expect(r.body.publish_problems.length).toBeGreaterThan(0);
 
-    for (const step of [BASICS, WHEN, WHERE, { minAge: 16, requiresWaiver: true, equipmentNotes: "Gloves provided" }]) {
+    for (const step of [BASICS, WHEN, WHERE, { minAge: 16, requiresCar: true, equipmentNotes: "Gloves provided" }]) {
       const p = await api.patch(`/v1/requests/${id}`, step);
       expect(p.status, JSON.stringify(p.body)).toBe(200);
     }

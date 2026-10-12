@@ -10,12 +10,13 @@ import { wrap } from "../../lib/http";
 import { can, orgMembership, type PolicyUser } from "../../lib/policy";
 import { requireAuthedUser } from "../../middleware/auth";
 import { enqueue } from "../../jobs/queue";
-import { ownerActions, staffingCounts, syncStaffing, transitionRequest, TransitionError, publishProblems } from "./lifecycle";
+import { ownerActions, staffingCounts, syncStaffing, transitionRequest, TransitionError, publishProblems, formProblems } from "./lifecycle";
 import { buildSet, crossFieldProblems, getCategory, listCategories, meetsTier, posterTier, RequestFields } from "./model";
 import { needsOwnerApproval, orgStanding, standingMessage, submitForOwnerApproval } from "./governance";
 import { notify } from "../notifications/service";
 import { calendarChanged } from "../calendar/updates";
 import { requestProgress } from "./progress";
+import { materialEdit } from "./material";
 
 export const OWNER_COLUMNS = `r.id, r.title, r.description, r.status, r.review_status, r.review_notes, r.category, r.required_skills, r.nice_to_have_skills,
   r.volunteers_needed, r.urgency, r.schedule_type, r.starts_at, r.ends_at, r.recurrence_rule, r.timezone, r.duration_minutes, r.apply_by,
@@ -68,7 +69,7 @@ async function ownerView(row: Record<string, any>) {
     actions: ownerActions(row.status, row.review_status),
     progress: await requestProgress(row.id),
     checkin_url: row.checkin_token ? `${env.WEB_BASE_URL.replace(/\/$/, "")}/check-in/${row.checkin_token}` : null,
-    publish_problems: [...publishProblems(row), ...crossFieldProblems(row)],
+    publish_problems: [...publishProblems(row), ...crossFieldProblems(row), ...(await formProblems(pool, row))],
     events: events.rows
   };
 }
@@ -200,18 +201,24 @@ export function registerRequestRoutes(app: Express) {
         if (loc.rows[0]?.mode !== "remote" && loc.rows[0]?.q) await enqueue("geocode.request", { requestId: row.id, locationText: String(loc.rows[0].q) });
       }
       if (live && f.volunteersNeeded !== undefined) await syncStaffing(row.id, { userId: user.id, kind: "user" });
-      // A one-time shift that moved: move everyone's commitment and send updated invites (CAL-02, REQ-08).
-      if (live && row.schedule_type === "one_time" && (f.startsAt !== undefined || f.endsAt !== undefined || f.durationMinutes !== undefined)) {
-        const now = (await pool.query("SELECT starts_at, ends_at, duration_minutes FROM service_requests WHERE id = $1", [row.id])).rows[0];
-        if (now?.starts_at && (String(now.starts_at) !== String(row.starts_at) || String(now.ends_at) !== String(row.ends_at) || now.duration_minutes !== row.duration_minutes)) {
+      // A shift that moved (one-time or repeating): move everyone's commitment and send updated invites (CAL-02, REQ-08).
+      const timing = f.startsAt !== undefined || f.endsAt !== undefined || f.durationMinutes !== undefined || f.recurrenceRule !== undefined || f.timezone !== undefined;
+      let moved: string[] = [];
+      if (live && timing) {
+        const now = (await pool.query("SELECT starts_at, ends_at, duration_minutes, recurrence_rule, timezone FROM service_requests WHERE id = $1", [row.id])).rows[0];
+        const changed = ["starts_at", "ends_at", "duration_minutes", "recurrence_rule", "timezone"].some((k) => String(now?.[k] ?? "") !== String(row[k] ?? ""));
+        if (now?.starts_at && changed) {
           const end = now.ends_at ?? new Date(new Date(now.starts_at).getTime() + (Number(now.duration_minutes) || 60) * 60_000);
-          const moved = await pool.query(
+          const r = await pool.query(
             "UPDATE request_commitments SET start_at = $2, end_at = $3, volunteer_confirmed_at = NULL, updated_at = NOW() WHERE request_id = $1 AND status IN ('scheduled', 'confirmed') RETURNING id",
             [row.id, now.starts_at, end]
           );
-          await calendarChanged(moved.rows.map((r) => String(r.id)), "update");
+          moved = r.rows.map((x) => String(x.id));
+          await calendarChanged(moved, "update");
         }
       }
+      // Other changes that matter to someone already coming: they re-confirm (DATA-01, REQ-08).
+      if (live) await materialEdit(row, user.id, moved.length > 0);
       const fresh = await pool.query(`SELECT ${OWNER_COLUMNS} FROM service_requests r WHERE r.id = $1`, [row.id]);
       return res.json(await ownerView(fresh.rows[0]));
     })
@@ -230,7 +237,7 @@ export function registerRequestRoutes(app: Express) {
       const { event, reason } = parsed.data;
 
       if (event === "publish") {
-        const problems = [...publishProblems(row), ...crossFieldProblems(row)];
+        const problems = [...publishProblems(row), ...crossFieldProblems(row), ...(await formProblems(pool, row))];
         if (problems.length) return res.status(422).json({ error: { code: "incomplete", message: problems.join("; ") }, message: problems.join("; "), problems });
         const cat = await getCategory(row.category);
         if (!cat || !cat.enabled) return res.status(422).json({ message: "This category isn't available right now" });

@@ -6,13 +6,13 @@ import type { Express } from "express";
 import { z } from "zod";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
-import { RELIABILITY_SQL, recordCommitmentCancel } from "../reviews/service";
-import { afterApplicationUpdate, applicationHasSlot, FULL_MESSAGE } from "./applications";
+import { type AppRow, ownerReviewStates, RELIABILITY_SQL, recordCommitmentCancel, sideFor } from "../reviews/service";
+import { acceptError, afterApplicationUpdate, checkAccept } from "./applications";
 import { loadOwned } from "./routes";
 import { minorSql } from "../../lib/age";
 import { staffingCounts } from "./lifecycle";
 import { requestProgress } from "./progress";
-import { prerequisites } from "../prerequisites/service";
+import { prerequisitesForRequest } from "../prerequisites/service";
 import { calendarChanged } from "../calendar/updates";
 
 const ACTIONS = ["accept", "waitlist", "decline", "reconsider", "confirm", "complete", "cancel"] as const;
@@ -61,9 +61,17 @@ export function registerApplicantRoutes(app: Express) {
       const counts = await staffingCounts(pool, owned.row.id);
       const progress = await requestProgress(owned.row.id);
       // Prerequisites (forms, guardian consent, checks) for everyone who's in.
-      const applicants = await Promise.all(
-        r.rows.map(async (row) => (["accepted", "confirmed"].includes(row.status) ? { ...row, prerequisites: await prerequisites(String(row.volunteer_user_id), owned.row.id) } : row))
-      );
+      const inIds = r.rows.filter((row) => ["accepted", "confirmed"].includes(row.status)).map((row) => String(row.volunteer_user_id));
+      const pre = await prerequisitesForRequest(owned.row.id, inIds);
+      // Review state for completed work, in one query instead of one request per volunteer.
+      // Only someone who can review (the poster, or an org admin/manager) gets the review state.
+      const reviewer = sideFor(owned.user, { volunteer_user_id: "", requester_user_id: owned.row.requester_user_id, requester_org_slug: owned.row.requester_org_slug } as AppRow) === "owner";
+      const reviews = reviewer ? await ownerReviewStates(r.rows.filter((row) => row.status === "completed")) : new Map();
+      const applicants = r.rows.map((row) => ({
+        ...row,
+        ...(["accepted", "confirmed"].includes(row.status) ? { prerequisites: pre.get(String(row.volunteer_user_id)) } : {}),
+        ...(row.status === "completed" ? { review: reviews.get(String(row.id)) ?? null } : {})
+      }));
       return res.json({
         request: {
           id: owned.row.id,
@@ -72,6 +80,7 @@ export function registerApplicantRoutes(app: Express) {
           volunteers_needed: owned.row.volunteers_needed,
           starts_at: owned.row.starts_at,
           ends_at: owned.row.ends_at,
+          timezone: owned.row.timezone ?? null,
           requester_org_slug: owned.row.requester_org_slug,
           target: counts.target,
           unit: counts.unit,
@@ -105,23 +114,11 @@ export function registerApplicantRoutes(app: Express) {
       if (!a) return res.status(404).json({ message: "Applicant not found" });
       const move = MOVES[body.data.action];
       if (!move.from.includes(a.status)) return res.status(409).json({ message: `Can't ${body.data.action} an applicant who is ${a.status}` });
-      if (body.data.action === "accept" && a.status !== "offered" && !(await applicationHasSlot(a.id))) return res.status(409).json({ error: { code: "full", message: FULL_MESSAGE }, message: FULL_MESSAGE });
       let acceptedAmount: number | null = null;
       if (body.data.action === "accept") {
-        const s = await staffingCounts(pool, owned.row.id);
-        if (s.target != null) {
-          const remaining = Math.max(0, Math.round((s.target - s.committed) * 100) / 100);
-          acceptedAmount = body.data.acceptedAmount ?? (a.offered_amount != null ? (s.allowOverfill ? a.offered_amount : Math.min(a.offered_amount, remaining)) : null);
-          if (acceptedAmount == null || acceptedAmount <= 0) {
-            const m = `The goal of ${s.target} ${s.unit} is already committed. Turn on “accept more than the goal” to take more.`;
-            return res.status(409).json({ error: { code: "target_met", message: m }, message: m });
-          }
-          if (a.offered_amount != null && acceptedAmount > a.offered_amount) return res.status(422).json({ message: `They offered ${a.offered_amount} ${s.unit}; you can accept that much or less` });
-          if (!s.allowOverfill && acceptedAmount > remaining) {
-            const m = `Only ${remaining} ${s.unit} of the goal ${remaining === 1 ? "is" : "are"} left. Accept part of their offer.`;
-            return res.status(409).json({ error: { code: "over_target", message: m }, message: m });
-          }
-        }
+        const check = await checkAccept(a.id, body.data.acceptedAmount);
+        if (!check.ok) return res.status(check.status).json(acceptError(check));
+        acceptedAmount = check.acceptedAmount;
       }
 
       const rescheduled: string[] = [];

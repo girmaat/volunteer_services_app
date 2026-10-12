@@ -64,6 +64,8 @@ export default async function Page(
   const ctx = await getOrgContext();
   if (!ctx) redirect("/org/signup");
   if (!ctx.org.onboarding_completed) redirect("/org/onboarding");
+  // Volunteers' contact details and attendance are for admins and managers.
+  if (ctx.membership.role === "member") redirect("/org/documents");
 
   const [requests, rows] = await Promise.all([loadRequests(), loadAttendance(searchParams)]);
 

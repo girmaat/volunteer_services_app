@@ -3,7 +3,7 @@ import { AlertTriangle, Check } from "lucide-react";
 import { backendFetch } from "../../app/lib/backend";
 import { bulkApproveAction, conflictAction, decideAction } from "../../app/_hours/actions";
 import { Button, EmptyState, LinkTabs, Notice, PageHeader, StatusPill, Toast } from "../ui";
-import { formatInZone } from "../../lib/time";
+import { formatInZone, zoneOr } from "../../lib/time";
 
 export type ReviewItem = {
   id: string;
@@ -44,7 +44,7 @@ const input = "h-10 rounded border border-line-strong bg-surface px-3 text-sm";
 const h = (n: number | null) => (n == null ? "—" : `${Math.round(n * 100) / 100} h`);
 
 function When({ c }: { c: ReviewItem }) {
-  const tz = c.timezone || "America/New_York";
+  const tz = zoneOr(c.timezone);
   if (!c.started_at) return <span>No times recorded</span>;
   return (
     <span>
@@ -60,11 +60,16 @@ function When({ c }: { c: ReviewItem }) {
  * (admins and managers) and for individuals who posted a request. Approving is one click; a
  * change, a refusal or sending back needs a note the volunteer sees.
  */
-export default async function HoursReview({ base, status, flash, error, approved, skipped }: { base: "/org/hours" | "/requester/hours"; status: string; flash?: string; error?: string; approved?: string; skipped?: string }) {
+const PAGE = 100;
+
+export default async function HoursReview({ base, status, page, flash, error, approved, skipped }: { base: "/org/hours" | "/requester/hours"; status: string; page?: string; flash?: string; error?: string; approved?: string; skipped?: string }) {
   const as = base === "/org/hours" ? "org" : "requester";
   const tab = ["waiting", "disputed", "decided"].includes(status) ? status : "waiting";
-  const res = await backendFetch(`/v1/contributions/review?as=${as}&status=${tab}`);
-  const data = res.ok ? ((await res.json()) as { items: ReviewItem[]; counts: { waiting: number; disputed: number }; org_verified: boolean }) : null;
+  const pageNo = Math.max(1, Math.min(1000, Number.parseInt(page || "1", 10) || 1));
+  const res = await backendFetch(`/v1/contributions/review?as=${as}&status=${tab}&limit=${PAGE}&offset=${(pageNo - 1) * PAGE}`);
+  const data = res.ok
+    ? ((await res.json()) as { items: ReviewItem[]; page: { total: number; offset: number; next_offset: number | null }; counts: { waiting: number; disputed: number }; org_verified: boolean })
+    : null;
   const items = data?.items ?? [];
   const bulkable = items.filter((c) => c.can_decide && c.status === "pending" && !c.exceptions.length);
   const decide = (id: string) => decideAction.bind(null, base, tab, id);
@@ -222,6 +227,25 @@ export default async function HoursReview({ base, status, flash, error, approved
           </li>
         ))}
       </ul>
+      {data && data.page.total > items.length ? (
+        <nav aria-label="Pages" className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <span className="text-muted">
+            Showing {data.page.offset + 1}–{data.page.offset + items.length} of {data.page.total}
+          </span>
+          <span className="flex gap-2">
+            {pageNo > 1 ? (
+              <Link href={`${base}?status=${tab}&page=${pageNo - 1}`} className="rounded-md border border-line px-3 py-1.5 font-semibold">
+                Previous
+              </Link>
+            ) : null}
+            {data.page.next_offset != null ? (
+              <Link href={`${base}?status=${tab}&page=${pageNo + 1}`} className="rounded-md border border-line px-3 py-1.5 font-semibold">
+                Next
+              </Link>
+            ) : null}
+          </span>
+        </nav>
+      ) : null}
     </>
   );
 }
