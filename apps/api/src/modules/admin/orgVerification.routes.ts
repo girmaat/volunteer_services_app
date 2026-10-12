@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Platform-admin organization verification (ORG-02, GOV-02): submitted → approved, needs_info
  * (the org answers and resubmits), rejected (with reasons; resubmitting is the appeal route), and
@@ -42,10 +41,10 @@ export function registerAdminOrgVerificationRoutes(app: Express) {
     })
   );
 
-  const decision = (route: string, fn: (slug: string, adminId: string, notes: string | null) => Promise<{ status: number; body: any }>, notesRequired: boolean) =>
+  const decision = (route: string, fn: (slug: string, adminId: string, notes: string | null) => Promise<{ status: number; body: unknown }>, notesRequired: boolean) =>
     app.post(
       route,
-      wrap(async (req: any, res: any) => {
+      wrap(async (req, res) => {
         const r = await requirePlatformAdminAccess(pool, req, res);
         if (!r) return;
         const slug = String(req.params.slug || "").trim();
@@ -54,7 +53,7 @@ export function registerAdminOrgVerificationRoutes(app: Express) {
         if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
         const notes = parsed.data.notes || null;
         if (notesRequired && !notes) return res.status(422).json({ message: "Give the organization a reason; they see it" });
-        const out = await fn(slug, String((r.user as any).id), notes);
+        const out = await fn(slug, String(r.user.id), notes);
         res.locals.audit = { action: `org.${route.split("/").pop()!.replace("-", "_")}`, targetType: "organization", targetId: slug, details: { notes } };
         return res.status(out.status).json(out.body);
       })

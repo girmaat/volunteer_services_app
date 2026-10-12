@@ -36,13 +36,6 @@ function ModeIcon({ mode }: { mode?: string | null }) {
   return <C aria-hidden className="h-4 w-4 shrink-0" />;
 }
 
-export function formatNeededBy(d?: string | null) {
-  if (!d) return null;
-  const date = new Date(d);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 /**
  * When it happens, in the viewer's time zone. For remote requests in another zone the
  * organizer's local time is in the tooltip ("their time").

@@ -4,7 +4,6 @@ import { pool } from "../../lib/db";
 // Shared Settings (All logged-in users): Blocked users + Reports filed
 // ------------------------------------------------------------
 
-
 // ------------------------------------------------------------
 // Shared Settings (All logged-in users): Notifications Center
 // ------------------------------------------------------------
@@ -25,28 +24,3 @@ export async function getNotificationLastSeen(userId: string): Promise<Date> {
   return new Date(r.rows[0].last_seen_at);
 }
 
-export async function setNotificationLastSeenNow(userId: string) {
-  await pool.query(
-    `
-    INSERT INTO user_notification_state (user_id, last_seen_at)
-    VALUES ($1, NOW())
-    ON CONFLICT (user_id)
-    DO UPDATE SET last_seen_at = EXCLUDED.last_seen_at
-    `,
-    [userId]
-  );
-}
-
-export function clampInt(value: unknown, fallback: number, min: number, max: number) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return fallback;
-  const i = Math.floor(n);
-  return Math.min(max, Math.max(min, i));
-}
-
-export function formatStatus(s: string | null) {
-  if (!s) return "Update";
-  return s
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (m) => m.toUpperCase());
-}

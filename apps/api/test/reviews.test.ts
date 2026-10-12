@@ -1,5 +1,6 @@
+import { RELIABILITY_SQL } from "../src/modules/reviews/service";
 import { describe, expect, it } from "vitest";
-import { anon, as, createUser, EMAILS, pool, userId } from "./helpers";
+import { anon, as, createUser, EMAILS, pool, userId, ownerAct } from "./helpers";
 import { revealDueReviews } from "../src/modules/reviews/service";
 
 const soon = (h: number) => new Date(Date.now() + h * 3600_000).toISOString();
@@ -19,7 +20,7 @@ async function setup(title: string, vol: string, startsInHours = 72) {
   });
   await owner.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
   const ap = await (await as(vol)).post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "Happy to help" });
-  await owner.post(`/v1/requester/applications/${ap.body.applicationId}/accept`);
+  await ownerAct(owner, ap.body.applicationId, "accept");
   return { requestId: String(d.body.id), applicationId: String(ap.body.applicationId) };
 }
 
@@ -29,8 +30,8 @@ describe("double-blind structured reviews", () => {
     const owner = await as(EMAILS.requester);
     const vol = await as("rev.vol@thankyou.test");
     expect((await owner.post("/v1/reviews", { applicationId, overall: 5 })).status).toBe(409); // not completed yet
-    await owner.post(`/v1/requester/applications/${applicationId}/confirm`, { start_at: soon(-3), end_at: soon(-1) });
-    await owner.post(`/v1/requester/applications/${applicationId}/complete`);
+    await ownerAct(owner, applicationId, "confirm", { startAt: soon(-3), endAt: soon(-1) });
+    await ownerAct(owner, applicationId, "complete");
 
     const first = await owner.post("/v1/reviews", { applicationId, overall: 5, reliability: 5, communication: 4, skill: 5, comment: "Great help", wouldWorkAgain: true });
     expect(first.status, JSON.stringify(first.body)).toBe(201);
@@ -59,8 +60,8 @@ describe("double-blind structured reviews", () => {
   it("publishes a lone review 14 days after completion", async () => {
     const { applicationId } = await setup("Reviews: timeout", "rev2.vol@thankyou.test");
     const owner = await as(EMAILS.requester);
-    await owner.post(`/v1/requester/applications/${applicationId}/confirm`, { start_at: soon(-3), end_at: soon(-1) });
-    await owner.post(`/v1/requester/applications/${applicationId}/complete`);
+    await ownerAct(owner, applicationId, "confirm", { startAt: soon(-3), endAt: soon(-1) });
+    await ownerAct(owner, applicationId, "complete");
     await owner.post("/v1/reviews", { applicationId, overall: 4 });
     await pool.query("UPDATE request_applications SET completed_at = NOW() - INTERVAL '15 days' WHERE id = $1", [applicationId]);
     expect(await revealDueReviews()).toBeGreaterThan(0);
@@ -75,7 +76,7 @@ describe("reliability: late cancellations and no-shows", () => {
     const r = await (await as("late.vol@thankyou.test")).post(`/v1/volunteer/applications/${applicationId}/cancel`, { reason: "Sick" });
     expect(r.status, JSON.stringify(r.body)).toBe(200);
     expect(r.body.late_cancel).toBe(true);
-    const rel = await (await as(EMAILS.requester)).get(`/v1/users/${await userId("late.vol@thankyou.test")}/reliability`);
+    const rel = { body: (await pool.query(`SELECT ${RELIABILITY_SQL("$1")} AS r`, [await userId("late.vol@thankyou.test")])).rows[0].r };
     expect(rel.body.late_cancels).toBe(1);
     const n = await pool.query("SELECT COUNT(*)::int AS c FROM notifications n JOIN users u ON u.id = n.user_id WHERE u.email = $1 AND n.title LIKE 'A volunteer canceled%'", [EMAILS.requester]);
     expect(n.rows[0].c).toBeGreaterThan(0);
@@ -96,7 +97,7 @@ describe("reliability: late cancellations and no-shows", () => {
     expect((await (await as(EMAILS.remoteVolunteer)).post(`/v1/applications/${applicationId}/no-show`)).status).toBe(404);
     const ns = await owner.post(`/v1/applications/${applicationId}/no-show`);
     expect(ns.status, JSON.stringify(ns.body)).toBe(200);
-    const rel = await owner.get(`/v1/users/${await userId("noshow.vol@thankyou.test")}/reliability`);
+    const rel = await { body: (await pool.query(`SELECT ${RELIABILITY_SQL("$1")} AS r`, [await userId("noshow.vol@thankyou.test")])).rows[0].r };
     expect(rel.body.no_shows).toBe(1);
     const vol = await as("noshow.vol@thankyou.test");
     expect((await vol.post("/v1/disputes", { applicationId, kind: "no_show", reason: "short" })).status).toBe(400);

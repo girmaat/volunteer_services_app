@@ -337,7 +337,8 @@ describe("retired volunteer self-log", () => {
     const v = await as(EMAILS.volunteer);
     expect((await v.post("/v1/volunteer/history/impact", { impact_date: "2026-10-01", hours: 3 })).status).toBe(404);
     expect((await v.get("/v1/volunteer/history/hours")).status).toBe(404);
-    expect((await v.get("/v1/volunteer/history/summary")).status).toBe(200);
+    expect((await v.get("/v1/volunteer/history/summary")).status).toBe(404);
+    expect((await v.get("/v1/volunteer/impact")).status).toBe(200);
   });
 });
 

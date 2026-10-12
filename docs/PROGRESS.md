@@ -392,3 +392,45 @@ Migrations 0014 and 0015.
 
 Checks: 1,881 API tests and 22 E2E scripts (new U17 check: join approval, logo upload, no CSP
 violations, safe sign-in redirect) pass repeatedly.
+
+## Readiness, contact limits and cleanup (2026-10-12)
+
+**Ready for release 2 (schools, donated goods, deliverables)** — no flows yet, but nothing needs remapping:
+- Requests have a `work_type` (`shift`, `units`; `deliverable` and `goods` reserved). Release 1 derives
+  it from the goal's unit and never overwrites a reserved type.
+- Contributions have a `kind` (`time`, `units`, `deliverable`, `goods`); goods can never carry hours
+  (database check), so they can't reach hour totals.
+- **Evidence** on any contribution: a link or a file (PDF, image, Word, text; 5 MB; checked by content).
+  The volunteer adds it while the hours are still open; reviewers can add it any time; whoever added it
+  can remove it while open. Only the volunteer and that contribution's reviewers can see it. Shown on
+  the volunteer's Impact page and in Hours review.
+- Organizations have a type (nonprofit, school, community group, faith-based, government, other), set in
+  Organization settings and by platform admins. Schools can add **school coordinators** (member-level
+  access for now); other types can't, and a school can't change type while it has coordinators.
+  Existing copy that called managers "coordinators" now says "managers".
+
+**Contact details**: volunteers' emails and phone numbers go only to an organization's admins and
+managers (and individual posters). Members and coordinators see names only — in applicants,
+applications, the dashboard, incidents (including email search) and document acknowledgements.
+Document acknowledgements no longer show minors' emails.
+
+**Bugs fixed during cleanup**
+- Share-link reports couldn't be resolved and "warn/clear" always failed (missing columns, migration 0016).
+- One person could take down a share link by reporting it three times; it now takes three different people.
+- "Delete user" could never recover from an error (a failed step aborted the transaction anyway).
+- The recommendations fallback skipped the under-18 visibility filter; the fallback is gone.
+
+**Cleanup**
+- Removed endpoints the web app no longer calls (legacy requester/org request and application routes,
+  old volunteer feeds and history summaries, reliability, single-request admin edit, and others), the
+  pages and components that used them, schema "does this column exist?" probes, "missing table"
+  guards, the retired free-form volunteer log tables (entries kept as self-reported contributions)
+  and all but 5 redirects. Deleted files are kept in `.retired/` on the development machine.
+- Screens added for features that had an API but no page: ID verification (Settings → Verification),
+  category rules (Admin → Categories) and profile photos (uploads only; the "Avatar URL" field is gone).
+- Typing: explicit `any` down from 404 to about 100 (API 294 → 42, web 116 → 58); file-wide
+  "allow any" lint switches removed (30 → 0), so what's left shows as lint warnings.
+
+Checks: typecheck and lint (warnings only), every web call matches an API route, 1,670 API tests
+(fewer than before because tests of removed endpoints went with them) and 24 E2E scripts (new U18:
+evidence, organization type) pass repeatedly.

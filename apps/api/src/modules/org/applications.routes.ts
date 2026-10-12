@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
-import type { Application } from "express";
 import { z } from "zod";
 import { contributionFromAttendance } from "../contributions/service";
 import { minorSql } from "../../lib/age";
@@ -8,14 +6,14 @@ import { outstanding, prerequisites } from "../prerequisites/service";
 import { pool } from "../../lib/db";
 import { acceptError, afterApplicationUpdate, checkAccept } from "../requests/applications";
 import { wrap } from "../../lib/http";
-import { requireAdminOrManager, requireOrg } from "./context";
+import { contactsFor, requireAdminOrManager, requireOrg } from "./context";
 
 export function registerOrgApplicationsRoutes(app: Express) {
 
   // Phase 4.2: Org Applications pipeline
   app.get(
     "/v1/org/applications",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
 
@@ -69,15 +67,13 @@ export function registerOrgApplicationsRoutes(app: Express) {
         [ok.ctx.org.slug, status, requestId]
       );
 
-
-      return res.json({ applications: rows.rows });
+      return res.json({ applications: contactsFor(ok.ctx, rows.rows) });
     })
   );
 
-
   app.post(
     "/v1/org/applications/:id/attendance/check-in",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
@@ -131,17 +127,16 @@ export function registerOrgApplicationsRoutes(app: Express) {
         VALUES ($1, $2, $3, $4, NOW(), $5, $6)
         RETURNING *
         `,
-        [ok.ctx.org.slug, requestId, params.data.id, volunteerUserId, notes, String((ok.user as any).id)]
+        [ok.ctx.org.slug, requestId, params.data.id, volunteerUserId, notes, String(ok.user.id)]
       );
 
       return res.status(201).json({ attendance: inserted.rows[0] });
     })
   );
 
-
   app.post(
     "/v1/org/applications/:id/attendance/check-out",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
@@ -190,16 +185,15 @@ export function registerOrgApplicationsRoutes(app: Express) {
         `,
         [logId]
       );
-      const contributionId = await contributionFromAttendance(logId, "staff_check_in", String((ok.user as any).id));
+      const contributionId = await contributionFromAttendance(logId, "staff_check_in", String(ok.user.id));
 
       return res.json({ attendance: updated.rows[0], contribution_id: contributionId });
     })
   );
 
-
   app.patch(
     "/v1/org/applications/:id",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
@@ -279,207 +273,13 @@ export function registerOrgApplicationsRoutes(app: Express) {
           AND r.requester_org_slug = $5
         RETURNING a.*
         `,
-        [params.data.id, String((ok.user as any).id), p.status ?? null, p.assigned_to_user_id ?? null, ok.ctx.org.slug, acceptedAmount]
+        [params.data.id, String(ok.user.id), p.status ?? null, p.assigned_to_user_id ?? null, ok.ctx.org.slug, acceptedAmount]
       );
 
       if ((upd.rowCount ?? 0) === 0) return res.status(404).json({ message: "Not found" });
-      if (p.status) await afterApplicationUpdate(params.data.id, p.status, String((ok.user as any).id));
+      if (p.status) await afterApplicationUpdate(params.data.id, p.status, String(ok.user.id));
       return res.json(upd.rows[0]);
     })
   );
 
-
-  app.post(
-    "/v1/org/applications/:id/confirm",
-    wrap(async (req: any, res: any) => {
-      const ok = await requireOrg(pool, req, res);
-      if (!ok) return;
-      if (!requireAdminOrManager(ok.ctx, res)) return;
-
-      const params = z.object({ id: z.string().uuid() }).safeParse(req.params);
-      if (!params.success) return res.status(400).json({ message: "Invalid application id" });
-
-      const body = z
-        .object({
-          start_at: z.string().min(1),
-          end_at: z.string().optional()
-        })
-        .parse(req.body);
-
-      const appRes = await pool.query(
-        `
-        SELECT a.id, a.status, a.volunteer_user_id, a.request_id
-        FROM request_applications a
-        JOIN service_requests r ON r.id = a.request_id
-        WHERE a.id = $1 AND r.requester_org_slug = $2
-        `,
-        [params.data.id, ok.ctx.org.slug]
-      );
-
-      if ((appRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Application not found" });
-
-      const status = String(appRes.rows[0]?.status || "");
-      if (status !== "accepted" && status !== "confirmed") {
-        return res.status(409).json({ message: `Cannot confirm/schedule from status '${status}'` });
-      }
-
-      const volunteerUserId = String(appRes.rows[0]?.volunteer_user_id);
-      const requestId = String(appRes.rows[0]?.request_id);
-
-      const startAt = new Date(body.start_at);
-      if (Number.isNaN(startAt.getTime())) return res.status(400).json({ message: "Invalid start_at" });
-      const endAt = body.end_at ? new Date(body.end_at) : null;
-      if (endAt && Number.isNaN(endAt.getTime())) return res.status(400).json({ message: "Invalid end_at" });
-
-      const existingCommitment = await pool.query(
-        "SELECT id FROM request_commitments WHERE volunteer_user_id = $1 AND request_id = $2 ORDER BY updated_at DESC LIMIT 1",
-        [volunteerUserId, requestId]
-      );
-
-      let commitmentId: string | null = null;
-
-      if ((existingCommitment.rowCount ?? 0) > 0) {
-        commitmentId = String(existingCommitment.rows[0]?.id);
-        await pool.query(
-          "UPDATE request_commitments SET status = 'confirmed', start_at = $3, end_at = $4, updated_at = NOW() WHERE id = $1 AND volunteer_user_id = $2",
-          [commitmentId, volunteerUserId, startAt.toISOString(), endAt ? endAt.toISOString() : null]
-        );
-      } else {
-        const inserted = await pool.query(
-          "INSERT INTO request_commitments (volunteer_user_id, request_id, status, start_at, end_at) VALUES ($1, $2, 'confirmed', $3, $4) RETURNING id",
-          [volunteerUserId, requestId, startAt.toISOString(), endAt ? endAt.toISOString() : null]
-        );
-        commitmentId = inserted.rows[0]?.id ?? null;
-      }
-
-      await pool.query(
-        `
-        UPDATE request_applications a
-        SET
-          status = 'confirmed',
-          status_updated_at = NOW(),
-          status_updated_by_user_id = $2::uuid,
-          updated_at = NOW()
-        FROM service_requests r
-        WHERE a.id = $1 AND r.id = a.request_id AND r.requester_org_slug = $3
-        `,
-        [params.data.id, String((ok.user as any).id), ok.ctx.org.slug]
-      );
-
-      await afterApplicationUpdate(params.data.id, "confirmed", String((ok.user as any).id));
-      return res.json({ ok: true, status: "confirmed", commitment_id: commitmentId });
-    })
-  );
-
-
-  app.post(
-    "/v1/org/applications/:id/cancel",
-    wrap(async (req: any, res: any) => {
-      const ok = await requireOrg(pool, req, res);
-      if (!ok) return;
-      if (!requireAdminOrManager(ok.ctx, res)) return;
-
-      const params = z.object({ id: z.string().uuid() }).safeParse(req.params);
-      if (!params.success) return res.status(400).json({ message: "Invalid application id" });
-
-      const appRes = await pool.query(
-        `
-        SELECT a.id, a.status, a.volunteer_user_id, a.request_id
-        FROM request_applications a
-        JOIN service_requests r ON r.id = a.request_id
-        WHERE a.id = $1 AND r.requester_org_slug = $2
-        `,
-        [params.data.id, ok.ctx.org.slug]
-      );
-
-      if ((appRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Application not found" });
-
-      const status = String(appRes.rows[0]?.status || "");
-      if (status === "canceled") return res.json({ ok: true, status: "canceled" });
-
-      if (status !== "accepted" && status !== "confirmed") {
-        return res.status(409).json({ message: `Cannot cancel from status '${status}'` });
-      }
-
-      const volunteerUserId = String(appRes.rows[0]?.volunteer_user_id);
-      const requestId = String(appRes.rows[0]?.request_id);
-
-      await pool.query(
-        `
-        UPDATE request_applications a
-        SET
-          status = 'canceled',
-          status_updated_at = NOW(),
-          status_updated_by_user_id = $2::uuid,
-          updated_at = NOW()
-        FROM service_requests r
-        WHERE a.id = $1 AND r.id = a.request_id AND r.requester_org_slug = $3
-        `,
-        [params.data.id, String((ok.user as any).id), ok.ctx.org.slug]
-      );
-
-      await pool.query(
-        "UPDATE request_commitments SET status = 'canceled', updated_at = NOW() WHERE volunteer_user_id = $1 AND request_id = $2",
-        [volunteerUserId, requestId]
-      );
-
-      await afterApplicationUpdate(params.data.id, "canceled", String((ok.user as any).id));
-      return res.json({ ok: true, status: "canceled" });
-    })
-  );
-
-
-  app.post(
-    "/v1/org/applications/:id/complete",
-    wrap(async (req: any, res: any) => {
-      const ok = await requireOrg(pool, req, res);
-      if (!ok) return;
-      if (!requireAdminOrManager(ok.ctx, res)) return;
-
-      const params = z.object({ id: z.string().uuid() }).safeParse(req.params);
-      if (!params.success) return res.status(400).json({ message: "Invalid application id" });
-
-      const appRes = await pool.query(
-        `
-        SELECT a.id, a.status, a.volunteer_user_id, a.request_id
-        FROM request_applications a
-        JOIN service_requests r ON r.id = a.request_id
-        WHERE a.id = $1 AND r.requester_org_slug = $2
-        `,
-        [params.data.id, ok.ctx.org.slug]
-      );
-
-      if ((appRes.rowCount ?? 0) === 0) return res.status(404).json({ message: "Application not found" });
-
-      const status = String(appRes.rows[0]?.status || "");
-      if (status !== "confirmed") {
-        return res.status(409).json({ message: `Cannot complete from status '${status}'` });
-      }
-
-      const volunteerUserId = String(appRes.rows[0]?.volunteer_user_id);
-      const requestId = String(appRes.rows[0]?.request_id);
-
-      await pool.query(
-        `
-        UPDATE request_applications a
-        SET
-          status = 'completed',
-          status_updated_at = NOW(),
-          status_updated_by_user_id = $2::uuid,
-          updated_at = NOW()
-        FROM service_requests r
-        WHERE a.id = $1 AND r.id = a.request_id AND r.requester_org_slug = $3
-        `,
-        [params.data.id, String((ok.user as any).id), ok.ctx.org.slug]
-      );
-
-      await pool.query(
-        "UPDATE request_commitments SET status = 'completed', updated_at = NOW() WHERE volunteer_user_id = $1 AND request_id = $2",
-        [volunteerUserId, requestId]
-      );
-
-      await afterApplicationUpdate(params.data.id, "completed", String((ok.user as any).id));
-      return res.json({ ok: true, status: "completed" });
-    })
-  );
 }

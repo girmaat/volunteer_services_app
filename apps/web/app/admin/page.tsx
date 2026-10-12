@@ -20,6 +20,7 @@ type DbStatusResponse = {
   database: string | null;
   expected_owner: string | null;
   owner_mismatches: Array<{ tablename: string; tableowner: string }>;
+  pending_migrations?: string[];
 };
 
 type PlatformSettingsResponse = {
@@ -215,7 +216,7 @@ export default async function Page(props: { searchParams?: Promise<{ ok?: string
             </div>
             <div className="muted text-xs mt-1">
               Runtime DB user: <code>{dbStatus.db_user || "—"}</code>. Pending migrations:{" "}
-              {(dbStatus as any).pending_migrations?.length ? <span className="badge badgeBad">{(dbStatus as any).pending_migrations.join(", ")}</span> : <span className="badge badgeOk">none</span>}.
+              {dbStatus.pending_migrations?.length ? <span className="badge badgeBad">{dbStatus.pending_migrations.join(", ")}</span> : <span className="badge badgeOk">none</span>}.
               {dbStatus.expected_owner ? (
                 <> Expected owner: <code>{dbStatus.expected_owner}</code>.</>
               ) : null}

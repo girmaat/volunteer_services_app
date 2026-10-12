@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
 import { cachedUserGeo } from "../../lib/geoRuntime";
@@ -16,7 +15,7 @@ import type { PolicyUser } from "../../lib/policy";
 import { wrap } from "../../lib/http";
 
 /** Ranked recommendations for a volunteer. Shared by the list endpoint and the dashboard (one round-trip). */
-export async function recommendedFor(user: { id: string }): Promise<{ rows: any[]; radius: number; label: string }> {
+export async function recommendedFor(user: { id: string }): Promise<{ rows: Record<string, unknown>[]; radius: number; label: string }> {
   try {
 
     // Profile signals (tags + freeform experience) feed a simple, deterministic recommender.
@@ -37,8 +36,8 @@ export async function recommendedFor(user: { id: string }): Promise<{ rows: any[
       [user.id]
     );
 
-    const p = (profile.rows[0] || {}) as any;
-    const userTags = Array.from(new Set([...(p.help_categories || []), ...(p.experience_tags || [])].map((s: any) => String(s).toLowerCase())));
+    const p = (profile.rows[0] || {});
+    const userTags = Array.from(new Set([...(p.help_categories || []), ...(p.experience_tags || [])].map((s) => String(s).toLowerCase())));
     const experience = String(p.experience || "").trim();
 
     const radius = Math.min(Math.max(Math.floor(Number(p.radius || 25)), 1), 200);
@@ -69,9 +68,7 @@ export async function recommendedFor(user: { id: string }): Promise<{ rows: any[
       )))
     `;
 
-    let rows: any;
-    try {
-      rows = await pool.query(
+      const rows = await pool.query(
       `
       WITH base AS (
         SELECT
@@ -147,92 +144,8 @@ export async function recommendedFor(user: { id: string }): Promise<{ rows: any[
         radius
       ]
     );
-    } catch (e: any) {
-      const msg = String(e?.message || "").toLowerCase();
-      const code = String(e?.code || "");
-      // If pg_trgm isn't installed, Postgres throws undefined_function (42883) for similarity()
-      const missingSimilarity = code === "42883" && msg.includes("similarity");
-      if (!missingSimilarity) throw e;
 
-      rows = await pool.query(
-      `WITH base AS (
-        SELECT
-          o.id,
-          o.title,
-          LEFT(o.description, 240) AS summary,
-          COALESCE(o.location_text, '') AS location,
-          COALESCE(o.mode, 'remote') AS mode,
-          o.updated_at,
-          org.name AS organization_name,
-          o.requester_org_slug AS organization_slug,
-          o.requester_user_id AS requester_user_id,
-          o.tags,
-          (s.user_id IS NOT NULL) AS saved,
-          a.id AS application_id,
-          a.status AS application_status,
-          ARRAY(
-            SELECT unnest(COALESCE(o.tags, '{}'::text[]))
-            INTERSECT
-            SELECT unnest($2::text[])
-          ) AS matched_tags,
-          0::double precision AS text_sim,
-          CASE
-            WHEN $3::boolean AND o.location_lat IS NOT NULL AND o.location_lng IS NOT NULL AND $4::float8 IS NOT NULL AND $5::float8 IS NOT NULL
-            THEN (3958.7613 * 2 * ASIN(SQRT(
-              POWER(SIN(RADIANS((o.location_lat - $4) / 2)), 2)
-              + COS(RADIANS($4)) * COS(RADIANS(o.location_lat))
-              * POWER(SIN(RADIANS((o.location_lng - $5) / 2)), 2)
-            )))
-            ELSE NULL
-          END AS distance_miles
-        FROM service_requests o
-        LEFT JOIN organizations org ON org.slug = o.requester_org_slug
-        LEFT JOIN volunteer_saved_requests s ON s.user_id = $1 AND s.request_id = o.id
-        LEFT JOIN LATERAL (
-          SELECT id, status
-          FROM request_applications
-          WHERE volunteer_user_id = $1 AND request_id = o.id
-          ORDER BY updated_at DESC
-          LIMIT 1
-        ) a ON TRUE
-        WHERE
-          ${discoverableSql("o")} AND NOT o.is_sensitive
-          AND COALESCE(o.mode, 'remote') = ANY($6::text[])
-      )
-      SELECT
-        *,
-        COALESCE(array_length(matched_tags, 1), 0) AS tag_overlap,
-        GREATEST(0, 1 - (EXTRACT(EPOCH FROM (NOW() - updated_at)) / 86400) / 30.0) AS recency_score,
-        CASE
-          WHEN distance_miles IS NULL THEN 0
-          WHEN distance_miles <= $7 THEN GREATEST(0, 1 - (distance_miles / $7))
-          ELSE 0
-        END AS distance_score,
-        (
-          (COALESCE(array_length(matched_tags, 1), 0) * 3.0)
-          + (GREATEST(0, 1 - (EXTRACT(EPOCH FROM (NOW() - updated_at)) / 86400) / 30.0) * 2.0)
-          + (CASE
-              WHEN distance_miles IS NULL THEN 0
-              WHEN distance_miles <= $7 THEN GREATEST(0, 1 - (distance_miles / $7)) * 1.5
-              ELSE 0
-            END)
-        ) AS recommendation_score
-      FROM base
-      ORDER BY recommendation_score DESC, updated_at DESC
-      LIMIT 60`,
-      [
-        user.id,
-        userTags,
-        userGeo ? true : false,
-        userGeo ? userGeo.lat : null,
-        userGeo ? userGeo.lng : null,
-        allowedModes,
-        radius
-      ]
-    );
-    }
-
-    const out = (rows.rows as any[]).map((r) => {
+    const out = rows.rows.map((r) => {
       const reasons: string[] = [];
       const matched = Array.isArray(r.matched_tags) ? r.matched_tags.filter(Boolean) : [];
       if (matched.length) reasons.push(`Matches your interests: ${matched.slice(0, 3).join(', ')}`);
@@ -251,140 +164,14 @@ export async function recommendedFor(user: { id: string }): Promise<{ rows: any[
     });
 
     return { rows: out, radius, label };
-  } catch (e: any) {
+  } catch (e) {
     console.error("recommendedFor failed", e);
     const rows = await volunteerOpportunityRowsForUser(user.id, "", [], "o.updated_at DESC").catch(() => []);
-    return { rows: rows as any[], radius: 25, label: "" };
+    return { rows, radius: 25, label: "" };
   }
 }
 
 export function registerVolunteerOpportunitiesRoutes(app: Express) {
-
-
-
-app.get(
-  "/v1/volunteer/opportunities/recommended",
-  wrap(async (req, res) => {
-    const user = await requireVolunteerUser(req, res);
-    if (!user) return;
-    const { rows, radius, label } = await recommendedFor(user);
-    res.setHeader("x-volunteer-radius-miles", String(radius));
-    res.setHeader("x-volunteer-location-label", label);
-    return res.json(rows);
-  })
-);
-
-
-
-
-app.get(
-  "/v1/volunteer/opportunities/remote",
-  wrap(async (req, res) => {
-    const user = await requireVolunteerUser(req, res);
-    if (!user) return;
-
-    try {
-      const modes = ["remote", "hybrid"];
-      const rows = await volunteerOpportunityRowsForUser(
-        user.id,
-        "WHERE COALESCE(o.mode, 'remote') = ANY($2::text[])",
-        [modes]
-      );
-      return res.json(rows);
-    } catch (e: any) {
-      console.error("/v1/volunteer/opportunities/remote failed", e);
-      res.setHeader("x-volunteer-remote-fallback", "1");
-      return res.json([]);
-    }
-  })
-);
-
-
-
-app.get(
-  "/v1/volunteer/opportunities/nearby",
-  wrap(async (req, res) => {
-    const user = await requireVolunteerUser(req, res);
-    if (!user) return;
-
-    // Allow callers to override radius (miles) via ?radius=25
-    const radiusQ = Number((req.query as any)?.radius);
-
-    const profile = await pool.query(
-      `SELECT COALESCE(service_radius_miles, 25) AS radius, public_location, location FROM user_profiles WHERE user_id=$1`,
-      [user.id]
-    );
-
-    const defaultRadius = Number(profile.rows[0]?.radius || 25);
-    const radius = Number.isFinite(radiusQ) && radiusQ > 0 ? Math.min(Math.max(Math.floor(radiusQ), 1), 200) : Math.min(Math.max(Math.floor(defaultRadius), 1), 200);
-
-    const label = String(profile.rows[0]?.public_location || profile.rows[0]?.location || "").trim();
-
-    // Best-effort: backfill a few recently-updated requests so the first "Nearby" load isn't empty.
-
-    const userGeo = await cachedUserGeo(user.id);
-    if (!userGeo) {
-      res.setHeader("x-volunteer-location-missing", "1");
-      res.setHeader("x-volunteer-radius-miles", String(radius));
-      res.setHeader("x-volunteer-location-label", label);
-      return res.json([]);
-    }
-
-    const distanceExpr = `
-      (3958.7613 * 2 * ASIN(SQRT(
-        POWER(SIN(RADIANS((o.location_lat - $2) / 2)), 2)
-        + COS(RADIANS($2)) * COS(RADIANS(o.location_lat))
-        * POWER(SIN(RADIANS((o.location_lng - $3) / 2)), 2)
-      )))
-    `;
-
-    const rows = await pool.query(
-      `
-      SELECT
-        o.id,
-        o.title,
-        LEFT(o.description, 240) AS summary,
-        COALESCE(o.location_text, '') AS location,
-        COALESCE(o.mode, 'remote') AS mode,
-        o.updated_at,
-        org.name AS organization_name,
-        o.requester_org_slug AS organization_slug,
-        o.requester_user_id AS requester_user_id,
-        o.tags,
-        (s.user_id IS NOT NULL) AS saved,
-        a.id AS application_id,
-        a.status AS application_status,
-        ${distanceExpr} AS distance_miles
-      FROM service_requests o
-      LEFT JOIN organizations org ON org.slug = o.requester_org_slug
-      LEFT JOIN volunteer_saved_requests s ON s.user_id = $1 AND s.request_id = o.id
-      LEFT JOIN LATERAL (
-        SELECT id, status
-        FROM request_applications
-        WHERE volunteer_user_id = $1 AND request_id = o.id
-        ORDER BY updated_at DESC
-        LIMIT 1
-      ) a ON TRUE
-      WHERE
-        ${discoverableSql("o")} AND NOT o.is_sensitive
-        AND COALESCE(o.mode, 'remote') IN ('in-person','hybrid')
-        AND o.location_lat IS NOT NULL
-        AND o.location_lng IS NOT NULL
-        AND ${distanceExpr} <= $4
-      ORDER BY distance_miles ASC, o.updated_at DESC
-      LIMIT 60
-      `,
-      [user.id, userGeo.lat, userGeo.lng, radius]
-    );
-
-    res.setHeader("x-volunteer-location-missing", "0");
-    res.setHeader("x-volunteer-radius-miles", String(radius));
-    res.setHeader("x-volunteer-location-label", label);
-
-    return res.json(rows.rows);
-  })
-);
-
 
 
 app.get(
@@ -398,8 +185,6 @@ app.get(
     return res.json(items);
   })
 );
-
-
 
 
 app.get(
@@ -417,7 +202,6 @@ app.get(
     return sendDetail(res, user as PolicyUser, viewer, id);
   })
 );
-
 
 
 app.post(
@@ -443,7 +227,6 @@ app.post(
 );
 
 
-
 app.delete(
   "/v1/volunteer/opportunities/:id/save",
   wrap(async (req, res) => {
@@ -459,7 +242,6 @@ app.delete(
     return res.status(200).json({ saved: false });
   })
 );
-
 
 
 app.post(
@@ -524,27 +306,6 @@ app.post(
     });
   })
 );
-
-
-
-app.get(
-  "/v1/volunteer/saved",
-  wrap(async (req, res) => {
-    const user = await requireVolunteerUser(req, res);
-    if (!user) return;
-
-    // Deprecated alias for backwards compatibility (shares canonical implementation).
-    res.setHeader("x-deprecated", "Use /v1/volunteer/opportunities/saved instead.");
-
-    const items = await listVolunteerSavedOpportunities(user.id);
-
-    return res.json(items);
-  })
-);
-
-
-
-
 
 
 }

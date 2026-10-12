@@ -24,13 +24,9 @@ export async function isActiveOrgMember(userId: string, orgSlug: string) {
   return (rows.rowCount ?? 0) > 0;
 }
 
-export function requiresAuthByType(shareType: string) {
-  // In this codebase, org/opportunity/service-request experiences are logged-in surfaces.
-  return shareType === "ORGANIZATION" || shareType === "OPPORTUNITY" || shareType === "SERVICE_REQUEST";
-}
-
 export function hashIp(req: express.Request) {
-  const salt = String(process.env.IP_HASH_SALT || "");
+  // A dedicated salt if set; otherwise the unsubscribe-link secret (required in production).
+  const salt = String(process.env.IP_HASH_SALT || process.env.NOTIFICATION_SECRET || (process.env.NODE_ENV === "production" ? "" : "thankyou-dev-ip-salt"));
   if (!salt) return null;
 
   // Never trust a raw X-Forwarded-For here: report thresholds count distinct IPs.
@@ -77,7 +73,7 @@ export async function getShareModerationSummaryForUser(userId: string) {
     [userId, SHARE_REPORTS_AUTO_REVOKE_THRESHOLD]
   );
 
-  const row = (res.rows[0] || {}) as any;
+  const row = (res.rows[0] || {});
   const reportedLinks = Number(row.reported_links || 0);
   const autoRevokedLinks = Number(row.auto_revoked_links || 0);
   const reportsLast30d = Number(row.reports_last_30d || 0);
@@ -122,7 +118,7 @@ export const createShareLinkHandler = async (req: express.Request, res: express.
 
   // Ownership/permission checks per share type (privacy & safety)
   if (shareType === "ORGANIZATION") {
-    const ok = (user as any).is_platform_admin || (await isActiveOrgMember(user.id, targetRef));
+    const ok = user.is_platform_admin || (await isActiveOrgMember(user.id, targetRef));
     if (!ok) return res.status(403).json({ message: "Forbidden" });
   }
 
@@ -137,10 +133,10 @@ export const createShareLinkHandler = async (req: express.Request, res: express.
     );
     if (rows.rowCount === 0) return res.status(404).json({ message: "Request not found" });
 
-    const row = rows.rows[0] as any;
+    const row = rows.rows[0];
     const isOwner = String(row.requester_user_id) === String(user.id);
     const orgSlug = row.requester_org_slug as string | null;
-    const ok = (user as any).is_platform_admin || isOwner || (orgSlug ? await isActiveOrgMember(user.id, orgSlug) : false);
+    const ok = user.is_platform_admin || isOwner || (orgSlug ? await isActiveOrgMember(user.id, orgSlug) : false);
     if (!ok) return res.status(403).json({ message: "Forbidden" });
   }
 
@@ -162,7 +158,7 @@ export const createShareLinkHandler = async (req: express.Request, res: express.
     destinationPath = `/opportunities/${encodeURIComponent(targetRef)}`;
   } else if (shareType === "SERVICE_REQUEST") {
     const rows = await pool.query(`SELECT requester_org_slug FROM service_requests WHERE id = $1`, [targetRef]);
-    const orgSlug = (rows.rows[0] as any)?.requester_org_slug as string | null;
+    const orgSlug = (rows.rows[0])?.requester_org_slug as string | null;
     destinationPath = orgSlug ? `/org/requests/${encodeURIComponent(targetRef)}` : `/requester/requests/${encodeURIComponent(targetRef)}`;
   }
 
@@ -185,7 +181,7 @@ export const createShareLinkHandler = async (req: express.Request, res: express.
   );
 
   if ((existing.rowCount ?? 0) > 0) {
-    const row = existing.rows[0] as any;
+    const row = existing.rows[0];
     return res.json({
       token: row.token,
       share_path: `/share/${row.token}`,

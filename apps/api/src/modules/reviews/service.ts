@@ -194,11 +194,6 @@ export const RELIABILITY_SQL = (userExpr: string) => `(
     LEFT JOIN request_commitments rel_c ON rel_c.request_id = rel_a.request_id AND rel_c.volunteer_user_id = rel_a.volunteer_user_id
    WHERE rel_a.volunteer_user_id = ${userExpr})`;
 
-export async function reliabilityOf(userId: string) {
-  const r = await pool.query(`SELECT ${RELIABILITY_SQL("$1")} AS rel`, [userId]);
-  return r.rows[0].rel as { completed: number; late_cancels: number; no_shows: number; rate: number | null };
-}
-
 /**
  * Records a cancellation on the commitment. A volunteer canceling less than 24 hours before the
  * start is a late cancellation (shown on their reliability).

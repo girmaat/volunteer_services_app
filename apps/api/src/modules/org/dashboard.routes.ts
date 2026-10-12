@@ -1,26 +1,22 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
-import { requireUserBySession } from "../../auth/session";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
-import { authHeaderToken, getOrgContextForUser, requireOrg } from "./context";
+import { contactsFor, requireOrg } from "./context";
 
 export function registerOrgDashboardRoutes(app: Express) {
   // Phase 1+2: Org context (single org by membership; no switching)
   app.get(
     "/v1/org/me",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       return res.json(ok.ctx);
     })
   );
 
-
-
     app.get(
     "/v1/org/dashboard",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
 
@@ -100,7 +96,7 @@ export function registerOrgDashboardRoutes(app: Express) {
         )
       ]);
 
-      // Hours waiting for a decision, and coordinators' requests waiting for an owner.
+      // Hours waiting for a decision, and managers' requests waiting for an owner.
       const extra = await pool.query(
         `SELECT (SELECT COUNT(*)::int FROM contributions WHERE org_slug = $1 AND status IN ('pending', 'disputed')) AS hours_waiting,
                 (SELECT COUNT(*)::int FROM service_requests WHERE requester_org_slug = $1 AND owner_approval = 'pending') AS owner_waiting`,
@@ -115,7 +111,7 @@ export function registerOrgDashboardRoutes(app: Express) {
         unreadMessages: Number(unread.rows[0]?.c ?? 0),
         activeMembers: Number(members.rows[0]?.c ?? 0),
         recentRequests: recentReq.rows,
-        recentApplications: recentApps.rows
+        recentApplications: contactsFor(ok.ctx, recentApps.rows)
       });
     })
   );

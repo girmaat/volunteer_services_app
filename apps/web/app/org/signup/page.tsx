@@ -16,7 +16,7 @@ const label = "text-sm font-semibold text-ink";
 function message(err: unknown, fallback: string) {
   const e = err as { message?: string; error?: { message?: string }; errors?: { fieldErrors?: Record<string, string[]> } } | null;
   const field = e?.errors?.fieldErrors ? Object.values(e.errors.fieldErrors).flat()[0] : null;
-  return String(field || e?.error?.message || e?.message || fallback);
+  return String(field || e?.error?.message || (e instanceof Error && e.message) || fallback);
 }
 
 /** Signed-in: start an organization from your existing account (your roles stay). */

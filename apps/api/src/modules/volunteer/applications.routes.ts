@@ -1,22 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { icsEvent } from "../../lib/ics";
-import { env } from "../../lib/env";
 import type { Express } from "express";
 import { z } from "zod";
 import { contentDisposition } from "../../lib/http";
 import { requireVolunteerUser } from "../../middleware/auth";
-import { illustrateRows } from "./helpers";
 import { pool } from "../../lib/db";
-import { submitReview, ReviewError } from "../reviews/service";
-import type { PolicyUser } from "../../lib/policy";
 import { afterApplicationUpdate } from "../requests/applications";
 import { commitmentIcs } from "../calendar/updates";
 import { wrap } from "../../lib/http";
 
 export function registerVolunteerApplicationsRoutes(app: Express) {
-
-
-
 
 app.get(
   "/v1/volunteer/applications",
@@ -53,8 +44,6 @@ app.get(
     return res.json(rows.rows);
   })
 );
-
-
 
 app.get(
   "/v1/volunteer/applications/:id",
@@ -102,7 +91,7 @@ app.get(
 
     if (rows.rowCount === 0) return res.status(404).json({ message: "Application not found" });
 
-    const r = rows.rows[0] as any;
+    const r = rows.rows[0];
 
     const commitmentRes = await pool.query(
       `
@@ -160,10 +149,6 @@ app.get(
   })
 );
 
-
-
-
-
 app.post(
   "/v1/volunteer/applications/:id/withdraw",
   wrap(async (req, res) => {
@@ -194,105 +179,6 @@ app.post(
     return res.status(200).json({ id: updated.rows[0]?.id, status: updated.rows[0]?.status, updated_at: updated.rows[0]?.updated_at });
   })
 );
-
-
-
-app.post(
-  "/v1/volunteer/applications/:id/schedule",
-  wrap(async (req, res) => {
-    const user = await requireVolunteerUser(req, res);
-    if (!user) return;
-
-    const idParsed = z.string().uuid().safeParse(req.params.id);
-    if (!idParsed.success) return res.status(400).json({ message: "Invalid application id" });
-    const id = idParsed.data;
-
-    const body = z
-      .object({
-        start_at: z.string().min(1),
-        end_at: z.string().optional()
-      })
-      .parse(req.body);
-
-    const existing = await pool.query(
-      "SELECT id, status, request_id FROM request_applications WHERE id = $1 AND volunteer_user_id = $2",
-      [id, user.id]
-    );
-    if (existing.rowCount === 0) return res.status(404).json({ message: "Application not found" });
-
-    const status = String(existing.rows[0]?.status || "");
-    if (status !== "accepted" && status !== "confirmed") {
-      return res.status(409).json({ message: `Cannot schedule from status '${status}'` });
-    }
-
-    const requestId = String(existing.rows[0]?.request_id);
-    const startAt = new Date(body.start_at);
-    if (Number.isNaN(startAt.getTime())) return res.status(400).json({ message: "Invalid start_at" });
-    const endAt = body.end_at ? new Date(body.end_at) : null;
-    if (endAt && Number.isNaN(endAt.getTime())) return res.status(400).json({ message: "Invalid end_at" });
-
-    const existingCommitment = await pool.query(
-      "SELECT id FROM request_commitments WHERE volunteer_user_id = $1 AND request_id = $2 ORDER BY updated_at DESC LIMIT 1",
-      [user.id, requestId]
-    );
-
-    let commitmentId: string | null = null;
-
-    if ((existingCommitment.rowCount ?? 0) > 0) {
-      commitmentId = String(existingCommitment.rows[0]?.id);
-      await pool.query(
-        "UPDATE request_commitments SET status = 'confirmed', start_at = $3, end_at = $4, updated_at = NOW() WHERE id = $1 AND volunteer_user_id = $2",
-        [commitmentId, user.id, startAt.toISOString(), endAt ? endAt.toISOString() : null]
-      );
-    } else {
-      const inserted = await pool.query(
-        "INSERT INTO request_commitments (volunteer_user_id, request_id, status, start_at, end_at) VALUES ($1, $2, 'confirmed', $3, $4) RETURNING id",
-        [user.id, requestId, startAt.toISOString(), endAt ? endAt.toISOString() : null]
-      );
-      commitmentId = inserted.rows[0]?.id ?? null;
-    }
-
-    await pool.query("UPDATE request_applications SET status = 'confirmed', updated_at = NOW() WHERE id = $1", [id]);
-
-    return res.status(200).json({ ok: true, commitment_id: commitmentId });
-  })
-);
-
-
-
-app.post(
-  "/v1/volunteer/applications/:id/complete",
-  wrap(async (req, res) => {
-    const user = await requireVolunteerUser(req, res);
-    if (!user) return;
-
-    const idParsed = z.string().uuid().safeParse(req.params.id);
-    if (!idParsed.success) return res.status(400).json({ message: "Invalid application id" });
-    const id = idParsed.data;
-
-    const existing = await pool.query(
-      "SELECT id, status, request_id FROM request_applications WHERE id = $1 AND volunteer_user_id = $2",
-      [id, user.id]
-    );
-    if (existing.rowCount === 0) return res.status(404).json({ message: "Application not found" });
-
-    const status = String(existing.rows[0]?.status || "");
-    if (status !== "confirmed") return res.status(409).json({ message: `Cannot complete from status '${status}'` });
-
-    const requestId = String(existing.rows[0]?.request_id);
-
-    await pool.query("UPDATE request_applications SET status = 'completed', updated_at = NOW() WHERE id = $1", [id]);
-    await pool.query(
-      "UPDATE request_commitments SET status = 'completed', updated_at = NOW() WHERE volunteer_user_id = $1 AND request_id = $2",
-      [user.id, requestId]
-    );
-
-    await afterApplicationUpdate(id, "completed", String(user.id));
-    return res.status(200).json({ ok: true, status: "completed" });
-  })
-);
-
-
 
 app.get(
   "/v1/volunteer/documents/:id/download",
@@ -338,79 +224,12 @@ app.get(
 
     if ((row.rowCount ?? 0) === 0) return res.status(404).json({ message: "Document not found" });
 
-    const r = row.rows[0] as any;
+    const r = row.rows[0];
     res.setHeader("content-type", r.mime_type || "application/octet-stream");
     res.setHeader("content-disposition", contentDisposition(r.file_name));
     return res.status(200).send(r.bytes);
   })
 );
-
-
-
-// Volunteer: leave a review for the requester (two-sided reputation)
-app.get("/v1/volunteer/applications/:id/review-requester", wrap(async (req, res) => {
-  const user = await requireVolunteerUser(req, res);
-  if (!user) return;
-
-  const idParsed = z.string().uuid().safeParse(req.params.id);
-  if (!idParsed.success) return res.status(400).json({ message: "Invalid application id" });
-  const applicationId = idParsed.data;
-
-  const row = await pool.query(
-    `
-    SELECT
-      rr.id,
-      rr.rating,
-      rr.strengths,
-      rr.improvements,
-      rr.would_work_again,
-      rr.created_at
-    FROM requester_reviews rr
-    WHERE rr.request_application_id = $1 AND rr.reviewer_user_id = $2
-    LIMIT 1
-    `,
-    [applicationId, user.id]
-  );
-
-  return res.json({ review: row.rowCount ? illustrateRows(row.rows[0]) : null });
-}));
-
-
-
-app.post("/v1/volunteer/applications/:id/review-requester", wrap(async (req, res) => {
-  const user = await requireVolunteerUser(req, res);
-  if (!user) return;
-
-  const idParsed = z.string().uuid().safeParse(req.params.id);
-  if (!idParsed.success) return res.status(400).json({ message: "Invalid application id" });
-  const applicationId = idParsed.data;
-
-  const body = z
-    .object({
-      rating: z.number().int().min(1).max(5),
-      strengths: z.string().max(2000).optional(),
-      improvements: z.string().max(2000).optional(),
-      would_work_again: z.boolean().optional()
-    })
-    .parse(req.body);
-
-  try {
-    const out = await submitReview(user as PolicyUser, applicationId, {
-      overall: body.rating,
-      comment: body.strengths || null,
-      strengths: body.strengths || null,
-      improvements: body.improvements || null,
-      wouldWorkAgain: typeof body.would_work_again === "boolean" ? body.would_work_again : null
-    });
-    return res.json({ id: out.id, ok: true, published: out.published });
-  } catch (e) {
-    if (e instanceof ReviewError) return res.status(e.status).json({ message: e.message });
-    throw e;
-  }
-}));
-
-
-
 
 app.get(
   "/v1/volunteer/calendar/commitments",

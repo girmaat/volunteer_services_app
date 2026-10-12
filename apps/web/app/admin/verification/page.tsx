@@ -71,7 +71,7 @@ export default async function Page(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ notes: notes || undefined })
     });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) redirect(`/admin/verification?tab=organizations&error=${encodeURIComponent(String(json?.message || "Failed"))}`);
     revalidatePath("/admin/verification");
     redirect("/admin/verification?tab=organizations&ok=1");

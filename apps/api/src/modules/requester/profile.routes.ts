@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
 import { setProfile } from "../../auth/handlers";
@@ -98,7 +97,7 @@ app.get(
       [user.id]
     );
 
-    const r: any = statsRow.rows[0] || {};
+    const r = statsRow.rows[0] || {};
     const commitmentsTotal = Number(r.commitments_total_count || 0);
     const canceled = Number(r.canceled_count || 0);
     const cancellation_rate = commitmentsTotal > 0 ? canceled / commitmentsTotal : null;
@@ -107,7 +106,7 @@ app.get(
       user: { id: user.id, email: user.email, role: user.role },
       verification: {
         email_verified: !!user.email_verified_at,
-        phone_verified: !!(user as any).phone_verified_at,
+        phone_verified: !!user.phone_verified_at,
         id_verification_status: user.verification_status || null
       },
       profile: prof.rows[0] || null,
@@ -185,7 +184,7 @@ app.get("/v1/requester/history/reviews", wrap(async (req, res) => {
   );
 
   const avg = rows.rows.length
-    ? rows.rows.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / rows.rows.length
+    ? rows.rows.reduce((s: number, r) => s + Number(r.rating || 0), 0) / rows.rows.length
     : 0;
 
   return res.json({ average_rating: avg, count: rows.rows.length, reviews: illustrateRows(rows.rows) });

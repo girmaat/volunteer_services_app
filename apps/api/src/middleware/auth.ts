@@ -39,7 +39,7 @@ async function authenticate(req: express.Request, res: express.Response, opts: O
     return null;
   }
   if (isBanned(user)) {
-    res.status(403).json({ message: "Account is banned", banned_until: user.banned_until, banned_reason: (user as any).banned_reason || null });
+    res.status(403).json({ message: "Account is banned", banned_until: user.banned_until, banned_reason: user.banned_reason || null });
     return null;
   }
   if (!opts.allowIncompleteOnboarding && !user.onboarding_completed) {

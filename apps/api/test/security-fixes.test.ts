@@ -149,10 +149,10 @@ describe("minors' profiles and public hours (high #5, medium #11)", () => {
     expect((await (await as(teen)).get(`/v1/public/volunteers/${id}`)).status).toBe(200);
   });
 
-  it("public hours are approved hours, never the old self-log", async () => {
+  it("public hours are approved hours, never self-reported ones", async () => {
     const v = `${uniq("hours")}@thankyou.test`;
     await createUser({ email: v, roles: ["volunteer"] });
-    await pool.query("INSERT INTO volunteer_impact_entries (volunteer_user_id, impact_date, hours) VALUES ($1, CURRENT_DATE, 999)", [await userId(v)]);
+    await pool.query("INSERT INTO contributions (volunteer_user_id, source, reported_hours, status, verification_method) VALUES ($1, 'outside', 999, 'self_reported', 'self_reported')", [await userId(v)]);
     const r = await anon().get(`/v1/public/volunteers/${await userId(v)}`);
     expect(JSON.stringify(r.body)).not.toContain("999");
   });

@@ -97,15 +97,6 @@ export function registerMessagingRoutes(app: Express) {
     })
   );
 
-  app.get(
-    "/v1/inbox/unread-count",
-    wrap(async (req, res) => {
-      const user = (await requireAuthedUser(req, res)) as PolicyUser | null;
-      if (!user) return;
-      const list = await listConversations(user, "all");
-      return res.json({ unread: list.reduce((a, c) => a + Number(c.unread || 0), 0) });
-    })
-  );
 
   // Start (or reopen) the conversation for a request. Volunteers must have applied; owners pick an applicant.
   app.post(

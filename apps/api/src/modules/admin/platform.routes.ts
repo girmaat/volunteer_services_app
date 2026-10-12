@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
 import { requirePlatformAdmin, requireSuperAdmin } from "../../admin/auth";
@@ -55,15 +54,15 @@ export function registerAdminPlatformRoutes(app: Express) {
           `,
           [expectedOwner]
         );
-        ownerMismatches = mm.rows as any;
+        ownerMismatches = mm.rows;
       }
 
       return res.json({
         run_migrations: runMigrations,
         pending_migrations: pending,
-        db_user: (info.rows[0] as any)?.db_user || null,
-        session_user: (info.rows[0] as any)?.session_user || null,
-        database: (info.rows[0] as any)?.database || null,
+        db_user: (info.rows[0])?.db_user || null,
+        session_user: (info.rows[0])?.session_user || null,
+        database: (info.rows[0])?.database || null,
         expected_owner: expectedOwner,
         owner_mismatches: ownerMismatches
       });
@@ -145,7 +144,7 @@ export function registerAdminPlatformRoutes(app: Express) {
                 updated_by_user_id = $4,
                 updated_at = NOW()
           WHERE id = $1`,
-        [1, enabled, message && message.length ? message : null, String((r.user as any).id)]
+        [1, enabled, message && message.length ? message : null, String(r.user.id)]
       );
 
       await pool.query(
@@ -154,7 +153,7 @@ export function registerAdminPlatformRoutes(app: Express) {
         [
           "maintenance",
           JSON.stringify({ enabled, message: message && message.length ? message : null }),
-          String((r.user as any).id)
+          String(r.user.id)
         ]
       );
 

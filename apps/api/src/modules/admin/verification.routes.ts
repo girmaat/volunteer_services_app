@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { contentDisposition } from "../../lib/http";
 import { z } from "zod";
@@ -75,7 +74,7 @@ export function registerAdminVerificationRoutes(app: Express) {
       const rows = await pool.query(`SELECT id, file_name, mime_type, bytes FROM verification_documents WHERE id = $1`, [docId]);
       if ((rows.rowCount ?? 0) === 0) return res.status(404).json({ message: "Document not found" });
 
-      const d = rows.rows[0] as any;
+      const d = rows.rows[0];
       res.setHeader("content-type", d.mime_type || "application/octet-stream");
       res.setHeader("content-disposition", contentDisposition(d.file_name));
       return res.send(d.bytes);
@@ -104,7 +103,7 @@ export function registerAdminVerificationRoutes(app: Express) {
                 updated_at = NOW()
           WHERE id = $1
           RETURNING id`,
-        [userId, String((r.user as any).id), parsed.data.notes ? String(parsed.data.notes) : null]
+        [userId, String(r.user.id), parsed.data.notes ? String(parsed.data.notes) : null]
       );
       if ((upd.rowCount ?? 0) === 0) return res.status(404).json({ message: "User not found" });
       return res.json({ ok: true });

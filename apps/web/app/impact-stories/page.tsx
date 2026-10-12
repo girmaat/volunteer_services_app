@@ -38,8 +38,8 @@ async function getStories(): Promise<StoriesResult> {
 
     const stories = (await res.json()) as Story[];
     return { stories };
-  } catch (e: any) {
-    return { stories: [], error: e?.message || "Failed to load stories" };
+  } catch (e) {
+    return { stories: [], error: (e instanceof Error && e.message) || "Failed to load stories" };
   }
 }
 

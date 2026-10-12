@@ -6,7 +6,7 @@ export const soon = (days: number) => new Date(Date.now() + days * 86400_000).to
 let seq = 0;
 export const uniq = (p: string) => `${p}-${process.pid}-${++seq}`;
 
-/** A fresh organization with an admin (owner), a manager (coordinator) and a member. */
+/** A fresh organization with an admin (owner), a manager and a member. */
 export async function makeOrg(opts: { verified?: boolean; policy?: string } = {}) {
   const slug = uniq("pilot-org");
   await pool.query(

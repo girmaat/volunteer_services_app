@@ -4,29 +4,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../../lib/cn";
 
 /**
- * Data table. Wraps in a horizontally scrollable region so wide tables never push the page
- * sideways on a phone; the caption names the table for screen readers.
- */
-export function Table({ caption, captionHidden = true, className, children }: { caption: string; captionHidden?: boolean; className?: string; children: ReactNode }) {
-  return (
-    <div className="w-full overflow-x-auto rounded-md border border-line bg-surface" role="region" aria-label={caption} tabIndex={0}>
-      <table className={cn("w-full border-collapse text-sm", className)}>
-        <caption className={captionHidden ? "srOnly" : "p-3 text-left text-sm font-semibold text-ink"}>{caption}</caption>
-        {children}
-      </table>
-    </div>
-  );
-}
-
-export function Th({ className, ...rest }: ComponentProps<"th">) {
-  return <th scope="col" className={cn("whitespace-nowrap border-b border-line bg-wash px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted", className)} {...rest} />;
-}
-
-export function Td({ className, ...rest }: ComponentProps<"td">) {
-  return <td className={cn("border-b border-line px-3 py-2.5 align-top text-ink", className)} {...rest} />;
-}
-
-/**
  * Previous / next pagination driven by URL params, so it works without JavaScript and pages
  * are linkable. Pass the current query (minus the page key) in `params`.
  */

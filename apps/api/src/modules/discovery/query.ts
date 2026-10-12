@@ -104,7 +104,7 @@ const SELECT = `
   r.public_area, r.starts_at, r.ends_at, r.schedule_type, r.recurrence_rule, r.timezone, r.duration_minutes, r.apply_by,
   r.volunteers_needed, r.urgency, r.required_skills, r.nice_to_have_skills, r.min_age, r.requires_background_check,
   r.requires_training, r.requires_waiver, r.requires_car, mask_contacts(r.accessibility_notes) AS accessibility_notes, mask_contacts(r.equipment_notes) AS equipment_notes, r.is_sensitive,
-  r.target_value::float AS target_value, r.target_unit, r.min_contribution::float AS min_contribution, r.allow_overfill, r.requires_guardian_consent,
+  r.target_value::float AS target_value, r.target_unit, r.work_type, r.min_contribution::float AS min_contribution, r.allow_overfill, r.requires_guardian_consent,
   CASE WHEN r.target_value IS NULL THEN 0::float
        ELSE (SELECT COALESCE(SUM(COALESCE(x.accepted_amount, x.offered_amount)), 0)::float FROM request_applications x WHERE x.request_id = r.id AND x.status IN ('accepted','confirmed','completed')) END AS committed_amount,
   r.status, r.published_at, r.updated_at,

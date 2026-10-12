@@ -36,7 +36,7 @@ async function loadBanned(): Promise<{ data: BannedUser[]; error: string | null;
     const msg = `Failed to load banned users (HTTP ${res.status})`;
     return { data: [], error: msg, status: res.status };
   }
-  const json = (await res.json().catch(() => ({}))) as any;
+  const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
   const data = (Array.isArray(json?.banned_users) ? json.banned_users : []) as BannedUser[];
   return { data, error: null, status: res.status };
 }
@@ -47,7 +47,7 @@ async function loadActions(): Promise<{ data: EnforcementAction[]; error: string
     const msg = `Failed to load enforcement actions (HTTP ${res.status})`;
     return { data: [], error: msg, status: res.status };
   }
-  const json = (await res.json().catch(() => ({}))) as any;
+  const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
   const data = (Array.isArray(json?.actions) ? json.actions : []) as EnforcementAction[];
   return { data, error: null, status: res.status };
 }
@@ -66,7 +66,7 @@ export default async function Page() {
     "use server";
     const userId = String(formData.get("user_id") || "");
     const res = await backendFetch(`/v1/admin/users/${encodeURIComponent(userId)}/unban`, { method: "POST" });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     const jar = await cookies();
     if (!res.ok) {
       jar.set(FLASH_COOKIE, JSON.stringify({ kind: "error", message: String(json?.message || "Failed") }), { httpOnly: true, sameSite: "lax", path: "/admin/enforcement", maxAge: 30 });

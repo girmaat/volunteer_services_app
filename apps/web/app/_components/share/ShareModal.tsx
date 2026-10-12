@@ -77,8 +77,8 @@ export default function ShareModal({
         try {
           const r = await onMint(settings);
           if (!r.ok) setError(r.message || "Could not generate a share link.");
-        } catch (e: any) {
-          setError(e?.message ? String(e.message) : "Could not generate a share link.");
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Could not generate a share link.");
         } finally {
           setWorking(false);
         }
@@ -123,8 +123,8 @@ export default function ShareModal({
       const r = await onMint(settings, { forceNew: true });
       if (!r.ok) setError(r.message || "Could not generate a share link.");
       else setError(null);
-    } catch (e: any) {
-      setError(e?.message ? String(e.message) : "Could not generate a share link.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not generate a share link.");
     } finally {
       setWorking(false);
     }

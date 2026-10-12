@@ -1,5 +1,4 @@
 
-import { HttpUrl } from "@thankyou/contracts";
 import { MfaLocked, startMfaChallenge } from "../modules/mfa/routes";
 import { isBanned } from "../lib/ban";
 import { MediaPath } from "../lib/media";
@@ -13,7 +12,7 @@ import multer from "multer";
 import { z } from "zod";
 import { randomTokenUrlSafe, sha256 } from "./crypto";
 import { devEmailLink, sendEmail } from "./email";
-import { createSession, deleteSession, deleteAllSessionsForUser, requireUserBySession, setSessionContext } from "./session";
+import { createSession, deleteSession, requireUserBySession, setSessionContext } from "./session";
 import { availableContexts, can, contextOrgSlug, homeFor, type PolicyUser } from "../lib/policy";
 import { getOrgContextForUser } from "../modules/org/context";
 import { recomputeOnboarding } from "./onboarding";
@@ -44,7 +43,7 @@ export async function me(pool: Pool, req: Request, res: Response) {
     pool.query("SELECT COUNT(*)::int AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL", [user.id]).catch(() => ({ rows: [{ n: 0 }] })),
     // Org members get their org context here too, so org pages don't need a second call to /v1/org/me.
     can(user as PolicyUser, "org:act")
-      ? getOrgContextForUser(pool, String(user.id), contextOrgSlug((user as any).active_context)).catch(() => null)
+      ? getOrgContextForUser(pool, String(user.id), contextOrgSlug(user.active_context)).catch(() => null)
       : Promise.resolve(null),
     pool
       .query(
@@ -59,7 +58,7 @@ export async function me(pool: Pool, req: Request, res: Response) {
   const active = user.active_context && (contexts as string[]).includes(user.active_context) ? user.active_context : null;
   return res.json({
     user: {
-      ...(user as any),
+      ...user,
       active_context: active,
       contexts,
       home: homeFor(active ?? (user.role === "org_admin" ? "org:" : user.role)),
@@ -103,7 +102,7 @@ export async function signup(pool: Pool, req: Request, res: Response) {
 
   const existing = await pool.query("SELECT id, email_verified_at FROM users WHERE email=$1", [email]);
   if ((existing.rowCount ?? 0) > 0) {
-    const existingUser = existing.rows[0] as any;
+    const existingUser = existing.rows[0];
     const existingUserId = String(existingUser.id);
     const verifiedAt = existingUser.email_verified_at as string | null;
 
@@ -218,8 +217,8 @@ export async function resendVerification(pool: Pool, req: Request, res: Response
     return res.status(202).json({ status: "accepted" });
   }
 
-  const userId = String((u.rows[0] as any).id);
-  const verifiedAt = (u.rows[0] as any).email_verified_at as string | null;
+  const userId = String((u.rows[0]).id);
+  const verifiedAt = (u.rows[0]).email_verified_at as string | null;
 
   if (verifiedAt) {
     return res.json({ status: "ok", message: "Email already verified" });
@@ -286,7 +285,7 @@ export async function verifyEmail(pool: Pool, req: Request, res: Response) {
 
   if ((t.rowCount ?? 0) === 0) return res.status(400).json({ message: "Invalid or expired token" });
 
-  const row = t.rows[0] as any;
+  const row = t.rows[0];
   if (row.used_at) return res.status(400).json({ message: "Token already used" });
   if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) {
     return res.status(400).json({ message: "Invalid or expired token" });
@@ -338,7 +337,7 @@ export async function login(pool: Pool, req: Request, res: Response) {
     return res.status(401).json({ message: "Invalid email or password" });
   }
 
-  const row = u.rows[0] as any;
+  const row = u.rows[0];
   const ok = await bcrypt.compare(password, String(row.password_hash || ""));
   if (!ok) return res.status(401).json({ message: "Invalid email or password" });
 
@@ -390,7 +389,7 @@ export async function changePassword(pool: Pool, req: Request, res: Response) {
   const u = await pool.query("SELECT password_hash FROM users WHERE id=$1", [user.id]);
   if ((u.rowCount ?? 0) === 0) return res.status(401).json({ message: "Not authenticated" });
 
-  const passwordHash = String((u.rows[0] as any).password_hash || "");
+  const passwordHash = String((u.rows[0]).password_hash || "");
   const ok = await bcrypt.compare(parsed.data.currentPassword, passwordHash);
   if (!ok) return res.status(400).json({ message: "Current password is incorrect" });
 
@@ -416,7 +415,6 @@ export async function changePassword(pool: Pool, req: Request, res: Response) {
   return res.json({ status: "password_changed", signedOutOtherSessions: true });
 }
 
-
 export async function forgotPassword(pool: Pool, req: Request, res: Response) {
   const schema = z.object({ email: z.string().email() });
   const parsed = schema.safeParse(req.body);
@@ -430,7 +428,7 @@ export async function forgotPassword(pool: Pool, req: Request, res: Response) {
     return res.status(202).json({ status: "accepted" });
   }
 
-  const userId = String((u.rows[0] as any).id);
+  const userId = String((u.rows[0]).id);
 
   const token = randomTokenUrlSafe(32);
   const tokenHash = sha256(token);
@@ -749,7 +747,6 @@ export async function setProfile(pool: Pool, req: Request, res: Response) {
   return res.json({ user: updated });
 }
 
-
 export async function setAvailability(pool: Pool, req: Request, res: Response) {
   const token = authHeaderToken(req);
   if (!token) return res.status(401).json({ message: "Not authenticated" });
@@ -796,8 +793,8 @@ export async function skipAvailability(pool: Pool, req: Request, res: Response) 
   if (!user) return res.status(401).json({ message: "Not authenticated" });
 
   const role = String(user.role || "");
-  const requesterMode = String((user as any).requester_mode || "");
-  const accountType = String((user as any).account_type || "");
+  const requesterMode = String(user.requester_mode || "");
+  const accountType = String(user.account_type || "");
 
   const isIndividualRequester =
     role === "requester" &&
@@ -832,9 +829,8 @@ export async function submitVerification(pool: Pool, req: Request, res: Response
   const user = await requireUserBySession(pool, token);
   if (!user) return res.status(401).json({ message: "Not authenticated" });
 
-  if (!user.verification_required) {
-    return res.status(400).json({ message: "Verification is not required for this account" });
-  }
+  // Anyone can ask to be verified (it unlocks sensitive categories); approved accounts don't resubmit.
+  if (user.verification_status === "approved") return res.status(409).json({ message: "Your account is already verified" });
 
   const file = (req as any).file as Express.Multer.File | undefined;
   if (!file) return res.status(400).json({ message: "Missing document file" });
@@ -854,7 +850,8 @@ export async function submitVerification(pool: Pool, req: Request, res: Response
 
   await pool.query(
     `UPDATE users
-        SET verification_status='submitted',
+        SET verification_required = TRUE,
+            verification_status='submitted',
             verification_submitted_at = COALESCE(verification_submitted_at, NOW()),
             updated_at=NOW()
       WHERE id=$1`,

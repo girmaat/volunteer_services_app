@@ -69,8 +69,8 @@ async function getPage(): Promise<PageLoad> {
       return { page: null, error: msg };
     }
     return { page: await res.json(), error: null };
-  } catch (e: any) {
-    const msg = e?.message ? String(e.message) : "fetch failed";
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "fetch failed";
     return { page: null, error: msg };
   }
 }

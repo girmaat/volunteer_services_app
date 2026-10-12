@@ -1,11 +1,9 @@
 import { isBanned } from "../../lib/ban";
 import { can, contextOrgSlug, type PolicyUser } from "../../lib/policy";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import multer from "multer";
 import type { Request, Response } from "express";
 import type { Pool } from "pg";
 import { requireUserBySession } from "../../auth/session";
-import { pool } from "../../lib/db";
 
 export function authHeaderToken(req: Request): string | null {
   const header = req.header("authorization") || "";
@@ -27,98 +25,9 @@ export function slugifyOrgSlug(input: string) {
     .slice(0, 80);
 }
 
-export type DbQueryable = { query: (text: string, params?: any[]) => Promise<any> };
-
-export const _publicColumnsCache = new Map<string, Set<string>>();
-
-export async function publicTableExists(db: DbQueryable, table: string): Promise<boolean> {
-  const res = await db.query("SELECT to_regclass($1) AS reg", [`public.${table}`]);
-  return Boolean(res.rows?.[0]?.reg);
-}
-
-export async function getPublicColumns(db: DbQueryable, table: string): Promise<Set<string>> {
-  const cached = _publicColumnsCache.get(table);
-  if (cached) return cached;
-
-  const res = await db.query(
-    "SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name=$1",
-    [table]
-  );
-  const cols = new Set<string>((res.rows || []).map((r: any) => String(r.column_name)));
-  _publicColumnsCache.set(table, cols);
-  return cols;
-}
-
-export function buildInsertSql(
-  table: string,
-  values: Record<string, any>,
-  allowedColumns: Set<string>,
-  requiredColumns: string[]
-) {
-  const cols: string[] = [];
-  const params: any[] = [];
-  const placeholders: string[] = [];
-
-  for (const col of requiredColumns) {
-    if (!allowedColumns.has(col)) {
-      throw new Error(`Database schema missing required column ${table}.${col}`);
-    }
-  }
-
-  let i = 1;
-  for (const [k, v] of Object.entries(values)) {
-    if (!allowedColumns.has(k)) continue;
-    cols.push(k);
-    params.push(v);
-    placeholders.push(`$${i++}`);
-  }
-
-  if (cols.length === 0) throw new Error(`No writable columns found for ${table}`);
-
-  return {
-    sql: `INSERT INTO ${table} (${cols.join(", ")}) VALUES (${placeholders.join(", ")})`,
-    params
-  };
-}
-
-export function buildUpdateSql(
-  table: string,
-  keyColumn: string,
-  keyValue: any,
-  updates: Record<string, any>,
-  allowedColumns: Set<string>,
-  requiredColumns: string[]
-) {
-  for (const col of requiredColumns) {
-    if (!allowedColumns.has(col)) {
-      throw new Error(`Database schema missing required column ${table}.${col}`);
-    }
-  }
-
-  const sets: string[] = [];
-  const params: any[] = [];
-  let i = 1;
-
-  for (const [k, v] of Object.entries(updates)) {
-    if (!allowedColumns.has(k)) continue;
-    sets.push(`${k}=$${i++}`);
-    params.push(v);
-  }
-
-  if (sets.length === 0) {
-    // Nothing to update - still treat as success.
-    return { sql: `SELECT 1`, params: [] as any[] };
-  }
-
-  params.push(keyValue);
-  return {
-    sql: `UPDATE ${table} SET ${sets.join(", ")} WHERE ${keyColumn}=$${i}`,
-    params
-  };
-}
-
-export function pgErrorCode(e: any): string {
-  return String((e && (e.code || e.sqlState)) || "");
+export function pgErrorCode(e: unknown): string {
+  const x = (e ?? {}) as { code?: unknown; sqlState?: unknown };
+  return String(x.code || x.sqlState || "");
 }
 
 export const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -149,11 +58,12 @@ export type OrgContext = {
     contact_phone: string | null;
     preferred_contact_method: string | null;
     publication_policy: string;
+    org_type: string;
     suspended_at: string | null;
     suspended_reason: string | null;
   };
   membership: {
-    role: "admin" | "manager" | "member";
+    role: "admin" | "manager" | "member" | "coordinator";
     status: "active" | "invited";
   };
 };
@@ -165,7 +75,7 @@ export async function getOrgContextForUser(pool: Pool, userId: string, preferred
       o.slug, o.name, o.summary, o.location, o.mission, o.website_url, o.contact_email, o.logo_url, o.onboarding_completed, o.updated_at,
       o.verification_required, o.verification_status, o.verification_submitted_at, o.verification_submission_notes, o.verification_notes, o.verified_at,
       o.preferred_skills, o.service_area, o.hours, o.contact_phone, o.preferred_contact_method,
-      o.publication_policy, o.suspended_at, o.suspended_reason,
+      o.publication_policy, o.org_type, o.suspended_at, o.suspended_reason,
       m.role, m.status
     FROM organization_members m
     JOIN organizations o ON o.slug = m.org_slug
@@ -178,7 +88,7 @@ export async function getOrgContextForUser(pool: Pool, userId: string, preferred
 
   if ((rows.rowCount ?? 0) === 0) return null;
 
-  const r = rows.rows[0] as any;
+  const r = rows.rows[0];
   return {
     org: {
       slug: String(r.slug),
@@ -203,12 +113,13 @@ export async function getOrgContextForUser(pool: Pool, userId: string, preferred
       contact_phone: r.contact_phone ?? null,
       preferred_contact_method: r.preferred_contact_method ?? null,
       publication_policy: String(r.publication_policy || "owner_first_and_high_risk"),
+      org_type: String(r.org_type || "nonprofit"),
       suspended_at: r.suspended_at ? String(r.suspended_at) : null,
       suspended_reason: r.suspended_reason ?? null
     },
     membership: {
-      role: String(r.role) as any,
-      status: String(r.status) as any
+      role: String(r.role) as OrgContext["membership"]["role"],
+      status: String(r.status) as OrgContext["membership"]["status"]
     }
   };
 }
@@ -226,7 +137,7 @@ export async function requireOrg(pool: Pool, req: Request, res: Response) {
     return null;
   }
   if (isBanned(user)) {
-    res.status(403).json({ message: "Account is banned", banned_until: (user as any).banned_until });
+    res.status(403).json({ message: "Account is banned", banned_until: user.banned_until });
     return null;
   }
 
@@ -234,9 +145,9 @@ export async function requireOrg(pool: Pool, req: Request, res: Response) {
     res.status(403).json({ message: "Forbidden" });
     return null;
   }
-  (user as any).role = "org_admin";
+  user.role = "org_admin";
 
-  const ctx = await getOrgContextForUser(pool, String((user as any).id), contextOrgSlug((user as any).active_context));
+  const ctx = await getOrgContextForUser(pool, String(user.id), contextOrgSlug(user.active_context));
   if (!ctx) {
     res.status(404).json({ message: "Organization membership not found" });
     return null;
@@ -251,6 +162,23 @@ export function requireAdmin(ctx: OrgContext, res: Response) {
     return false;
   }
   return true;
+}
+
+/** Volunteers' emails and phone numbers are for admins and managers; members and coordinators don't see them. */
+export function seesContacts(ctx: OrgContext) {
+  return ctx.membership.role === "admin" || ctx.membership.role === "manager";
+}
+
+const CONTACT_KEYS = ["email", "phone", "volunteer_email", "volunteer_phone"] as const;
+
+/** Rows with volunteer contact fields cleared when this staff member may not see them. */
+export function contactsFor<T extends Record<string, unknown>>(ctx: OrgContext, rows: T[]): T[] {
+  if (seesContacts(ctx)) return rows;
+  return rows.map((row) => {
+    const out: Record<string, unknown> = { ...row };
+    for (const k of CONTACT_KEYS) if (k in out) out[k] = null;
+    return out as T;
+  });
 }
 
 export function requireAdminOrManager(ctx: OrgContext, res: Response) {

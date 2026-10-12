@@ -89,15 +89,6 @@ export function registerMfaRoutes(app: Express) {
     })
   );
 
-  app.get(
-    "/v1/me/mfa",
-    wrap(async (req, res) => {
-      const user = await requireAuthedUser(req, res);
-      if (!user) return;
-      const r = (await pool.query("SELECT mfa_enabled_at, cardinality(mfa_recovery_hashes) AS codes FROM users WHERE id = $1", [user.id])).rows[0];
-      return res.json({ enabled: Boolean(r?.mfa_enabled_at), enabled_at: r?.mfa_enabled_at ?? null, recovery_codes_left: Number(r?.codes ?? 0) });
-    })
-  );
 
   // Step 1 of turning it on: a new secret to scan. Nothing changes until a code from it is confirmed.
   app.post(

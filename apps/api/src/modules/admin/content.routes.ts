@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { MediaPath } from "../../lib/media";
 import type { Express } from "express";
 import { z } from "zod";
+import { OrgType } from "@thankyou/contracts";
 import { requireModerator, requirePlatformAdmin } from "../../admin/auth";
 import { pool } from "../../lib/db";
-import { transitionRequest, TransitionError, type RequestEvent } from "../requests/lifecycle";
 import { wrap } from "../../lib/http";
 import { parseLimit, parseOffset } from "./helpers";
 
@@ -17,16 +16,16 @@ export function registerAdminContentRoutes(app: Express) {
       const r = await requirePlatformAdmin(pool, req, res);
       if (!r) return;
 
-      const q = String((req.query.q as any) || "").trim();
-      const status = String((req.query.status as any) || "").trim();
-      const requiredRaw = String((req.query.required as any) || "").trim();
-      const sortRaw = String((req.query.sort as any) || "").trim();
-      const dirRaw = String((req.query.dir as any) || "").trim().toLowerCase();
+      const q = String(req.query.q || "").trim();
+      const status = String(req.query.status || "").trim();
+      const requiredRaw = String(req.query.required || "").trim();
+      const sortRaw = String(req.query.sort || "").trim();
+      const dirRaw = String(req.query.dir || "").trim().toLowerCase();
 
       const limit = parseLimit(req.query.limit, 50, 200);
       const offset = parseOffset(req.query.offset);
 
-      const params: any[] = [];
+      const params: unknown[] = [];
       const wheres: string[] = [];
 
       if (q) {
@@ -76,6 +75,7 @@ export function registerAdminContentRoutes(app: Express) {
            o.website_url,
            o.contact_email,
            o.logo_url,
+           o.org_type,
            o.verification_required,
            o.verification_status,
            o.verification_submitted_at,
@@ -103,7 +103,6 @@ export function registerAdminContentRoutes(app: Express) {
     })
   );
 
-
   app.patch(
     "/v1/admin/organizations/:slug",
     wrap(async (req, res) => {
@@ -123,19 +122,24 @@ export function registerAdminContentRoutes(app: Express) {
           contact_email: z.string().email().optional().nullable(),
           logo_url: MediaPath.optional(),
           verification_required: z.boolean().optional(),
-          verification_status: z.enum(["not_required", "required", "submitted", "approved", "rejected"]).optional()
+          verification_status: z.enum(["not_required", "required", "submitted", "approved", "rejected"]).optional(),
+          org_type: OrgType.optional()
         })
         .strict();
 
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
-      const fields = parsed.data as any;
+      const fields: Record<string, unknown> = parsed.data;
       const keys = Object.keys(fields);
       if (keys.length === 0) return res.status(400).json({ message: "No changes" });
+      if (parsed.data.org_type && parsed.data.org_type !== "school") {
+        const c = await pool.query("SELECT 1 FROM organization_members WHERE org_slug = $1 AND role = 'coordinator' AND status IN ('active','invited') LIMIT 1", [slug]);
+        if (c.rowCount) return res.status(409).json({ message: "This organization has coordinators; change their role before changing its type" });
+      }
 
       const sets: string[] = [];
-      const params: any[] = [slug];
+      const params: unknown[] = [slug];
 
       for (const k of keys) {
         params.push(fields[k]);
@@ -150,7 +154,6 @@ export function registerAdminContentRoutes(app: Express) {
     })
   );
 
-
   // Opportunity management (service_requests only)
   app.get(
     "/v1/admin/requests",
@@ -158,12 +161,12 @@ export function registerAdminContentRoutes(app: Express) {
       const r = await requireModerator(pool, req, res);
       if (!r) return;
 
-      const q = String((req.query.q as any) || "").trim();
-      const status = String((req.query.status as any) || "").trim();
+      const q = String(req.query.q || "").trim();
+      const status = String(req.query.status || "").trim();
       const limit = parseLimit(req.query.limit, 50, 200);
       const offset = parseOffset(req.query.offset);
 
-      const params: any[] = [];
+      const params: unknown[] = [];
       const clauses: string[] = [];
 
       if (q) {
@@ -212,64 +215,4 @@ export function registerAdminContentRoutes(app: Express) {
     })
   );
 
-
-  app.patch(
-    "/v1/admin/requests/:id",
-    wrap(async (req, res) => {
-      const r = await requireModerator(pool, req, res);
-      if (!r) return;
-
-      const requestId = String(req.params.id || "").trim();
-      const schema = z
-        .object({
-          title: z.string().min(1).max(200).optional(),
-          description: z.string().min(1).max(8000).optional(),
-          status: z.enum(["open", "paused", "closed"]).optional(),
-          reason: z.string().max(500).optional(),
-          mode: z.enum(["in-person", "remote", "hybrid"]).optional().nullable(),
-          location_text: z.string().max(500).optional().nullable(),
-          needed_by: z.string().datetime().optional().nullable(),
-          tags: z.array(z.string().min(1).max(40)).optional()
-        })
-        .strict();
-      const parsed = schema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
-
-      const { status: wantStatus, reason, ...rest } = parsed.data as any;
-      const fields = rest;
-      const keys = Object.keys(fields);
-      if (keys.length === 0 && !wantStatus) return res.status(400).json({ message: "No changes" });
-      // Status changes go through the lifecycle (audited, applicants notified).
-      if (wantStatus) {
-        const cur = await pool.query("SELECT status FROM service_requests WHERE id::text = $1", [requestId]);
-        if (!cur.rowCount) return res.status(404).json({ message: "Service request not found" });
-        const from = String(cur.rows[0].status);
-        const event = wantStatus === "paused" ? "pause" : wantStatus === "closed" ? "take_down" : from === "paused" ? "resume" : from === "canceled" ? "restore" : null;
-        if (event) {
-          try {
-            await transitionRequest(requestId, event as RequestEvent, { userId: String((r.user as any).id), kind: "admin" }, { reason: reason || (event === "take_down" ? "Closed by a moderator" : null) });
-          } catch (e) {
-            if (e instanceof TransitionError) return res.status(e.status).json({ message: e.message });
-            throw e;
-          }
-        }
-        if (!keys.length) return res.json({ ok: true });
-      }
-
-      const sets: string[] = [];
-      const params: any[] = [requestId];
-      for (const k of keys) {
-        let val = fields[k];
-        if (k === "needed_by" && typeof val === "string") {
-          val = new Date(val).toISOString();
-        }
-        params.push(val);
-        sets.push(`${k} = $${params.length}`);
-      }
-      sets.push(`updated_at = NOW()`);
-      const upd = await pool.query(`UPDATE service_requests SET ${sets.join(", ")} WHERE id = $1 RETURNING id`, params);
-      if ((upd.rowCount ?? 0) === 0) return res.status(404).json({ message: "Service request not found" });
-      return res.json({ ok: true });
-    })
-  );
 }

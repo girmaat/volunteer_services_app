@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { requireRequesterUser } from "../../middleware/auth";
 import { pool } from "../../lib/db";
-import { discoverableSql } from "../requests/lifecycle";
 import { wrap } from "../../lib/http";
 
 /** Recent applications and threads for a requester's dashboard. */
@@ -110,36 +108,6 @@ export async function requesterReputation(userId: string) {
 
 export function registerRequesterDashboardRoutes(app: Express) {
 
-
-// Requester area: home scaffold + access control (Step 4.1)
-app.get(
-  "/v1/requester/home",
-  wrap(async (req, res) => {
-    const user = await requireRequesterUser(req, res);
-    if (!user) return;
-
-    const statsRes = await pool.query(
-      `SELECT
-         (SELECT COUNT(*)::int FROM organizations) AS organizations,
-         (SELECT COUNT(*)::int FROM service_requests r WHERE ${discoverableSql("r")}) AS opportunities,
-         (SELECT COUNT(*)::int FROM public_pages) AS publicPages`
-    );
-
-    const howRes = await pool.query(
-      "SELECT slug, title, body, updated_at FROM public_pages WHERE slug = $1",
-      ["how-it-works"]
-    );
-
-    return res.json({
-      user: { id: user.id, email: user.email, role: user.role },
-      counts: statsRes.rows[0] || { organizations: 0, opportunities: 0, publicPages: 0 },
-      howItWorks: howRes.rows[0] || null
-    });
-  })
-);
-
-
-
 // Requester area: dashboard summary (Step 4.2)
 app.get(
   "/v1/requester/dashboard",
@@ -188,16 +156,4 @@ app.get(
   })
 );
 
-
-
-
-// Requester area: quick access activity (new applications + recent messages)
-app.get(
-  "/v1/requester/activity",
-  wrap(async (req, res) => {
-    const user = await requireRequesterUser(req, res);
-    if (!user) return;
-    return res.json(await requesterActivity(user));
-  })
-);
 }

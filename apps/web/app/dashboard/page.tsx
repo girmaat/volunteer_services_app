@@ -14,8 +14,8 @@ export default async function Page() {
 
   if (!user) redirect("/login?next=/dashboard");
 
-  const accountType = String((user as any).account_type || "");
-  const requesterMode = String((user as any).requester_mode || "");
+  const accountType = String(user.account_type || "");
+  const requesterMode = String(user.requester_mode || "");
 
   // Organization-requester accounts establish org context via /org/signup.
   // They should never reach the generic dashboard before doing so.

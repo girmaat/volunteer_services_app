@@ -1,20 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
-import type { Application, Request } from "express";
 import { z } from "zod";
 import { contributionFromAttendance } from "../contributions/service";
 import { minorSql } from "../../lib/age";
 import { outstanding, prerequisites } from "../prerequisites/service";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
-import { requireAdminOrManager, requireOrg } from "./context";
+import { contactsFor, requireAdminOrManager, requireOrg, seesContacts } from "./context";
 
 export function registerOrgComplianceRoutes(app: Express) {
 
   // Volunteer roster: unique volunteers across requests, with counts + optional filters.
   app.get(
     "/v1/org/roster",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       // Volunteers' contact details and attendance: admins and managers only.
@@ -80,12 +78,10 @@ export function registerOrgComplianceRoutes(app: Express) {
     })
   );
 
-
-
   // Org Operations: Attendance Tracking (check-in/out + hours)
   app.get(
     "/v1/org/attendance",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       // Volunteers' contact details and attendance: admins and managers only.
@@ -148,10 +144,9 @@ export function registerOrgComplianceRoutes(app: Express) {
     })
   );
 
-
   app.post(
     "/v1/org/attendance/manual",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
@@ -210,19 +205,18 @@ export function registerOrgComplianceRoutes(app: Express) {
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *
         `,
-        [ok.ctx.org.slug, requestId, body.data.application_id, volunteerUserId, checkIn.toISOString(), checkOut ? checkOut.toISOString() : null, derivedHours, body.data.notes ?? null, String((ok.user as any).id)]
+        [ok.ctx.org.slug, requestId, body.data.application_id, volunteerUserId, checkIn.toISOString(), checkOut ? checkOut.toISOString() : null, derivedHours, body.data.notes ?? null, String(ok.user.id)]
       );
 
-      const contributionId = checkOut ? await contributionFromAttendance(String(inserted.rows[0].id), "manual_attendance", String((ok.user as any).id)) : null;
+      const contributionId = checkOut ? await contributionFromAttendance(String(inserted.rows[0].id), "manual_attendance", String(ok.user.id)) : null;
       return res.status(201).json({ attendance: inserted.rows[0], contribution_id: contributionId });
     })
   );
 
-
   // Org Operations: Incident Reports
   app.get(
     "/v1/org/incidents",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
 
@@ -260,22 +254,21 @@ export function registerOrgComplianceRoutes(app: Express) {
             OR i.title ILIKE '%' || $5 || '%'
             OR i.description ILIKE '%' || $5 || '%'
             OR COALESCE(up.display_name,'') ILIKE '%' || $5 || '%'
-            OR COALESCE(u.email,'') ILIKE '%' || $5 || '%'
+            OR ($6::boolean AND COALESCE(u.email,'') ILIKE '%' || $5 || '%')
           )
         ORDER BY i.created_at DESC
         LIMIT 500
         `,
-        [ok.ctx.org.slug, status, severity, requestId, search]
+        [ok.ctx.org.slug, status, severity, requestId, search, seesContacts(ok.ctx)]
       );
 
-      return res.json({ incidents: rows.rows });
+      return res.json({ incidents: contactsFor(ok.ctx, rows.rows) });
     })
   );
 
-
   app.post(
     "/v1/org/incidents",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
@@ -337,7 +330,7 @@ export function registerOrgComplianceRoutes(app: Express) {
           body.data.title,
           body.data.description,
           body.data.severity ?? "medium",
-          String((ok.user as any).id)
+          String(ok.user.id)
         ]
       );
 
@@ -345,10 +338,9 @@ export function registerOrgComplianceRoutes(app: Express) {
     })
   );
 
-
   app.get(
     "/v1/org/incidents/:id",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
 
@@ -374,14 +366,13 @@ export function registerOrgComplianceRoutes(app: Express) {
 
       if ((row.rowCount ?? 0) === 0) return res.status(404).json({ message: "Incident not found" });
 
-      return res.json({ incident: row.rows[0] });
+      return res.json({ incident: contactsFor(ok.ctx, [row.rows[0]])[0] });
     })
   );
 
-
   app.patch(
     "/v1/org/incidents/:id",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;

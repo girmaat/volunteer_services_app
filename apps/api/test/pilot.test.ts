@@ -15,9 +15,6 @@ describe("verified-only publishing and owner approval (ORG-02/05, GOV-01/02, CAS
     const r = await publish(o.admin, id);
     expect(r.status).toBe(403);
     expect(r.body.error.code).toBe("org_not_verified");
-    // The old endpoint follows the same rule.
-    const legacy = await (await as(o.admin)).post("/v1/org/requests", { title: "Legacy", description: "Legacy publish attempt here." });
-    expect(legacy.status).toBe(403);
   });
 
   it("platform staff ask for more information, suspend and reinstate, always with a reason", async () => {
@@ -42,14 +39,14 @@ describe("verified-only publishing and owner approval (ORG-02/05, GOV-01/02, CAS
     expect((await anon().get(`/v1/public/opportunities/${id}`)).status).toBe(200);
   });
 
-  it("a coordinator's first request waits for the owner; rejection keeps it private with notes", async () => {
+  it("a manager's first request waits for the owner; rejection keeps it private with notes", async () => {
     const o = await makeOrg();
     const id = await orgRequest(o.manager, o.slug);
     const sub = await publish(o.manager, id);
     expect(sub.status).toBe(202);
     expect(sub.body.owner_approval).toBe("pending");
     expect((await anon().get(`/v1/public/opportunities/${id}`)).status).toBe(404);
-    // Coordinators and members can't approve; the owner must give a reason to send it back.
+    // Managers and members can't approve; the owner must give a reason to send it back.
     expect((await (await as(o.manager)).post(`/v1/requests/${id}/owner-approval`, { decision: "approve" })).status).toBe(403);
     expect((await (await as(o.member)).post(`/v1/requests/${id}/owner-approval`, { decision: "approve" })).status).toBe(404);
     expect((await (await as(o.admin)).post(`/v1/requests/${id}/owner-approval`, { decision: "reject" })).status).toBe(422);

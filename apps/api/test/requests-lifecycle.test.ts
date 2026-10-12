@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { anon, as, birthDateForAge, createUser, EMAILS, pool, userId } from "./helpers";
+import { anon, as, birthDateForAge, createUser, EMAILS, pool, userId, ownerAct } from "./helpers";
 import { readUnsubscribeToken, unsubscribeToken } from "../src/modules/notifications/service";
 
 const soon = (days: number) => new Date(Date.now() + days * 86400_000).toISOString();
@@ -138,9 +138,9 @@ describe("staffing: open → pending → filled, waitlist auto-promotion", () =>
 
   it("first accept → pending, second → filled; extra applicants join the waitlist", async () => {
     const api = await as(EMAILS.requester);
-    await api.post(`/v1/requester/applications/${apps[vols[0]]}/accept`);
+    await ownerAct(api, apps[vols[0]], "accept");
     expect((await api.get(`/v1/requests/${requestId}`)).body.status).toBe("pending");
-    await api.post(`/v1/requester/applications/${apps[vols[1]]}/accept`);
+    await ownerAct(api, apps[vols[1]], "accept");
     const full = await api.get(`/v1/requests/${requestId}`);
     expect(full.body.status).toBe("filled");
     expect(full.body.staffing).toMatchObject({ accepted: 2, needed: 2 });
@@ -148,14 +148,14 @@ describe("staffing: open → pending → filled, waitlist auto-promotion", () =>
     expect(late.status).toBe(201);
     expect(late.body.status).toBe("waitlisted");
     apps[vols[2]] = late.body.applicationId;
-    const over = await api.post(`/v1/requester/applications/${apps[vols[2]]}/accept`);
+    const over = await ownerAct(api, apps[vols[2]], "accept");
     expect(over.status).toBe(409);
     expect(over.body.error.code).toBe("full");
   });
 
   it("when an accepted volunteer is canceled, the next waitlisted person is offered the spot (never placed silently)", async () => {
     const api = await as(EMAILS.requester);
-    const c = await api.post(`/v1/requester/applications/${apps[vols[0]]}/cancel`);
+    const c = await ownerAct(api, apps[vols[0]], "cancel");
     expect(c.status, JSON.stringify(c.body)).toBe(200);
     const offered = await pool.query("SELECT status, offer_expires_at FROM request_applications WHERE id = $1", [apps[vols[2]]]);
     expect(offered.rows[0].status).toBe("offered");
@@ -180,9 +180,9 @@ describe("staffing: open → pending → filled, waitlist auto-promotion", () =>
     for (const e of people) await createUser({ email: e, roles: ["volunteer"] });
     const ids: string[] = [];
     for (const e of people) ids.push((await (await as(e)).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" })).body.applicationId);
-    await api.post(`/v1/requester/applications/${ids[0]}/accept`);
+    await ownerAct(api, ids[0], "accept");
     for (const x of ids.slice(1)) await pool.query("UPDATE request_applications SET status = 'waitlisted' WHERE id = $1", [x]);
-    await api.post(`/v1/requester/applications/${ids[0]}/cancel`);
+    await ownerAct(api, ids[0], "cancel");
     expect((await pool.query("SELECT status FROM request_applications WHERE id = $1", [ids[1]])).rows[0].status).toBe("offered");
     // Declining passes it on; letting the next one lapse expires it.
     expect((await (await as(people[1])).post(`/v1/volunteer/applications/${ids[1]}/offer`, { accept: false })).body.status).toBe("withdrawn");

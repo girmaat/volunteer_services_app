@@ -42,11 +42,11 @@ describe("one account, multiple roles", () => {
     expect(me.body.user.roles).toEqual(["requester", "volunteer"]);
     expect(me.body.user.contexts).toEqual(["volunteer", "requester"]);
     expect((await api.get("/v1/volunteer/applications")).status).toBe(200);
-    expect((await api.get("/v1/requester/requests")).status).toBe(200);
+    expect((await api.get("/v1/requester/dashboard")).status).toBe(200);
   });
 
   it("single-role accounts are kept out of the other area", async () => {
-    expect((await (await as(EMAILS.volunteer)).get("/v1/requester/requests")).status).toBe(403);
+    expect((await (await as(EMAILS.volunteer)).get("/v1/requester/dashboard")).status).toBe(403);
     expect((await (await as(EMAILS.requester)).get("/v1/volunteer/applications")).status).toBe(403);
   });
 
@@ -77,11 +77,11 @@ describe("one account, multiple roles", () => {
   it("adds a role to an existing account", async () => {
     await createUser({ email: "add.role@thankyou.test", roles: ["volunteer"] });
     const api = await as("add.role@thankyou.test");
-    expect((await api.get("/v1/requester/requests")).status).toBe(403);
+    expect((await api.get("/v1/requester/dashboard")).status).toBe(403);
     const add = await api.post("/v1/me/roles", { role: "requester" });
     expect(add.status).toBe(201);
     expect(add.body.next).toBe("/requester/profile?setup=1");
-    expect((await api.get("/v1/requester/requests")).status).toBe(200);
+    expect((await api.get("/v1/requester/dashboard")).status).toBe(200);
     expect((await api.get("/v1/volunteer/applications")).status).toBe(200);
     const again = await api.post("/v1/me/roles", { role: "requester" });
     expect(again.status).toBe(200);

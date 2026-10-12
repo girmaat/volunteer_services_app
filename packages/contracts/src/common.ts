@@ -29,3 +29,16 @@ export const HttpUrl = z
   .max(2048)
   .url()
   .refine((u) => /^https?:\/\//i.test(u), { message: "Must be an http(s) URL" });
+
+/** What kind of organization this is. A school can have coordinators (release 2: student service records). */
+export const ORG_TYPES = ["nonprofit", "school", "community_group", "faith_based", "government", "other"] as const;
+export const OrgType = z.enum(ORG_TYPES);
+export type OrgTypeValue = z.infer<typeof OrgType>;
+export const ORG_TYPE_LABEL: Record<OrgTypeValue, string> = {
+  nonprofit: "Nonprofit",
+  school: "School",
+  community_group: "Community group",
+  faith_based: "Faith-based organization",
+  government: "Government agency",
+  other: "Other"
+};

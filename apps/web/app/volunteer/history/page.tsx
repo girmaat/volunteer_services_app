@@ -3,6 +3,7 @@ import { Award, BadgeCheck, Clock, Download, MessageSquareQuote, NotebookPen, St
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { zoneOr } from "../../../lib/time";
 import ShareButton from "../../_components/share/ShareButton";
+import Evidence, { type EvidenceItem } from "../../../components/hours/Evidence";
 import { Button, ButtonLink, EmptyState, Notice, PageHeader, StatStrip, StatusPill, SubmitButton, Toast } from "../../../components/ui";
 import { disputeAction, outsideAction, reportAction, resubmitAction } from "./actions";
 
@@ -23,6 +24,7 @@ type Contribution = {
   unit: string | null;
   description: string | null;
   last_reason: string | null;
+  evidence?: EvidenceItem[];
 };
 type Work = {
   application_id: string;
@@ -49,8 +51,12 @@ const FLASH: Record<string, string> = {
   reported: "Sent for approval. It counts once the organizer approves it.",
   outside: "Saved as self-reported.",
   resubmitted: "Sent back for approval.",
-  disputed: "Dispute sent. Someone who wasn’t part of the decision will look at it."
+  disputed: "Dispute sent. Someone who wasn’t part of the decision will look at it.",
+  evidence: "Evidence added. Your reviewer can see it.",
+  evidence_removed: "Evidence removed."
 };
+// A volunteer can add or remove evidence while the hours can still change.
+const EVIDENCE_OPEN = new Set(["pending", "revision_requested", "disputed", "self_reported"]);
 
 // Dates and times show in the volunteer's own time zone (from their availability).
 const day = (iso: string, tz: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: tz });
@@ -99,6 +105,7 @@ function ContributionLine({ c, anchor, tz }: { c: Contribution; anchor: string; 
       <p className="m-0 mt-1 text-xs text-muted">{c.method_label}</p>
       {c.description ? <p className="m-0 mt-1 text-muted">“{c.description}”</p> : null}
       {c.last_reason ? <p className="m-0 mt-1">Reviewer’s note: {c.last_reason}</p> : null}
+      <Evidence contributionId={c.id} items={c.evidence ?? []} back={`/volunteer/history${anchor}`} canAdd={EVIDENCE_OPEN.has(c.status)} />
       {c.status === "revision_requested" ? (
         <form action={resubmitAction.bind(null, c.id, anchor)} className="mt-2 grid gap-2 rounded-md border border-line p-3">
           <p className="m-0 text-sm font-medium">Fix and send it back</p>
@@ -188,10 +195,6 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
               <h2 id="timeline-h" className="m-0 text-lg">
                 Your volunteering
               </h2>
-              <span id="hours" />
-              <span id="tasks" />
-              <span id="outcomes" />
-              <span id="impact" />
               {!data.timeline.length ? (
                 <div className="mt-3">
                   <EmptyState

@@ -8,6 +8,7 @@ import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { orgMembership, type PolicyUser } from "../../lib/policy";
 import { requireAuthedUser, requireVolunteerUser } from "../../middleware/auth";
+import { evidenceFor, listEvidence, registerEvidenceRoutes } from "./evidence";
 import { checkReviewer, ContributionError, createContribution, decide, declareConflict, dispute, METHOD_LABEL, resubmit, type Method } from "./service";
 
 const uuid = z.string().uuid();
@@ -18,12 +19,13 @@ function fail(res: Response, e: unknown) {
   throw e;
 }
 
-const LIST_COLUMNS = `c.id, c.status, c.source, c.verification_method, c.started_at, c.ended_at, c.break_minutes, c.timezone,
+const LIST_COLUMNS = `c.id, c.status, c.kind, c.source, c.verification_method, c.started_at, c.ended_at, c.break_minutes, c.timezone,
   c.reported_hours::float AS reported_hours, c.reported_units::float AS reported_units, c.unit,
   c.approved_hours::float AS approved_hours, c.approved_units::float AS approved_units,
   c.description, c.overlap_flag, c.created_at, c.decided_at, c.decided_by_user_id, c.decided_by_role, c.org_slug,
   c.request_id, c.application_id, c.volunteer_user_id, r.title AS request_title, r.target_unit,
   COALESCE(NULLIF(vp.display_name, ''), split_part(COALESCE(vp.full_name, ''), ' ', 1), 'Volunteer') AS volunteer_name,
+  (SELECT COUNT(*)::int FROM contribution_evidence e WHERE e.contribution_id = c.id) AS evidence_count,
   (SELECT d.reason FROM contribution_decisions d WHERE d.contribution_id = c.id AND d.action IN ('adjusted', 'rejected', 'revision_requested', 'corrected', 'disputed', 'marked_unverified', 'dispute_upheld')
     ORDER BY d.created_at DESC LIMIT 1) AS last_reason`;
 
@@ -38,6 +40,7 @@ function exceptions(c: Record<string, any>) {
 }
 
 export function registerContributionRoutes(app: Express) {
+  registerEvidenceRoutes(app);
   // ---- Reviewers ------------------------------------------------------------------------------
   app.get(
     "/v1/contributions/review",
@@ -73,6 +76,7 @@ export function registerContributionRoutes(app: Express) {
           WHERE ${org ? "c.org_slug = $1" : "c.org_slug IS NULL AND r.requester_user_id = $1"} AND c.status = ANY($2::text[]) AND ($3::uuid IS NULL OR c.request_id = $3)`,
         [org ? org.slug : user.id, statuses, q.data.requestId ?? null]
       )).rows[0].n) : 0;
+      const evidence = await evidenceFor(r.rows.map((c) => String(c.id)));
       const items = r.rows.map(({ total_count: _t, ...c }) => {
         let why: string | null = null;
         if (String(c.volunteer_user_id) === user.id) why = "Your own hours: another reviewer approves these";
@@ -84,7 +88,8 @@ export function registerContributionRoutes(app: Express) {
           method_label: METHOD_LABEL[c.verification_method as Method],
           exceptions: exceptions(c),
           can_decide: !why && ["pending", "disputed", "approved", "adjusted", "rejected"].includes(c.status),
-          why_not: why
+          why_not: why,
+          evidence: evidence.get(String(c.id)) ?? []
         };
       });
       const counts = await pool.query(
@@ -125,7 +130,7 @@ export function registerContributionRoutes(app: Express) {
            FROM contribution_decisions d WHERE d.contribution_id = $1 ORDER BY d.created_at`,
         [id.data]
       );
-      return res.json({ ...c, method_label: METHOD_LABEL[c.verification_method as Method], exceptions: exceptions(c), history: d.rows });
+      return res.json({ ...c, method_label: METHOD_LABEL[c.verification_method as Method], exceptions: exceptions(c), history: d.rows, evidence: await listEvidence(id.data) });
     })
   );
 

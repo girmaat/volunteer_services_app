@@ -13,7 +13,7 @@ type MemberRow = {
   invited_email: string | null;
   email: string;
   full_name: string | null;
-  role: "admin" | "manager" | "member";
+  role: "admin" | "manager" | "member" | "coordinator";
   status: "active" | "invited" | "requested";
   created_at: string;
   updated_at: string;
@@ -21,7 +21,7 @@ type MemberRow = {
 
 type MembersResponse = {
   org: { slug: string; name: string };
-  membership: { role: "admin" | "manager" | "member"; status: "active" | "invited" };
+  membership: { role: "admin" | "manager" | "member" | "coordinator"; status: "active" | "invited" };
   members: MemberRow[];
 };
 
@@ -50,6 +50,8 @@ export default async function Page(
   const data = await getMembers();
 
   const canManage = isAdminOrManager(data.membership.role);
+  // Coordinators exist only in schools (they curate opportunities for students).
+  const isSchool = ctx.org.org_type === "school";
 
   async function inviteMemberAction(formData: FormData) {
     "use server";
@@ -62,7 +64,7 @@ export default async function Page(
       body: JSON.stringify({ email, role })
     });
 
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       const msg = encodeURIComponent(String(json?.message || "Failed to send invite"));
       redirect(`/org/team?error=${msg}`);
@@ -86,7 +88,7 @@ export default async function Page(
     });
 
     if (!res.ok) {
-      const json = (await res.json().catch(() => ({}))) as any;
+      const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
       const msg = encodeURIComponent(String(json?.message || "Failed to update role"));
       redirect(`/org/team?error=${msg}`);
     }
@@ -101,7 +103,7 @@ export default async function Page(
 
     const res = await backendFetch(`/v1/org/members/${userId}`, { method: "DELETE" });
     if (!res.ok) {
-      const json = (await res.json().catch(() => ({}))) as any;
+      const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
       const msg = encodeURIComponent(String(json?.message || "Failed to remove member"));
       redirect(`/org/team?error=${msg}`);
     }
@@ -116,7 +118,7 @@ export default async function Page(
 
     const res = await backendFetch(`/v1/org/members/invites/${memberId}`, { method: "DELETE" });
     if (!res.ok) {
-      const json = (await res.json().catch(() => ({}))) as any;
+      const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
       const msg = encodeURIComponent(String(json?.message || "Failed to cancel invite"));
       redirect(`/org/team?error=${msg}`);
     }
@@ -130,7 +132,7 @@ export default async function Page(
     if (!memberId) return;
 
     const res = await backendFetch(`/v1/org/members/invites/${memberId}/resend`, { method: "POST" });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       const msg = encodeURIComponent(String(json?.message || "Failed to resend invite"));
       redirect(`/org/team?error=${msg}`);
@@ -150,7 +152,7 @@ export default async function Page(
       decision === "approve" ? `/v1/org/members/requests/${memberId}/approve` : `/v1/org/members/requests/${memberId}/decline`,
       { method: "POST" }
     );
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) redirect(`/org/team?error=${encodeURIComponent(String(json?.message || "That didn't work"))}#requests`);
     revalidatePath("/org/team");
     redirect(`/org/team?request=${decision}#requests`);
@@ -209,6 +211,7 @@ export default async function Page(
               Role
               <select className="p-2.5 rounded-md border border-line" name="role" aria-label="Role" defaultValue="member">
                 <option value="member">Member</option>
+                {isSchool ? <option value="coordinator">School coordinator</option> : null}
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
               </select>
@@ -242,6 +245,7 @@ export default async function Page(
                     <input type="hidden" name="user_id" value={m.user_id || ""} />
                     <select className="p-2 rounded-md border border-line" name="role" aria-label="Role" defaultValue={m.role} disabled={!canManage}>
                       <option value="member">Member</option>
+                      {isSchool || m.role === "coordinator" ? <option value="coordinator">School coordinator</option> : null}
                       <option value="manager">Manager</option>
                       <option value="admin">Admin</option>
                     </select>
@@ -308,7 +312,7 @@ export default async function Page(
                 <div className="flex justify-between gap-3 items-baseline flex-wrap">
                   <div>
                     <div className="font-bold">{m.email}</div>
-                    <div className="text-xs text-muted">Role: {m.role}</div>
+                    <div className="text-xs text-muted">Role: {m.role === "coordinator" ? "School coordinator" : m.role}</div>
                   </div>
                   <div className="text-xs text-muted">Status: Invited</div>
                 </div>

@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { requirePlatformAdmin } from "../../admin/auth";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
-import { nowIso, shareReportsHaveModerationCols } from "./helpers";
+import { nowIso } from "./helpers";
 
 export function registerAdminDashboardRoutes(app: Express) {
   // Dashboard
@@ -29,21 +28,15 @@ export function registerAdminDashboardRoutes(app: Express) {
         `
       );
 
-            // Include share-link reports in report counts even when migrations are disabled.
-      const shareHas = await shareReportsHaveModerationCols(pool);
       const shareCounts = await pool.query(
-        shareHas
-          ? `SELECT
+        `SELECT
                (SELECT COUNT(*)::int FROM share_reports WHERE status IN ('submitted','in_review')) AS reports_open,
                (SELECT COUNT(*)::int FROM share_reports WHERE status = 'submitted') AS reports_submitted`
-          : `SELECT
-               (SELECT COUNT(*)::int FROM share_reports) AS reports_open,
-               (SELECT COUNT(*)::int FROM share_reports) AS reports_submitted`
       );
 
-      const countsRow: any = counts.rows[0] || {};
-      countsRow.reports_open = (countsRow.reports_open || 0) + ((shareCounts.rows[0] as any)?.reports_open || 0);
-      countsRow.reports_submitted = (countsRow.reports_submitted || 0) + ((shareCounts.rows[0] as any)?.reports_submitted || 0);
+      const countsRow = counts.rows[0] || {};
+      countsRow.reports_open = (countsRow.reports_open || 0) + ((shareCounts.rows[0])?.reports_open || 0);
+      countsRow.reports_submitted = (countsRow.reports_submitted || 0) + ((shareCounts.rows[0])?.reports_submitted || 0);
 
 const recent = await pool.query(
         `SELECT id, email, created_at

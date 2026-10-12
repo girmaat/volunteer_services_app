@@ -50,11 +50,6 @@ export function registerAccountRoutes(app: Express) {
           ...(await q("SELECT rating, comment, visible_at FROM visible_volunteer_reviews WHERE volunteer_user_id = $1")),
           ...(await q("SELECT rating, comment, visible_at FROM visible_requester_reviews WHERE requester_user_id = $1"))
         ],
-        impact: {
-          hours: await q("SELECT impact_date, hours, notes FROM volunteer_impact_entries WHERE volunteer_user_id = $1"),
-          tasks: await q("SELECT task_date, task, duration_hours FROM volunteer_task_entries WHERE volunteer_user_id = $1"),
-          outcomes: await q("SELECT outcome_date, outcome, quantity, unit FROM volunteer_outcome_entries WHERE volunteer_user_id = $1")
-        },
         // Hours as reviewed by organizations, with every decision (the record of service).
         contributions: await q(
           `SELECT c.id, c.request_id, r.title AS request_title, c.org_slug, c.source, c.started_at, c.ended_at, c.break_minutes, c.reported_hours::float, c.reported_units::float,
@@ -207,13 +202,6 @@ export function registerAccountRoutes(app: Express) {
           WHERE c.volunteer_user_id = $1 ORDER BY 1 DESC`,
         [user.id]
       );
-      const legacy = await pool.query(
-        `SELECT i.impact_date AS date, COALESCE(r.title, '') AS activity, i.hours::float AS hours, i.notes AS detail FROM volunteer_impact_entries i LEFT JOIN service_requests r ON r.id = i.request_id WHERE i.volunteer_user_id = $1
-         UNION ALL
-         SELECT t.task_date, COALESCE(r.title, ''), t.duration_hours::float, t.task FROM volunteer_task_entries t LEFT JOIN service_requests r ON r.id = t.request_id WHERE t.volunteer_user_id = $1
-         ORDER BY 1 DESC NULLS LAST`,
-        [user.id]
-      );
       const STATUS: Record<string, string> = { approved: "approved", adjusted: "approved (adjusted)", pending: "waiting for approval", revision_requested: "sent back", disputed: "disputed", rejected: "not approved", unverified: "unverifiable", self_reported: "self-reported" };
       const d = (v: unknown) => (v ? new Date(v as string).toISOString().slice(0, 10) : "");
       const lines = [["date", "activity", "organization", "status", "reported_hours", "approved_hours", "reported_units", "approved_units", "unit", "verified_by", "approver_role", "note"].map(csvCell).join(",")];
@@ -224,7 +212,6 @@ export function registerAccountRoutes(app: Express) {
             .join(",")
         );
       }
-      for (const n of legacy.rows) lines.push([d(n.date), n.activity, "", "self-reported", n.hours ?? "", "", "", "", "", METHOD_LABEL.self_reported, "", n.detail ?? ""].map(csvCell).join(","));
       res.setHeader("content-type", "text/csv; charset=utf-8");
       res.setHeader("content-disposition", 'attachment; filename="thankyou-impact.csv"');
       return res.send("﻿" + lines.join("\r\n"));

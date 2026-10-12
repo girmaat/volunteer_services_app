@@ -99,7 +99,7 @@ export default async function Page(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ status: nextStatus || undefined, admin_notes: notes || null })
     });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok)
       redirect(
         `/admin/reports?${status ? `status=${encodeURIComponent(status)}&` : ""}error=${encodeURIComponent(
@@ -121,7 +121,7 @@ export default async function Page(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ action, admin_notes: notes || null })
     });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok)
       redirect(
         `/admin/reports?${status ? `status=${encodeURIComponent(status)}&` : ""}error=${encodeURIComponent(
@@ -141,7 +141,7 @@ export default async function Page(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ reason })
     });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok)
       redirect(
         `/admin/reports?${status ? `status=${encodeURIComponent(status)}&` : ""}error=${encodeURIComponent(
@@ -163,7 +163,7 @@ export default async function Page(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ until, reason })
     });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok)
       redirect(
         `/admin/reports?${status ? `status=${encodeURIComponent(status)}&` : ""}error=${encodeURIComponent(

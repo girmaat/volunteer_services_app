@@ -20,9 +20,8 @@ import { notify } from "../notifications/service";
 
 export type ContributionStatus = "self_reported" | "pending" | "approved" | "adjusted" | "rejected" | "revision_requested" | "disputed" | "unverified";
 export type Method = "staff_check_in" | "qr_check_in" | "manual_attendance" | "marked_complete" | "volunteer_report" | "self_reported";
+export type ContributionKind = "time" | "units" | "deliverable" | "goods";
 export type Decision = "approve" | "adjust" | "reject" | "request_revision";
-
-export const CREDITED: ContributionStatus[] = ["approved", "adjusted"];
 
 /** How each verification method reads on the record and the verification page (CON-07: never "all equivalent"). */
 export const METHOD_LABEL: Record<Method, string> = {
@@ -87,6 +86,8 @@ export type NewContribution = {
   breakMinutes?: number;
   hours?: number | null;
   units?: number | null;
+  /** time | units now; deliverable | goods are reserved for release 2. Derived from hours/units when omitted. */
+  kind?: ContributionKind;
   description?: string | null;
   actorUserId: string | null;
   actorRole: string;
@@ -104,12 +105,14 @@ export async function createContribution(c: NewContribution): Promise<string> {
     tz = r.rows[0]?.timezone ?? null;
   }
   const hours = c.hours ?? (c.startedAt && c.endedAt ? hoursBetween(c.startedAt, c.endedAt, c.breakMinutes ?? 0) : null);
+  const kind: ContributionKind = c.kind ?? (hours == null && c.units != null ? "units" : "time");
+  if (kind === "goods" && hours != null) throw new ContributionError(422, "goods_no_hours", "Donated goods are counted in items, not hours");
   const status: ContributionStatus = c.source === "outside" || !c.requestId ? "self_reported" : "pending";
   const flagged = await overlaps(pool, c.volunteerUserId, c.startedAt ?? null, c.endedAt ?? null, null, true);
   const ins = await pool.query(
     `INSERT INTO contributions (volunteer_user_id, request_id, application_id, org_slug, source, attendance_log_id, started_at, ended_at, break_minutes,
-                                timezone, reported_hours, reported_units, unit, status, verification_method, description, overlap_flag)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                                timezone, reported_hours, reported_units, unit, status, verification_method, description, overlap_flag, kind)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
      ON CONFLICT (attendance_log_id) DO NOTHING
      RETURNING id`,
     [
@@ -129,7 +132,8 @@ export async function createContribution(c: NewContribution): Promise<string> {
       status,
       status === "self_reported" ? "self_reported" : c.method,
       c.description ?? null,
-      flagged
+      flagged,
+      kind
     ]
   );
   if (!ins.rowCount) {

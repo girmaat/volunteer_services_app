@@ -1,17 +1,14 @@
 import { can, type PolicyUser } from "../../lib/policy";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
 import { pool } from "../../lib/db";
 import { coarseLocationFromText } from "../../lib/redaction";
 import { getOptionalAuthedUser, requireAuthedUser } from "../../middleware/auth";
-import { SHARE_REPORTS_AUTO_REVOKE_THRESHOLD, buildLoginCtaHref, createShareLinkHandler, hashIp, requiresAuthByType } from "./helpers";
+import { SHARE_REPORTS_AUTO_REVOKE_THRESHOLD, buildLoginCtaHref, createShareLinkHandler, hashIp } from "./helpers";
 
 export function registerShareRoutes(app: Express) {
 
 app.post("/v1/shares", createShareLinkHandler);
-
-
 
 app.get("/v1/shares/:token", async (req, res) => {
   const token = String(req.params.token || "").trim();
@@ -29,7 +26,7 @@ app.get("/v1/shares/:token", async (req, res) => {
 
   if (linkRes.rowCount === 0) return res.status(404).json({ message: "Not found" });
 
-  const link = linkRes.rows[0] as any;
+  const link = linkRes.rows[0];
 
   const isExpired = Boolean(link.expires_at) && new Date(link.expires_at).getTime() <= Date.now();
   const isRevoked = Boolean(link.revoked_at);
@@ -42,7 +39,7 @@ app.get("/v1/shares/:token", async (req, res) => {
   const user = await getOptionalAuthedUser(req);
 
   if (visibility === "private") {
-    const isOwner = Boolean(user) && String((user as any).id) === String(link.created_by_user_id);
+    const isOwner = Boolean(user) && String(user?.id) === String(link.created_by_user_id);
     const isAdmin = can(user as PolicyUser | null, "platform:moderate");
     if (!isOwner && !isAdmin) {
       // Don't disclose existence for private shares.
@@ -90,7 +87,7 @@ app.get("/v1/shares/:token", async (req, res) => {
   let title = "Shared link";
   let summary = "";
   let coarseLocation: string | null = null;
-  let timeWindow: any = null;
+  let timeWindow: { needed_by: string } | null = null;
   let verificationStatus: string | null = null;
   let imageUrl: string | null = null;
   let ctaLabel = "Open";
@@ -99,7 +96,7 @@ app.get("/v1/shares/:token", async (req, res) => {
   try {
     if (shareType === "PUBLIC_PAGE") {
       const rowRes = await pool.query(`SELECT title, body FROM public_pages WHERE slug = $1`, [targetRef]);
-      const row = rowRes.rows[0] as any;
+      const row = rowRes.rows[0];
       title = String(row?.title || "Public page");
       const body = String(row?.body || "");
       summary = body.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
@@ -109,7 +106,7 @@ app.get("/v1/shares/:token", async (req, res) => {
         `SELECT title, excerpt, cover_image_url FROM impact_stories WHERE slug = $1`,
         [targetRef]
       );
-      const row = rowRes.rows[0] as any;
+      const row = rowRes.rows[0];
       title = String(row?.title || "Impact story");
       summary = String(row?.excerpt || "").slice(0, 180);
       imageUrl = row?.cover_image_url ? String(row.cover_image_url) : null;
@@ -119,7 +116,7 @@ app.get("/v1/shares/:token", async (req, res) => {
         `SELECT name, summary, location, verification_status, verified_at FROM organizations WHERE slug = $1`,
         [targetRef]
       );
-      const row = rowRes.rows[0] as any;
+      const row = rowRes.rows[0];
       title = String(row?.name || "Organization");
       summary = String(row?.summary || "").slice(0, 180);
       coarseLocation = String(row?.location || "");
@@ -141,7 +138,7 @@ app.get("/v1/shares/:token", async (req, res) => {
         [targetRef]
       );
 
-      const row = rowRes.rows[0] as any;
+      const row = rowRes.rows[0];
       title = String(row?.title || "Service request");
       summary = String(row?.description || "").replace(/\s+/g, " ").trim().slice(0, 180);
 
@@ -184,7 +181,6 @@ app.get("/v1/shares/:token", async (req, res) => {
   });
 });
 
-
 app.post("/v1/shares/:token/events", async (req, res) => {
   const token = String(req.params.token || "").trim();
   const parsed = z
@@ -199,7 +195,7 @@ app.post("/v1/shares/:token/events", async (req, res) => {
   const linkRes = await pool.query(`SELECT id, created_by_user_id, revoked_at FROM share_links WHERE token = $1 LIMIT 1`, [token]);
   if (linkRes.rowCount === 0) return res.status(404).json({ message: "Not found" });
 
-  const linkId = (linkRes.rows[0] as any).id;
+  const linkId = (linkRes.rows[0]).id;
 
   const user = await getOptionalAuthedUser(req);
   const ipHashVal = hashIp(req);
@@ -211,12 +207,11 @@ app.post("/v1/shares/:token/events", async (req, res) => {
       INSERT INTO share_events (share_link_id, event_type, actor_user_id, ip_hash, user_agent, referer)
       VALUES ($1, $2, $3, $4, $5, $6)
     `,
-    [linkId, parsed.data.event_type, user ? (user as any).id : null, ipHashVal, userAgent || null, referer || null]
+    [linkId, parsed.data.event_type, user ? user.id : null, ipHashVal, userAgent || null, referer || null]
   );
 
   return res.json({ ok: true });
 });
-
 
 app.post("/v1/shares/:token/report", async (req, res) => {
   const token = String(req.params.token || "").trim();
@@ -231,31 +226,40 @@ app.post("/v1/shares/:token/report", async (req, res) => {
   if (!token) return res.status(400).json({ message: "Missing token" });
   if (!parsed.success) return res.status(400).json({ message: "Invalid payload" });
 
-  const linkRes = await pool.query(`SELECT id FROM share_links WHERE token = $1 LIMIT 1`, [token]);
+  const linkRes = await pool.query(`SELECT id, revoked_at FROM share_links WHERE token = $1 LIMIT 1`, [token]);
   if (linkRes.rowCount === 0) return res.status(404).json({ message: "Not found" });
 
-  const linkId = (linkRes.rows[0] as any).id;
-  const linkRevokedAt = (linkRes.rows[0] as any).revoked_at as string | null;
+  const linkId = String(linkRes.rows[0].id);
+  const linkRevokedAt = linkRes.rows[0].revoked_at as string | null;
   const user = await getOptionalAuthedUser(req);
+  const reporterId = user ? String((user as { id: string }).id) : null;
+  const ipHash = hashIp(req);
+
+  // One report per person (account or network address) per link.
+  const dupe = await pool.query(
+    "SELECT 1 FROM share_reports WHERE share_link_id = $1 AND (($2::uuid IS NOT NULL AND reporter_user_id = $2::uuid) OR ($2::uuid IS NULL AND reporter_ip_hash = $3)) LIMIT 1",
+    [linkId, reporterId, ipHash]
+  );
+  if (dupe.rowCount) return res.json({ ok: true });
 
   await pool.query(
-    `
-      INSERT INTO share_reports (share_link_id, reason, details, reporter_user_id)
-      VALUES ($1, $2, $3, $4)
-    `,
-    [linkId, parsed.data.reason, parsed.data.details || null, user ? (user as any).id : null]
+    "INSERT INTO share_reports (share_link_id, reason, details, reporter_user_id, reporter_ip_hash) VALUES ($1, $2, $3, $4, $5)",
+    [linkId, parsed.data.reason, parsed.data.details || null, reporterId, ipHash]
   );
+  await pool.query("UPDATE share_links SET moderation_state = 'reported' WHERE id = $1 AND moderation_state = 'clean'", [linkId]);
 
-  // Policy: auto-revoke a link after N reports
-  const countRes = await pool.query(`SELECT COUNT(*)::int AS c FROM share_reports WHERE share_link_id = $1`, [linkId]);
-  const reportCount = Number((countRes.rows[0] as any)?.c || 0);
+  // Auto-revoke after N different people report it (one person reporting repeatedly doesn't count).
+  const countRes = await pool.query(
+    "SELECT COUNT(DISTINCT COALESCE(reporter_user_id::text, reporter_ip_hash))::int AS c FROM share_reports WHERE share_link_id = $1",
+    [linkId]
+  );
+  const reportCount = Number(countRes.rows[0]?.c || 0);
   if (!linkRevokedAt && reportCount >= SHARE_REPORTS_AUTO_REVOKE_THRESHOLD) {
-    await pool.query(`UPDATE share_links SET revoked_at = NOW() WHERE id = $1 AND revoked_at IS NULL`, [linkId]);
+    await pool.query("UPDATE share_links SET revoked_at = NOW(), revoked_reason = 'auto_reports' WHERE id = $1 AND revoked_at IS NULL", [linkId]);
   }
 
   return res.json({ ok: true });
 });
-
 
 app.post("/v1/shares/:token/revoke", async (req, res) => {
   const token = String(req.params.token || "").trim();
@@ -271,7 +275,7 @@ app.post("/v1/shares/:token/revoke", async (req, res) => {
 
   if (linkRes.rowCount === 0) return res.status(404).json({ message: "Not found" });
 
-  const row = linkRes.rows[0] as any;
+  const row = linkRes.rows[0];
   const isOwner = String(row.created_by_user_id) === String(user.id);
   const isAdmin = can(user as PolicyUser, "platform:moderate");
 
@@ -280,8 +284,6 @@ app.post("/v1/shares/:token/revoke", async (req, res) => {
   await pool.query(`UPDATE share_links SET revoked_at = NOW() WHERE id = $1`, [row.id]);
   return res.json({ ok: true });
 });
-
-
 
 // The /v1/share/* duplicates were removed; use /v1/shares/*.
 }

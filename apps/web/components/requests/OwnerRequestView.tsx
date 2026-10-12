@@ -51,7 +51,7 @@ export default function OwnerRequestView({
   isOwner,
   checkinUrl
 }: {
-  /** Org admin: can approve coordinators' requests. */
+  /** Org admin: can approve managers' requests. */
   isOwner?: boolean;
   /** The on-site check-in link when a code exists (organization requests). */
   checkinUrl?: string | null;
@@ -106,7 +106,7 @@ export default function OwnerRequestView({
             <form action={ownerApprovalAction} className="grid gap-2">
               <input type="hidden" name="id" value={r.id} />
               <label className="grid gap-1 text-sm font-medium">
-                Note for the coordinator <span className="font-normal">(needed if you send it back)</span>
+                Note for the manager <span className="font-normal">(needed if you send it back)</span>
                 <textarea name="notes" rows={2} maxLength={1000} className="rounded border border-line-strong bg-surface px-3 py-2 text-sm font-normal" />
               </label>
               <div className="flex flex-wrap gap-2">

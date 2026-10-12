@@ -39,7 +39,7 @@ export default async function Page(props: { searchParams?: Promise<{ token?: str
       body: JSON.stringify({ token, adultConfirmed: fd.get("adultConfirmed") === "yes" })
     });
 
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       const msg = encodeURIComponent(String(json?.message || "Failed to accept invite"));
       redirect(`/org/invite?token=${encodeURIComponent(token)}&error=${msg}`);

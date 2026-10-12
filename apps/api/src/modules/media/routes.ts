@@ -3,7 +3,7 @@
  * WebP, up to 1 MB) and served from our own origin at /media/<id>; links to images on other sites
  * aren't accepted, so viewing a profile never reveals the viewer to a third party.
  */
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import crypto from "crypto";
 import multer from "multer";
 import { z } from "zod";
@@ -12,7 +12,6 @@ import { wrap } from "../../lib/http";
 import { requireAuthedUser } from "../../middleware/auth";
 import { requireAdmin, requireOrg } from "../org/context";
 import { sniffType } from "../messaging/files";
-export { MediaPath } from "../../lib/media";
 
 export const MAX_IMAGE_BYTES = 1024 * 1024;
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_IMAGE_BYTES, files: 1 } }).single("file");
@@ -33,7 +32,7 @@ async function store(kind: "avatar" | "logo", owner: string | null, org: string 
   return `/media/${r.rows[0].id}`;
 }
 
-function runUpload(req: any, res: any): Promise<boolean> {
+function runUpload(req: Request, res: Response): Promise<boolean> {
   return new Promise((resolve) =>
     upload(req, res, (err: unknown) => {
       if (err) {
@@ -48,13 +47,13 @@ function runUpload(req: any, res: any): Promise<boolean> {
 export function registerMediaRoutes(app: Express) {
   app.post(
     "/v1/me/avatar",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const user = await requireAuthedUser(req, res);
       if (!user) return;
       if (!(await runUpload(req, res))) return;
       const c = checkImage(req.file);
       if (!c.ok) return res.status(400).json({ message: c.message });
-      const path = await store("avatar", user.id, null, req.file, c.mime);
+      const path = await store("avatar", user.id, null, req.file as Express.Multer.File, c.mime);
       await pool.query("INSERT INTO user_profiles (user_id, avatar_url) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET avatar_url = EXCLUDED.avatar_url, updated_at = NOW()", [user.id, path]);
       await pool.query("DELETE FROM media_images WHERE owner_user_id = $1 AND kind = 'avatar' AND ('/media/' || id::text) <> $2", [user.id, path]);
       return res.status(201).json({ avatar_url: path });
@@ -63,7 +62,7 @@ export function registerMediaRoutes(app: Express) {
 
   app.post(
     "/v1/orgs/:orgSlug/logo",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (ok.ctx.org.slug !== String(req.params.orgSlug)) return res.status(404).json({ message: "Org not found" });
@@ -71,7 +70,7 @@ export function registerMediaRoutes(app: Express) {
       if (!(await runUpload(req, res))) return;
       const c = checkImage(req.file);
       if (!c.ok) return res.status(400).json({ message: c.message });
-      const path = await store("logo", null, ok.ctx.org.slug, req.file, c.mime);
+      const path = await store("logo", null, ok.ctx.org.slug, req.file as Express.Multer.File, c.mime);
       await pool.query("UPDATE organizations SET logo_url = $2, updated_at = NOW() WHERE slug = $1", [ok.ctx.org.slug, path]);
       await pool.query("DELETE FROM media_images WHERE org_slug = $1 AND kind = 'logo' AND ('/media/' || id::text) <> $2", [ok.ctx.org.slug, path]);
       return res.status(201).json({ logo_url: path });
@@ -80,7 +79,7 @@ export function registerMediaRoutes(app: Express) {
 
   app.get(
     "/v1/public/media/:id",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const id = z.string().uuid().safeParse(req.params.id);
       if (!id.success) return res.status(404).json({ message: "Not found" });
       const r = (await pool.query("SELECT mime_type, bytes, sha256 FROM media_images WHERE id = $1", [id.data])).rows[0];

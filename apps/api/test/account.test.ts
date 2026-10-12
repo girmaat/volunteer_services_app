@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { anon, as, createUser, EMAILS, PASSWORD, pool, userId } from "./helpers";
+import { anon, as, createUser, EMAILS, PASSWORD, pool, userId, ownerAct } from "./helpers";
 
 const soon = (h: number) => new Date(Date.now() + h * 3600_000).toISOString();
 
@@ -48,7 +48,7 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
     const v = await as("confirm.vol@thankyou.test");
     const ap = await v.post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
     expect((await v.post(`/v1/volunteer/applications/${ap.body.applicationId}/confirm-attendance`)).status).toBe(409);
-    await owner.post(`/v1/requester/applications/${ap.body.applicationId}/accept`);
+    await ownerAct(owner, ap.body.applicationId, "accept");
     expect((await v.post(`/v1/volunteer/applications/${ap.body.applicationId}/confirm-attendance`)).body.confirmed).toBe(true);
     const c = await pool.query("SELECT volunteer_confirmed_at FROM request_commitments WHERE request_id = $1 AND volunteer_user_id = $2", [d.body.id, await userId("confirm.vol@thankyou.test")]);
     expect(c.rows[0].volunteer_confirmed_at).toBeTruthy();
@@ -73,8 +73,6 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
     await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "complete" });
 
     // Marking complete sends the scheduled time to the reviewer; nothing counts yet.
-    const sum = await v.get("/v1/volunteer/history/summary");
-    expect(sum.body).toMatchObject({ completed_count: 1, total_hours: 0, pending_hours: 1.5 });
     const imp = await v.get("/v1/volunteer/impact");
     expect(imp.body.totals).toMatchObject({ hours: 0, pending_hours: 1.5, completed: 1 });
     const c = imp.body.timeline[0].contributions[0];
@@ -91,7 +89,7 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
     expect(queue.body.items.find((x: { id: string }) => x.id === c.id)).toMatchObject({ can_decide: true, volunteer_name: "hours.vol" });
     const ok = await owner.post(`/v1/contributions/${c.id}/decide`, { action: "approve" });
     expect(ok.body).toMatchObject({ status: "approved", approved_hours: 1.5 });
-    expect((await v.get("/v1/volunteer/history/summary")).body.total_hours).toBe(1.5);
+    expect((await v.get("/v1/volunteer/impact")).body.totals.hours).toBe(1.5);
 
     // The volunteer reports extra time; the reviewer approves less, with a reason the volunteer sees.
     const rep = await v.post("/v1/volunteer/contributions", { applicationId: ap.body.applicationId, hours: 2, description: "Stayed late to help." });
@@ -150,7 +148,7 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
 
   it("exports impact as CSV safe for spreadsheets", async () => {
     const uid = await userId(EMAILS.volunteer);
-    await pool.query("INSERT INTO volunteer_task_entries (volunteer_user_id, task_date, task, duration_hours) VALUES ($1, CURRENT_DATE, '=HYPERLINK(\"x\")', 2)", [uid]);
+    await pool.query("INSERT INTO contributions (volunteer_user_id, source, reported_hours, status, verification_method, description) VALUES ($1, 'outside', 2, 'self_reported', 'self_reported', '=HYPERLINK(\"x\")')", [uid]);
     const r = await (await as(EMAILS.volunteer)).get("/v1/volunteer/history/export.csv");
     expect(r.status).toBe(200);
     expect(r.headers["content-type"]).toContain("text/csv");

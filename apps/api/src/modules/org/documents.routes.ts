@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { documentType } from "../messaging/files";
 import type { Express } from "express";
 import { contentDisposition } from "../../lib/http";
-import type { Request } from "express";
 import { z } from "zod";
+import { minorSql } from "../../lib/age";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
-import { orgDocUploadMiddleware, requireAdminOrManager, requireOrg } from "./context";
+import { contactsFor, orgDocUploadMiddleware, requireAdminOrManager, requireOrg } from "./context";
 import crypto from "node:crypto";
 import { notify } from "../notifications/service";
 
@@ -17,7 +16,7 @@ export function registerOrgDocumentsRoutes(app: Express) {
   // Org Operations: Waivers & Training Docs
   app.get(
     "/v1/org/documents",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
 
@@ -50,16 +49,15 @@ export function registerOrgDocumentsRoutes(app: Express) {
     })
   );
 
-
   app.post(
     "/v1/org/documents",
     orgDocUploadMiddleware,
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
 
-      const file = (req as any).file as Express.Multer.File | undefined;
+      const file = req.file;
       if (!file) return res.status(400).json({ message: "Missing file" });
 
       const real = documentType(file.buffer, file.originalname);
@@ -97,14 +95,14 @@ export function registerOrgDocumentsRoutes(app: Express) {
           file.buffer,
           requireAck,
           active,
-          String((ok.user as any).id)
+          String(ok.user.id)
         ]
       );
 
       await pool.query(
         `INSERT INTO org_document_versions (document_id, version, title, file_name, mime_type, bytes, sha256, created_by_user_id)
          VALUES ($1, 1, $2, $3, $4, $5, $6, $7)`,
-        [inserted.rows[0].id, body.data.title, file.originalname, file.mimetype, file.buffer, sha256Hex(file.buffer), String((ok.user as any).id)]
+        [inserted.rows[0].id, body.data.title, file.originalname, file.mimetype, file.buffer, sha256Hex(file.buffer), String(ok.user.id)]
       );
 
       return res.status(201).json({ document: { ...inserted.rows[0], current_version: 1 } });
@@ -116,13 +114,13 @@ export function registerOrgDocumentsRoutes(app: Express) {
   app.post(
     "/v1/org/documents/:id/versions",
     orgDocUploadMiddleware,
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
       const params = z.object({ id: z.string().uuid() }).safeParse(req.params);
       if (!params.success) return res.status(400).json({ message: "Invalid document id" });
-      const file = (req as any).file as Express.Multer.File | undefined;
+      const file = req.file;
       if (!file) return res.status(400).json({ message: "Missing file" });
       const real = documentType(file.buffer, file.originalname);
       if (!real) return res.status(400).json({ message: "Unsupported file type. Use PDF, JPG, or PNG." });
@@ -139,7 +137,7 @@ export function registerOrgDocumentsRoutes(app: Express) {
       await pool.query(
         `INSERT INTO org_document_versions (document_id, version, title, file_name, mime_type, bytes, sha256, requires_resign, change_note, created_by_user_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-        [doc.id, version, title, file.originalname, file.mimetype, file.buffer, sha256Hex(file.buffer), resign, body.data.change_note, String((ok.user as any).id)]
+        [doc.id, version, title, file.originalname, file.mimetype, file.buffer, sha256Hex(file.buffer), resign, body.data.change_note, String(ok.user.id)]
       );
       await pool.query(
         "UPDATE org_documents SET current_version = $2, title = $3, file_name = $4, mime_type = $5, bytes = $6, updated_at = NOW() WHERE id = $1",
@@ -188,7 +186,7 @@ export function registerOrgDocumentsRoutes(app: Express) {
 
   app.get(
     "/v1/org/documents/:id/versions",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       const params = z.object({ id: z.string().uuid() }).safeParse(req.params);
@@ -203,10 +201,9 @@ export function registerOrgDocumentsRoutes(app: Express) {
     })
   );
 
-
   app.get(
     "/v1/org/documents/:id/download",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
 
@@ -219,17 +216,16 @@ export function registerOrgDocumentsRoutes(app: Express) {
       );
       if ((row.rowCount ?? 0) === 0) return res.status(404).json({ message: "Document not found" });
 
-      const r = row.rows[0] as any;
+      const r = row.rows[0];
       res.setHeader("content-type", r.mime_type || "application/octet-stream");
       res.setHeader("content-disposition", contentDisposition(r.file_name));
       return res.status(200).send(r.bytes);
     })
   );
 
-
   app.post(
     "/v1/org/documents/:id/assign",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
@@ -264,17 +260,16 @@ export function registerOrgDocumentsRoutes(app: Express) {
         VALUES ($1, $2, $3, $4)
         ON CONFLICT (org_document_id, request_id) DO UPDATE SET required_before = EXCLUDED.required_before
         `,
-        [params.data.id, requestId, String((ok.user as any).id), body.data.required_before]
+        [params.data.id, requestId, String(ok.user.id), body.data.required_before]
       );
 
       return res.json({ ok: true });
     })
   );
 
-
   app.delete(
     "/v1/org/documents/:id/assign",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
@@ -294,10 +289,9 @@ export function registerOrgDocumentsRoutes(app: Express) {
     })
   );
 
-
   app.get(
     "/v1/org/documents/:id/acks",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
 
@@ -312,7 +306,7 @@ export function registerOrgDocumentsRoutes(app: Express) {
         `
         SELECT
           ack.*,
-          u.email AS volunteer_email,
+          CASE WHEN ${minorSql("u.id")} THEN NULL ELSE u.email END AS volunteer_email,
           up.display_name AS volunteer_display_name
         FROM volunteer_document_acks ack
         JOIN org_documents d ON d.id = ack.org_document_id
@@ -324,7 +318,7 @@ export function registerOrgDocumentsRoutes(app: Express) {
         [ok.ctx.org.slug, params.data.id, requestId]
       );
 
-      return res.json({ acknowledgements: rows.rows });
+      return res.json({ acknowledgements: contactsFor(ok.ctx, rows.rows) });
     })
   );
 }

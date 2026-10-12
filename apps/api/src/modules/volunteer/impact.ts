@@ -22,7 +22,11 @@ export type WorkContribution = {
   description: string | null;
   last_reason: string | null;
   decided_by_role: string | null;
+  kind: string;
+  evidence: EvidenceItem[];
 };
+
+export type EvidenceItem = { id: string; kind: "link" | "file"; url: string | null; label: string | null; file_name: string | null; mine: boolean };
 
 export type CompletedWork = {
   application_id: string;
@@ -64,13 +68,25 @@ export async function completedWork(userId: string): Promise<CompletedWork[]> {
   );
   const contribs = await pool.query(
     `SELECT c.id, c.application_id, c.status, c.source, c.verification_method, c.started_at, c.ended_at, c.reported_hours, c.approved_hours,
-            c.reported_units, c.approved_units, c.unit, c.description, c.decided_by_role,
+            c.reported_units, c.approved_units, c.unit, c.description, c.decided_by_role, c.kind,
             (SELECT d.reason FROM contribution_decisions d WHERE d.contribution_id = c.id AND d.action IN ('adjusted', 'rejected', 'revision_requested', 'corrected', 'marked_unverified')
               ORDER BY d.created_at DESC LIMIT 1) AS last_reason
        FROM contributions c WHERE c.volunteer_user_id = $1 AND c.application_id IS NOT NULL
       ORDER BY COALESCE(c.started_at, c.created_at)`,
     [userId]
   );
+  // Evidence metadata (never the bytes) for all of them in one query.
+  const ev = await pool.query(
+    `SELECT e.id, e.contribution_id, e.kind, e.url, e.label, e.file_name, (e.added_by_user_id = $1) AS mine
+       FROM contribution_evidence e JOIN contributions c ON c.id = e.contribution_id
+      WHERE c.volunteer_user_id = $1 AND c.application_id IS NOT NULL ORDER BY e.created_at`,
+    [userId]
+  );
+  const evidenceOf = new Map<string, EvidenceItem[]>();
+  for (const e of ev.rows) {
+    const k = String(e.contribution_id);
+    evidenceOf.set(k, [...(evidenceOf.get(k) ?? []), { id: String(e.id), kind: e.kind, url: e.url ?? null, label: e.label ?? null, file_name: e.file_name ?? null, mine: Boolean(e.mine) }]);
+  }
   const byApp = new Map<string, WorkContribution[]>();
   for (const c of contribs.rows) {
     const k = String(c.application_id);
@@ -90,7 +106,9 @@ export async function completedWork(userId: string): Promise<CompletedWork[]> {
         unit: c.unit ?? null,
         description: c.description ?? null,
         last_reason: c.last_reason ?? null,
-        decided_by_role: c.decided_by_role ?? null
+        decided_by_role: c.decided_by_role ?? null,
+        kind: String(c.kind || "time"),
+        evidence: evidenceOf.get(String(c.id)) ?? []
       }
     ]);
   }
@@ -131,13 +149,7 @@ export async function hoursSummary(userId: string): Promise<HoursSummary> {
        FROM contributions WHERE volunteer_user_id = $1 GROUP BY status, unit`,
     [userId]
   );
-  // Notes and hours logged before contributions existed count as self-reported.
-  const legacy = await pool.query(
-    `SELECT (COALESCE((SELECT SUM(hours) FROM volunteer_impact_entries WHERE volunteer_user_id = $1), 0)
-           + COALESCE((SELECT SUM(duration_hours) FROM volunteer_task_entries WHERE volunteer_user_id = $1), 0))::float AS h`,
-    [userId]
-  );
-  const out: HoursSummary = { approved: 0, pending: 0, self_reported: Number(legacy.rows[0]?.h || 0), units: [] };
+  const out: HoursSummary = { approved: 0, pending: 0, self_reported: 0, units: [] };
   const units = new Map<string, { approved: number; pending: number }>();
   for (const row of r.rows) {
     if (CREDITED.has(row.status)) out.approved += row.approved_h;

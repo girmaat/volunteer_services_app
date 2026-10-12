@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { minorSql } from "../../lib/age";
 import { can, type PolicyUser } from "../../lib/policy";
 import type { Express } from "express";
@@ -54,7 +53,7 @@ app.get(
     );
 
     // Ensure callers always get a usable slug (and we can keep body for back-compat generation)
-    const stories = rows.rows.map((r: any) => {
+    const stories = rows.rows.map((r) => {
       const slug =
         r.slug ||
         `${String(r.title || "story")
@@ -73,7 +72,7 @@ app.get(
       };
     });
 
-    return res.json(stories.map(({ body, ...rest }) => rest)); // list stays lightweight
+    return res.json(stories.map(({ body: _body, ...rest }) => rest)); // list stays lightweight
   })
 );
 
@@ -106,7 +105,7 @@ app.get(
 
     if (rows.rowCount === 0) return res.status(404).json({ message: "Story not found" });
 
-    const r = rows.rows[0] as any;
+    const r = rows.rows[0];
     const slug =
       r.slug ||
       `${String(r.title || "story")
@@ -147,7 +146,7 @@ app.get(
         LIMIT $2 OFFSET $3`,
       [q, page.limit + 1, page.offset]
     );
-    const items = rows.rows.map((o: any) => ({
+    const items = rows.rows.map((o) => ({
       slug: o.slug,
       name: o.name,
       summary: sanitizePublicDescription(String(o.summary || "")),
@@ -174,7 +173,7 @@ app.get(
       [slug]
     );
     if (rows.rowCount === 0) return res.status(404).json({ message: "Organization not found" });
-    const o: any = rows.rows[0];
+    const o = rows.rows[0];
     res.setHeader("cache-control", "public, max-age=60, stale-while-revalidate=300");
     return res.json({
       slug: o.slug,
@@ -224,7 +223,7 @@ app.get(
       [orgSlug, mode, q, page.limit + 1, page.offset]
     );
 
-    const items = rows.rows.map((r: any) => ({
+    const items = rows.rows.map((r) => ({
       id: r.id,
       title: r.title,
       summary: sanitizePublicDescription(String(r.description || "")).slice(0, 240),
@@ -262,7 +261,7 @@ app.get(
     );
     if (rows.rowCount === 0) return res.status(404).json({ message: "Opportunity not found" });
 
-    const r: any = rows.rows[0];
+    const r = rows.rows[0];
     res.setHeader("cache-control", "public, max-age=30, stale-while-revalidate=120");
     return res.json({
       id: r.id,
@@ -353,10 +352,10 @@ app.get("/v1/public/volunteers/:id", wrap(async (req, res) => {
 
   if (row.rowCount === 0) return res.status(404).json({ message: "Volunteer not found" });
 
-  const r: any = row.rows[0];
+  const r = row.rows[0];
 
   const viewer = await optionalAuthedUser(req);
-  const viewerId = viewer ? String((viewer as any).id || "") : "";
+  const viewerId = viewer ? String(viewer.id || "") : "";
   const isAdmin = !!(viewer && can(viewer as PolicyUser, "platform:moderate"));
   // Under-18 volunteers never have a public profile (SAFE-04): only they and platform staff see it.
   const visible = !!r.public_profile_visible && !r.minor;
@@ -501,11 +500,11 @@ app.get("/v1/public/requesters/:id", wrap(async (req, res) => {
 
   if (row.rowCount === 0) return res.status(404).json({ message: "Requester not found" });
 
-  const r: any = row.rows[0];
+  const r = row.rows[0];
 
   const viewer = await optionalAuthedUser(req);
-  const viewerId = viewer ? String((viewer as any).id || "") : "";
-  const isAdmin = !!(viewer && (viewer as any).is_platform_admin);
+  const viewerId = viewer ? String(viewer.id || "") : "";
+  const isAdmin = !!(viewer && viewer.is_platform_admin);
   const visible = !!r.public_profile_visible;
   const canView = visible || viewerId === requesterId || isAdmin;
   if (!canView) return res.status(404).json({ message: "Requester not found" });

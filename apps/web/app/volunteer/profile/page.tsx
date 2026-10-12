@@ -1,3 +1,4 @@
+import PhotoUpload from "../../../components/profile/PhotoUpload";
 import ProfileTabs from "../../../components/shell/ProfileTabs";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -36,7 +37,6 @@ export default async function Page(
     const phoneRaw = String(formData.get("phone") || "").trim();
 
     const displayNameRaw = String(formData.get("displayName") || "").trim();
-    const avatarUrlRaw = String(formData.get("avatarUrl") || "").trim();
     const publicLocationRaw = String(formData.get("publicLocation") || "").trim();
     const serviceRadiusMilesRaw = String(formData.get("serviceRadiusMiles") || "").trim();
 
@@ -60,7 +60,6 @@ export default async function Page(
 
     payload.phone = phoneRaw ? phoneRaw : null;
     payload.displayName = displayNameRaw ? displayNameRaw : null;
-    payload.avatarUrl = avatarUrlRaw ? avatarUrlRaw : null;
     payload.publicLocation = publicLocationRaw ? publicLocationRaw : null;
 
     const birthDateRaw = String(formData.get("birthDate") || "").trim();
@@ -141,9 +140,14 @@ export default async function Page(
 
 
       <div className={styles.profileHeader}>
-        <div className={styles.avatarCircle} aria-hidden="true">
-          <span className={styles.avatarText}>{avatarText}</span>
-        </div>
+        {profile?.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={profile.avatar_url} alt="" className={styles.avatarCircle} />
+        ) : (
+          <div className={styles.avatarCircle} aria-hidden="true">
+            <span className={styles.avatarText}>{avatarText}</span>
+          </div>
+        )}
 
         <div className={styles.profileHeaderBody}>
           <p className={styles.profileName}>{displayName || "Your name"}</p>
@@ -187,6 +191,7 @@ export default async function Page(
 
         <div className={`${styles.tile} col-span-full`}>
           <h2 className={styles.tileTitle}>Edit profile</h2>
+          <div className="mb-4"><PhotoUpload name={displayName} src={profile?.avatar_url} back="/volunteer/profile" /></div>
           <p className={styles.meta}>Update your public-safe details. Changes persist on refresh.</p>
 
           <form action={saveProfile} className={styles.form}>
@@ -210,16 +215,6 @@ export default async function Page(
                   placeholder="City / neighborhood (no address)"
                 />
               </label>
-
-              <label className={styles.label}>
-                Avatar URL (optional)
-                <input
-                  name="avatarUrl"
-                  className={styles.input}
-                  defaultValue={profile?.avatar_url || ""}
-                  placeholder="https://..."
-                />
-              </label>
             </div>
 
             <label className={styles.label}>
@@ -239,7 +234,7 @@ export default async function Page(
 
             <label className={styles.label}>
               Date of birth (private)
-              <input name="birthDate" type="date" autoComplete="bday" className={styles.input} defaultValue={(profile as any)?.birth_date ?? ""} />
+              <input name="birthDate" type="date" autoComplete="bday" className={styles.input} defaultValue={profile?.birth_date ?? ""} />
               <p className={styles.meta}>Only used to check age limits. Never shown to anyone.</p>
             </label>
 
@@ -247,7 +242,7 @@ export default async function Page(
               Background check
               <p className={styles.meta}>
                 {({ cleared: "Cleared", pending: "In progress", expired: "Expired — contact support to renew", none: "Not on file" } as Record<string, string>)[
-                  String((profile as any)?.background_check_status || "none")
+                  String(profile?.background_check_status || "none")
                 ]}
                 . Some opportunities (for example with children) need a cleared check; our team records it after reviewing your documents.
               </p>

@@ -24,10 +24,6 @@ export async function deleteSession(pool: Pool, sessionToken: string) {
   await pool.query("DELETE FROM sessions WHERE session_token = session_key($1)", [sessionToken]);
 }
 
-export async function deleteAllSessionsForUser(pool: Pool, userId: string) {
-  await pool.query("DELETE FROM sessions WHERE user_id=$1", [userId]);
-}
-
 /**
  * Columns of `users` that may leave the API. Explicit on purpose: a new column (for example an
  * internal moderation note) must be added here deliberately before any client can see it.

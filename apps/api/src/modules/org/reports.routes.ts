@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Organization reports (OPS-02, OPS-05), built on contributions so they agree with what volunteers
  * see: hours count once approved; hours waiting for a decision and hours not approved are reported
@@ -59,7 +58,7 @@ const INRANGE = `
 export function registerOrgReportsRoutes(app: Express) {
   app.get(
     "/v1/org/reports/impact",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       // Reports name volunteers and their hours: admins and managers only.
@@ -201,7 +200,7 @@ export function registerOrgReportsRoutes(app: Express) {
 
   app.get(
     "/v1/org/reports/volunteer-hours",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
@@ -239,7 +238,7 @@ export function registerOrgReportsRoutes(app: Express) {
         approved_hours: r2(first.all_approved),
         waiting_hours: r2(first.all_waiting),
         volunteers_total: Number(first.total_rows || 0),
-        volunteers: rows.rows.map(({ total_rows: _t, all_approved: _a, all_waiting: _w, ...r }: any) => ({ ...r, approved_hours: r2(r.approved_hours), waiting_hours: r2(r.waiting_hours), declined_hours: r2(r.declined_hours) }))
+        volunteers: rows.rows.map(({ total_rows: _t, all_approved: _a, all_waiting: _w, ...r }) => ({ ...r, approved_hours: r2(r.approved_hours), waiting_hours: r2(r.waiting_hours), declined_hours: r2(r.declined_hours) }))
       });
     })
   );

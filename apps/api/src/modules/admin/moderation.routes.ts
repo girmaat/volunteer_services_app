@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
 import { requireModerator, requirePlatformAdmin } from "../../admin/auth";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
-import { parseLimit, parseOffset, shareLinksHaveModerationCols, shareReportsHaveModerationCols } from "./helpers";
+import { parseLimit, parseOffset } from "./helpers";
 
 export function registerAdminModerationRoutes(app: Express) {
 
@@ -14,10 +13,10 @@ app.get(
       const r = await requirePlatformAdmin(pool, req, res);
       if (!r) return;
 
-      const target = String((req.query.target_user_id as any) || "").trim();
+      const target = String(req.query.target_user_id || "").trim();
       const limit = parseLimit(req.query.limit, 50, 200);
 
-      const params: any[] = [];
+      const params: unknown[] = [];
       let where = "";
       if (target) {
         params.push(target);
@@ -25,10 +24,7 @@ app.get(
       }
       params.push(limit);
 
-      let rows;
-
-      try {
-        rows = await pool.query(
+      const rows = await pool.query(
         `SELECT a.id, a.target_user_id, a.action_type, a.ban_until, a.reason, a.notes, a.created_at,
                 actor.email AS actor_email,
                 target.email AS target_email
@@ -40,12 +36,6 @@ app.get(
            LIMIT $${params.length}`,
         params
       );
-      } catch (e: any) {
-        if (e && (e.code === "42P01" || e.code === "42703")) {
-          return res.json({ actions: [] });
-        }
-        throw e;
-      }
 
 
       return res.json({ actions: rows.rows });
@@ -61,10 +51,7 @@ app.get(
 
       const limit = parseLimit(req.query.limit, 50, 200);
 
-      let rows;
-
-      try {
-        rows = await pool.query(
+      const rows = await pool.query(
         `SELECT u.id, u.email, u.banned_until, u.banned_reason, u.strike_count, p.display_name
            FROM users u
            LEFT JOIN user_profiles p ON p.user_id = u.id
@@ -73,12 +60,6 @@ app.get(
           LIMIT $1`,
         [limit]
       );
-      } catch (e: any) {
-        if (e && (e.code === "42P01" || e.code === "42703")) {
-          return res.json({ banned_users: [] });
-        }
-        throw e;
-      }
 
 
       return res.json({ banned_users: rows.rows });
@@ -93,18 +74,18 @@ app.get(
       const r = await requireModerator(pool, req, res);
       if (!r) return;
 
-      const status = String((req.query.status as any) || "").trim();
+      const status = String(req.query.status || "").trim();
       const limit = parseLimit(req.query.limit, 50, 200);
       const offset = parseOffset(req.query.offset);
 
-      const params: any[] = [];
+      const params: unknown[] = [];
       let where = "";
       if (status && ["submitted", "in_review", "resolved", "dismissed"].includes(status)) {
         params.push(status);
         where = `WHERE status = $${params.length}`;
       }
       // Category queues (harassment, scam, safety…): one queue per category.
-      const category = String((req.query.category as any) || "").trim().slice(0, 40);
+      const category = String(req.query.category || "").trim().slice(0, 40);
       if (category) {
         params.push(category);
         where = `${where ? where + " AND" : "WHERE"} category = $${params.length}`;
@@ -112,19 +93,15 @@ app.get(
       params.push(limit);
       params.push(offset);
 
-            const shareHas = await shareReportsHaveModerationCols(pool);
-      const shareLinksHas = await shareLinksHaveModerationCols(pool);
 
-      const shareStatusSql = shareHas ? "srp.status" : "'submitted'::text";
-      const shareAdminNotesSql = shareHas ? "srp.admin_notes" : "NULL::text";
-      const shareUpdatedAtSql = shareHas ? "srp.updated_at" : "srp.created_at";
-      const shareResolvedAtSql = shareHas ? "srp.resolved_at" : "NULL::timestamptz";
+      const shareStatusSql = "srp.status";
+      const shareAdminNotesSql = "srp.admin_notes";
+      const shareUpdatedAtSql = "srp.updated_at";
+      const shareResolvedAtSql = "srp.resolved_at";
 
-      const shareModerationStateSql = shareLinksHas ? "sl.moderation_state" : "NULL::text";
-      const shareRevokedReasonSql = shareLinksHas ? "sl.revoked_reason" : "NULL::text";
-      const distinctExpr24h = shareHas
-        ? "COUNT(DISTINCT COALESCE(r2.reporter_user_id::text, r2.reporter_ip_hash))"
-        : "COUNT(DISTINCT r2.reporter_user_id)";
+      const shareModerationStateSql = "sl.moderation_state";
+      const shareRevokedReasonSql = "sl.revoked_reason";
+      const distinctExpr24h = "COUNT(DISTINCT COALESCE(r2.reporter_user_id::text, r2.reporter_ip_hash))";
 
       const rows = await pool.query(
         `
@@ -245,19 +222,15 @@ return res.json({ reports: rows.rows, limit, offset });
       const reportId = String(req.params.id || "").trim();
       if (!reportId) return res.status(400).json({ message: "Invalid report id" });
 
-      const shareHas = await shareReportsHaveModerationCols(pool);
-      const shareLinksHas = await shareLinksHaveModerationCols(pool);
 
-      const shareStatusSql = shareHas ? "srp.status" : "'submitted'::text";
-      const shareAdminNotesSql = shareHas ? "srp.admin_notes" : "NULL::text";
-      const shareUpdatedAtSql = shareHas ? "srp.updated_at" : "srp.created_at";
-      const shareResolvedAtSql = shareHas ? "srp.resolved_at" : "NULL::timestamptz";
+      const shareStatusSql = "srp.status";
+      const shareAdminNotesSql = "srp.admin_notes";
+      const shareUpdatedAtSql = "srp.updated_at";
+      const shareResolvedAtSql = "srp.resolved_at";
 
-      const shareModerationStateSql = shareLinksHas ? "sl.moderation_state" : "NULL::text";
-      const shareRevokedReasonSql = shareLinksHas ? "sl.revoked_reason" : "NULL::text";
-      const distinctExpr24h = shareHas
-        ? "COUNT(DISTINCT COALESCE(r2.reporter_user_id::text, r2.reporter_ip_hash))"
-        : "COUNT(DISTINCT r2.reporter_user_id)";
+      const shareModerationStateSql = "sl.moderation_state";
+      const shareRevokedReasonSql = "sl.revoked_reason";
+      const distinctExpr24h = "COUNT(DISTINCT COALESCE(r2.reporter_user_id::text, r2.reporter_ip_hash))";
 
       const rows = await pool.query(
         `
@@ -361,13 +334,7 @@ return res.json({ reports: rows.rows, limit, offset });
       );
 
       if ((rows.rowCount ?? 0) == 0) return res.status(404).json({ message: "Report not found" });
-      return res.json({
-        report: rows.rows[0],
-        capabilities: {
-          share_reports_moderation_cols: shareHas,
-          share_links_moderation_cols: shareLinksHas
-        }
-      });
+      return res.json({ report: rows.rows[0] });
     })
   );
 
@@ -391,7 +358,7 @@ return res.json({ reports: rows.rows, limit, offset });
       const adminNotes = parsed.data.admin_notes !== undefined ? parsed.data.admin_notes : undefined;
 
       const sets: string[] = [];
-      const params: any[] = [reportId];
+      const params: unknown[] = [reportId];
       if (status) {
         params.push(status);
         sets.push(`status = $${params.length}`);
@@ -407,10 +374,6 @@ return res.json({ reports: rows.rows, limit, offset });
 
       const upd = await pool.query(`UPDATE user_reports SET ${sets.join(", ")} WHERE id = $1 RETURNING id`, params);
       if ((upd.rowCount ?? 0) === 0) {
-        const shareHas = await shareReportsHaveModerationCols(pool);
-        if (!shareHas) {
-          return res.status(400).json({ message: "Share-link reports are visible, but can’t be updated because DB migrations are disabled (share_reports lacks moderation columns). Run `pnpm db:migrate`." });
-        }
         const upd2 = await pool.query(`UPDATE share_reports SET ${sets.join(", ")} WHERE id = $1 RETURNING id`, params);
         if ((upd2.rowCount ?? 0) === 0) return res.status(404).json({ message: "Report not found" });
       }
@@ -437,8 +400,6 @@ return res.json({ reports: rows.rows, limit, offset });
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
-      const shareHas = await shareReportsHaveModerationCols(pool);
-      const linksHas = await shareLinksHaveModerationCols(pool);
 
       const reportRes = await pool.query(
         `
@@ -452,64 +413,51 @@ return res.json({ reports: rows.rows, limit, offset });
       );
       if (reportRes.rowCount === 0) return res.status(404).json({ message: "Report not found" });
 
-      const linkId = (reportRes.rows[0] as any).share_link_id;
-      const token = String((reportRes.rows[0] as any).token || "");
+      const linkId = (reportRes.rows[0]).share_link_id;
+      const token = String((reportRes.rows[0]).token || "");
 
       const action = parsed.data.action;
       const adminNotes = parsed.data.admin_notes !== undefined ? parsed.data.admin_notes : undefined;
 
-      if ((action === "warn" || action === "clear") && !linksHas) {
-        return res.status(400).json({
-          message:
-            "Share-link warning state requires newer sharing schema. Run `pnpm db:migrate`."
-        });
-      }
-
       if (action === "block") {
-        if (linksHas) {
-          await pool.query(
-            `
-              UPDATE share_links
-                 SET revoked_at = COALESCE(revoked_at, NOW()),
-                     revoked_reason = 'admin_block',
-                     revoked_by_user_id = $2,
-                     moderation_state = 'blocked',
-                     moderation_updated_at = NOW(),
-                     moderation_updated_by_user_id = $2,
-                     moderation_notes = COALESCE($3, moderation_notes)
-               WHERE id = $1
-            `,
-            [linkId, (r.user as any).id, adminNotes ?? null]
-          );
-        } else {
-          await pool.query(`UPDATE share_links SET revoked_at = COALESCE(revoked_at, NOW()) WHERE id = $1`, [linkId]);
-        }
+        await pool.query(
+          `
+            UPDATE share_links
+               SET revoked_at = COALESCE(revoked_at, NOW()),
+                   revoked_reason = 'admin_block',
+                   revoked_by_user_id = $2,
+                   moderation_state = 'blocked',
+                   moderation_updated_at = NOW(),
+                   moderation_updated_by_user_id = $2,
+                   moderation_notes = COALESCE($3, moderation_notes)
+             WHERE id = $1
+          `,
+          [linkId, r.user.id, adminNotes ?? null]
+        );
+      
       }
 
       if (action === "unblock") {
-        if (linksHas) {
-          // If there are still reports, keep the warning state; otherwise clear.
-          const rc = await pool.query(`SELECT COUNT(*)::int AS n FROM share_reports WHERE share_link_id = $1`, [linkId]);
-          const n = Number((rc.rows[0] as any)?.n || 0);
-          const nextState = n > 0 ? "reported" : "clean";
+        // If there are still reports, keep the warning state; otherwise clear.
+        const rc = await pool.query(`SELECT COUNT(*)::int AS n FROM share_reports WHERE share_link_id = $1`, [linkId]);
+        const n = Number((rc.rows[0])?.n || 0);
+        const nextState = n > 0 ? "reported" : "clean";
 
-          await pool.query(
-            `
-              UPDATE share_links
-                 SET revoked_at = NULL,
-                     revoked_reason = NULL,
-                     revoked_by_user_id = NULL,
-                     moderation_state = $3,
-                     moderation_updated_at = NOW(),
-                     moderation_updated_by_user_id = $2,
-                     moderation_notes = COALESCE($4, moderation_notes)
-               WHERE id = $1
-            `,
-            [linkId, (r.user as any).id, nextState, adminNotes ?? null]
-          );
-        } else {
-          await pool.query(`UPDATE share_links SET revoked_at = NULL WHERE id = $1`, [linkId]);
-        }
+        await pool.query(
+          `
+            UPDATE share_links
+               SET revoked_at = NULL,
+                   revoked_reason = NULL,
+                   revoked_by_user_id = NULL,
+                   moderation_state = $3,
+                   moderation_updated_at = NOW(),
+                   moderation_updated_by_user_id = $2,
+                   moderation_notes = COALESCE($4, moderation_notes)
+             WHERE id = $1
+          `,
+          [linkId, r.user.id, nextState, adminNotes ?? null]
+        );
+      
       }
 
       if (action === "warn") {
@@ -522,7 +470,7 @@ return res.json({ reports: rows.rows, limit, offset });
                    moderation_notes = COALESCE($3, moderation_notes)
              WHERE id = $1
           `,
-          [linkId, (r.user as any).id, adminNotes ?? null]
+          [linkId, r.user.id, adminNotes ?? null]
         );
       }
 
@@ -536,21 +484,20 @@ return res.json({ reports: rows.rows, limit, offset });
                    moderation_notes = COALESCE($3, moderation_notes)
              WHERE id = $1
           `,
-          [linkId, (r.user as any).id, adminNotes ?? null]
+          [linkId, r.user.id, adminNotes ?? null]
         );
       }
 
-      if (shareHas) {
-        const sets: string[] = ["status = 'resolved'", "updated_at = NOW()", "resolved_at = NOW()", "action = $2", "action_at = NOW()", "action_by_user_id = $3"];
-        const params: any[] = [reportId, action === "clear" ? "clear" : action, (r.user as any).id];
+      const sets: string[] = ["status = 'resolved'", "updated_at = NOW()", "resolved_at = NOW()", "action = $2", "action_at = NOW()", "action_by_user_id = $3"];
+      const params: unknown[] = [reportId, action === "clear" ? "clear" : action, r.user.id];
 
-        if (adminNotes !== undefined) {
-          params.push(adminNotes ?? null);
-          sets.push(`admin_notes = $${params.length}`);
-        }
-
-        await pool.query(`UPDATE share_reports SET ${sets.join(", ")} WHERE id = $1`, params);
+      if (adminNotes !== undefined) {
+        params.push(adminNotes ?? null);
+        sets.push(`admin_notes = $${params.length}`);
       }
+
+      await pool.query(`UPDATE share_reports SET ${sets.join(", ")} WHERE id = $1`, params);
+    
 
       return res.json({ ok: true, token });
     })
@@ -564,12 +511,12 @@ return res.json({ reports: rows.rows, limit, offset });
       const r = await requireModerator(pool, req, res);
       if (!r) return;
 
-      const status = String((req.query.status as any) || "").trim();
-      const severity = String((req.query.severity as any) || "").trim();
+      const status = String(req.query.status || "").trim();
+      const severity = String(req.query.severity || "").trim();
       const limit = parseLimit(req.query.limit, 50, 200);
       const offset = parseOffset(req.query.offset);
 
-      const params: any[] = [];
+      const params: unknown[] = [];
       const clauses: string[] = [];
       if (status && ["open", "in_review", "resolved", "closed"].includes(status)) {
         params.push(status);
@@ -633,7 +580,7 @@ return res.json({ reports: rows.rows, limit, offset });
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
       const sets: string[] = [];
-      const params: any[] = [incidentId];
+      const params: unknown[] = [incidentId];
       for (const [k, v] of Object.entries(parsed.data)) {
         if (v === undefined) continue;
         params.push(v);

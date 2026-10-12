@@ -7,7 +7,7 @@
  */
 
 export type MemberRole = "volunteer" | "requester";
-export type OrgMembership = { slug: string; name: string; role: "admin" | "manager" | "member" };
+export type OrgMembership = { slug: string; name: string; role: "admin" | "manager" | "member" | "coordinator" };
 export type PlatformRole = "moderator" | "admin" | "super" | null;
 export type TrustTier = "unverified" | "basic" | "trusted";
 export type ActiveContext = "volunteer" | "requester" | "admin" | `org:${string}`;

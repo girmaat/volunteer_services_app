@@ -4,6 +4,7 @@ import { backendFetch } from "../../app/lib/backend";
 import { bulkApproveAction, conflictAction, decideAction } from "../../app/_hours/actions";
 import { Button, EmptyState, LinkTabs, Notice, PageHeader, StatusPill, Toast } from "../ui";
 import { formatInZone, zoneOr } from "../../lib/time";
+import Evidence, { type EvidenceItem } from "./Evidence";
 
 export type ReviewItem = {
   id: string;
@@ -29,6 +30,7 @@ export type ReviewItem = {
   can_decide: boolean;
   why_not: string | null;
   decided_at: string | null;
+  evidence?: EvidenceItem[];
 };
 
 const FLASH: Record<string, string> = {
@@ -153,6 +155,7 @@ export default async function HoursReview({ base, status, page, flash, error, ap
             </p>
             {c.description ? <p className="m-0 mt-1 text-sm text-muted">“{c.description}”</p> : null}
             {c.last_reason ? <p className="m-0 mt-1 text-sm">Note: {c.last_reason}</p> : null}
+            <Evidence contributionId={c.id} items={c.evidence ?? []} />
             {c.exceptions.length ? (
               <ul className="m-0 mt-2 flex flex-wrap gap-2 p-0">
                 {c.exceptions.map((e) => (

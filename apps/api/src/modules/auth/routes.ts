@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { requireUserBySession } from "../../auth/session";
 import { pool } from "../../lib/db";
@@ -27,7 +26,7 @@ const {
   skipAvailability,
   submitVerification,
   verificationUploadMiddleware
-} = authHandlers as any;
+} = authHandlers;
 
 export function registerAuthRoutes(app: Express) {
 
@@ -93,7 +92,7 @@ app.post(
 app.get("/v1/me/moderation", async (req, res) => {
   const user = await requireAuthedUser(req, res);
   if (!user) return;
-  const summary = await getShareModerationSummaryForUser(String((user as any).id));
+  const summary = await getShareModerationSummaryForUser(String(user.id));
   return res.json(summary);
 });
 

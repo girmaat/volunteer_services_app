@@ -21,17 +21,6 @@ export function inOrg(user: U): boolean {
   return user.role === "org_admin";
 }
 
-export function isModerator(user: U): boolean {
-  const r = user?.platform_role ?? user?.platform_admin_role;
-  return Boolean(user?.is_platform_admin || r === "moderator" || r === "admin" || r === "super");
-}
-
-export function activeOrgSlug(user: U): string | null {
-  const ctx = user?.active_context || "";
-  if (ctx.startsWith("org:")) return ctx.slice(4);
-  return user?.orgs?.[0]?.slug ?? null;
-}
-
 export const CONTEXT_HOME: Record<string, string> = {
   volunteer: "/volunteer/dashboard",
   requester: "/requester/dashboard",

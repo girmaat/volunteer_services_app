@@ -169,8 +169,8 @@ export default function ShareButton({ target, label, className }: Props) {
         visibility: String(body.visibility || s.visibility),
         expiresAt: body.expires_at || body.expiresAt || null
       };
-    } catch (e: any) {
-      return { ok: false, message: e?.message ? String(e.message) : "Failed to create share link", reason: "other" };
+    } catch (e) {
+      return { ok: false, message: e instanceof Error ? e.message : "Failed to create share link", reason: "other" };
     } finally {
       setLoading(false);
     }

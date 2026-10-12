@@ -35,7 +35,7 @@ export async function getPlatformAdminRole(pool: Pool, userId: string): Promise<
     [userId]
   );
   if ((r.rowCount ?? 0) === 0) return null;
-  const role = String((r.rows[0] as any)?.role || "").toLowerCase();
+  const role = String((r.rows[0])?.role || "").toLowerCase();
   return role === "super" ? "super" : role === "admin" ? "admin" : role === "moderator" ? "moderator" : null;
 }
 
@@ -85,7 +85,7 @@ export async function requireAuthedUser(pool: Pool, req: Request, res: Response)
   }
 
   if (isBanned(user)) {
-    res.status(403).json({ message: "Account is temporarily suspended", banned_until: (user as any).banned_until });
+    res.status(403).json({ message: "Account is temporarily suspended", banned_until: user.banned_until });
     return null;
   }
 
@@ -111,7 +111,7 @@ export async function requirePlatformAdmin(pool: Pool, req: Request, res: Respon
     res.status(403).json({ message: "Forbidden" });
     return null;
   }
-  if (await staffMfaMissing(pool, String((user as any).id), res)) return null;
+  if (await staffMfaMissing(pool, String(user.id), res)) return null;
   return { user, flags };
 }
 
@@ -124,7 +124,7 @@ export async function requireModerator(pool: Pool, req: Request, res: Response) 
     res.status(403).json({ message: "Forbidden" });
     return null;
   }
-  if (await staffMfaMissing(pool, String((user as any).id), res)) return null;
+  if (await staffMfaMissing(pool, String(user.id), res)) return null;
   return { user, flags };
 }
 

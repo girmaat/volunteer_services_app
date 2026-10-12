@@ -18,15 +18,24 @@ describe("organization area", () => {
 
   it("org admin posts a request that appears in the public list under the org", async () => {
     const api = await as(EMAILS.orgAdmin);
-    const res = await api.post("/v1/org/requests", {
+    const me0 = await api.get("/v1/org/me");
+    const res = await api.post("/v1/requests", {
+      as: "org",
+      orgSlug: me0.body.org.slug,
       title: "Org test: weekend pantry shift",
       description: "Help pack boxes for families on Saturday morning.",
+      category: "food",
+      volunteersNeeded: 2,
+      scheduleType: "one_time",
+      startsAt: new Date(Date.now() + 6 * 86400_000).toISOString(),
+      timezone: "America/New_York",
+      durationMinutes: 120,
       mode: "in-person",
-      location_text: "Queens, NY",
-      tags: ["food"]
+      publicArea: "Queens, NY"
     });
-    expect([200, 201], JSON.stringify(res.body)).toContain(res.status);
-    expect(res.body.request.status).toBe("open");
+    expect(res.status, JSON.stringify(res.body)).toBe(201);
+    const pubd = await api.post(`/v1/requests/${res.body.id}/transition`, { event: "publish" });
+    expect([200, 202], JSON.stringify(pubd.body)).toContain(pubd.status);
     const me = await api.get("/v1/org/me");
     const pub = await anon().get(`/v1/public/opportunities?org=${me.body.org.slug}&q=pantry%20shift`);
     expect(pub.body.items.some((o: { title: string }) => o.title === "Org test: weekend pantry shift")).toBe(true);
@@ -67,7 +76,7 @@ describe("platform admin", () => {
 describe("settings", () => {
   it("overview counts and privacy settings work", async () => {
     const api = await as(EMAILS.requester);
-    for (const p of ["/v1/settings/notifications", "/v1/settings/notifications/unseen-count", "/v1/settings/privacy-safety", "/v1/settings/blocked-users/count", "/v1/settings/reports/count", "/v1/settings/reports"]) {
+    for (const p of ["/v1/settings/notifications/unseen-count", "/v1/settings/privacy-safety", "/v1/settings/blocked-users/count", "/v1/settings/reports/count", "/v1/settings/reports"]) {
       expect((await api.get(p)).status, p).toBe(200);
     }
     const counts = await api.get("/v1/settings/reports/count");

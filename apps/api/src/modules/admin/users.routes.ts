@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
 import { requirePlatformAdmin, requireSuperAdmin } from "../../admin/auth";
@@ -18,16 +17,16 @@ export function registerAdminUsersRoutes(app: Express) {
       const r = await requirePlatformAdmin(pool, req, res);
       if (!r) return;
 
-      const q = String((req.query.q as any) || "").trim();
-      const adminRole = String((req.query.admin_role as any) || "").trim(); // super|admin|none|''
-      const banned = String((req.query.banned as any) || "").trim(); // banned|not_banned|''
-      const verificationStatus = String((req.query.verification_status as any) || "").trim();
-      const verificationRequired = String((req.query.verification_required as any) || "").trim(); // required|not_required|''
-      const onboarding = String((req.query.onboarding as any) || "").trim(); // complete|incomplete|''
-      const accountType = String((req.query.account_type as any) || "").trim();
+      const q = String(req.query.q || "").trim();
+      const adminRole = String(req.query.admin_role || "").trim(); // super|admin|none|''
+      const banned = String(req.query.banned || "").trim(); // banned|not_banned|''
+      const verificationStatus = String(req.query.verification_status || "").trim();
+      const verificationRequired = String(req.query.verification_required || "").trim(); // required|not_required|''
+      const onboarding = String(req.query.onboarding || "").trim(); // complete|incomplete|''
+      const accountType = String(req.query.account_type || "").trim();
 
-      const sortRaw = String((req.query.sort as any) || "created_at").trim();
-      const dirRaw = String((req.query.dir as any) || "desc").trim().toLowerCase();
+      const sortRaw = String(req.query.sort || "created_at").trim();
+      const dirRaw = String(req.query.dir || "desc").trim().toLowerCase();
       const dir = dirRaw === "asc" ? "ASC" : "DESC";
 
       const limit = parseLimit(req.query.limit, 50, 200);
@@ -46,7 +45,7 @@ export function registerAdminUsersRoutes(app: Express) {
 
       const sortExpr = sortMap[sortRaw] || "u.created_at";
 
-      const params: any[] = [];
+      const params: unknown[] = [];
       const conditions: string[] = [];
 
       if (q) {
@@ -141,7 +140,7 @@ app.post(
          VALUES ($1, $2, $3, NOW(), NULL, $4)
          ON CONFLICT (user_id)
          DO UPDATE SET role = EXCLUDED.role, granted_by_user_id = EXCLUDED.granted_by_user_id, granted_at = NOW(), revoked_at = NULL, revoked_by_user_id = NULL, notes = EXCLUDED.notes`,
-        [targetUserId, role, String((r.user as any).id), parsed.data.notes ? String(parsed.data.notes) : null]
+        [targetUserId, role, String(r.user.id), parsed.data.notes ? String(parsed.data.notes) : null]
       );
 
       return res.json({ ok: true });
@@ -160,7 +159,7 @@ app.post(
         `UPDATE platform_admins
             SET revoked_at = NOW(), revoked_by_user_id = $2
           WHERE user_id = $1 AND revoked_at IS NULL`,
-        [targetUserId, String((r.user as any).id)]
+        [targetUserId, String(r.user.id)]
       );
 
       return res.json({ ok: true });
@@ -175,7 +174,7 @@ app.post(
       if (!r) return;
 
       const targetUserId = String(req.params.id || "");
-      const actingUserId = String((r.user as any).id);
+      const actingUserId = String(r.user.id);
       if (!ensureNotSelf(targetUserId, actingUserId)) return res.status(400).json({ message: "Cannot strike yourself" });
       if (!(await staffTargetAllowed(targetUserId, Boolean(r.flags.isSuperAdmin)))) return res.status(403).json({ message: "Only a super admin can take action on platform staff" });
 
@@ -198,7 +197,7 @@ app.post(
       if (!r) return;
 
       const targetUserId = String(req.params.id || "");
-      const actingUserId = String((r.user as any).id);
+      const actingUserId = String(r.user.id);
       if (!ensureNotSelf(targetUserId, actingUserId)) return res.status(400).json({ message: "Cannot clear your own strikes" });
 
       const schema = z.object({ notes: z.string().max(4000).optional() });
@@ -220,7 +219,7 @@ app.post(
       if (!r) return;
 
       const targetUserId = String(req.params.id || "");
-      const actingUserId = String((r.user as any).id);
+      const actingUserId = String(r.user.id);
       if (!ensureNotSelf(targetUserId, actingUserId)) return res.status(400).json({ message: "Cannot ban yourself" });
       if (!(await staffTargetAllowed(targetUserId, Boolean(r.flags.isSuperAdmin)))) return res.status(403).json({ message: "Only a super admin can take action on platform staff" });
 
@@ -264,7 +263,7 @@ app.post(
       if (!r) return;
 
       const targetUserId = String(req.params.id || "");
-      const actingUserId = String((r.user as any).id);
+      const actingUserId = String(r.user.id);
       if (!ensureNotSelf(targetUserId, actingUserId)) return res.status(400).json({ message: "Cannot unban yourself" });
 
       const schema = z.object({ notes: z.string().max(4000).optional() });
@@ -296,7 +295,7 @@ app.post(
       if (!r) return;
 
       const targetUserId = String(req.params.id || "");
-      const actingUserId = String((r.user as any).id);
+      const actingUserId = String(r.user.id);
       if (!ensureNotSelf(targetUserId, actingUserId)) return res.status(400).json({ message: "Cannot delete yourself" });
 
       const schema = z.object({ confirm: z.literal("DELETE") });
@@ -304,29 +303,19 @@ app.post(
       if (!parsed.success) return res.status(400).json({ message: "Type DELETE to confirm." });
 
       const client = await pool.connect();
-      const safe = async (sql: string, params: any[]) => {
-        try {
-          await client.query(sql, params);
-        } catch (e: any) {
-          // If a table/column is missing (migrations disabled / older schema), ignore and continue.
-          if (e && (e.code === "42P01" || e.code === "42703")) return;
-          throw e;
-        }
-      };
-
       try {
         await client.query("BEGIN");
 
         // Break any FK links that were created without ON DELETE SET NULL (older schema).
-        await safe(`UPDATE users SET verified_by_user_id = NULL WHERE verified_by_user_id = $1`, [targetUserId]);
-        await safe(`UPDATE users SET banned_by_user_id = NULL WHERE banned_by_user_id = $1`, [targetUserId]);
-        await safe(`UPDATE organizations SET created_by_user_id = NULL WHERE created_by_user_id = $1`, [targetUserId]);
-        await safe(`UPDATE organizations SET verified_by_user_id = NULL WHERE verified_by_user_id = $1`, [targetUserId]);
-        await safe(`UPDATE request_applications SET assigned_to_user_id = NULL WHERE assigned_to_user_id = $1`, [targetUserId]);
-        await safe(`UPDATE request_applications SET status_updated_by_user_id = NULL WHERE status_updated_by_user_id = $1`, [targetUserId]);
+        await client.query(`UPDATE users SET verified_by_user_id = NULL WHERE verified_by_user_id = $1`, [targetUserId]);
+        await client.query(`UPDATE users SET banned_by_user_id = NULL WHERE banned_by_user_id = $1`, [targetUserId]);
+        await client.query(`UPDATE organizations SET created_by_user_id = NULL WHERE created_by_user_id = $1`, [targetUserId]);
+        await client.query(`UPDATE organizations SET verified_by_user_id = NULL WHERE verified_by_user_id = $1`, [targetUserId]);
+        await client.query(`UPDATE request_applications SET assigned_to_user_id = NULL WHERE assigned_to_user_id = $1`, [targetUserId]);
+        await client.query(`UPDATE request_applications SET status_updated_by_user_id = NULL WHERE status_updated_by_user_id = $1`, [targetUserId]);
 
         // Remove admin record explicitly (also cascades in newer schemas).
-        await safe(`DELETE FROM platform_admins WHERE user_id = $1`, [targetUserId]);
+        await client.query(`DELETE FROM platform_admins WHERE user_id = $1`, [targetUserId]);
 
         const del = await client.query(`DELETE FROM users WHERE id = $1`, [targetUserId]);
         if (del.rowCount === 0) {
@@ -336,7 +325,7 @@ app.post(
 
         await client.query("COMMIT");
         return res.json({ ok: true });
-      } catch (e: any) {
+      } catch (e) {
         try {
           await client.query("ROLLBACK");
         } catch {}

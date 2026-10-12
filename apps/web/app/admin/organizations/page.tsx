@@ -1,6 +1,7 @@
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { ORG_TYPE_LABEL, ORG_TYPES, type OrgTypeValue } from "@thankyou/contracts";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,7 @@ type OrgRow = {
   slug: string;
   name: string;
   contact_email: string | null;
+  org_type?: string;
   verification_required: boolean;
   verification_status: string;
   verification_submitted_at: string | null;
@@ -54,6 +56,23 @@ export default async function Page(
 
   const orgs = await loadOrgs({ q, status, required, sort, dir });
 
+  async function setOrgType(formData: FormData) {
+    "use server";
+    const slug = String(formData.get("slug") || "");
+    const res = await backendFetch(`/v1/admin/organizations/${encodeURIComponent(slug)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ org_type: String(formData.get("org_type") || "") })
+    });
+    const json = (await res.json().catch(() => ({}))) as { message?: string };
+    const qs = new URLSearchParams();
+    if (q) qs.set("q", q);
+    if (status && status !== "all") qs.set("status", status);
+    qs.set(res.ok ? "ok" : "error", res.ok ? "1" : String(json?.message || "Failed"));
+    revalidatePath("/admin/organizations");
+    redirect(`/admin/organizations?${qs.toString()}`);
+  }
+
   async function toggleVerificationRequired(formData: FormData) {
     "use server";
     const slug = String(formData.get("slug") || "");
@@ -65,7 +84,7 @@ export default async function Page(
       body: JSON.stringify({ verification_required: requiredNext, verification_status: requiredNext ? "required" : "not_required" })
     });
 
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
 
     const qs = new URLSearchParams();
     if (q) qs.set("q", q);
@@ -151,6 +170,7 @@ export default async function Page(
           <thead>
             <tr>
               <th>Organization</th>
+              <th>Type</th>
               <th>Members</th>
               <th>Verification</th>
               <th>Last update</th>
@@ -164,6 +184,19 @@ export default async function Page(
                   <div className="font-black">{o.name}</div>
                   <div className="muted text-xs">slug: <code>{o.slug}</code></div>
                   <div className="muted text-xs">{o.contact_email || "No contact email"}</div>
+                </td>
+                <td>
+                  <form action={setOrgType} className="flex gap-1.5 items-center">
+                    <input type="hidden" name="slug" value={o.slug} />
+                    <select name="org_type" defaultValue={o.org_type || "nonprofit"} aria-label={`Type of ${o.name}`} className="text-xs">
+                      {ORG_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {ORG_TYPE_LABEL[t as OrgTypeValue]}
+                        </option>
+                      ))}
+                    </select>
+                    <button className="btn" type="submit">Set</button>
+                  </form>
                 </td>
                 <td className="muted text-xs">{o.members_count}</td>
                 <td>

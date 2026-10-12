@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 
 type AdminUser = {
   id: string;
+  shadow_banned?: boolean;
+  background_check_status?: string | null;
   email: string;
   display_name: string | null;
   role: string | null;
@@ -75,7 +77,7 @@ async function loadUsers(query: Record<string, string>): Promise<{ data: UsersRe
   const url = `/v1/admin/users${buildQuery(query)}`;
   const res = await backendFetch(url, { method: "GET" });
   if (!res.ok) {
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     return { data: null, error: String(json?.message || "Failed to load users") };
   }
   const json = (await res.json()) as UsersResponse;
@@ -138,7 +140,7 @@ export default async function Page(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ role })
     });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       await setFlash("error", String(json?.message || "Failed to update admin role"));
       redirect(`/admin/users${buildQuery(query)}`);
@@ -152,7 +154,7 @@ export default async function Page(
     "use server";
     const userId = String(formData.get("user_id") || "");
     const res = await backendFetch(`/v1/admin/users/${encodeURIComponent(userId)}/revoke-admin`, { method: "POST" });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       await setFlash("error", String(json?.message || "Failed to revoke admin"));
       redirect(`/admin/users${buildQuery(query)}`);
@@ -171,7 +173,7 @@ export default async function Page(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ reason: reason || undefined })
     });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       await setFlash("error", String(json?.message || "Failed to apply strike"));
       redirect(`/admin/users${buildQuery(query)}`);
@@ -185,7 +187,7 @@ export default async function Page(
     "use server";
     const userId = String(formData.get("user_id") || "");
     const res = await backendFetch(`/v1/admin/users/${encodeURIComponent(userId)}/clear-strikes`, { method: "POST" });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       await setFlash("error", String(json?.message || "Failed to clear strikes"));
       redirect(`/admin/users${buildQuery(query)}`);
@@ -208,7 +210,7 @@ export default async function Page(
       body: JSON.stringify({ until, reason: reason || undefined })
     });
 
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       await setFlash("error", String(json?.message || "Failed to ban user"));
       redirect(`/admin/users${buildQuery(query)}`);
@@ -222,7 +224,7 @@ export default async function Page(
     "use server";
     const userId = String(formData.get("user_id") || "");
     const res = await backendFetch(`/v1/admin/users/${encodeURIComponent(userId)}/unban`, { method: "POST" });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       await setFlash("error", String(json?.message || "Failed to unban user"));
       redirect(`/admin/users${buildQuery(query)}`);
@@ -247,7 +249,7 @@ export default async function Page(
       body: JSON.stringify({ confirm: "DELETE" })
     });
 
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       await setFlash("error", String(json?.message || "Failed to delete user"));
       redirect(`/admin/users${buildQuery(query)}`);
@@ -406,14 +408,14 @@ export default async function Page(
                         )}
                       </form>
 
-                      <form action={shadowBan.bind(null, u.id, !(u as any).shadow_banned, "/admin/users")}>
+                      <form action={shadowBan.bind(null, u.id, !u.shadow_banned, "/admin/users")}>
                         <button className="btn" type="submit" title="Their requests and messages stay visible only to them">
-                          {(u as any).shadow_banned ? "Lift shadow-ban" : "Shadow-ban"}
+                          {u.shadow_banned ? "Lift shadow-ban" : "Shadow-ban"}
                         </button>
                       </form>
 
                       <form action={setBackgroundCheck.bind(null, u.id, "/admin/users")}>
-                        <select className="input" name="status" aria-label="Background check" defaultValue={(u as any).background_check_status || "none"}>
+                        <select className="input" name="status" aria-label="Background check" defaultValue={u.background_check_status || "none"}>
                           <option value="none">Background check: none</option>
                           <option value="pending">Background check: pending</option>
                           <option value="cleared">Background check: cleared</option>

@@ -1,3 +1,4 @@
+import PhotoUpload from "../../../components/profile/PhotoUpload";
 import ProfileTabs from "../../../components/shell/ProfileTabs";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -80,7 +81,6 @@ export default async function Page(
     const phoneRaw = String(formData.get("phone") || "").trim();
 
     const displayNameRaw = String(formData.get("displayName") || "").trim();
-    const avatarUrlRaw = String(formData.get("avatarUrl") || "").trim();
     const publicLocationRaw = String(formData.get("publicLocation") || "").trim();
 
     const bioRaw = String(formData.get("bio") || "").trim();
@@ -108,7 +108,6 @@ export default async function Page(
 
     // Public (allow clearing by sending null)
     payload.displayName = displayNameRaw ? displayNameRaw : null;
-    payload.avatarUrl = avatarUrlRaw ? avatarUrlRaw : null;
     payload.publicLocation = publicLocationRaw ? publicLocationRaw : null;
     payload.bio = bioRaw ? bioRaw : null;
 
@@ -212,9 +211,14 @@ export default async function Page(
 
 
       <div className={styles.profileHeader}>
-        <div className={styles.avatarCircle} aria-hidden="true">
-          <span className={styles.avatarText}>{avatarText}</span>
-        </div>
+        {profile?.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={profile.avatar_url} alt="" className={styles.avatarCircle} />
+        ) : (
+          <div className={styles.avatarCircle} aria-hidden="true">
+            <span className={styles.avatarText}>{avatarText}</span>
+          </div>
+        )}
 
         <div className={styles.profileHeaderBody}>
           <p className={styles.profileName}>{displayName || "Your name"}</p>
@@ -278,6 +282,7 @@ export default async function Page(
 
         <div className={`${styles.tile} col-span-full`}>
           <h2 className={styles.tileTitle}>Edit profile</h2>
+          <div className="mb-4"><PhotoUpload name={displayName} src={profile?.avatar_url} back="/requester/profile" /></div>
           <p className={styles.meta}>
             Public profile details are shown to volunteers before you chat. Keep it coarse (city/neighborhood only).
           </p>
@@ -301,16 +306,6 @@ export default async function Page(
                   className={styles.input}
                   defaultValue={profile?.public_location || profile?.location || ""}
                   placeholder="City / neighborhood (no address)"
-                />
-              </label>
-
-              <label className={`${styles.label} flex-1`}>
-                Avatar URL (optional)
-                <input
-                  name="avatarUrl"
-                  className={styles.input}
-                  defaultValue={profile?.avatar_url || ""}
-                  placeholder="https://..."
                 />
               </label>
             </div>

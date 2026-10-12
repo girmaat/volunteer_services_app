@@ -5,6 +5,7 @@ import { getOrgContext } from "../../lib/org";
 import { redirect } from "next/navigation";
 import { Button, Card, Notice, PageHeader, VerifiedBadge } from "../../../components/ui";
 import OrgTabs from "../../../components/org/OrgTabs";
+import { ORG_TYPE_LABEL, ORG_TYPES } from "@thankyou/contracts";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,8 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
       service_area: String(formData.get("service_area") || "") || null,
       hours: String(formData.get("hours") || "") || null,
       contact_phone: String(formData.get("contact_phone") || "") || null,
-      preferred_contact_method: String(formData.get("preferred_contact_method") || "") || null
+      preferred_contact_method: String(formData.get("preferred_contact_method") || "") || null,
+      org_type: String(formData.get("org_type") || "") || undefined
     };
 
     const res = await backendFetch(`/v1/orgs/${encodeURIComponent(orgSlug)}`, {
@@ -45,7 +47,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
       body: JSON.stringify(payload)
     });
 
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       const msg = encodeURIComponent(String(json?.message || "Failed to save organization settings"));
       redirect(`/org/settings?error=${msg}`);
@@ -66,7 +68,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
     const payload = new FormData();
     payload.set("file", file, file.name);
     const res = await backendFetch(`/v1/orgs/${encodeURIComponent(orgSlug)}/logo`, { method: "POST", body: payload });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) redirect(`/org/settings?error=${encodeURIComponent(String(json?.message || "Upload failed"))}`);
     revalidatePath("/org");
     redirect("/org/settings?saved=1");
@@ -82,7 +84,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
       body: JSON.stringify({ new_slug: newSlug })
     });
 
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       const msg = encodeURIComponent(String(json?.message || "Failed to change slug"));
       redirect(`/org/settings?error=${msg}`);
@@ -102,7 +104,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
       body: JSON.stringify({ submission_notes })
     });
 
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) {
       const msg = encodeURIComponent(String(json?.message || "Failed to submit verification"));
       redirect(`/org/settings?error=${msg}`);
@@ -168,6 +170,16 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
             <label className={label}>
               Summary <span className={hint}>One sentence shown in search results.</span>
               <input name="summary" defaultValue={org.summary} required className={input} />
+            </label>
+            <label className={label}>
+              Type of organization <span className={hint}>Schools can add school coordinators to their team.</span>
+              <select name="org_type" defaultValue={org.org_type || "nonprofit"} className={input}>
+                {ORG_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {ORG_TYPE_LABEL[t]}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className={label}>
               Mission <span className={hint}>(optional)</span>
@@ -283,13 +295,13 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
         <h2 id="publishing" className="m-0 mb-2 text-lg">
           Who can publish requests
         </h2>
-        <p className="m-0 text-sm text-muted">Admins (owners) always publish directly. Choose when coordinators need an owner to approve first.</p>
+        <p className="m-0 text-sm text-muted">Admins (owners) always publish directly. Choose when managers need an owner to approve first.</p>
         {canEdit ? (
           <form action={savePolicyAction} className="mt-4 grid gap-3">
             {[
               ["owner_first_and_high_risk", "The organization’s first request, and high-risk ones (recommended)", "High-risk: sensitive categories, under-18 consent or a background check."],
               ["owner_all", "Every request", "An owner approves everything before it goes public."],
-              ["delegated", "None: coordinators publish on their own", "Use when your coordinators are experienced."]
+              ["delegated", "None: managers publish on their own", "Use when your managers are experienced."]
             ].map(([v, l, h]) => (
               <label key={v} className="flex items-start gap-3 text-sm">
                 <input type="radio" name="publication_policy" value={v} defaultChecked={(org.publication_policy || "owner_first_and_high_risk") === v} className="mt-0.5 h-5 w-5 accent-[var(--primary)]" />
@@ -307,7 +319,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
           </form>
         ) : (
           <p className="m-0 mt-2 text-sm">
-            {org.publication_policy === "delegated" ? "Coordinators publish on their own." : org.publication_policy === "owner_all" ? "An owner approves every request." : "An owner approves the first request and high-risk ones."}
+            {org.publication_policy === "delegated" ? "Managers publish on their own." : org.publication_policy === "owner_all" ? "An owner approves every request." : "An owner approves the first request and high-risk ones."}
           </p>
         )}
       </Card>

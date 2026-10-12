@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AddressInfo } from "node:net";
-import { anon, as, createUser, EMAILS, getApp, pool, tokenFor, userId } from "./helpers";
+import { anon, as, createUser, EMAILS, getApp, pool, tokenFor, userId, ownerAct } from "./helpers";
 import { maskContacts, holdReason } from "../src/modules/messaging/safety";
 import { runHourly } from "../src/jobs/maintenance";
 
@@ -77,7 +77,7 @@ describe("conversations", () => {
     expect(t.body.conversation.with_name).toBeTruthy();
     // Reading clears unread.
     expect((await owner.get("/v1/inbox/conversations?as=requester")).body.conversations.find((c: { id: string }) => c.id === convId).unread).toBe(0);
-    await owner.post(`/v1/requester/applications/${applicationId}/accept`);
+    await ownerAct(owner, applicationId, "accept");
     t = await owner.get(`/v1/inbox/conversations/${convId}`);
     expect(t.body.conversation.contacts_unlocked).toBe(true);
     expect(t.body.messages[0].body).toContain("555-222-3333");
@@ -303,7 +303,7 @@ describe("contact privacy outside the inbox", () => {
 
     const rid = await liveRequest(EMAILS.requester, "Privacy: requester ask");
     await (await as("privacy.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${rid}/apply`, { message: "hi" });
-    for (const p of ["/v1/requester/applications/pending", "/v1/requester/dashboard", `/v1/requester/requests/${rid}/applications`]) {
+    for (const p of ["/v1/requester/applications/pending", "/v1/requester/dashboard", `/v1/requests/${rid}/applicants`]) {
       expect(JSON.stringify((await (await as(EMAILS.requester)).get(p)).body), p).not.toContain("privacy.vol@thankyou.test");
     }
   });

@@ -13,7 +13,7 @@ const label = "text-sm font-semibold text-ink";
 function message(err: unknown, fallback: string) {
   const e = err as { message?: string; errors?: { fieldErrors?: Record<string, string[]> } } | null;
   const field = e?.errors?.fieldErrors ? Object.entries(e.errors.fieldErrors).map(([k, v]) => `${k.replace(/_/g, " ")}: ${v.join(", ")}`)[0] : null;
-  return String(field || e?.message || fallback);
+  return String(field || (e instanceof Error && e.message) || fallback);
 }
 
 /** One step: confirm the contact person and the public profile, then go to Org Home. */

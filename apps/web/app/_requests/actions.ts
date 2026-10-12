@@ -4,16 +4,6 @@ import { redirect } from "next/navigation";
 import { backendFetch } from "../lib/backend";
 import { errorText, optStr, publishTarget, str, wizardStepTarget } from "./wizard";
 
-/** Saves the current step (creating the draft on step 1) and moves to the next one. */
-export async function saveWizardStep(fd: FormData) {
-  redirect(await wizardStepTarget(fd));
-}
-
-/** Publishes (or submits for review) from the last step. */
-export async function publishDraft(fd: FormData) {
-  redirect(await publishTarget(fd));
-}
-
 /** Owner actions on a live request: pause, resume, complete, cancel (with reason). */
 export async function requestAction(fd: FormData) {
   const id = str(fd, "id");
@@ -37,7 +27,7 @@ export async function deleteDraft(fd: FormData) {
   redirect(list);
 }
 
-/** An organization owner approves a coordinator's request (it publishes) or sends it back with a note. */
+/** An organization owner approves a manager's request (it publishes) or sends it back with a note. */
 export async function ownerApprovalAction(fd: FormData) {
   const id = String(fd.get("id") || "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) redirect("/org/requests");

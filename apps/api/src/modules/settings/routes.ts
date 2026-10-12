@@ -1,208 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { requireAuthedUser } from "../../middleware/auth";
-import { NotificationItem, clampInt, formatStatus, getNotificationLastSeen, setNotificationLastSeenNow } from "./helpers";
+import { getNotificationLastSeen } from "./helpers";
 
 export function registerSettingsRoutes(app: Express) {
-
-app.get(
-  "/v1/settings/notifications",
-  wrap(async (req, res) => {
-    const user = await requireAuthedUser(req, res);
-    if (!user) return;
-
-    const limit = clampInt((req.query as any)?.limit, 50, 1, 200);
-    const lastSeen = await getNotificationLastSeen(user.id);
-
-    const rows = await pool.query(
-      `
-      SELECT * FROM (
-        -- Messages received (all roles)
-        SELECT
-          'message'::text AS type,
-          dm.id::text AS source_id,
-          dm.created_at::timestamptz AS created_at,
-          dm.sender_user_id::text AS actor_id,
-          COALESCE(NULLIF(p.display_name, ''), NULLIF(split_part(COALESCE(p.full_name, ''), ' ', 1), ''), 'Member') AS actor_name,
-          LEFT(dm.body, 220) AS body_preview,
-          NULL::text AS request_id,
-          NULL::text AS request_title,
-          NULL::text AS application_id,
-          NULL::text AS application_status,
-          NULL::int AS rating
-        FROM direct_messages dm
-        JOIN users su ON su.id = dm.sender_user_id
-        LEFT JOIN user_profiles p ON p.user_id = dm.sender_user_id
-        WHERE dm.recipient_user_id = $1 AND dm.status = 'sent'
-
-        UNION ALL
-
-        -- New applications (requesters)
-        SELECT
-          'new_application'::text AS type,
-          a.id::text AS source_id,
-          a.created_at::timestamptz AS created_at,
-          a.volunteer_user_id::text AS actor_id,
-          COALESCE(NULLIF(vp.display_name, ''), NULLIF(split_part(COALESCE(vp.full_name, ''), ' ', 1), ''), 'Member') AS actor_name,
-          LEFT(COALESCE(a.message, ''), 220) AS body_preview,
-          r.id::text AS request_id,
-          r.title::text AS request_title,
-          NULL::text AS application_id,
-          NULL::text AS application_status,
-          NULL::int AS rating
-        FROM request_applications a
-        JOIN service_requests r ON r.id = a.request_id
-        JOIN users vu ON vu.id = a.volunteer_user_id
-        LEFT JOIN user_profiles vp ON vp.user_id = a.volunteer_user_id
-        WHERE $2 = 'requester' AND r.requester_user_id = $1
-
-        UNION ALL
-
-        -- Application status updates (volunteers)
-        SELECT
-          'application_update'::text AS type,
-          a.id::text AS source_id,
-          a.updated_at::timestamptz AS created_at,
-          r.requester_user_id::text AS actor_id,
-          COALESCE(NULLIF(rp.display_name, ''), NULLIF(split_part(COALESCE(rp.full_name, ''), ' ', 1), ''), 'Member') AS actor_name,
-          NULL::text AS body_preview,
-          r.id::text AS request_id,
-          r.title::text AS request_title,
-          a.id::text AS application_id,
-          a.status::text AS application_status,
-          NULL::int AS rating
-        FROM request_applications a
-        JOIN service_requests r ON r.id = a.request_id
-        JOIN users ru ON ru.id = r.requester_user_id
-        LEFT JOIN user_profiles rp ON rp.user_id = r.requester_user_id
-        WHERE $2 = 'volunteer'
-          AND a.volunteer_user_id = $1
-          AND a.updated_at IS NOT NULL
-          AND a.updated_at > a.created_at
-          AND COALESCE(a.status, 'pending') <> 'pending'
-
-        UNION ALL
-
-        -- Reviews received (volunteer)
-        SELECT
-          'review_received'::text AS type,
-          vr.id::text AS source_id,
-          vr.created_at::timestamptz AS created_at,
-          vr.reviewer_user_id::text AS actor_id,
-          COALESCE(NULLIF(pp.display_name, ''), NULLIF(split_part(COALESCE(pp.full_name, ''), ' ', 1), ''), 'Member') AS actor_name,
-          LEFT(COALESCE(vr.strengths, ''), 220) AS body_preview,
-          vr.request_id::text AS request_id,
-          sr.title::text AS request_title,
-          NULL::text AS application_id,
-          NULL::text AS application_status,
-          vr.rating::int AS rating
-        FROM visible_volunteer_reviews vr
-        LEFT JOIN users pu ON pu.id = vr.reviewer_user_id
-        LEFT JOIN user_profiles pp ON pp.user_id = vr.reviewer_user_id
-        LEFT JOIN service_requests sr ON sr.id = vr.request_id
-        WHERE $2 = 'volunteer' AND vr.volunteer_user_id = $1
-
-        UNION ALL
-
-        -- Reviews received (requester)
-        SELECT
-          'review_received'::text AS type,
-          rr.id::text AS source_id,
-          rr.created_at::timestamptz AS created_at,
-          rr.reviewer_user_id::text AS actor_id,
-          COALESCE(NULLIF(pp.display_name, ''), NULLIF(split_part(COALESCE(pp.full_name, ''), ' ', 1), ''), 'Member') AS actor_name,
-          LEFT(COALESCE(rr.strengths, ''), 220) AS body_preview,
-          rr.request_id::text AS request_id,
-          sr.title::text AS request_title,
-          NULL::text AS application_id,
-          NULL::text AS application_status,
-          rr.rating::int AS rating
-        FROM visible_requester_reviews rr
-        LEFT JOIN users pu ON pu.id = rr.reviewer_user_id
-        LEFT JOIN user_profiles pp ON pp.user_id = rr.reviewer_user_id
-        LEFT JOIN service_requests sr ON sr.id = rr.request_id
-        WHERE $2 = 'requester' AND rr.requester_user_id = $1
-      ) n
-      ORDER BY created_at DESC
-      LIMIT $3
-      `,
-      [user.id, user.role, limit]
-    );
-
-    const notifications: NotificationItem[] = (rows.rows as any[]).map((r: any) => {
-      const createdAtIso = new Date(r.created_at).toISOString();
-      const seen = new Date(r.created_at).getTime() <= lastSeen.getTime();
-
-      if (r.type === 'message') {
-        const who = r.actor_name || 'Someone';
-        return {
-          id: `message:${r.source_id}`,
-          type: 'message',
-          created_at: createdAtIso,
-          seen,
-          title: `New message from ${who}`,
-          body: (r.body_preview || '').trim() || 'You received a new message.',
-          href: user.role === 'volunteer'
-            ? `/volunteer/messages/${r.actor_id}`
-            : user.role === 'requester'
-              ? `/requester/messages/${r.actor_id}`
-              : null
-        };
-      }
-
-      if (r.type === 'new_application') {
-        const who = r.actor_name || 'A volunteer';
-        const reqTitle = r.request_title || 'your request';
-        return {
-          id: `new_application:${r.source_id}`,
-          type: 'new_application',
-          created_at: createdAtIso,
-          seen,
-          title: `New application from ${who}`,
-          body: `For: ${reqTitle}`,
-          href: r.request_id ? `/requester/requests/${r.request_id}/applications` : '/requester/requests'
-        };
-      }
-
-      if (r.type === 'application_update') {
-        const who = r.actor_name || 'Requester';
-        const reqTitle = r.request_title || 'a request';
-        const label = formatStatus(r.application_status);
-        return {
-          id: `application_update:${r.source_id}:${r.application_status || ''}`,
-          type: 'application_update',
-          created_at: createdAtIso,
-          seen,
-          title: `Application update: ${label}`,
-          body: `${reqTitle} • from ${who}`,
-          href: r.application_id ? `/volunteer/applications/${r.application_id}` : '/volunteer/applications'
-        };
-      }
-
-      // review_received
-      const who = r.actor_name || 'Someone';
-      const reqTitle = r.request_title || 'a request';
-      const stars = typeof r.rating === 'number' ? ` (${r.rating}/5)` : '';
-      return {
-        id: `review_received:${r.source_id}`,
-        type: 'review_received',
-        created_at: createdAtIso,
-        seen,
-        title: `Review received from ${who}${stars}`,
-        body: `For: ${reqTitle}`,
-        href: user.role === 'volunteer' ? '/volunteer/history/reviews' : '/requester/reputation/reviews'
-      };
-    });
-
-    const unseenCount = notifications.reduce((acc, n) => acc + (n.seen ? 0 : 1), 0);
-
-    return res.json({ last_seen_at: lastSeen.toISOString(), unseen_count: unseenCount, notifications });
-  })
-);
-
 
 app.get(
   "/v1/settings/notifications/unseen-count",
@@ -257,20 +60,6 @@ app.get(
   })
 );
 
-
-app.post(
-  "/v1/settings/notifications/mark-all-seen",
-  wrap(async (req, res) => {
-    const user = await requireAuthedUser(req, res);
-    if (!user) return;
-
-    await setNotificationLastSeenNow(user.id);
-    return res.json({ ok: true });
-  })
-);
-
-
-
 // ------------------------------------------------------------
 // Shared Settings (All logged-in users): Privacy & Safety
 // ------------------------------------------------------------
@@ -309,7 +98,6 @@ app.get(
   })
 );
 
-
 app.post(
   "/v1/settings/privacy-safety",
   wrap(async (req, res) => {
@@ -340,8 +128,6 @@ app.post(
     return res.json(upsert.rows[0]);
   })
 );
-
-
 
 app.get(
   "/v1/settings/reportables",
@@ -432,7 +218,6 @@ app.get(
   })
 );
 
-
 app.get(
   "/v1/settings/blocked-users/count",
   wrap(async (req, res) => {
@@ -486,7 +271,6 @@ app.get(
   })
 );
 
-
 app.post(
   "/v1/settings/blocked-users",
   wrap(async (req, res) => {
@@ -530,7 +314,6 @@ app.post(
   })
 );
 
-
 app.delete(
   "/v1/settings/blocked-users/:blockedUserId",
   wrap(async (req, res) => {
@@ -545,7 +328,6 @@ app.delete(
     return res.json({ ok: true });
   })
 );
-
 
 app.get(
   "/v1/settings/reports",
@@ -585,7 +367,6 @@ app.get(
     return res.json(rows.rows);
   })
 );
-
 
 app.post(
   "/v1/settings/reports",

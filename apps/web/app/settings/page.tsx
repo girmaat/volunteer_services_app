@@ -46,11 +46,9 @@ export default async function Page() {
           <div className={styles.badgeRow}>
             <span className={styles.badge}>{me?.role ? `Role: ${me.role}` : "Role: —"}</span>
             <span className={styles.badge}>{me?.email_verified_at ? "Email verified" : "Email not verified"}</span>
-            {me?.verification_required ? (
-              <span className={styles.badge}>{`Verification: ${me.verification_status || "required"}`}</span>
-            ) : (
-              <span className={styles.badge}>Verification not required</span>
-            )}
+            <a href="/settings/verification" className={styles.badge}>
+              {me?.verification_status === "approved" ? "Verified" : me?.verification_status === "submitted" ? "Verification in review" : "Get verified"}
+            </a>
           </div>
 
           <p className={`${styles.small} ${styles.accountHint}`}>

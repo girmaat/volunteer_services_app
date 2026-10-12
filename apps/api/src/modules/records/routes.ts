@@ -15,7 +15,7 @@ import { METHOD_LABEL, type Method } from "../contributions/service";
 
 const ROLE_LABEL: Record<string, string> = {
   org_admin: "Organization administrator",
-  org_manager: "Organization coordinator",
+  org_manager: "Organization manager",
   requester: "The person who asked for help"
 };
 

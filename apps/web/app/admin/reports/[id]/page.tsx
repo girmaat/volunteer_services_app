@@ -28,12 +28,7 @@ type ReportRow = {
   target_request_title: string | null;
 };
 
-type ReportCapabilities = {
-  share_reports_moderation_cols?: boolean;
-  share_links_moderation_cols?: boolean;
-};
-
-async function loadReport(id: string): Promise<{ report: ReportRow | null; error: string | null; capabilities: ReportCapabilities | null }> {
+async function loadReport(id: string): Promise<{ report: ReportRow | null; error: string | null }> {
   const res = await backendFetch(`/v1/admin/reports/${encodeURIComponent(id)}`, { method: "GET" });
   if (!res.ok) {
     let msg = `Failed to load report (HTTP ${res.status})`;
@@ -43,10 +38,10 @@ async function loadReport(id: string): Promise<{ report: ReportRow | null; error
     } catch {
       // ignore
     }
-    return { report: null, error: msg, capabilities: null };
+    return { report: null, error: msg };
   }
-  const json = (await res.json().catch(() => ({}))) as { report?: ReportRow; capabilities?: ReportCapabilities };
-  return { report: json.report || null, error: null, capabilities: json.capabilities || null };
+  const json = (await res.json().catch(() => ({}))) as { report?: ReportRow };
+  return { report: json.report || null, error: null };
 }
 
 function statusBadge(s: string) {
@@ -84,9 +79,6 @@ export default async function Page(
 
   const loaded = await loadReport(id);
   const report = loaded.report;
-  const caps = loaded.capabilities || {};
-  const canUpdateShareReport = Boolean(caps.share_reports_moderation_cols);
-  const canSetShareWarning = Boolean(caps.share_links_moderation_cols);
 
   async function updateReport(formData: FormData) {
     "use server";
@@ -99,7 +91,7 @@ export default async function Page(
       body: JSON.stringify({ status: nextStatus || undefined, admin_notes: notes || null })
     });
 
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) redirect(`/admin/reports/${encodeURIComponent(id)}?error=${encodeURIComponent(String(json?.message || "Failed"))}`);
 
     revalidatePath(`/admin/reports/${encodeURIComponent(id)}`);
@@ -118,7 +110,7 @@ export default async function Page(
       body: JSON.stringify({ action, admin_notes: notes || null })
     });
 
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) redirect(`/admin/reports/${encodeURIComponent(id)}?error=${encodeURIComponent(String(json?.message || "Failed"))}`);
 
     revalidatePath(`/admin/reports/${encodeURIComponent(id)}`);
@@ -135,7 +127,7 @@ export default async function Page(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ reason })
     });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) redirect(`/admin/reports/${encodeURIComponent(id)}?error=${encodeURIComponent(String(json?.message || "Failed"))}`);
     revalidatePath(`/admin/reports/${encodeURIComponent(id)}`);
     revalidatePath("/admin/reports");
@@ -153,7 +145,7 @@ export default async function Page(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ until, reason })
     });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok) redirect(`/admin/reports/${encodeURIComponent(id)}?error=${encodeURIComponent(String(json?.message || "Failed"))}`);
     revalidatePath(`/admin/reports/${encodeURIComponent(id)}`);
     revalidatePath("/admin/reports");
@@ -236,54 +228,30 @@ export default async function Page(
             ) : null}
           </div>
 
-	          {report.source === "share_report" && !canUpdateShareReport ? (
-	            <div className="adminCard border border-warning">
-	              <div className="font-black">Update status</div>
-	              <div className="muted text-xs mt-2">
-	                This environment can <strong>view</strong> share-link reports, but can’t update their status/notes because your database
-	                hasn’t applied the sharing moderation columns yet.
-	              </div>
-	              <div className="mt-2.5 grid gap-1.5">
-	                <div className="muted text-xs">
-	                  To enable status updates, run the sharing schema upgrade as the DB owner:
-	                </div>
-	                <div className="muted text-xs">
-	                  <code>backend/scripts/db/apply_sharing_schema.sql</code>
-	                </div>
-	                <div className="muted text-xs">
-	                  Or set <code>RUN_MIGRATIONS=1</code> and restart the backend.
-	                </div>
-	              </div>
-	              <div className="flex gap-2.5 flex-wrap items-center mt-3">
-	                <Link prefetch={false} className="btn" href="/admin/reports">Back to queue</Link>
-	              </div>
-	            </div>
-	          ) : (
-	            <div className="adminCard">
-	              <div className="font-black">Update status</div>
-	              <form className="mt-2.5 grid gap-2.5" action={updateReport}>
-	                <label className="grid gap-1.5">
-	                  <span className="muted text-xs">Status</span>
-	                  <select name="status" aria-label="Status" defaultValue={report.status || "submitted"} className="input">
-	                    <option value="submitted">submitted</option>
-	                    <option value="in_review">in_review</option>
-	                    <option value="resolved">resolved</option>
-	                    <option value="dismissed">dismissed</option>
-	                  </select>
-	                </label>
+          <div className="adminCard">
+            <div className="font-black">Update status</div>
+            <form className="mt-2.5 grid gap-2.5" action={updateReport}>
+              <label className="grid gap-1.5">
+                <span className="muted text-xs">Status</span>
+                <select name="status" aria-label="Status" defaultValue={report.status || "submitted"} className="input">
+                  <option value="submitted">submitted</option>
+                  <option value="in_review">in_review</option>
+                  <option value="resolved">resolved</option>
+                  <option value="dismissed">dismissed</option>
+                </select>
+              </label>
 
-	                <label className="grid gap-1.5">
-	                  <span className="muted text-xs">Admin notes</span>
-	                  <textarea name="admin_notes" aria-label="Admin notes" defaultValue={report.admin_notes || ""} className="textarea" rows={4} placeholder="Notes for other moderators (not visible to users)" />
-	                </label>
+              <label className="grid gap-1.5">
+                <span className="muted text-xs">Admin notes</span>
+                <textarea name="admin_notes" aria-label="Admin notes" defaultValue={report.admin_notes || ""} className="textarea" rows={4} placeholder="Notes for other moderators (not visible to users)" />
+              </label>
 
-	                <div className="flex gap-2.5 flex-wrap items-center">
-	                  <button className="btn btnSoft" type="submit">Save</button>
-	                  <Link prefetch={false} className="btn" href="/admin/reports">Back to queue</Link>
-	                </div>
-	              </form>
-	            </div>
-	          )}
+              <div className="flex gap-2.5 flex-wrap items-center">
+                <button className="btn btnSoft" type="submit">Save</button>
+                <Link prefetch={false} className="btn" href="/admin/reports">Back to queue</Link>
+              </div>
+            </form>
+          </div>
 
           {report.target_user_id ? (
             <div className="adminCard">
@@ -338,20 +306,15 @@ export default async function Page(
                 </label>
 
                 <div className="adminActions">
-                  <button className="btn btnSoft" type="submit" name="action" value="warn" disabled={!canSetShareWarning}>
+                  <button className="btn btnSoft" type="submit" name="action" value="warn">
                     Warn owner
                   </button>
                   <button className="btn btnDanger" type="submit" name="action" value="block">Block link</button>
                   <button className="btn" type="submit" name="action" value="unblock">Unblock</button>
-                  <button className="btn" type="submit" name="action" value="clear" disabled={!canSetShareWarning}>
+                  <button className="btn" type="submit" name="action" value="clear">
                     Clear reports
                   </button>
                 </div>
-                {!canSetShareWarning ? (
-                  <div className="muted text-xs mt-1.5">
-                    “Warn” and “Clear” require the newer sharing schema columns on <code>share_links</code>. You can still Block/Unblock.
-                  </div>
-                ) : null}
               </form>
             </div>
           ) : null}

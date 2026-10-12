@@ -8,10 +8,6 @@ function normalizeQuery(q: string) {
   return (q || "").trim().replace(/\s+/g, " ").toLowerCase();
 }
 
-function isFiniteNumber(n: any): n is number {
-  return typeof n === "number" && Number.isFinite(n);
-}
-
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
@@ -84,7 +80,7 @@ export async function geocodeWithCache(
   );
 
   if ((cached.rowCount ?? 0) > 0) {
-    const row = cached.rows[0] as any;
+    const row = cached.rows[0];
     const lat = Number(row.lat);
     const lng = Number(row.lng);
     if (Number.isFinite(lat) && Number.isFinite(lng) && row.updated_at) {
@@ -138,7 +134,7 @@ export async function ensureUserGeo(pool: Pool, userId: string, opts?: { allowFe
   );
 
   if ((rows.rowCount ?? 0) === 0) return null;
-  const r = rows.rows[0] as any;
+  const r = rows.rows[0];
 
   const lat = Number(r.geo_lat);
   const lng = Number(r.geo_lng);
@@ -169,7 +165,7 @@ export async function ensureServiceRequestGeo(
   );
 
   if ((existing.rowCount ?? 0) > 0) {
-    const r = existing.rows[0] as any;
+    const r = existing.rows[0];
     const lat = Number(r.location_lat);
     const lng = Number(r.location_lng);
     if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };

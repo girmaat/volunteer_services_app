@@ -1,5 +1,6 @@
+import { RELIABILITY_SQL } from "../src/modules/reviews/service";
 import { describe, expect, it } from "vitest";
-import { anon, as, createUser, EMAILS, pool, userId } from "./helpers";
+import { anon, as, createUser, EMAILS, pool, userId, ownerAct } from "./helpers";
 import { defaultAction } from "../src/middleware/adminAudit";
 
 const soon = (h: number) => new Date(Date.now() + h * 3600_000).toISOString();
@@ -92,7 +93,7 @@ describe("held messages, disputes, shadow-ban, metrics", () => {
     const d = await api.post("/v1/requests", { title: "Queue: dispute", description: "Request used to test disputes.", category: "errands", mode: "remote", scheduleType: "one_time", startsAt: soon(30) });
     await api.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
     const ap = await (await as("disp.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
-    await api.post(`/v1/requester/applications/${ap.body.applicationId}/accept`);
+    await ownerAct(api, ap.body.applicationId, "accept");
     await pool.query("UPDATE service_requests SET starts_at = NOW() - INTERVAL '1 hour' WHERE id = $1", [d.body.id]);
     await api.post(`/v1/applications/${ap.body.applicationId}/no-show`);
     const disp = await (await as("disp.vol@thankyou.test")).post("/v1/disputes", { applicationId: ap.body.applicationId, kind: "no_show", reason: "I was there; the door was locked and nobody answered." });
@@ -102,7 +103,7 @@ describe("held messages, disputes, shadow-ban, metrics", () => {
     const dec = await mod.post(`/v1/admin/disputes/${disp.body.id}/decide`, { status: "overturned", notes: "Photo shows the volunteer at the door on time." });
     expect(dec.body.status).toBe("overturned");
     expect((await mod.post(`/v1/admin/disputes/${disp.body.id}/decide`, { status: "upheld", notes: "again" })).status).toBe(409);
-    const rel = await api.get(`/v1/users/${await userId("disp.vol@thankyou.test")}/reliability`);
+    const rel = await { body: (await pool.query(`SELECT ${RELIABILITY_SQL("$1")} AS r`, [await userId("disp.vol@thankyou.test")])).rows[0].r };
     expect(rel.body.no_shows).toBe(0);
   });
 

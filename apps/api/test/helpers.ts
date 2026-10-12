@@ -85,3 +85,10 @@ export function birthDateForAge(years: number) {
   d.setUTCDate(d.getUTCDate() - 30);
   return d.toISOString().slice(0, 10);
 }
+
+/** The request owner acts on an applicant (accept, waitlist, decline, confirm, complete, cancel). */
+export async function ownerAct(api: Awaited<ReturnType<typeof as>>, applicationId: string, action: string, body: Record<string, unknown> = {}) {
+  const r = await pool.query("SELECT request_id FROM request_applications WHERE id = $1", [applicationId]);
+  if (!r.rowCount) return api.post(`/v1/requests/00000000-0000-4000-8000-000000000000/applicants/${applicationId}`, { action, ...body });
+  return api.post(`/v1/requests/${r.rows[0].request_id}/applicants/${applicationId}`, { action, ...body });
+}

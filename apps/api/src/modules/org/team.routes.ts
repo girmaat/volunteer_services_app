@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Express } from "express";
 import { z } from "zod";
 import { randomTokenUrlSafe, sha256 } from "../../auth/crypto";
@@ -17,7 +16,7 @@ export function registerOrgTeamRoutes(app: Express) {
   // Phase 1/4: Members (existing UI uses these; kept)
   app.get(
     "/v1/org/members",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
 
@@ -53,20 +52,21 @@ export function registerOrgTeamRoutes(app: Express) {
   
   app.post(
     "/v1/org/members",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
 
       const schema = z.object({
         email: z.string().email(),
-        role: z.enum(["member", "manager", "admin"]).optional()
+        role: z.enum(["member", "coordinator", "manager", "admin"]).optional()
       });
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+      if (parsed.data.role === "coordinator" && !(await isSchool(ok.ctx.org.slug))) return res.status(400).json({ message: "Coordinators are for schools" });
 
       const email = String(parsed.data.email || "").trim().toLowerCase();
-      const role = (parsed.data.role || "member") as any;
+      const role = parsed.data.role || "member";
 
       // If they're already an active member, just update role.
       const active = await pool.query(
@@ -132,7 +132,7 @@ export function registerOrgTeamRoutes(app: Express) {
   // Cancel a pending invite (admin/manager only)
   app.delete(
     "/v1/org/members/invites/:memberId",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
@@ -153,7 +153,7 @@ export function registerOrgTeamRoutes(app: Express) {
   // Resend an invite (admin/manager only)
   app.post(
     "/v1/org/members/invites/:memberId/resend",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdminOrManager(ok.ctx, res)) return;
@@ -205,7 +205,7 @@ export function registerOrgTeamRoutes(app: Express) {
   // Public: show invite details for a token (used by /org/invite page).
   app.get(
     "/v1/public/org-invites/lookup",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const token = String(req.query.token || "").trim();
       if (!token) return res.status(400).json({ message: "Missing token" });
 
@@ -222,7 +222,7 @@ export function registerOrgTeamRoutes(app: Express) {
       );
       if ((row.rowCount ?? 0) === 0) return res.status(404).json({ message: "Invite not found" });
 
-      const r = row.rows[0] as any;
+      const r = row.rows[0];
       return res.json({
         org: { slug: String(r.org_slug), name: String(r.org_name) },
         role: String(r.role),
@@ -236,7 +236,7 @@ export function registerOrgTeamRoutes(app: Express) {
   // Accept an invite (requires login).
   app.post(
     "/v1/org/invites/accept",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const sessionToken = authHeaderToken(req);
       if (!sessionToken) return res.status(401).json({ message: "Not authenticated" });
 
@@ -261,18 +261,18 @@ export function registerOrgTeamRoutes(app: Express) {
       );
       if ((invite.rowCount ?? 0) === 0) return res.status(404).json({ message: "Invite not found" });
 
-      const inv = invite.rows[0] as any;
+      const inv = invite.rows[0];
       const invitedEmail = String(inv.invited_email || "").trim().toLowerCase();
-      const userEmail = String((user as any).email || "").trim().toLowerCase();
+      const userEmail = String(user.email || "").trim().toLowerCase();
       if (invitedEmail && userEmail !== invitedEmail) {
         return res.status(403).json({ message: "This invite was sent to a different email address." });
       }
 
-      const notAdult = await staffAdultCheck(String((user as any).id), parsed.data.adultConfirmed);
+      const notAdult = await staffAdultCheck(String(user.id), parsed.data.adultConfirmed);
       if (notAdult) return res.status(403).json({ message: notAdult, code: "adult_required" });
 
       // One account, multiple roles: volunteers and requesters can also join an organization's team.
-      const hasMemberRoles = ((user as any).roles || []).length > 0;
+      const hasMemberRoles = (user.roles || []).length > 0;
 
       const c = await pool.connect();
       await c.query("BEGIN");
@@ -280,7 +280,7 @@ export function registerOrgTeamRoutes(app: Express) {
         // If user already has membership, update it; otherwise, convert the invite row to the active membership.
         const existing = await c.query(
           "SELECT id FROM organization_members WHERE org_slug=$1 AND user_id=$2 LIMIT 1",
-          [String(inv.org_slug), String((user as any).id)]
+          [String(inv.org_slug), String(user.id)]
         );
 
         if ((existing.rowCount ?? 0) > 0) {
@@ -303,7 +303,7 @@ export function registerOrgTeamRoutes(app: Express) {
                 updated_at=NOW()
             WHERE id=$1
             `,
-            [String(inv.id), String((user as any).id)]
+            [String(inv.id), String(user.id)]
           );
         }
 
@@ -319,7 +319,7 @@ export function registerOrgTeamRoutes(app: Express) {
                  verification_status='not_required',
                  updated_at=NOW()
            WHERE id=$1`,
-          [String((user as any).id)]
+          [String(user.id)]
         );
 
         await c.query("COMMIT");
@@ -337,7 +337,7 @@ export function registerOrgTeamRoutes(app: Express) {
 
   // Join requests: an admin approves (they become a member) or declines.
   const joinDecision = (decision: "approve" | "decline") =>
-      wrap(async (req: any, res: any) => {
+      wrap(async (req, res) => {
         const ok = await requireOrg(pool, req, res);
         if (!ok) return;
         if (!requireAdmin(ok.ctx, res)) return;
@@ -369,7 +369,7 @@ export function registerOrgTeamRoutes(app: Express) {
 
 app.patch(
     "/v1/org/members/:userId",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdmin(ok.ctx, res)) return;
@@ -377,9 +377,10 @@ app.patch(
       const params = z.object({ userId: z.string().uuid() }).safeParse(req.params);
       if (!params.success) return res.status(400).json({ message: "Invalid user id" });
 
-      const schema = z.object({ role: z.enum(["admin", "manager", "member"]) });
+      const schema = z.object({ role: z.enum(["admin", "manager", "member", "coordinator"]) });
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
+      if (parsed.data.role === "coordinator" && !(await isSchool(ok.ctx.org.slug))) return res.status(400).json({ message: "Coordinators are for schools" });
 
       const target = (await pool.query("SELECT role, status FROM organization_members WHERE org_slug=$1 AND user_id=$2", [ok.ctx.org.slug, params.data.userId])).rows[0];
       if (!target || target.status !== "active") return res.status(404).json({ message: "Member not found" });
@@ -400,7 +401,7 @@ app.patch(
 
   app.delete(
     "/v1/org/members/:userId",
-    wrap(async (req: any, res: any) => {
+    wrap(async (req, res) => {
       const ok = await requireOrg(pool, req, res);
       if (!ok) return;
       if (!requireAdmin(ok.ctx, res)) return;
@@ -424,4 +425,10 @@ app.patch(
       return res.json({ ok: true });
     })
   );
+}
+
+/** Coordinators exist only in school organizations (they curate opportunities for students). */
+async function isSchool(orgSlug: string) {
+  const r = await pool.query("SELECT org_type FROM organizations WHERE slug = $1", [orgSlug]);
+  return r.rows[0]?.org_type === "school";
 }

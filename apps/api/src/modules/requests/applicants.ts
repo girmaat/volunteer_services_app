@@ -10,6 +10,7 @@ import { type AppRow, ownerReviewStates, RELIABILITY_SQL, recordCommitmentCancel
 import { acceptError, afterApplicationUpdate, checkAccept } from "./applications";
 import { loadOwned } from "./routes";
 import { minorSql } from "../../lib/age";
+import { can } from "../../lib/policy";
 import { staffingCounts } from "./lifecycle";
 import { requestProgress } from "./progress";
 import { prerequisitesForRequest } from "../prerequisites/service";
@@ -67,8 +68,12 @@ export function registerApplicantRoutes(app: Express) {
       // Only someone who can review (the poster, or an org admin/manager) gets the review state.
       const reviewer = sideFor(owned.user, { volunteer_user_id: "", requester_user_id: owned.row.requester_user_id, requester_org_slug: owned.row.requester_org_slug } as AppRow) === "owner";
       const reviews = reviewer ? await ownerReviewStates(r.rows.filter((row) => row.status === "completed")) : new Map();
+      // Contact details go to the individual poster, or an org's admins and managers (not members or coordinators).
+      const orgSlug = owned.row.requester_org_slug ? String(owned.row.requester_org_slug) : null;
+      const seesContacts = !orgSlug || can(owned.user, "org:manage", { orgSlug });
       const applicants = r.rows.map((row) => ({
         ...row,
+        ...(seesContacts ? {} : { email: null, phone: null }),
         ...(["accepted", "confirmed"].includes(row.status) ? { prerequisites: pre.get(String(row.volunteer_user_id)) } : {}),
         ...(row.status === "completed" ? { review: reviews.get(String(row.id)) ?? null } : {})
       }));

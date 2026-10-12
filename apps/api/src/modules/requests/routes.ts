@@ -23,7 +23,7 @@ export const OWNER_COLUMNS = `r.id, r.title, r.description, r.status, r.review_s
   r.mode, r.public_area, r.exact_address, r.accessibility_notes, r.min_age, r.requires_background_check, r.requires_training,
   r.requires_waiver, r.requires_car, r.equipment_notes, r.is_sensitive, r.requester_user_id, r.requester_org_slug, r.published_at,
   r.filled_at, r.completed_at, r.canceled_at, r.cancel_reason, r.removed_at, r.removed_reason, r.created_at, r.updated_at,
-  r.target_value::float AS target_value, r.target_unit, r.min_contribution::float AS min_contribution, r.allow_overfill, r.requires_guardian_consent,
+  r.target_value::float AS target_value, r.target_unit, r.work_type, r.min_contribution::float AS min_contribution, r.allow_overfill, r.requires_guardian_consent,
   r.owner_approval, r.owner_approval_notes, r.owner_approved_at, r.submitted_by_user_id, r.checkin_token`;
 
 type Owned = { row: Record<string, any>; user: PolicyUser };
@@ -334,6 +334,15 @@ export async function saveFields(id: string, f: import("./model").RequestFieldsI
   const { sets, params } = buildSet(f, 2);
   if (!sets.length) return;
   await pool.query(`UPDATE service_requests SET ${sets.join(", ")}, updated_at = NOW() WHERE id = $1`, [id, ...params]);
+  // Release 1 derives the work type: a goal counted in anything but hours is 'units', otherwise 'shift'.
+  // 'deliverable' and 'goods' are reserved for release 2 and never set here.
+  if (f.targetUnit !== undefined || f.targetValue !== undefined) {
+    await pool.query(
+      `UPDATE service_requests SET work_type = CASE WHEN target_unit IS NOT NULL AND lower(target_unit) <> 'hours' THEN 'units' ELSE 'shift' END
+        WHERE id = $1 AND work_type IN ('shift', 'units')`,
+      [id]
+    );
+  }
   if (f.category) {
     await pool.query("UPDATE service_requests r SET is_sensitive = c.is_sensitive FROM request_categories c WHERE c.slug = r.category AND r.id = $1", [id]);
   }

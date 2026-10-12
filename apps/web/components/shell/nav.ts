@@ -41,6 +41,7 @@ export function navFor(ctx: AppContext): NavItem[] {
         { href: "/admin", label: "Overview", icon: "home", exact: true },
         { href: "/admin/moderation", label: "Moderation", icon: "flag", match: ["/admin/moderation", "/admin/reports", "/admin/incidents"] },
         { href: "/admin/opportunities", label: "Requests", icon: "list" },
+        { href: "/admin/categories", label: "Categories", icon: "clipboard" },
         { href: "/admin/users", label: "Users", icon: "users", match: ["/admin/users", "/admin/enforcement"] },
         { href: "/admin/organizations", label: "Organizations", icon: "building", match: ["/admin/organizations", "/admin/org-verification"] },
         { href: "/admin/verification", label: "Verification", icon: "shield" },
@@ -63,8 +64,6 @@ export function profileHref(ctx: AppContext) {
   return "/settings";
 }
 
-/** Public paths under /org that are reachable before an organization exists. */
-export const PUBLIC_ORG_PATHS = ["/org/signup", "/org/invite", "/org/enroll"];
 /** Areas that render the signed-in app shell (their layouts render it). */
 export const APP_AREAS = ["/volunteer", "/requester", "/org", "/settings", "/admin", "/inbox", "/notifications"];
 

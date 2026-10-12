@@ -25,11 +25,12 @@ export type OrgContext = {
     contact_phone?: string | null;
     preferred_contact_method?: string | null;
     publication_policy?: "owner_all" | "owner_first_and_high_risk" | "delegated";
+    org_type?: string;
     suspended_at?: string | null;
     suspended_reason?: string | null;
   };
   membership: {
-    role: "admin" | "manager" | "member";
+    role: "admin" | "manager" | "member" | "coordinator";
     status: "active" | "invited";
   };
 };

@@ -66,7 +66,7 @@ export default async function Page(
         outcome: outcome || null
       })
     });
-    const json = (await res.json().catch(() => ({}))) as any;
+    const json = (await res.json().catch(() => ({}))) as { message?: string; [key: string]: unknown };
     if (!res.ok)
       redirect(
         `/admin/incidents?${status ? `status=${encodeURIComponent(status)}&` : ""}${severity ? `severity=${encodeURIComponent(severity)}&` : ""}error=${encodeURIComponent(

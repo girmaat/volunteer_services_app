@@ -41,8 +41,8 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  const verificationStatus = String((orgCtx as any)?.org?.verification_status || "");
-  const verificationRequired = Boolean((orgCtx as any)?.org?.verification_required);
+  const verificationStatus = String(orgCtx?.org?.verification_status || "");
+  const verificationRequired = Boolean(orgCtx?.org?.verification_required);
 
   const verificationLabel =
     verificationStatus === "approved" || verificationStatus === "verified"

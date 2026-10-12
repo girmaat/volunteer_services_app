@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { anon, as, EMAILS, userId } from "./helpers";
+import { anon, as, EMAILS, ownerAct, userId } from "./helpers";
 
 /**
  * The core marketplace loop as it works today:
@@ -12,16 +12,23 @@ describe("request → apply → accept → message → complete → review", () 
 
   it("requester posts a request", async () => {
     const api = await as(EMAILS.requester);
-    const res = await api.post("/v1/requester/requests", {
+    const res = await api.post("/v1/requests", {
       title: "Flow test: help moving boxes",
       description: "Two hours of help moving boxes to a storage unit. Call me at 555-123-4567.",
+      category: "errands",
+      requiredSkills: "lifting",
+      volunteersNeeded: 1,
+      scheduleType: "one_time",
+      startsAt: new Date(Date.now() + 4 * 86400_000).toISOString(),
+      timezone: "America/New_York",
+      durationMinutes: 120,
       mode: "in-person",
-      locationText: "Upper West Side, Manhattan, NY",
-      tags: "moving, lifting"
+      publicArea: "Manhattan, NY"
     });
     expect(res.status).toBe(201);
-    requestId = res.body.id ?? res.body.request?.id;
+    requestId = res.body.id;
     expect(requestId).toMatch(/^[0-9a-f-]{36}$/);
+    expect((await api.post(`/v1/requests/${requestId}/transition`, { event: "publish" })).status).toBe(200);
   });
 
   it("is visible publicly with the phone number redacted", async () => {
@@ -61,16 +68,16 @@ describe("request → apply → accept → message → complete → review", () 
 
   it("requester sees and accepts the application; others cannot", async () => {
     const outsider = await as(EMAILS.dual);
-    expect([403, 404]).toContain((await outsider.post(`/v1/requester/applications/${applicationId}/accept`)).status);
+    expect([403, 404]).toContain((await ownerAct(outsider, applicationId, "accept")).status);
 
     const api = await as(EMAILS.requester);
-    const apps = await api.get(`/v1/requester/requests/${requestId}/applications`);
+    const apps = await api.get(`/v1/requests/${requestId}/applicants`);
     expect(apps.status).toBe(200);
     expect(JSON.stringify(apps.body)).toContain(applicationId);
 
-    const accept = await api.post(`/v1/requester/applications/${applicationId}/accept`);
+    const accept = await ownerAct(api, applicationId, "accept");
     expect(accept.status).toBe(200);
-    const acceptAgain = await api.post(`/v1/requester/applications/${applicationId}/accept`);
+    const acceptAgain = await ownerAct(api, applicationId, "accept");
     expect([200, 409]).toContain(acceptAgain.status);
   });
 
@@ -91,16 +98,16 @@ describe("request → apply → accept → message → complete → review", () 
     const req = await as(EMAILS.requester);
     const start = new Date(Date.now() - 3 * 3600_000).toISOString();
     const end = new Date(Date.now() - 1 * 3600_000).toISOString();
-    const confirm = await req.post(`/v1/requester/applications/${applicationId}/confirm`, { start_at: start, end_at: end });
+    const confirm = await ownerAct(req, applicationId, "confirm", { startAt: start, endAt: end });
     expect(confirm.status).toBe(200);
-    const complete = await req.post(`/v1/requester/applications/${applicationId}/complete`);
+    const complete = await ownerAct(req, applicationId, "complete");
     expect(complete.status).toBe(200);
 
-    const review = await req.post(`/v1/requester/applications/${applicationId}/review`, { rating: 5, strengths: "On time", would_work_again: true });
+    const review = await req.post("/v1/reviews", { applicationId, overall: 5, reliability: 5, comment: "On time", wouldWorkAgain: true });
     expect([200, 201], JSON.stringify(review.body)).toContain(review.status);
 
     const vol = await as(EMAILS.volunteer);
-    const back = await vol.post(`/v1/volunteer/applications/${applicationId}/review-requester`, { rating: 5, strengths: "Clear instructions" });
+    const back = await vol.post("/v1/reviews", { applicationId, overall: 5, clarity: 5, comment: "Clear instructions" });
     expect([200, 201], JSON.stringify(back.body)).toContain(back.status);
   });
 
@@ -132,9 +139,9 @@ describe("request → apply → accept → message → complete → review", () 
 describe("volunteer feeds", () => {
   it("recommended, nearby, remote and saved feeds load", async () => {
     const api = await as(EMAILS.volunteer);
-    for (const feed of ["recommended", "nearby", "remote"]) {
-      const res = await api.get(`/v1/volunteer/opportunities/${feed}`);
-      expect(res.status, feed).toBe(200);
+    for (const tab of ["recommended", "nearby", "remote"]) {
+      const res = await api.get(`/v1/discovery/opportunities?tab=${tab}`);
+      expect(res.status, tab).toBe(200);
     }
     const list = await anon().get("/v1/public/opportunities?limit=1");
     const id = list.body.items[0].id;
@@ -146,8 +153,8 @@ describe("volunteer feeds", () => {
 
   it("remote feed only returns remote or hybrid work", async () => {
     const api = await as(EMAILS.remoteVolunteer);
-    const res = await api.get("/v1/volunteer/opportunities/remote");
-    const items = Array.isArray(res.body) ? res.body : res.body.items;
+    const res = await api.get("/v1/discovery/opportunities?tab=remote&limit=50");
+    const items = res.body.items;
     expect(items.length).toBeGreaterThan(0);
     expect(items.every((o: { mode: string }) => o.mode === "remote" || o.mode === "hybrid")).toBe(true);
   });

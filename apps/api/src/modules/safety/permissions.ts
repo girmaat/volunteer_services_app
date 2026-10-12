@@ -23,20 +23,3 @@ export async function getMessagingPermission(userId: string): Promise<MessagingP
   return "anyone";
 }
 
-export async function canSendDirectMessage(sender: any, recipientUserId: string): Promise<{ allowed: boolean; reason?: string }> {
-  if (!recipientUserId) return { allowed: false, reason: "Invalid recipient." };
-  if (String(sender?.id || "") === String(recipientUserId)) return { allowed: true };
-  if (sender?.is_platform_admin) return { allowed: true };
-
-  const perm = await getMessagingPermission(recipientUserId);
-  if (perm === "anyone") return { allowed: true };
-
-  if (perm === "verified_only") {
-    // Login requires verified email, but keep the check for safety.
-    if (sender?.email_verified_at) return { allowed: true };
-    return { allowed: false, reason: "Only verified users can message this user." };
-  }
-
-  // perm === 'no_one'
-  return { allowed: false, reason: "This user is not accepting direct messages right now." };
-}

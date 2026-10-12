@@ -7,6 +7,7 @@ import { forwardHeaders } from "../../lib/forward";
 
 export type CurrentUser = {
   id: string;
+  requester_mode?: string | null;
   email: string;
   email_verified_at: string | null;
   role: "volunteer" | "requester" | "org_admin" | null;
@@ -50,6 +51,8 @@ export type VolunteerProfile = {
   // Account identity (private)
   full_name: string;
   phone: string | null;
+  birth_date?: string | null;
+  background_check_status?: string | null;
 
   // Public profile (shown to others)
   display_name: string | null;

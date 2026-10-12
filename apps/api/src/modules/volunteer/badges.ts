@@ -2,7 +2,6 @@
  * Volunteer badges. Computing is read-only; awarding (persisting + notifying) runs as a background
  * job after work is completed, never inside a GET request.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { pool } from "../../lib/db";
 import { notify } from "../notifications/service";
 
@@ -26,12 +25,12 @@ export async function computeBadges(userId: string) {
       pool.query(`SELECT rating, created_at FROM visible_volunteer_reviews WHERE volunteer_user_id = $1 ORDER BY created_at ASC`, [userId])
     ]);
 
-    const completedDates = (completed.rows || []).map((r: any) => new Date(r.updated_at).toISOString());
+    const completedDates = (completed.rows || []).map((r) => new Date(r.updated_at).toISOString());
     const completedCount = completedDates.length;
 
     const earnedAtCompletion = (n: number) => (completedDates.length >= n ? completedDates[n - 1] : null);
 
-    const hourEvents = (hours.rows || []).map((r: any) => ({ d: r.d ? String(r.d) : null, hrs: Number(r.hrs || 0) }));
+    const hourEvents = (hours.rows || []).map((r) => ({ d: r.d ? String(r.d) : null, hrs: Number(r.hrs || 0) }));
     let cumulative = 0;
     const hourEarnedAt: Record<number, string | null> = { 10: null, 25: null, 50: null, 100: null };
     for (const ev of hourEvents) {
@@ -45,7 +44,7 @@ export async function computeBadges(userId: string) {
 
     const reviewCount = (reviews.rows || []).length;
     const avgRating =
-      reviewCount > 0 ? reviews.rows.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / reviewCount : 0;
+      reviewCount > 0 ? reviews.rows.reduce((s: number, r) => s + Number(r.rating || 0), 0) / reviewCount : 0;
 
     const badges = [
       {
@@ -123,7 +122,7 @@ export async function awardBadges({ userId }: { userId: string }) {
     );
     if (r.rowCount) {
       n++;
-      await notify(userId, "application_status", { title: `New badge: ${b.title}`, href: "/volunteer/history/badges" });
+      await notify(userId, "application_status", { title: `New badge: ${b.title}`, href: "/volunteer/history#badges" });
     }
   }
   return n;

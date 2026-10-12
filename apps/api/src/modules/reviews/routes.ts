@@ -7,7 +7,7 @@ import type { PolicyUser } from "../../lib/policy";
 import { requireAuthedUser, requireVolunteerUser } from "../../middleware/auth";
 import { notify, requestOwnerIds } from "../notifications/service";
 import { afterApplicationUpdate } from "../requests/applications";
-import { loadApplication, recordCommitmentCancel, reliabilityOf, reviewsFor, ReviewError, sideFor, submitReview } from "./service";
+import { loadApplication, recordCommitmentCancel, reviewsFor, ReviewError, sideFor, submitReview } from "./service";
 
 export { ReviewBody };
 
@@ -43,17 +43,6 @@ export function registerReviewRoutes(app: Express) {
       const out = await reviewsFor(user, id.data);
       if (!out) return res.status(404).json({ message: "Application not found" });
       return res.json(out);
-    })
-  );
-
-  app.get(
-    "/v1/users/:id/reliability",
-    wrap(async (req, res) => {
-      const user = await requireAuthedUser(req, res);
-      if (!user) return;
-      const id = z.string().uuid().safeParse(req.params.id);
-      if (!id.success) return res.status(400).json({ message: "Invalid id" });
-      return res.json(await reliabilityOf(id.data));
     })
   );
 
