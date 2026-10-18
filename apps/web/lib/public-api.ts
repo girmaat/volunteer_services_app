@@ -91,3 +91,11 @@ export async function getPublicPage(slug: string): Promise<PublicPage | null> {
 export function modeLabel(mode: string) {
   return mode === "in-person" ? "In person" : mode === "hybrid" ? "Hybrid" : "Remote";
 }
+
+export type PublicAd = { id: string; title: string; body: string | null; link_url: string | null; image_url: string | null; placement: "left" | "right" };
+
+/** Live ads for each side panel (empty when an admin turned that side off). Refreshed every minute. */
+export async function getPublicAds(): Promise<{ left: PublicAd[]; right: PublicAd[] }> {
+  const r = await getJson<{ left: PublicAd[]; right: PublicAd[] }>("/v1/public/ads", 60);
+  return r.ok ? r.data : { left: [], right: [] };
+}

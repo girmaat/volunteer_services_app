@@ -1,8 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, ShieldCheck, EyeOff, MessageSquareLock, Siren } from "lucide-react";
-import { getPublicPage, listPublicOpportunities } from "../lib/public-api";
-import OpportunityRow from "../components/opportunities/OpportunityRow";
+import { ArrowRight, CheckCircle2, ShieldCheck, EyeOff, MessageSquareLock, Siren } from "lucide-react";
+import { getPublicPage } from "../lib/public-api";
 import { buttonClass } from "../components/ui/Button";
 
 // Rebuilt at most once a minute (ISR).
@@ -34,6 +33,19 @@ const AUDIENCES = [
   }
 ];
 
+const ORG_POINTS = [
+  "Post one-time shifts, recurring roles or goals like 200 meals",
+  "Review applicants, accept or waitlist in one click",
+  "Check-in codes, attendance and approved hours in one place",
+  "A verified badge volunteers trust"
+];
+
+const VOLUNTEER_POINTS = [
+  "Matches based on your skills, schedule and distance",
+  "In person nearby or remote from home",
+  "Your address and number stay private"
+];
+
 const STEPS = [
   ["Find something that fits", "Search by place, schedule or skill. Remote work shows up for everyone."],
   ["Apply with a short note", "Say why you're a good fit. The requester reviews and accepts."],
@@ -49,81 +61,84 @@ const SAFETY = [
 ];
 
 export default async function Home() {
-  const [cms, list] = await Promise.all([getPublicPage("home"), listPublicOpportunities({ limit: 5 })]);
+  const cms = await getPublicPage("home");
   const intro =
     cms?.body?.split("\n")[0]?.trim() ||
     "Find flexible volunteer opportunities, offer help to your community, and track your impact — all in one place.";
 
   return (
     <div className="grid gap-20 pt-4">
-      <section className="grid items-start gap-12 lg:grid-cols-[1.1fr_1fr]">
+      <section className="grid gap-6">
         <div>
-          <h1 className="m-0 max-w-[14ch] text-3xl font-extrabold sm:text-4xl">Help that fits your week.</h1>
-          <p className="mt-5 max-w-[46ch] text-lg text-muted">{intro}</p>
-
-          <form action="/opportunities" method="get" role="search" className="mt-8 rounded-md border border-line bg-surface p-3">
-            <label htmlFor="home-q" className="sr-only">
-              What would you like to help with?
-            </label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                id="home-q"
-                name="q"
-                placeholder="Tutoring, food bank, rides…"
-                className="h-12 min-w-0 flex-1 rounded border border-line-strong bg-surface px-3 text-base"
-              />
-              <button type="submit" className={buttonClass("primary", "lg")}>
-                Find opportunities
-              </button>
-            </div>
-            <fieldset className="m-0 mt-3 flex flex-wrap gap-2 border-0 p-0">
-              <legend className="sr-only">Where</legend>
-              {[
-                ["", "Anywhere"],
-                ["in-person", "In person"],
-                ["remote", "Remote"]
-              ].map(([value, label]) => (
-                <label key={value} className="cursor-pointer">
-                  <input type="radio" name="mode" value={value} defaultChecked={value === ""} className="peer sr-only" />
-                  <span className="inline-block rounded-full border border-line-strong px-3 py-1 text-sm text-muted peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:shadow-[var(--focus)]">
-                    {label}
-                  </span>
-                </label>
-              ))}
-            </fieldset>
-          </form>
-
-          <p className="mt-5 text-sm text-muted">
-            Need help yourself?{" "}
-            <Link prefetch={false} href="/signup" className="font-medium text-primary underline underline-offset-4">
-              Post a request
-            </Link>{" "}
-            · Running a nonprofit?{" "}
-            <Link prefetch={false} href="/org/signup" className="font-medium text-primary underline underline-offset-4">
-              Register your organization
-            </Link>
-          </p>
+          <h1 className="m-0 text-3xl font-extrabold sm:text-4xl">Help that fits your week.</h1>
+          <p className="mt-4 max-w-[60ch] text-lg text-muted">{intro}</p>
         </div>
 
-        <section aria-labelledby="open-now" className="rounded-lg border border-line bg-surface p-5 sm:p-6">
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 id="open-now" className="m-0 text-lg">
-              Open right now
+        <div className="grid items-stretch gap-6 lg:grid-cols-2">
+          <section aria-labelledby="for-orgs" className="flex flex-col rounded-lg border border-line bg-surface p-6 sm:p-8">
+            <p className="m-0 text-sm font-semibold uppercase tracking-wide text-primary">For organizations</p>
+            <h2 id="for-orgs" className="m-0 mt-2 text-2xl">
+              Bring dependable volunteers to your cause
             </h2>
-            <Link prefetch={false} href="/opportunities" className="text-sm font-medium text-primary">
-              See all
-            </Link>
-          </div>
-          {list.items.length ? (
-            <ul className="m-0 mt-2 p-0">
-              {list.items.map((o) => (
-                <OpportunityRow key={o.id} o={o} href={`/opportunities/${o.id}`} compact />
+            <p className="m-0 mt-3 text-muted">
+              Post shifts and projects in minutes, choose from people whose reviews and reliability you can see, and keep every
+              hour on record. Free for nonprofits, schools and community groups.
+            </p>
+            <ul className="m-0 mt-5 grid gap-2.5 p-0">
+              {ORG_POINTS.map((t) => (
+                <li key={t} className="flex list-none items-start gap-2.5">
+                  <CheckCircle2 aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  {t}
+                </li>
               ))}
             </ul>
-          ) : (
-            <p className="text-muted">New opportunities are posted every day. Check back soon.</p>
-          )}
-        </section>
+            <div className="mt-auto grid gap-3 pt-7 sm:grid-cols-2">
+              <Link prefetch={false} href="/signup" className="grid gap-0.5 rounded-md border border-line-strong px-4 py-3 no-underline hover:border-primary">
+                <span className="text-sm text-muted">Need help yourself?</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold text-primary">
+                  Post a request <ArrowRight aria-hidden className="h-4 w-4" />
+                </span>
+              </Link>
+              <Link prefetch={false} href="/org/signup" className="grid gap-0.5 rounded-md bg-primary px-4 py-3 no-underline hover:bg-primary-hover">
+                <span className="text-sm text-white/85">Running a nonprofit?</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold text-white">
+                  Register your organization <ArrowRight aria-hidden className="h-4 w-4" />
+                </span>
+              </Link>
+            </div>
+          </section>
+
+          <section aria-labelledby="for-volunteers" className="flex flex-col rounded-lg bg-primary-tint p-6 sm:p-8">
+            <p className="m-0 text-sm font-semibold uppercase tracking-wide text-primary">For volunteers</p>
+            <h2 id="for-volunteers" className="m-0 mt-2 text-2xl">
+              Give an hour. See the difference.
+            </h2>
+            <p className="m-0 mt-3 text-muted">
+              Sort a food pantry on Saturday, tutor a student from home, or drive a neighbor to an appointment. Pick what fits
+              your skills and schedule — and get a verified record of every hour you give.
+            </p>
+            <ul className="m-0 mt-5 grid gap-2.5 p-0">
+              {VOLUNTEER_POINTS.map((t) => (
+                <li key={t} className="flex list-none items-start gap-2.5">
+                  <CheckCircle2 aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-auto pt-7">
+              <Link prefetch={false} href="/opportunities" className={buttonClass("primary", "lg")}>
+                Find opportunities <ArrowRight aria-hidden className="h-4 w-4" />
+              </Link>
+              <p className="m-0 mt-3 text-sm text-muted">
+                New here?{" "}
+                <Link prefetch={false} href="/signup" className="font-medium text-primary underline underline-offset-4">
+                  Create a free account
+                </Link>{" "}
+                to apply, save opportunities and track your hours.
+              </p>
+            </div>
+          </section>
+        </div>
       </section>
 
       <section aria-labelledby="who" className="grid gap-8">

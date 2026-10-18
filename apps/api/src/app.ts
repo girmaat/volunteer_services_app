@@ -1,3 +1,4 @@
+import { registerAdRoutes } from "./modules/ads/routes";
 import express, { type Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -111,6 +112,7 @@ export function createApp(): Express {
   registerDiscoveryRoutes(app);
   registerAlertRoutes(app);
   registerMediaRoutes(app);
+  registerAdRoutes(app);
   registerMessagingRoutes(app);
   registerJobHandler("notify.message_received", onMessageReceived);
   registerJobHandler("maintenance.hourly", runHourly);

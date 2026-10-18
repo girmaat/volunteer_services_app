@@ -17,14 +17,14 @@ export const MAX_IMAGE_BYTES = 1024 * 1024;
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_IMAGE_BYTES, files: 1 } }).single("file");
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
-function checkImage(file: Express.Multer.File | undefined): { ok: true; mime: string } | { ok: false; message: string } {
+export function checkImage(file: Express.Multer.File | undefined): { ok: true; mime: string } | { ok: false; message: string } {
   if (!file) return { ok: false, message: "Choose an image" };
   const mime = sniffType(file.buffer, file.originalname || "image");
   if (!mime || !IMAGE_TYPES.includes(mime)) return { ok: false, message: "Use a PNG, JPEG or WebP image" };
   return { ok: true, mime };
 }
 
-async function store(kind: "avatar" | "logo", owner: string | null, org: string | null, file: Express.Multer.File, mime: string) {
+export async function store(kind: "avatar" | "logo" | "ad", owner: string | null, org: string | null, file: Express.Multer.File, mime: string) {
   const r = await pool.query(
     "INSERT INTO media_images (owner_user_id, org_slug, kind, mime_type, bytes, sha256) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
     [owner, org, kind, mime, file.buffer, crypto.createHash("sha256").update(file.buffer).digest("hex")]
@@ -32,7 +32,7 @@ async function store(kind: "avatar" | "logo", owner: string | null, org: string 
   return `/media/${r.rows[0].id}`;
 }
 
-function runUpload(req: Request, res: Response): Promise<boolean> {
+export function runUpload(req: Request, res: Response): Promise<boolean> {
   return new Promise((resolve) =>
     upload(req, res, (err: unknown) => {
       if (err) {

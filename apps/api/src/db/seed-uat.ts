@@ -156,7 +156,18 @@ async function main() {
     const roseId = String((await pool.query("SELECT id FROM users WHERE email = $1", [E.rose])).rows[0].id);
     await call(E.admin, "POST", `/v1/admin/user-verification/${roseId}/approve`, { notes: "UAT seed: ID checked" });
 
-    console.log("UAT scenarios loaded (S1–S12). See docs/uat/README.md.");
+    // S13 · Advertisement panels on, with one live ad per side, one turned off and one expired.
+    await call(E.admin, "POST", "/v1/admin/ads/settings", { left: true, right: true });
+    const day = 86_400_000;
+    const ads = [
+      { title: "Harbor Food Bank holiday drive", body: "Sort and pack holiday meal boxes with neighbors. Shifts every Saturday in December.", link_url: "/organizations/harbor-food-bank", placement: "left" },
+      { title: "Become a reading buddy", body: "Read with a 2nd–3rd grader over video, 30 minutes twice a week.", link_url: "/opportunities?q=reading", placement: "right", expires_at: new Date(Date.now() + 30 * day).toISOString() },
+      { title: "Paused sponsor ad", body: "Turned off by an admin; never shown.", placement: "right", is_active: false },
+      { title: "Last month's campaign", body: "Expired; never shown.", placement: "left", expires_at: new Date(Date.now() - day).toISOString() }
+    ];
+    for (const ad of ads) await call(E.admin, "POST", "/v1/admin/ads", ad);
+
+    console.log("UAT scenarios loaded (S1–S13). See docs/uat/README.md.");
   } finally {
     // Audit-log rows are written just after each admin response; let them land before closing.
     await new Promise((r) => setTimeout(r, 1000));

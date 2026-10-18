@@ -2,7 +2,7 @@ export type AppContext = "volunteer" | "requester" | "org" | "admin";
 
 export type NavItem = { href: string; label: string; icon: IconName; match?: string[]; exact?: boolean };
 export type IconName =
-  | "home" | "search" | "clipboard" | "calendar" | "inbox" | "award" | "list" | "users" | "star" | "chart" | "building" | "settings" | "shield" | "flag" | "file" | "clock";
+  | "home" | "search" | "clipboard" | "calendar" | "inbox" | "award" | "list" | "users" | "star" | "chart" | "building" | "settings" | "shield" | "flag" | "file" | "clock" | "megaphone";
 
 /** Primary navigation per context: at most 7 items, plain-language labels. */
 export function navFor(ctx: AppContext): NavItem[] {
@@ -45,6 +45,7 @@ export function navFor(ctx: AppContext): NavItem[] {
         { href: "/admin/users", label: "Users", icon: "users", match: ["/admin/users", "/admin/enforcement"] },
         { href: "/admin/organizations", label: "Organizations", icon: "building", match: ["/admin/organizations", "/admin/org-verification"] },
         { href: "/admin/verification", label: "Verification", icon: "shield" },
+        { href: "/admin/ads", label: "Ads", icon: "megaphone" },
         { href: "/admin/audit", label: "Audit log", icon: "file" }
       ];
   }

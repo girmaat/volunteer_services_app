@@ -144,6 +144,7 @@ Organizations:
 | S10 | Valerie **saved** *Community garden weeding* and *Event setup crew*. | Valerie: Find opportunities → Saved. |
 | S11 | Rose's ID was **approved** (she can post sensitive requests). | Rose: Settings → Verification. |
 | S12 | Ravi's ID is **waiting for review**. | Admin: Verification → Users. |
+| S13 | **Advertisement panels on**: "Harbor Food Bank holiday drive" (left) and "Become a reading buddy" (right, expires in 30 days) are showing; "Paused sponsor ad" is turned off and "Last month's campaign" has expired. | Public pages on a wide screen (1280 px+). Admin: **Ads** (`/admin/ads`). |
 
 ## 5. How to read and record a test case
 
