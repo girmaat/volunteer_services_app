@@ -30,7 +30,7 @@ Ok "pnpm $(pnpm -v)"
 # The app's database login is the same on every computer (the developer's local settings).
 $DbName = "volunteer_services_app"
 $DbUser = "volunteer_services_app"
-$DbPassword = "pYarsema,21"
+$DbPassword = "postgres"
 $cfg = Read-Config
 if (-not $cfg) {
   $cfg = [pscustomobject]@{ pgPort = 5433; pgSuperPassword = "VsaLocal-" + (New-Secret 4); internalKey = (New-Secret 24); ipSalt = (New-Secret 16); notifySecret = (New-Secret 24) }
