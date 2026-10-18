@@ -15,7 +15,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 ### TC-HRS-001 · Volunteer's Impact page — P1
 
 - **Tester:** Valerie (`volunteer.local@thankyou.test`)
-- **Page:** sidebar → **Impact** (`/volunteer/history`)
+- **Page:** top menu → **Impact** (`/volunteer/history`)
 - **Before you start:** S1, S5
 - **Expected result:**
   - "Hours count once the organizer approves them. Waiting and self-reported hours are shown separately." with links
@@ -30,7 +30,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 ### TC-HRS-002 · Reviewer's hours queue — P1
 
 - **Tester:** Rose (`requester@thankyou.test`)
-- **Page:** sidebar → **Hours** (`/requester/hours`)
+- **Page:** top menu → **Hours** (`/requester/hours`)
 - **Before you start:** S1
 - **Expected result:**
   - "Volunteer hours — Approve the time people gave. Only approved hours count on a volunteer's record; anything you
@@ -167,7 +167,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 - **Tester:** Ravi, then Olivia switched to **Bright Futures Tutoring** (not verified)
 - **Steps:**
   1. Ravi applies to *Algebra tutoring (grade 8)* (message `I can tutor on Mondays.`).
-  2. Olivia switches organization (sidebar switcher) to Bright Futures Tutoring, opens the request's Applicants, **Accept**,
+  2. Olivia switches organization (switcher at the top right) to Bright Futures Tutoring, opens the request's Applicants, **Accept**,
      then **Mark complete**.
   3. Olivia opens **Hours**.
 - **Expected result:** The entry is listed, but instead of approve buttons: "Your organization must be verified to approve

@@ -67,7 +67,7 @@ Setup: `pnpm db:uat`.
 - **Test data:** Organization name `Hoboken Library Friends`; What does it do? `Volunteers who help run library events.`; City `Hoboken, NJ`; Your name (if asked) `Pat Organizer`; 18+ ticked
 - **Steps:** Under **Start a new organization** fill in and click **Create organization**.
 - **Expected result:** "You'll be its admin, signed in as <email>. Anything you already do on ThankYou stays as it is." After
-  creating: the Finish-setting-up page. The sidebar switcher now lists the organization alongside any personal role.
+  creating: the Finish-setting-up page. The switcher at the top right now lists the organization alongside any personal role.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-ORG-005 · Ask to join an organization — P1
@@ -219,7 +219,7 @@ Setup: `pnpm db:uat`.
 ### TC-ORG-019 · Switch between organizations — P1
 
 - **Tester:** Olivia (admin of Harbor Food Bank and Bright Futures Tutoring)
-- **Page:** sidebar switcher at the top ("Harbor Food Bank")
+- **Page:** switcher at the top right ("Harbor Food Bank")
 - **Steps:** Open the switcher, choose **Bright Futures Tutoring**; open Requests; switch back.
 - **Expected result:** The page header reads "Bright Futures Tutoring · Admin · Verification required" (or similar) and Requests lists
   only Bright Futures items. Switching back shows Harbor's. Nothing is mixed between the two.
@@ -307,6 +307,6 @@ Setup: `pnpm db:uat`.
 ### TC-ORG-028 · Organization menu — P2
 
 - **Tester:** Olivia
-- **Expected result:** Sidebar: Home, Requests, Applicants, Hours, People, Inbox, Organization. "People" opens the roster with
+- **Expected result:** Top menu: Home, Requests, Applicants, Hours, People, Inbox, Organization. "People" opens the roster with
   Attendance, Forms and Incidents nearby; "Organization" opens Team with tabs Team · Settings · Reports.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:

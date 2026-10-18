@@ -11,7 +11,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 ### TC-VCM-001 · My applications lists active and past applications — P1
 
 - **Tester:** Valerie (`volunteer.local@thankyou.test`)
-- **Page:** sidebar → **My applications** (`/volunteer/applications`)
+- **Page:** top menu → **My applications** (`/volunteer/applications`)
 - **Before you start:** S1, S2, S4, S5
 - **Expected result:**
   - "Track where you've applied. Addresses and contact details appear once you're accepted."
@@ -26,7 +26,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 - **Page:** My applications → *Saturday distribution shift*
 - **Before you start:** S4
 - **Expected result:**
-  - Header shows status **Accepted** and "Harbor Food Bank", with **Message** and **View opportunity**.
+  - Header shows status **Accepted** and "Harbor Food Bank", with **Messages** and **View opportunity**.
   - "When: Sat, … 2:00 PM EDT"; "Where: **87-10 Queens Blvd, Elmhurst, NY**".
   - "Your message: I've done food distribution before and can lift boxes."
   - Right column: **I'm still coming**, and "Can't make it? Cancel as early as you can so they can find someone else."
@@ -55,7 +55,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 ### TC-VCM-005 · Organizer confirms the schedule; it appears in the volunteer's Schedule and calendar file — P1
 
 - **Tester:** Olivia (`org.admin@thankyou.test`), then Valerie
-- **Page:** Olivia: Requests → *Saturday distribution shift* → **Applicants**. Valerie: sidebar → **Schedule**.
+- **Page:** Olivia: Requests → *Saturday distribution shift* → **Applicants**. Valerie: top menu → **Schedule**.
 - **Steps:**
   1. As Olivia, on Valerie's card keep the start time as shown and click **Confirm schedule**.
   2. As Valerie, open **Schedule** (`/volunteer/calendar`).

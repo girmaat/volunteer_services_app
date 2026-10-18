@@ -11,7 +11,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 ### TC-VDS-001 · Volunteer home — P1
 
 - **Tester:** Valerie (`volunteer.local@thankyou.test`)
-- **Page:** `/volunteer/dashboard` (sidebar → Home)
+- **Page:** `/volunteer/dashboard` (top menu → Home)
 - **Before you start:** S1, S4, S5, S10
 - **Expected result:**
   - "Hi, Valerie" with a **Find opportunities** button.
@@ -31,7 +31,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 ### TC-VDS-003 · Recommended list explains each match — P1
 
 - **Tester:** Valerie
-- **Page:** sidebar → **Find opportunities** (opens Recommended, `/volunteer/opportunities/recommended`)
+- **Page:** top menu → **Find opportunities** (opens Recommended, `/volunteer/opportunities/recommended`)
 - **Expected result:**
   - Heading "Recommended for you — Ranked by your skills, causes, schedule and distance." with tabs Recommended,
     Near you, Remote, Saved.

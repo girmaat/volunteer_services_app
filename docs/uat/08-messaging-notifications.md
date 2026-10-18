@@ -1,23 +1,26 @@
 # 08 · Messaging and notifications
 
-Conversations happen per request, between the volunteer and the organizer. Safety rules: **phone numbers,
+Conversations happen per request, between the volunteer and the organizer. **The organizer (or requester) always
+sends the first message; volunteers can only reply.** Safety rules: **phone numbers,
 emails, links and social handles are hidden until the volunteer is accepted**; messages that look like scams
 (gift cards, wire transfers, passwords…) are **held for a moderator**; either side can report, block or end a
 conversation. Notifications appear under the bell and on the Notifications page; email preferences are per
 type, with one-click unsubscribe.
 
 Setup: `pnpm db:uat`. S1 = Valerie ⇄ Rose conversation on the groceries request (accepted, so contacts are unlocked).
+Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Diego (S3). Nobody has written about
+*Walk and talk in the park* yet (S2).
 
 ---
 
 ### TC-MSG-001 · Inbox lists conversations — P1
 
 - **Tester:** Valerie (`volunteer.local@thankyou.test`)
-- **Page:** sidebar → **Inbox**
+- **Page:** top menu → **Inbox**
 - **Before you start:** S1, S4, S5
 - **Expected result:** "Conversations about your requests and applications." with a filter **This role / All**. Rows show the
-  other party (Harbor Food Bank, Rose), the request title, the last message and time; the groceries conversation shows "Thank
-  you, Valerie. Press 4B. See you Thursday!" and is marked unread.
+  other party (Harbor Food Bank, Rose), the request title, the last message and time; the groceries conversation shows "Press 4B.
+  See you Thursday!" and is marked unread.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-MSG-002 · Read and reply in a conversation — P1
@@ -31,25 +34,33 @@ Setup: `pnpm db:uat`. S1 = Valerie ⇄ Rose conversation on the groceries reques
   3. Rose opens Inbox.
 - **Expected result:**
   - 1: header "Rose — Help me carry groceries upstairs — Completed"; a **Safety** menu; the safety line "Never share bank
-    details, passwords or codes, and never send money or gift cards."; the messages in order with times (Valerie's
-    application note first).
+    details, passwords or codes, and never send money or gift cards."; the messages in order with times, starting with
+    Rose's "Thank you for offering, Valerie! When could you come?".
   - 2: the message appears at the bottom immediately.
   - 3: Rose's Inbox shows the conversation as unread with the new text; opening it marks it read. Rose gets a "New message from
     Valerie" notification (and at most one email per hour).
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
-### TC-MSG-003 · Contact details are hidden before acceptance — P1
+### TC-MSG-003 · Volunteers can't start a conversation; contact details are hidden before acceptance — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test`, Volunteering), then Rose
-- **Page:** Diego: My applications → *Walk and talk in the park* (Pending, S2) → **Message**
-- **Test data:** `Text me at 917-555-0123 or diego.walks@example.org, or find me on instagram @diegowalks`
+- **Tester:** Diego (`dual.role@thankyou.test`, Volunteering), Rose (`requester@thankyou.test`)
+- **Page:** Diego: My applications → *Walk and talk in the park* (Pending, S2) → **Messages**
+- **Test data:** Rose: `Hi Diego, thanks for applying! Which mornings suit you?`; Diego:
+  `Text me at 917-555-0123 or diego.walks@example.org, or find me on instagram @diegowalks`
 - **Steps:**
-  1. Diego sends the message.
-  2. Rose opens the same conversation (Inbox).
+  1. Diego clicks **Messages** on the application.
+  2. Rose opens My requests → *Walk and talk in the park* → **Applicants**, clicks **Message** on Diego's card, types
+     her message and clicks **Send**.
+  3. Diego refreshes the conversation, types his message and clicks **Send**.
+  4. Rose opens the conversation (Inbox).
 - **Expected result:**
-  - The conversation shows the note "Phone numbers, emails and links stay hidden until the volunteer is accepted."
-  - Rose sees the message with "[contact details hidden until accepted]" in place of the phone number, the email and the
-    Instagram handle. None of "917-555-0123", "diego.walks@example.org" or "@diegowalks" is visible to her.
+  - 1: the conversation opens with no message box, only "The organizer starts the conversation. You can reply as
+    soon as they message you."
+  - 2: Rose's message is sent. Diego gets a "New message" notification.
+  - 3: the message box is now there and Diego's reply is sent. The page notes "Phone numbers, emails and links stay
+    hidden until the volunteer is accepted."
+  - 4: Rose sees "[contact details hidden until accepted]" in place of the phone number, the email and the Instagram
+    handle. None of "917-555-0123", "diego.walks@example.org" or "@diegowalks" is visible to her.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-MSG-004 · Contact details show after acceptance — P1
@@ -62,9 +73,10 @@ Setup: `pnpm db:uat`. S1 = Valerie ⇄ Rose conversation on the groceries reques
 
 ### TC-MSG-005 · Links hidden before acceptance — P2
 
-- **Tester:** Valerie, then Rose
-- **Page:** Valerie: My applications → *Walk and talk in the park* (Pending) → Message
-- **Test data:** `Here's my volunteer profile: https://example.org/valerie and www.example.com/about`
+- **Tester:** Rose, then Valerie, then Rose
+- **Page:** Rose: *Walk and talk in the park* → Applicants → Valerie → **Message**; Valerie: Inbox
+- **Before you start:** Rose sends Valerie `Hi Valerie, thanks for applying!` (Valerie can't write first).
+- **Test data:** Valerie replies `Here's my volunteer profile: https://example.org/valerie and www.example.com/about`
 - **Expected result:** Rose sees "[link hidden until accepted]" for both links.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
@@ -103,13 +115,17 @@ Setup: `pnpm db:uat`. S1 = Valerie ⇄ Rose conversation on the groceries reques
 - **Expected result:** 1–2: the message shows the file; Rose downloads the same file. 3: "That file type isn't allowed." Nothing is sent.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
-### TC-MSG-009 · Start a conversation from an application — P2
+### TC-MSG-009 · Organizer starts a conversation from an application — P2
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test`)
+- **Tester:** Olivia (`org.admin@thankyou.test`), then Ravi (`volunteer.remote@thankyou.test`)
 - **Before you start:** Ravi applied to a Bright Futures request (e.g. VDS-016)
-- **Steps:** My applications → the application → **Message**.
-- **Expected result:** A conversation with "Bright Futures Tutoring" opens (or is created) about that request, showing Ravi's
-  application note. A volunteer can't message about a request they haven't applied to.
+- **Steps:**
+  1. Ravi: My applications → the application → **Messages**.
+  2. Olivia (switcher → Bright Futures Tutoring): Applicants → Ravi's application → **Message**, sends `Welcome, Ravi!`.
+  3. Ravi opens Inbox.
+- **Expected result:** 1: the conversation with "Bright Futures Tutoring" opens read-only: "The organizer starts the
+  conversation…". 2: the message is sent as the organization. 3: Ravi sees the message and can reply. A volunteer
+  can't open a conversation about a request they haven't applied to.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-MSG-010 · Report a conversation — P1
@@ -146,14 +162,15 @@ Setup: `pnpm db:uat`. S1 = Valerie ⇄ Rose conversation on the groceries reques
 - **Tester:** Olivia (`org.admin@thankyou.test`)
 - **Page:** Organization → **Inbox**
 - **Before you start:** S4, S5
-- **Expected result:** Conversations with Valerie (Deliver meals, Saturday shift), Diego and Tara (Saturday shift, from their
-  applications). Replies are sent as the organization ("Harbor Food Bank").
+- **Expected result:** Conversations with Valerie (Deliver meals, Saturday shift), Diego and Tara (Saturday shift), each
+  starting with Harbor's welcome message. Replies are sent as the organization ("Harbor Food Bank"). Olivia's own
+  "ThankYou support" thread also appears here once she has written to the team (TC-MSG-021).
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-MSG-014 · Notifications bell — P1
 
 - **Tester:** Valerie
-- **Page:** any page → bell icon at the top of the sidebar ("Notifications, N unread")
+- **Page:** any page → bell icon at the top right ("Notifications, N unread")
 - **Before you start:** S1–S5 (Valerie has several unread)
 - **Steps:**
   1. Click the bell.
@@ -234,4 +251,23 @@ Setup: `pnpm db:uat`. S1 = Valerie ⇄ Rose conversation on the groceries reques
   2. Rose opens Diego's conversation (*Set up my new phone*) and tries to send `Thanks again!`.
   3. Diego sets it back to **Anyone**.
 - **Expected result:** 2: the message is refused (Diego accepts no messages). 3: messaging works again.
+- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
+
+### TC-MSG-021 · Organizations message the ThankYou team; admins reply — P2
+
+- **Tester:** Olivia (`org.admin@thankyou.test`), then Ada (`admin@thankyou.test`)
+- **Page:** Olivia: `/contact`; Ada: Admin → **Support messages** (`/admin/support`)
+- **Test data:** Olivia: `How do we get our second location verified?`; Ada: `Send us the address and we'll review it.`
+- **Steps:**
+  1. Olivia opens Contact us. Under **Message the ThankYou team** types her message and clicks **Send message**.
+  2. Ada opens Admin → **Support messages**.
+  3. Ada opens the thread, types her reply and clicks **Send**.
+  4. Olivia opens Inbox.
+- **Expected result:**
+  - 1: Olivia lands in a conversation titled "ThankYou support" with her message. Below it, the email form still
+    works with her name and email filled in and locked.
+  - 2: a row "Olivia · Harbor Food Bank" with her message and a **Needs a reply** tag.
+  - 3: the reply is sent; the row now says **Answered**.
+  - 4: Olivia sees Ada's reply in the "ThankYou support" conversation and gets a notification.
+  - Volunteers and requesters without an organization don't see "Message the ThankYou team" on Contact us.
 - **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:

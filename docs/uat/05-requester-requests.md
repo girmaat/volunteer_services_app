@@ -154,7 +154,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 ### TC-REQ-010 · My requests tabs — P2
 
 - **Tester:** Rose
-- **Page:** sidebar → **My requests**
+- **Page:** top menu → **My requests**
 - **Before you start:** S1–S3
 - **Expected result:** Tabs **Active**, **Drafts**, **Past**, **All** with counts. Active lists *Set up my new phone*
   (Filled), *Help me carry groceries upstairs* (Filled), *Fill in an online benefits form*, *Walk and talk in the park*
@@ -192,7 +192,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 ### TC-REQ-013 · Applicants page across all requests — P2
 
 - **Tester:** Rose
-- **Page:** sidebar → **Applicants** (`/requester/applications`)
+- **Page:** top menu → **Applicants** (`/requester/applications`)
 - **Before you start:** S2 (fresh data)
 - **Expected result:** "Pending volunteer applications across your requests." lists Valerie and Diego, each "Applied to
   Walk and talk in the park — "<message>"" with area and time.
@@ -329,7 +329,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 ### TC-REQ-026 · Requester home — P2
 
 - **Tester:** Rose
-- **Page:** sidebar → **Home** (`/requester/dashboard`)
+- **Page:** top menu → **Home** (`/requester/dashboard`)
 - **Before you start:** fresh `pnpm db:uat`
 - **Expected result:** "Hi, Rose" with **Ask for help** and **Inbox**; tiles Open requests, Applicants to review **2**,
   Upcoming, Unread conversations, Your rating **5.0 ★** (1 review); "New applicants" lists Valerie and Diego for *Walk

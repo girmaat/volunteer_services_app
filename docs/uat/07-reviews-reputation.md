@@ -65,7 +65,7 @@ published for Diego ⇄ Rose.
 ### TC-REV-006 · Requester reputation pages — P1
 
 - **Tester:** Rose
-- **Page:** sidebar → **Reviews** (`/requester/reputation`)
+- **Page:** top menu → **Reviews** (`/requester/reputation`)
 - **Before you start:** S3
 - **Expected result:**
   - Overview: "Reviews received ★★★★★ 5.0 · 1 total" and "Reviews given 1 · Sent to volunteers"; tabs Overview,

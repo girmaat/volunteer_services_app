@@ -13,7 +13,7 @@ and what you should see.
 | [05-requester-requests.md](05-requester-requests.md) | Posting and managing a request as an individual, applicants, sensitive requests, goals | REQ-001 – REQ-026 |
 | [06-hours-evidence-records.md](06-hours-evidence-records.md) | Reporting and approving hours, evidence, disputes, Impact, CSV, verified records | HRS-001 – HRS-026 |
 | [07-reviews-reputation.md](07-reviews-reputation.md) | Two-sided reviews, reputation pages, reliability, badges | REV-001 – REV-010 |
-| [08-messaging-notifications.md](08-messaging-notifications.md) | Inbox, contact masking, attachments, report/block/end, notifications, email preferences | MSG-001 – MSG-020 |
+| [08-messaging-notifications.md](08-messaging-notifications.md) | Inbox, volunteers reply only, contact masking, attachments, report/block/end, notifications, email preferences, messaging the ThankYou team | MSG-001 – MSG-021 |
 | [09-org-setup-team.md](09-org-setup-team.md) | Organization sign-up, join requests, team and roles, settings, verification, publishing rules, school coordinators | ORG-001 – ORG-028 |
 | [10-org-operations.md](10-org-operations.md) | Organization requests, applicants, check-in, attendance, roster, forms, incidents, reports, contact limits | OPS-001 – OPS-030 |
 | [11-minors-safety.md](11-minors-safety.md) | Under-18 volunteers, guardian consent, age limits, minors' privacy | MIN-001 – MIN-012 |
@@ -78,7 +78,7 @@ The **User ID** you sign in with is the email address. Internal record IDs (long
 | --- | --- | --- | --- | --- |
 | `admin@thankyou.test` | `Password!` | Ada (Admin) — Ada Admin | Platform **super admin** | All admin tools: users, organizations, categories, verification, audit log, maintenance mode. Also has the volunteer role. |
 | `moderator@thankyou.test` | `Password!` | Maya (Moderator) — Maya Moderator | Platform **moderator** | Works the moderation queues (requests to review, held messages, disputes, reports). Can't open user or organization management. |
-| `org.admin@thankyou.test` | `Password!` | Olivia — Olivia Ortiz | **Admin** of Harbor Food Bank (verified) and of Bright Futures Tutoring (not verified) | Organization owner: posts requests, accepts volunteers, approves hours, manages the team and settings. Switch organization from the menu at the top of the sidebar. |
+| `org.admin@thankyou.test` | `Password!` | Olivia — Olivia Ortiz | **Admin** of Harbor Food Bank (verified) and of Bright Futures Tutoring (not verified) | Organization owner: posts requests, accepts volunteers, approves hours, manages the team and settings. Switch organization from the switcher at the top right. |
 | `org.manager@thankyou.test` | `Password!` | Nora — Nora Bennett | **Manager** at Harbor Food Bank | Can do day-to-day work (requests, applicants, hours, invites) but not admin-only settings. Sees volunteers' contact details. |
 | `org.member@thankyou.test` | `Password!` | Marcus — Marcus Lee | **Member** at Harbor Food Bank | Lowest staff role: can view requests and applicants, can't act on them, never sees volunteers' email or phone. |
 | `school.admin@thankyou.test` | `Password!` | Sam — Samuel Okafor | **Admin** of Lincoln High School (organization type: School, verified) | Posts school opportunities; can add school coordinators. |
@@ -134,7 +134,7 @@ Organizations:
 | --- | --- | --- |
 | S1 | Valerie applied to Rose's *Help me carry groceries upstairs*, was accepted, then Rose marked it complete. **2 h are waiting for Rose's approval.** Valerie already reviewed Rose; Rose hasn't reviewed Valerie yet. They exchanged two messages. | Rose: Hours, applicants of that request, Inbox. Valerie: Impact, application, Inbox. |
 | S2 | Diego and Valerie both applied to Rose's *Walk and talk in the park* (1 spot). **Both pending.** | Rose: Applicants. |
-| S3 | Diego applied to Rose's *Set up my new phone*, was accepted, the work was completed, **Rose approved 2 h**, and **both reviews are published**. | Diego: Impact, verified records. Rose: Reputation. Public profiles. |
+| S3 | Diego applied to Rose's *Set up my new phone*, was accepted, the work was completed, **Rose approved 2 h**, and **both reviews are published**. | Diego: Impact, verified records, shared profile link. Rose: Reputation, public requester profile. |
 | S4 | Harbor's *Saturday distribution shift*: **Valerie accepted** (she sees the exact address); **Diego and Tara (17) pending**. | Olivia/Nora/Marcus: Applicants. Valerie: application. |
 | S5 | Harbor's *Deliver meals to homebound seniors*: Valerie accepted and **reported 2.5 h** ("Delivered 12 meals on the Astoria route."), **waiting in Harbor's Hours queue**. | Olivia/Nora: Hours. |
 | S6 | Lincoln High's *After-school homework club helpers*: **Tara accepted** by the school. | Sam: Applicants. Tara: Applications. |
@@ -172,18 +172,16 @@ behavior, so the related cases will fail until these are fixed.
 
 | # | Where | What's wrong | Related cases |
 | --- | --- | --- | --- |
-| K1 | Help page (`/help`) | Shows developer troubleshooting text ("confirm the backend is running… RUN_MIGRATIONS=true") and outdated statements ("full directories are available to logged-in users only"). | PUB-012 |
-| K2 | Contact page (`/contact`) | Shows placeholder text: "Contact form wired to backend validation" and "This is a placeholder workflow; backend validates input and returns 202." | PUB-013 |
-| K3 | How it works, About, Help and other static pages | Show a "Public" badge and an internal description line (for example "Explains the core flow in simple steps."). | PUB-011 |
 | K4 | Shared page (`/share/…`) | Shows the organization's city instead of the opportunity's area (for *Community garden weeding* it says Queens, NY instead of Jersey City, NJ). | SHR-003 |
 | K5 | Volunteer home "Picked for you" and Saved list | Show "Flexible" instead of each opportunity's date and time. | VDS-002, VDS-014 |
 | K6 | Profiles | Requester profile and public requester page show raw values ("ID: not_required", "Typical response time 0s") and "Completed commitments 0" after completed work; a volunteer's public profile shows "Completed opportunities 0" even with completed, approved work. | PUB-008, PUB-009, SET-003 |
 | K7 | Admin → Moderation | Shows the poster's raw verification value, e.g. "Rose (not_required)". | ADM-004 |
 | K8 | Organization pages, signed in as a **member** | Shows buttons members can't use (Accept, Waitlist, Decline, Check in, Mark complete, Post a request, Upload document). The server refuses them with an error. The Hours page shows "Hours couldn't load" instead of saying hours are reviewed by admins and managers. | OPS-027, OPS-028 |
 | K9 | Organization home | Lists partly filled requests as "Pending" while the Requests page says "Partly filled". | OPS-001 |
-| K11 | Contact page | After **Send**, nothing on the page changes, so the visitor doesn't know the message went (it is stored and emailed to the team). | PUB-013 |
 | K10 | Organization → Attendance | Filter asks for a "Volunteer User ID" (an internal code) instead of a name. | OPS-012 |
 
 Already fixed while preparing these cases: the About page said "About GiveBack" (now ThankYou), and a
 moderator opening Admin → Organizations, Verification or Incidents got "Something went wrong" (now
-"Access denied").
+"Access denied"). Fixed in the October 18 round: the Help page's developer text (was K1), the Contact page's
+placeholder text and missing confirmation (K2, K11), and the "Public" tag and internal description lines on the
+information pages (K3).

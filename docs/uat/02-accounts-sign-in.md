@@ -185,7 +185,7 @@ seed accounts keep `Password!`.
 - **Steps:** Sign in as each user below (log out between them) and note where you land.
 - **Expected result:**
 
-  | User | Lands on | Sidebar switcher shows |
+  | User | Lands on | Switcher (top right) shows |
   | --- | --- | --- |
   | volunteer.local@thankyou.test | Volunteer home "Hi, Valerie" | Volunteering |
   | requester@thankyou.test | Requester home "Hi, Rose" | Requesting help |
@@ -210,7 +210,7 @@ seed accounts keep `Password!`.
 - **Tester:** Valerie (`volunteer.local@thankyou.test`)
 - **Page:** any signed-in page
 - **Steps:**
-  1. Open the account menu at the bottom of the sidebar (your name).
+  1. Open the account menu (the round avatar at the top right).
   2. Click **Log out**.
   3. Press the browser Back button, then open `/volunteer/dashboard`.
 - **Expected result:**
@@ -333,8 +333,8 @@ seed accounts keep `Password!`.
 - **Tester:** Diego (`dual.role@thankyou.test`)
 - **Page:** Volunteer home
 - **Steps:**
-  1. Look at the sidebar menu.
-  2. Click the switcher at the top of the sidebar ("Acting as Volunteering"), choose **Requesting help**.
+  1. Look at the menu along the top.
+  2. Click the switcher at the top right ("Volunteering"), choose **Requesting help**.
   3. Open **My requests**. Open Settings and refresh the page.
   4. Switch back to **Volunteering**.
 - **Expected result:**
@@ -352,7 +352,7 @@ seed accounts keep `Password!`.
 - **Steps:**
   1. Read the Roles page.
   2. Click **Add volunteer role** (the button under "Volunteer").
-  3. Open the switcher at the top of the sidebar.
+  3. Open the switcher at the top right.
 - **Expected result:**
   - 1: "Request help — Active on your account" and a Volunteer card with an add button.
   - 2: you land on the volunteer Profile page ready to fill in (`/volunteer/profile?setup=1`).

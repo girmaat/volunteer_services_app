@@ -88,14 +88,19 @@ async function main() {
     const setup = await requestId("Event setup crew");
     const homework = await requestId("After-school homework club helpers");
 
+    // Organizers and requesters start conversations; volunteers reply.
+    const opens = async (owner: string, requestId: string, volunteer: string, body: string) => {
+      const vid = (await pool.query("SELECT id FROM users WHERE email = $1", [volunteer])).rows[0].id;
+      const c = await call(owner, "POST", "/v1/inbox/conversations", { requestId, volunteerUserId: vid });
+      await call(owner, "POST", `/v1/inbox/conversations/${c.id}/messages`, { body });
+      return String(c.id);
+    };
+
     // S1 · Rose ⇄ Valerie, groceries: accepted, marked complete; 2 h waiting for Rose's approval;
     // Valerie has reviewed Rose (Rose's review still to do); a short message thread.
     const s1 = await apply(E.valerie, groceries, "Hi Rose, I live nearby and can help most Thursdays after 5 pm.");
     await act(E.rose, groceries, s1, "accept");
-    // Rose writes first (volunteers reply only).
-    const valerieId = (await pool.query("SELECT id FROM users WHERE email = $1", [E.valerie])).rows[0].id;
-    const convo = await call(E.rose, "POST", "/v1/inbox/conversations", { requestId: groceries, volunteerUserId: valerieId });
-    await call(E.rose, "POST", `/v1/inbox/conversations/${convo.id}/messages`, { body: "Thank you for offering, Valerie! When could you come?" });
+    const convo = { id: await opens(E.rose, groceries, E.valerie, "Thank you for offering, Valerie! When could you come?") };
     await call(E.valerie, "POST", `/v1/inbox/conversations/${convo.id}/messages`, { body: "Hi Rose! I can come Thursday at 5:30 pm. Which buzzer should I press?" });
     await call(E.rose, "POST", `/v1/inbox/conversations/${convo.id}/messages`, { body: "Press 4B. See you Thursday!" });
     await act(E.rose, groceries, s1, "complete");
@@ -107,6 +112,7 @@ async function main() {
 
     // S3 · Rose ⇄ Diego, phone setup: complete, hours approved, both reviews published.
     const s3 = await apply(E.diego, phone, "I set up phones for my parents; I can transfer contacts and photos.");
+    await opens(E.rose, phone, E.diego, "Hi Diego, thanks! Could you come Saturday morning?");
     await act(E.rose, phone, s3, "accept");
     await act(E.rose, phone, s3, "complete");
     await call(E.rose, "POST", `/v1/contributions/${await contributionFor(s3)}/decide`, { action: "approve" });
@@ -118,9 +124,11 @@ async function main() {
     await act(E.olivia, saturday, s4, "accept");
     await apply(E.diego, saturday, "Count me in for Saturday. I speak Spanish.");
     await apply(E.tara, saturday, "I'd like to help. This counts toward my school service hours.");
+    for (const v of [E.valerie, E.diego, E.tara]) await opens(E.olivia, saturday, v, "Thanks for signing up for Saturday! Doors open at 1:45 pm.");
 
     // S5 · Harbor's meal delivery: Valerie accepted and reported 2.5 h, waiting in Harbor's Hours queue.
     const s5 = await apply(E.valerie, meals, "I have a car and know the Astoria streets well.");
+    await opens(E.olivia, meals, E.valerie, "Welcome aboard, Valerie! Route sheets are at the front desk.");
     await act(E.olivia, meals, s5, "accept");
     await call(E.valerie, "POST", "/v1/volunteer/contributions", { applicationId: s5, hours: 2.5, description: "Delivered 12 meals on the Astoria route." });
 
