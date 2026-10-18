@@ -180,6 +180,72 @@ async function upsertUser(c: PoolClient, p: Persona, passwordHash: string): Prom
   return id;
 }
 
+
+/** Sample stories (seed data for demos and UAT). */
+const STORIES = [
+  {
+    slug: "saturday-shifts-at-harbor-food-bank",
+    title: "Saturday shifts that fed 300 families",
+    excerpt: "Twelve first-time volunteers kept Harbor Food Bank's busiest day running through the holidays.",
+    body: `## A line around the block
+Every Saturday, Harbor Food Bank in Queens hands out produce boxes to around 300 families. Last winter two regular volunteers moved away just as the holiday rush began.
+
+## Filling the gap
+Olivia, who coordinates volunteers, posted a recurring Saturday distribution shift on ThankYou with five spots and a waitlist. Within a week twelve people had applied, most of them first-time volunteers from the neighborhood.
+
+"The waitlist was the surprise," Olivia says. "When someone cancelled on a Friday night, the next person got the spot offered automatically. I didn't have to make a single phone call."
+
+## What changed
+- Every Saturday shift was fully staffed for eight weeks in a row.
+- Volunteers logged **146 approved hours**, which the food bank used in a grant report.
+- Four of the new volunteers now come every month.
+
+## Want to help?
+Harbor Food Bank posts new shifts every week. [See their opportunities](/organizations/harbor-food-bank).`
+  },
+  {
+    slug: "a-new-phone-and-a-new-friend",
+    title: "A new phone, and a new friend",
+    excerpt: "Rose wanted to video-call her grandchildren. Diego spent an afternoon making it happen.",
+    body: `## The request
+Rose, who is 81, was given a smartphone for her birthday and couldn't get past the setup screen. She posted a request on ThankYou: "Set up my new phone so I can video-call my grandkids."
+
+## The visit
+Diego, a software tester who volunteers on weekends, applied with a short note. They met at Rose's local library, a public place, as ThankYou suggests for a first meeting. In an hour he moved her contacts across, set up video calling and wrote the steps on a card she keeps by the phone.
+
+## Afterwards
+Both left five-star reviews. Rose wrote: "Diego was patient and explained everything twice without making me feel silly." Diego has since helped three more neighbors with technology.`
+  },
+  {
+    slug: "students-tutoring-students",
+    title: "Students tutoring students",
+    excerpt: "Lincoln High School students earned service hours by helping younger kids with homework, all tracked in one place.",
+    body: `## Service hours without the paperwork
+Lincoln High School asks every student to complete 40 hours of community service. Tracking those hours used to mean signature sheets that went missing.
+
+## How it works now
+The school's coordinator posts an after-school homework club on ThankYou. Students aged 16 and over apply, a parent or guardian gives consent in the app, and the coordinator takes attendance with a check-in code.
+
+## The result
+- **38 students** volunteered at the homework club this term.
+- Every hour was approved by the coordinator, so counselors trust the totals.
+- Students can share a link to their volunteer record with college applications, and turn it off afterwards.`
+  },
+  {
+    slug: "remote-reading-buddies",
+    title: "Reading buddies, from anywhere",
+    excerpt: "Bright Futures Tutoring matched remote volunteers with second graders for 30 minutes, twice a week.",
+    body: `## Volunteering from home
+Not everyone can give up a Saturday morning. Bright Futures Tutoring created a remote opportunity: read with a second or third grader over video for 30 minutes, twice a week.
+
+## Matching the right people
+Volunteers filtered for **Remote** opportunities and applied from across the country. Bright Futures required a short training session before the first call and a background check for everyone.
+
+## What kids gained
+Teachers reported that 80% of the children in the program moved up at least one reading level by the end of the semester. Volunteers kept a running total of their hours in ThankYou's Impact page.`
+  }
+];
+
 async function main() {
   const isProd = process.env.NODE_ENV === "production";
   const password = process.env.SEED_PASSWORD || (isProd ? "" : "Password!");
@@ -251,6 +317,11 @@ async function main() {
         "INSERT INTO request_status_events (request_id, event, from_status, to_status, actor_kind, reason) VALUES ($1, 'seed', NULL, $2, 'system', 'Seed data')",
         [ins.rows[0].id, status]
       );
+    }
+    // Sample impact stories for the public Impact stories page (girma-fixes #16).
+    await c.query("DELETE FROM impact_stories WHERE slug = ANY($1)", [STORIES.map((x) => x.slug)]);
+    for (const [i, st] of STORIES.entries()) {
+      await c.query("INSERT INTO impact_stories (slug, title, excerpt, body, updated_at) VALUES ($1, $2, $3, $4, NOW() - ($5 || ' days')::interval)", [st.slug, st.title, st.excerpt, st.body, String(i * 9 + 2)]);
     }
     await c.query("COMMIT");
 

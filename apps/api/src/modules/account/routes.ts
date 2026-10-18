@@ -144,6 +144,7 @@ export function registerAccountRoutes(app: Express) {
         await c.query("UPDATE guardian_consents SET status = 'replaced', responded_at = NOW() WHERE volunteer_user_id = $1 AND status = 'pending'", [user.id]);
         await c.query("UPDATE user_profiles SET birth_date = NULL WHERE user_id = $1", [user.id]);
         await c.query("DELETE FROM organization_members WHERE user_id = $1", [user.id]);
+        await c.query("UPDATE profile_share_links SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL", [user.id]);
         await c.query("UPDATE platform_admins SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL", [user.id]);
         await c.query("COMMIT");
       } catch (e) {

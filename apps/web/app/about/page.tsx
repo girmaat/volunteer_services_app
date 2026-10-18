@@ -1,81 +1,9 @@
-import styles from "./page.module.css";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
-import PublicPageBody from "../_components/PublicPageBody";
+import type { Metadata } from "next";
+import InfoPage from "../../components/content/InfoPage";
+import { ABOUT } from "../../content/pages";
 
-export const metadata = { title: "About ThankYou", alternates: { canonical: "/about" } };
+export const metadata: Metadata = { title: "About ThankYou", description: ABOUT.lead, alternates: { canonical: "/about" } };
 
-export const revalidate = 300;
-
-type PublicPage = {
-  slug: string;
-  title: string;
-  body: string;
-  updated_at: string;
-};
-
-type PageLoad = {
-  page: PublicPage | null;
-  error: string | null;
-};
-
-const DEFAULT_ABOUT_BODY = `## Our mission
-ThankYou connects volunteers, neighbors, and organizations so help reaches the right place—quickly and safely.
-
-We’re designed for real-world coordination: clear expectations, simple communication, and follow‑through you can measure.
-
-## Who it’s for
-- Volunteers looking for flexible ways to contribute
-- Neighbors requesting support with everyday needs
-- Organizations coordinating volunteers and opportunities
-- Administrators supporting trust & safety and policy enforcement
-
-## What you can do on ThankYou
-- Browse opportunities and service requests (sign in to view full details)
-- Apply, message, and confirm logistics in one place
-- Track volunteer hours and outcomes over time
-- Leave reviews after completion to build trust and reputation
-- Share impact stories (optional) to celebrate results
-
-## Trust, safety, and privacy
-ThankYou includes blocking, reporting, and privacy controls. You decide whether your public profile is visible and who can message you. If something doesn’t look right, use “Report” from any profile.
-
-## Built for training and real-world use
-This environment may include demo content for training and smoke testing. Before production use, review your organization’s policies and update public pages (Terms/Privacy) to match your requirements.`;
-
-
-async function getPage(): Promise<PageLoad> {
-  try {
-    const res = await fetch(`${API_BASE_URL_SERVER}/v1/public/pages/about`, { next: { revalidate: 300 } });
-    if (!res.ok) {
-      let msg = `Failed to load page (HTTP ${res.status})`;
-      try {
-        const data = await res.json();
-        if (data?.message) msg = String(data.message);
-      } catch {
-        // ignore
-      }
-      return { page: null, error: msg };
-    }
-    return { page: await res.json(), error: null };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "fetch failed";
-    return { page: null, error: msg };
-  }
-}
-
-
-export default async function Page() {
-  const { page, error } = await getPage();
-
-  return (
-    <section className={styles.page}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>{page?.title ?? "About ThankYou"}</h1>
-        <span className={styles.badge}>Public</span>
-      </header>
-      <div className={styles.content}>
-        <PublicPageBody body={page?.body ?? DEFAULT_ABOUT_BODY} />
-      </div>
-    </section>
-  );
+export default function Page() {
+  return <InfoPage page={ABOUT} />;
 }
