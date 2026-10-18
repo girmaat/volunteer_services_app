@@ -84,7 +84,8 @@ $api = $api -replace '^DATABASE_URL=.*', "DATABASE_URL=postgres://$($DbUser):$([
             -replace '^AUTH_RATE_LIMIT_PER_MINUTE=.*', 'AUTH_RATE_LIMIT_PER_MINUTE=60' `
             -replace '^INTERNAL_API_KEY=.*', "INTERNAL_API_KEY=$($cfg.internalKey)" `
             -replace '^IP_HASH_SALT=.*', "IP_HASH_SALT=$($cfg.ipSalt)" `
-            -replace '^NOTIFICATION_SECRET=.*', "NOTIFICATION_SECRET=$($cfg.notifySecret)"
+            -replace '^NOTIFICATION_SECRET=.*', "NOTIFICATION_SECRET=$($cfg.notifySecret)" `
+            -replace '^MFA_SECRET_KEY=.*', "MFA_SECRET_KEY=$($cfg.notifySecret)mfa"
 Set-Content -Path "apps\api\.env" -Value $api -Encoding ASCII
 $web = (Get-Content "apps\web\.env.example") -replace '^INTERNAL_API_KEY=.*', "INTERNAL_API_KEY=$($cfg.internalKey)"
 Set-Content -Path "apps\web\.env.local" -Value $web -Encoding ASCII

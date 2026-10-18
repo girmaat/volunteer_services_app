@@ -60,7 +60,9 @@ const EnvSchema = z
 export type Env = z.infer<typeof EnvSchema>;
 
 function load(): Env {
-  const parsed = EnvSchema.safeParse(process.env);
+  // A blank line in .env (e.g. "MFA_SECRET_KEY=") means "not set", not "set to an empty value".
+  const raw = Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== undefined && v.trim() !== ""));
+  const parsed = EnvSchema.safeParse(raw);
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => `  - ${i.path.join(".") || "env"}: ${i.message}`).join("\n");
     // eslint-disable-next-line no-console
