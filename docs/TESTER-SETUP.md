@@ -2,10 +2,10 @@
 
 ## A. For the developer: give a tester access
 
-The code is on GitHub at **https://github.com/girmaat/volunteer_services_portal** (the local folder is called
+The code is on GitHub at **https://github.com/girmaat/volunteer_services_app** (the local folder is called
 `thankyou-next`; the names don't need to match).
 
-1. Push your latest work: `git push` (the first time: `git remote add origin https://github.com/girmaat/volunteer_services_portal.git`
+1. Push your latest work: `git push` (the first time: `git remote add origin https://github.com/girmaat/volunteer_services_app.git`
    then `git push -u origin main`).
 2. If the repository is private, invite the tester: on GitHub open the repository → **Settings → Collaborators →
    Add people**, and enter the tester's GitHub username or email. The tester accepts the invitation from GitHub's email.
@@ -18,7 +18,7 @@ You need: a GitHub account that the developer invited, an internet connection, a
 
 1. Save `TESTER-INSTALL.bat` (from the developer) anywhere, for example on the desktop, and double-click it.
    - A window asks **where to put the project**. Pick any folder (Documents is fine); a
-     `volunteer_services_portal` folder is created inside it.
+     `volunteer_services_app` folder is created inside it.
    - If Windows says **"Windows protected your PC"**, click **More info → Run anyway**.
    - When Windows asks **"Do you want to allow this app to make changes to your device?"**, click **Yes**
      (it installs Git, Node.js and PostgreSQL).
@@ -39,7 +39,7 @@ Four shortcuts are added to the desktop:
 | **Reset ThankYou test data** | go back to the starting test data (before each round, or when a case says so). |
 | **Update ThankYou** | get a new version from the developer (close the "ThankYou server" window first). |
 
-The project is in the `volunteer_services_portal` folder you chose. If you prefer VS Code: **File → Open Folder…** →
+The project is in the `volunteer_services_app` folder you chose. If you prefer VS Code: **File → Open Folder…** →
 that folder, then **Terminal → Run Task…** → "ThankYou: Start (for testing)".
 
 Every test account's password is `Password!`. The accounts are listed under **How to test** in the tracker.
@@ -67,7 +67,7 @@ pnpm uat:tracker && open docs/uat/uat-tracker.html
 ## D. What the Windows setup does (for the developer)
 
 `TESTER-INSTALL.bat` installs Git with winget (Windows' package manager), asks the tester for a folder, clones
-the repository into `<folder>\volunteer_services_portal` and runs `scripts\tester\setup.ps1`. That script:
+the repository into `<folder>\volunteer_services_app` and runs `scripts\tester\setup.ps1`. That script:
 
 1. installs Node.js LTS (winget) and pnpm (npm), if missing;
 2. installs PostgreSQL 16 as a Windows service (winget, unattended, generated `postgres` superuser password, port

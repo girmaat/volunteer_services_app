@@ -10,8 +10,8 @@ exit /b
 # ---------------------------------------------------------------------------------------------
 # ThankYou - install for testing (Windows 10/11).
 #
-$RepoUrl = "https://github.com/girmaat/volunteer_services_portal.git"
-$RepoName = "volunteer_services_portal"
+$RepoUrl = "https://github.com/girmaat/volunteer_services_app.git"
+$RepoName = "volunteer_services_app"
 #
 # FOR THE TESTER: double-click this file. If Windows says "Windows protected your PC", click
 # "More info" and then "Run anyway". Answer "Yes" when Windows asks for permission to install.
