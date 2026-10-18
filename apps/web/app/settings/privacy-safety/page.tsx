@@ -60,7 +60,7 @@ export default async function Page(
     <>
       <h2 className={styles.sectionTitle}>Privacy &amp; Safety</h2>
       <p className={styles.meta}>
-        Control what appears on your public profile, and who can message you.
+        Control who sees your profile and who can message you.
       </p>
 
       {searchParams?.saved ? (
@@ -77,22 +77,30 @@ export default async function Page(
       ) : null}
 
       <form className="mt-3" action={saveSettings}>
-        <div className={styles.tile}>
-          <h3 className={styles.tileTitle}>Public profile visibility</h3>
-          <p className={styles.tileBody}>
-            When off, your public profile link will show as unavailable to others.
-          </p>
+        {user.role === "volunteer" ? (
+          <div className={styles.tile}>
+            <h3 className={styles.tileTitle}>Your volunteer profile is private</h3>
+            <p className={styles.tileBody}>
+              Nobody can look it up. To show it to someone, create a share link and choose what it shows in{" "}
+              <a href="/volunteer/profile/share">Profile → Sharing</a>. You can turn a link off at any time.
+            </p>
+            <input type="hidden" name="public_profile_visible" value={settings.public_profile_visible ? "on" : ""} />
+          </div>
+        ) : (
+          <div className={styles.tile}>
+            <h3 className={styles.tileTitle}>Public profile visibility</h3>
+            <p className={styles.tileBody}>When off, your public profile link will show as unavailable to others.</p>
 
-          <label className={`${styles.label} flex items-center gap-2.5`}>
-            <input type="checkbox" name="public_profile_visible" defaultChecked={!!settings.public_profile_visible} />
-            Public profile is visible
-          </label>
+            <label className={`${styles.label} flex items-center gap-2.5`}>
+              <input type="checkbox" name="public_profile_visible" defaultChecked={!!settings.public_profile_visible} />
+              Public profile is visible
+            </label>
 
-          <p className={`${styles.small} mt-2`}>
-            Your public profile link:{" "}
-            <code>{user.role === "volunteer" ? `/volunteers/${user.id}` : user.role === "requester" ? `/requesters/${user.id}` : ""}</code>
-          </p>
-        </div>
+            <p className={`${styles.small} mt-2`}>
+              Your public profile link: <code>{user.role === "requester" ? `/requesters/${user.id}` : ""}</code>
+            </p>
+          </div>
+        )}
 
         <div className={`${styles.tile} mt-3.5`}>
           <h3 className={styles.tileTitle}>Messaging permissions</h3>

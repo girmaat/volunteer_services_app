@@ -16,7 +16,15 @@ export function Badge({ tone = "neutral", children, className }: { tone?: Tone; 
 }
 
 /** The one place sunflower appears in content: a verified seal. */
-export function VerifiedBadge({ label = "Verified" }: { label?: string }) {
+export function VerifiedBadge({ label = "Verified", prominent }: { label?: string; prominent?: boolean }) {
+  if (prominent) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#b07d00] bg-sun px-3 py-1 text-sm font-bold text-ink shadow-sm" title="This organization completed ThankYou's verification review">
+        <BadgeCheck aria-hidden className="h-4 w-4 text-[#7a5600]" />
+        {label}
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-sun-tint px-2.5 py-0.5 text-xs font-semibold text-ink">
       <BadgeCheck aria-hidden className="h-3.5 w-3.5 text-[#b07d00]" />

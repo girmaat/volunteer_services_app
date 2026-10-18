@@ -1,8 +1,6 @@
 # 01 · Public site and browsing without an account
 
-What a visitor sees before signing in: the home page, browsing opportunities and organizations, public
-profiles, the information pages, and the contact form. Privacy rule throughout: **a visitor never sees an
-exact address, a phone number, an email address, a sensitive request or an unpublished request.**
+What a visitor (without login in) sees before signing in: the home page, browsing opportunities and organizations, public profiles, the information pages, and the contact form. Privacy rule throughout: **a visitor never sees an exact address, a phone number, an email address, a sensitive request or an unpublished request.**
 
 Run these signed out (a private/incognito window is easiest). Setup: `pnpm db:uat` (see README).
 
@@ -54,8 +52,7 @@ Run these signed out (a private/incognito window is easiest). Setup: `pnpm db:ua
 - **Page:** `/opportunities` (header → Opportunities)
 - **Test data:** Category **Food & meals**, Where **In person**
 - **Steps:**
-  1. Open Opportunities. Note the line "Exact addresses and contact details are shared only after an application
-     is accepted."
+  1. Open Opportunities. Note the line "Exact addresses and contact details are shared only after an application is accepted."
   2. Set Category = Food & meals, Where = In person, click **Show results**.
   3. Clear the filters (Category = All categories, Where = Anywhere) and click **Show results** again.
 - **Expected result:**
@@ -64,7 +61,7 @@ Run these signed out (a private/incognito window is easiest). Setup: `pnpm db:ua
   - Each card shows title, short description, area, poster, category, date and how many spots are left
     (e.g. "5 spots left" for the Saturday shift).
   - Step 3 shows all published, non-sensitive opportunities (organization and neighbor requests together).
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
+**Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-PUB-004 · Date filters — P2
 
@@ -140,7 +137,7 @@ Run these signed out (a private/incognito window is easiest). Setup: `pnpm db:ua
 ### TC-PUB-009 · Public volunteer profile — P2
 
 - **Tester:** Visitor
-- **Page:** Diego's public profile (sign in as Diego → Volunteering → Profile → **View public profile**, copy the address, open it signed out)
+- **Page:** Diego's public profile (sign in as Diego → Volunteering → Profile → **View public profile**, copy the address, open it signed out) Diego's email: dual.role@thankyou.test and password is Password!
 - **Before you start:** S3
 - **Expected result:**
   - Shows **Diego**, Newark, NJ, **Total hours logged 2**, **Average rating 5.0**, **Reviews received 1**, About text.

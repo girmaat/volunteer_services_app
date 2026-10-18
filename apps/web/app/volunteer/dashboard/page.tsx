@@ -11,6 +11,7 @@ type DashboardCounts = {
   applicationsNeedingAction: number;
   unreadMessages: number;
   upcomingCommitments: number;
+  hoursLogged?: number;
   recommended?: OpportunitySummary[];
 };
 
@@ -36,6 +37,7 @@ export default async function Page() {
             { label: "Applications in progress", value: counts.applicationsNeedingAction, href: "/volunteer/applications" },
             { label: "Upcoming", value: counts.upcomingCommitments, href: "/volunteer/calendar", hint: "confirmed shifts" },
             { label: "Unread messages", value: counts.unreadMessages, href: "/inbox", attention: counts.unreadMessages > 0 },
+            { label: "Total hours logged", value: counts.hoursLogged ?? 0, href: "/volunteer/history#completed", hint: "see where" },
             { label: "Saved", value: counts.savedOpportunities, href: "/volunteer/opportunities/saved" }
           ]}
         />

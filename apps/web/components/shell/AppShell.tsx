@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Logo } from "./Logo";
-import { BottomNav, SideNav } from "./AppNav";
+import { BottomNav, SideNav, TopNav } from "./AppNav";
 import UserMenu from "./UserMenu";
 import ContextSwitcher, { type ContextOption } from "./ContextSwitcher";
 import NotificationBell from "./NotificationBell";
@@ -26,8 +26,9 @@ function optionLabel(ctx: string, user: ShellUser) {
 }
 
 /**
- * Signed-in layout: sidebar on large screens, top bar + bottom tabs on small screens.
- * Every signed-in area (volunteer, requester, org, settings, admin) renders inside it.
+ * Signed-in layout. Volunteer, requester, organization, inbox and settings pages use a top
+ * navigation bar like the public site; only the platform admin tools keep a (dark) sidebar.
+ * Small screens get a compact top bar plus bottom tabs everywhere.
  */
 export default function AppShell({
   user,
@@ -56,6 +57,35 @@ export default function AppShell({
   const canAddRole = !(roles.includes("volunteer") && roles.includes("requester"));
   // The platform admin area gets a dark sidebar so staff always know they're in the admin tools.
   const adminTheme = context === "admin" ? " admin-chrome" : "";
+
+  if (context !== "admin") {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--paper)_88%,transparent)]">
+          <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-3 px-4 sm:px-6 lg:h-16">
+            <Logo href={items[0]?.href ?? "/"} wordmarkClassName="hidden min-[400px]:inline" />
+            <div className="hidden min-w-0 flex-1 lg:flex">
+              <TopNav items={items} label={label} />
+            </div>
+            <div className="ml-auto flex min-w-0 items-center gap-1.5">
+              {options.length > 1 || canAddRole ? (
+                <div className="w-36 min-w-0 xl:w-44">
+                  <ContextSwitcher options={options} currentLabel={label} canAddRole={canAddRole} compact />
+                </div>
+              ) : null}
+              <NotificationBell />
+              <UserMenu name={name} email={user.email} profileHref={profileHref(context)} compact />
+            </div>
+          </div>
+        </header>
+        {banner}
+        <main id="main" className="mx-auto w-full max-w-content flex-1 px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8">
+          {children}
+        </main>
+        <BottomNav items={items} label={label} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[256px_1fr]">

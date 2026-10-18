@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { API_BASE_URL_SERVER } from "@thankyou/config";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 type PlatformStatus = {
   maintenance: { enabled: boolean; message: string | null; updated_at: string };
@@ -13,7 +14,7 @@ function stripTrailingSlash(url: string) {
 
 async function getStatus(): Promise<PlatformStatus | null> {
   try {
-    const res = await fetch(`${stripTrailingSlash(API_BASE_URL_SERVER)}/v1/platform/status`, { next: { revalidate: 300 } });
+    const res = await fetch(`${stripTrailingSlash(API_BASE_URL_SERVER)}/v1/platform/status`, { cache: "no-store" });
     if (!res.ok) return null;
     return (await res.json()) as PlatformStatus;
   } catch {
@@ -23,7 +24,9 @@ async function getStatus(): Promise<PlatformStatus | null> {
 
 export default async function MaintenancePage() {
   const status = await getStatus();
-  const enabled = Boolean(status?.maintenance?.enabled);
+  const enabled = Boolean(status?.maintenance?.enabled) || process.env.MAINTENANCE_MODE === "true";
+  // Nothing to show when the site is up: send people to the home page.
+  if (!enabled) redirect("/");
   const message = status?.maintenance?.message?.trim() || "We’re doing some quick maintenance. Please check back soon.";
 
   return (

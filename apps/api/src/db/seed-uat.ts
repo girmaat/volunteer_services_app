@@ -92,9 +92,12 @@ async function main() {
     // Valerie has reviewed Rose (Rose's review still to do); a short message thread.
     const s1 = await apply(E.valerie, groceries, "Hi Rose, I live nearby and can help most Thursdays after 5 pm.");
     await act(E.rose, groceries, s1, "accept");
-    const convo = await call(E.valerie, "POST", "/v1/inbox/conversations", { requestId: groceries });
+    // Rose writes first (volunteers reply only).
+    const valerieId = (await pool.query("SELECT id FROM users WHERE email = $1", [E.valerie])).rows[0].id;
+    const convo = await call(E.rose, "POST", "/v1/inbox/conversations", { requestId: groceries, volunteerUserId: valerieId });
+    await call(E.rose, "POST", `/v1/inbox/conversations/${convo.id}/messages`, { body: "Thank you for offering, Valerie! When could you come?" });
     await call(E.valerie, "POST", `/v1/inbox/conversations/${convo.id}/messages`, { body: "Hi Rose! I can come Thursday at 5:30 pm. Which buzzer should I press?" });
-    await call(E.rose, "POST", `/v1/inbox/conversations/${convo.id}/messages`, { body: "Thank you, Valerie. Press 4B. See you Thursday!" });
+    await call(E.rose, "POST", `/v1/inbox/conversations/${convo.id}/messages`, { body: "Press 4B. See you Thursday!" });
     await act(E.rose, groceries, s1, "complete");
     await call(E.valerie, "POST", "/v1/reviews", { applicationId: s1, overall: 5, reliability: 5, clarity: 5, comment: "Rose had everything ready and explained exactly what she needed.", wouldWorkAgain: true });
 

@@ -85,8 +85,10 @@ describe("request → apply → accept → message → complete → review", () 
   it("both sides can message in the request thread", async () => {
     const vol = await as(EMAILS.volunteer);
     const req = await as(EMAILS.requester);
-    const list = await vol.get("/v1/inbox/conversations?as=volunteer");
-    conversationId = list.body.conversations.find((c: { request_id: string }) => c.request_id === requestId).id;
+    // The requester writes first; volunteers reply.
+    const opened = await req.post("/v1/inbox/conversations", { requestId, volunteerUserId: await userId(EMAILS.volunteer) });
+    conversationId = opened.body.id;
+    expect((await req.post(`/v1/inbox/conversations/${conversationId}/messages`, { body: "Thanks for offering!" })).status).toBe(201);
     const sent = await vol.post(`/v1/inbox/conversations/${conversationId}/messages`, { body: "Hi Rose, what time works?" });
     expect(sent.status).toBe(201);
     const thread = await req.get(`/v1/inbox/conversations/${conversationId}`);

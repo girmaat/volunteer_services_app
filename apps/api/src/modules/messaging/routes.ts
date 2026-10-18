@@ -9,11 +9,15 @@ import { pool } from "../../lib/db";
 import { contentDisposition, wrap } from "../../lib/http";
 import { can, type PolicyUser } from "../../lib/policy";
 import { requireAuthedUser } from "../../middleware/auth";
+import { requirePlatformAdmin } from "../../admin/auth";
 import { checkAttachment, MAX_ATTACHMENT_BYTES } from "./files";
 import { subscribe, publish } from "./realtime";
 import {
   contactsUnlocked,
   ensureConversation,
+  ensureSupportConversation,
+  ownerHasWritten,
+  REPLY_ONLY_MESSAGE,
   listConversations,
   loadConversation,
   markRead,
@@ -65,6 +69,8 @@ async function conversationView(user: PolicyUser, c: Conversation) {
     [c.volunteer_user_id, c.owner_user_id, c.org_slug]
   );
   const n = names.rows[0];
+  const replyOnlyWaiting = side === "volunteer" && c.kind !== "support" && !(await ownerHasWritten(c));
+  const supportOrg = c.kind === "support" ? (await pool.query("SELECT name FROM organizations WHERE slug = (SELECT support_org_slug FROM conversations WHERE id = $1)", [c.id])).rows[0]?.name : null;
   return {
     id: c.id,
     status: c.status,
@@ -74,10 +80,21 @@ async function conversationView(user: PolicyUser, c: Conversation) {
     application_id: c.application_id,
     application_status: c.application_status,
     as: side,
-    with_name: side === "volunteer" ? n.org_name || n.owner_name || "Organizer" : n.volunteer_name || "Volunteer",
+    kind: c.kind,
+    with_name:
+      c.kind === "support"
+        ? side === "volunteer"
+          ? "ThankYou support"
+          : `${n.volunteer_name || "Member"}${supportOrg ? ` (${supportOrg})` : ""}`
+        : side === "volunteer"
+          ? n.org_name || n.owner_name || "Organizer"
+          : n.volunteer_name || "Volunteer",
     with_user_id: side === "volunteer" ? c.owner_user_id : c.volunteer_user_id,
     contacts_unlocked: contactsUnlocked(c),
-    can_send: c.status === "active",
+    can_send: c.status === "active" && !replyOnlyWaiting,
+    // Volunteers reply only: true until the organizer sends the first message.
+    waiting_for_organizer: replyOnlyWaiting,
+    reply_only_message: replyOnlyWaiting ? REPLY_ONLY_MESSAGE : null,
     archived_at: c.archived_at,
     ended_at: c.ended_at
   };
@@ -112,6 +129,51 @@ export function registerMessagingRoutes(app: Express) {
       const c = await ensureConversation(p.data.requestId, volunteerId).catch(() => null);
       if (!c || !sideOf(user, c)) return res.status(404).json({ message: "Conversation not found" });
       return res.status(201).json(await conversationView(user, c));
+    })
+  );
+
+  // Organization members message the platform team (girma-fixes #17). One thread per person.
+  app.post(
+    "/v1/inbox/support",
+    wrap(async (req, res) => {
+      const user = (await requireAuthedUser(req, res)) as PolicyUser | null;
+      if (!user) return;
+      const m = (user.orgs || [])[0] ? (user.orgs || []).find((o) => `org:${o.slug}` === user.active_context) || (user.orgs || [])[0] : null;
+      if (!m) return res.status(403).json({ message: "Messaging the ThankYou team is available to organization members. Use the contact form instead." });
+      const p = z.object({ body: z.string().trim().min(1).max(5000).optional() }).safeParse(req.body ?? {});
+      if (!p.success) return res.status(400).json({ message: "Invalid payload", errors: p.error.flatten() });
+      const c = await ensureSupportConversation(user.id, m.slug);
+      if (!c) return res.status(503).json({ message: "The ThankYou team isn't set up to receive messages yet. Use the contact form." });
+      if (p.data.body) {
+        try {
+          await sendMessage(user, c, p.data.body);
+        } catch (e) {
+          return sendError(res, e);
+        }
+      }
+      return res.status(201).json(await conversationView(user, (await loadConversation(c.id))!));
+    })
+  );
+
+  // Platform admins: every support thread.
+  app.get(
+    "/v1/admin/support",
+    wrap(async (req, res) => {
+      if (!(await requirePlatformAdmin(pool, req, res))) return;
+      const r = await pool.query(
+        `SELECT c.id, c.status, c.last_message_at, c.created_at, p.display_name AS member_name, o.name AS org_name,
+                (SELECT body FROM direct_messages m WHERE m.conversation_id = c.id AND m.status = 'sent' ORDER BY m.created_at DESC LIMIT 1) AS last_body,
+                (SELECT sender_user_id = c.volunteer_user_id FROM direct_messages m WHERE m.conversation_id = c.id AND m.status = 'sent' ORDER BY m.created_at DESC LIMIT 1) AS awaiting_reply
+           FROM conversations c
+           LEFT JOIN user_profiles p ON p.user_id = c.volunteer_user_id
+           LEFT JOIN organizations o ON o.slug = c.support_org_slug
+          WHERE c.kind = 'support'
+          ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
+          LIMIT 200`
+      );
+      return res.json({
+        items: r.rows.map((x) => ({ ...x, last_body: x.last_body ? String(x.last_body).slice(0, 140) : null, awaiting_reply: Boolean(x.awaiting_reply) }))
+      });
     })
   );
 

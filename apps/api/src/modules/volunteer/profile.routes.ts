@@ -37,7 +37,9 @@ app.get(
            WHERE volunteer_user_id = $1 AND status IN ('pending','accepted')) AS applications,
          (SELECT COUNT(*)::int FROM direct_messages WHERE recipient_user_id = $1 AND read_at IS NULL AND status = 'sent') AS unread,
          (SELECT COUNT(*)::int FROM request_commitments
-           WHERE volunteer_user_id = $1 AND start_at > NOW() AND status IN ('scheduled','confirmed')) AS upcoming`,
+           WHERE volunteer_user_id = $1 AND start_at > NOW() AND status IN ('scheduled','confirmed')) AS upcoming,
+         (SELECT COALESCE(SUM(approved_hours), 0)::float FROM contributions
+           WHERE volunteer_user_id = $1 AND status IN ('approved','adjusted')) AS hours`,
       [user.id]
     ), recommendedFor(user)]);
     const c = r.rows[0] as Record<string, number>;
@@ -48,6 +50,8 @@ app.get(
       applicationsNeedingAction: c.applications ?? 0,
       unreadMessages: c.unread ?? 0,
       upcomingCommitments: c.upcoming ?? 0,
+      // Approved hours only (what an organizer or requester confirmed); details on Impact.
+      hoursLogged: Math.round(Number(c.hours ?? 0) * 10) / 10,
       // Top picks travel with the counters so the dashboard is a single backend call.
       recommended: rec.rows.slice(0, 6),
       recommendedRadiusMiles: rec.radius,

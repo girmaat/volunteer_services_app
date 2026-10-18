@@ -29,12 +29,23 @@ const MODES = [
 ];
 
 /** Date window for the "When" filter, in UTC (requests without a date always match). */
-function dateRange(when: string): [string, string] | null {
+const isDay = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
+
+function dateRange(when: string, from = "", to = ""): [string, string] | null {
   const now = new Date();
+  // Custom dates: one day (From only) or a range (From–To), whole days.
+  if (isDay(from) || isDay(to)) {
+    const a = isDay(from) ? from : to;
+    const b = isDay(to) && to >= a ? to : a;
+    const end = new Date(`${b}T00:00:00Z`);
+    end.setUTCDate(end.getUTCDate() + 1);
+    return [new Date(`${a}T00:00:00Z`).toISOString(), end.toISOString()];
+  }
   const day = (d: Date, add: number) => {
     const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + add));
     return x;
   };
+  if (when === "tomorrow") return [day(now, 1).toISOString(), day(now, 2).toISOString()];
   if (when === "week") return [now.toISOString(), day(now, 8).toISOString()];
   if (when === "month") return [now.toISOString(), day(now, 31).toISOString()];
   if (when === "weekend") {
@@ -73,7 +84,9 @@ export default async function FindOpportunities({
   const verified = one(sp.verified) === "1";
   const org = one(sp.org);
   const cursor = one(sp.cursor);
-  const when = one(sp.when);
+  const from = isDay(one(sp.from)) ? one(sp.from) : "";
+  const to = isDay(one(sp.to)) ? one(sp.to) : "";
+  const when = from || to ? "custom" : one(sp.when) === "custom" ? "" : one(sp.when);
 
   const params = new URLSearchParams({ tab, limit: "20" });
   if (q) params.set("q", q);
@@ -83,7 +96,7 @@ export default async function FindOpportunities({
   if (verified) params.set("verified_org", "true");
   if (org) params.set("org", org);
   if (cursor) params.set("cursor", cursor);
-  const range = dateRange(when);
+  const range = dateRange(when, from, to);
   if (range) {
     params.set("starts_after", range[0]);
     params.set("starts_before", range[1]);
@@ -97,7 +110,7 @@ export default async function FindOpportunities({
 
   const keep = (patch: Record<string, string>) => {
     const u = new URLSearchParams();
-    for (const [k, v] of Object.entries({ q, category, mode, radius, when, verified: verified ? "1" : "", org, ...patch })) if (v) u.set(k, v);
+    for (const [k, v] of Object.entries({ q, category, mode, radius, when: when === "custom" ? "" : when, from, to, verified: verified ? "1" : "", org, ...patch })) if (v) u.set(k, v);
     const s = u.toString();
     return s ? `${basePath}?${s}` : basePath;
   };
@@ -159,10 +172,23 @@ export default async function FindOpportunities({
             </label>
             <select id="opp-when" name="when" defaultValue={when} className="h-11 rounded border border-line-strong bg-surface px-3">
               <option value="">Any time</option>
+              <option value="tomorrow">Tomorrow</option>
               <option value="weekend">This weekend</option>
               <option value="week">Next 7 days</option>
               <option value="month">Next 30 days</option>
+              <option value="custom">Pick dates (below)</option>
             </select>
+            <div className="mt-1 grid gap-2">
+              <label className="grid gap-1 text-xs text-muted">
+                From
+                <input type="date" name="from" defaultValue={from} className="h-10 w-full min-w-0 rounded border border-line-strong bg-surface px-2 text-sm text-ink" />
+              </label>
+              <label className="grid gap-1 text-xs text-muted">
+                To (optional)
+                <input type="date" name="to" defaultValue={to} min={from || undefined} className="h-10 w-full min-w-0 rounded border border-line-strong bg-surface px-2 text-sm text-ink" />
+              </label>
+            </div>
+            <p className="m-0 text-xs text-muted">For one day, fill in From only. Dates override the list above.</p>
           </div>
           {tab !== "remote" && tab !== "nearby" ? (
             <fieldset className="m-0 grid gap-2 border-0 p-0">

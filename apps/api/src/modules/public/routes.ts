@@ -133,18 +133,22 @@ app.get(
 // no exact addresses, no private profile data).
 // ---------------------------------------------------------------------------
 
+const PUBLIC_ORG_LIMIT = 3;
+
 app.get(
   "/v1/public/organizations",
-  wrap(async (req, res) => {
-    const page = parsePage(req.query as Record<string, unknown>, { limit: 24, max: 50 });
-    const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
+  wrap(async (_req, res) => {
+    // The public directory shows only the few most recently active organizations (latest posted
+    // or updated opportunity, or profile update). The full list is for platform admins.
     const rows = await pool.query(
-      `SELECT slug, name, summary, location, verification_status, verified_at, updated_at
-         FROM organizations
-        WHERE ($1::text = '' OR name ILIKE '%' || $1 || '%' OR summary ILIKE '%' || $1 || '%')
-        ORDER BY (verification_status = 'approved') DESC, name ASC
-        LIMIT $2 OFFSET $3`,
-      [q, page.limit + 1, page.offset]
+      `SELECT o.slug, o.name, o.summary, o.location, o.verification_status, o.updated_at,
+              GREATEST(o.updated_at, COALESCE(MAX(r.updated_at), o.updated_at)) AS last_active_at
+         FROM organizations o
+         LEFT JOIN service_requests r ON r.requester_org_slug = o.slug AND ${discoverableSql("r")} AND NOT r.is_sensitive
+        GROUP BY o.slug, o.name, o.summary, o.location, o.verification_status, o.updated_at
+        ORDER BY last_active_at DESC, o.name ASC
+        LIMIT $1`,
+      [PUBLIC_ORG_LIMIT]
     );
     const items = rows.rows.map((o) => ({
       slug: o.slug,
@@ -152,10 +156,11 @@ app.get(
       summary: sanitizePublicDescription(String(o.summary || "")),
       location: looksPreciseLocation(String(o.location || "")) ? null : o.location,
       verified: o.verification_status === "approved",
-      updated_at: o.updated_at
+      updated_at: o.updated_at,
+      last_active_at: o.last_active_at
     }));
     res.setHeader("cache-control", "public, max-age=60, stale-while-revalidate=300");
-    return res.json(toPage(items, page));
+    return res.json({ items, nextCursor: null });
   })
 );
 
@@ -357,9 +362,9 @@ app.get("/v1/public/volunteers/:id", wrap(async (req, res) => {
   const viewer = await optionalAuthedUser(req);
   const viewerId = viewer ? String(viewer.id || "") : "";
   const isAdmin = !!(viewer && can(viewer as PolicyUser, "platform:moderate"));
-  // Under-18 volunteers never have a public profile (SAFE-04): only they and platform staff see it.
-  const visible = !!r.public_profile_visible && !r.minor;
-  const canView = visible || viewerId === volunteerId || isAdmin;
+  // Volunteer profiles are private (girma-fixes #12): only the volunteer and platform staff see this
+  // full view. Others see what the volunteer chooses to share through a share link (/p/<token>).
+  const canView = viewerId === volunteerId || isAdmin;
   if (!canView) return res.status(404).json({ message: "Volunteer not found" });
 
   const commitmentsTotal = Number(r.commitments_total_count || 0);
@@ -608,10 +613,16 @@ app.post(
   wrap(async (req, res) => {
     // Honeypot: bots fill hidden fields; pretend success and store nothing.
     if (typeof req.body?.website === "string" && req.body.website.trim()) return res.status(202).json({ status: "accepted" });
-    const parsed = ContactRequest.safeParse(req.body);
+    const viewer = await optionalAuthedUser(req).catch(() => null);
+    // Signed-in senders: name and email come from the account, not the form (girma-fixes #17).
+    let body = req.body ?? {};
+    if (viewer?.id) {
+      const me = await pool.query("SELECT u.email, COALESCE(NULLIF(p.display_name, ''), split_part(u.email, '@', 1)) AS name FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = $1", [viewer.id]);
+      if (me.rows[0]) body = { ...body, name: String(me.rows[0].name).slice(0, 120), email: me.rows[0].email };
+    }
+    const parsed = ContactRequest.safeParse(body);
     if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
-    const viewer = await optionalAuthedUser(req).catch(() => null);
     const ipHash = crypto.createHash("sha256").update(`${clientIp(req)}|${process.env.IP_HASH_SALT || "thankyou"}`).digest("hex");
     await pool.query(
       `INSERT INTO contact_messages (name, email, message, user_id, ip_hash) VALUES ($1, $2, $3, $4, $5)`,

@@ -133,7 +133,7 @@ export default async function ThreadPage(props: { params: Promise<{ id: string }
         </ol>
 
         {c.can_send ? (
-          <form action={send} className="grid gap-2 border-t border-line pt-4" encType="multipart/form-data">
+          <form action={send} className="grid gap-2 border-t border-line pt-4">
             <label htmlFor="msg-body" className="sr-only">
               Message
             </label>
@@ -148,6 +148,8 @@ export default async function ThreadPage(props: { params: Promise<{ id: string }
               <Button type="submit">Send</Button>
             </div>
           </form>
+        ) : c.waiting_for_organizer && c.status === "active" ? (
+          <Notice tone="info">{c.reply_only_message || "The organizer starts the conversation. You can reply as soon as they message you."}</Notice>
         ) : (
           <Notice tone="info">{c.status === "archived" ? "This conversation was archived 14 days after the request finished. It's read-only." : "This conversation has ended and is read-only."}</Notice>
         )}

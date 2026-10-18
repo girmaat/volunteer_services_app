@@ -27,6 +27,16 @@ async function liveRequest(email: string, title: string, extra: Record<string, u
   return String(d.body.id);
 }
 
+/** The organizer (or requester) opens the thread with an applicant and writes first. */
+async function ownerOpens(ownerEmail: string, requestId: string, volEmail: string, body = "Thanks for applying! Any questions?") {
+  const owner = await as(ownerEmail);
+  const c = await owner.post("/v1/inbox/conversations", { requestId, volunteerUserId: await userId(volEmail) });
+  expect(c.status, JSON.stringify(c.body)).toBe(201);
+  const m = await owner.post(`/v1/inbox/conversations/${c.body.id}/messages`, { body });
+  expect(m.status, JSON.stringify(m.body)).toBe(201);
+  return String(c.body.id);
+}
+
 describe("message safety helpers", () => {
   it("leaves dates alone", () => {
     expect(maskContacts("Starts 2026-10-24 or 10/24/2026")).toBe("Starts 2026-10-24 or 10/24/2026");
@@ -54,33 +64,49 @@ describe("conversations", () => {
   let applicationId = "";
   const vol = "msg.vol@thankyou.test";
 
-  it("applying opens a conversation with the application message", async () => {
+  it("volunteers can't start a conversation; they reply once the organizer writes", async () => {
     await createUser({ email: vol, roles: ["volunteer"] });
     await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = $1", [vol]);
     requestId = await liveRequest(EMAILS.requester, "Messaging: move a couch");
-    const a = await (await as(vol)).post(`/v1/volunteer/opportunities/${requestId}/apply`, { message: "Hi! I can help Saturday. Text me at 555-222-3333." });
+    const v = await as(vol);
+    const a = await v.post(`/v1/volunteer/opportunities/${requestId}/apply`, { message: "Hi! I can help Saturday." });
     expect(a.status).toBe(201);
     applicationId = a.body.applicationId;
+    // Applying doesn't open a thread, and a volunteer-opened thread is read-only until the organizer writes.
     const list = await (await as(EMAILS.requester)).get("/v1/inbox/conversations?as=requester");
-    const conv = list.body.conversations.find((c: { request_id: string }) => c.request_id === requestId);
-    expect(conv).toBeTruthy();
+    expect(list.body.conversations.find((c: { request_id: string }) => c.request_id === requestId)).toBeFalsy();
+    const mine = await v.post("/v1/inbox/conversations", { requestId });
+    expect(mine.status).toBe(201);
+    expect(mine.body.can_send).toBe(false);
+    expect(mine.body.waiting_for_organizer).toBe(true);
+    const early = await v.post(`/v1/inbox/conversations/${mine.body.id}/messages`, { body: "Hello?" });
+    expect(early.status).toBe(403);
+    expect(early.body.error.code).toBe("reply_only");
+
+    convId = await ownerOpens(EMAILS.requester, requestId, vol);
+    expect(convId).toBe(mine.body.id);
+    const t = await v.get(`/v1/inbox/conversations/${convId}`);
+    expect(t.body.conversation.can_send).toBe(true);
+    expect(t.body.conversation.waiting_for_organizer).toBe(false);
+    expect((await v.post(`/v1/inbox/conversations/${convId}/messages`, { body: "Sure. Text me at 555-222-3333." })).status).toBe(201);
+    const owners = await (await as(EMAILS.requester)).get("/v1/inbox/conversations?as=requester");
+    const conv = owners.body.conversations.find((c: { id: string }) => c.id === convId);
     expect(conv.unread).toBe(1);
     expect(conv.last_body).not.toContain("555-222-3333");
-    convId = conv.id;
   });
 
   it("masks contact details until the volunteer is accepted", async () => {
     const owner = await as(EMAILS.requester);
     let t = await owner.get(`/v1/inbox/conversations/${convId}`);
     expect(t.body.conversation.contacts_unlocked).toBe(false);
-    expect(t.body.messages[0].body).toContain("[contact details hidden until accepted]");
+    expect(t.body.messages[1].body).toContain("[contact details hidden until accepted]");
     expect(t.body.conversation.with_name).toBeTruthy();
     // Reading clears unread.
     expect((await owner.get("/v1/inbox/conversations?as=requester")).body.conversations.find((c: { id: string }) => c.id === convId).unread).toBe(0);
     await ownerAct(owner, applicationId, "accept");
     t = await owner.get(`/v1/inbox/conversations/${convId}`);
     expect(t.body.conversation.contacts_unlocked).toBe(true);
-    expect(t.body.messages[0].body).toContain("555-222-3333");
+    expect(t.body.messages[1].body).toContain("555-222-3333");
   });
 
   it("holds scam-like messages for review; the recipient never sees them", async () => {
@@ -168,6 +194,7 @@ describe("organization inbox, limits, blocking and archiving", () => {
     await admin.post("/v1/me/context", { context: "org:harbor-food-bank" });
     const id = await liveRequest(EMAILS.orgAdmin, "Messaging: org pantry shift", {}, "org");
     await (await as("orgmsg.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "Count me in" });
+    await ownerOpens(EMAILS.orgAdmin, id, "orgmsg.vol@thankyou.test", "Thanks for signing up!");
     await createUser({ email: "org.manager2@thankyou.test", org: { slug: "harbor-food-bank", role: "manager" } });
     const mgr = await as("org.manager2@thankyou.test");
     const list = await mgr.get("/v1/inbox/conversations?as=org");
@@ -187,6 +214,7 @@ describe("organization inbox, limits, blocking and archiving", () => {
     const id = await liveRequest(EMAILS.requester, "Messaging: burst test");
     const v = await as("burst.vol@thankyou.test");
     await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hello" });
+    await ownerOpens(EMAILS.requester, id, "burst.vol@thankyou.test");
     const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
     let last = 0;
     for (let i = 0; i < 31; i++) last = (await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: `msg ${i}` })).status;
@@ -205,6 +233,7 @@ describe("organization inbox, limits, blocking and archiving", () => {
     const v = await as("fresh.vol@thankyou.test");
     const ap = await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hello there" });
     expect(ap.status).toBe(201); // the application itself still goes through
+    await ownerOpens(EMAILS.requester, id, "fresh.vol@thankyou.test");
     const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
     const s = await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "Following up" });
     expect(s.status).toBe(429);
@@ -217,6 +246,7 @@ describe("organization inbox, limits, blocking and archiving", () => {
     const id = await liveRequest(EMAILS.requester, "Messaging: block test");
     const v = await as("block.vol@thankyou.test");
     await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
+    await ownerOpens(EMAILS.requester, id, "block.vol@thankyou.test");
     const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
     const b = await (await as(EMAILS.requester)).post(`/v1/inbox/conversations/${conv.id}/block`, { reason: "rude" });
     expect(b.body.blocked).toBe(true);
@@ -230,6 +260,7 @@ describe("organization inbox, limits, blocking and archiving", () => {
     const id = await liveRequest(EMAILS.requester, "Messaging: archive test");
     const v = await as("archive.vol@thankyou.test");
     await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
+    await ownerOpens(EMAILS.requester, id, "archive.vol@thankyou.test");
     await pool.query("UPDATE service_requests SET status = 'completed', completed_at = NOW() - INTERVAL '15 days' WHERE id = $1", [id]);
     await runHourly();
     const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
@@ -243,6 +274,7 @@ describe("organization inbox, limits, blocking and archiving", () => {
     const id = await liveRequest(EMAILS.requester, "Messaging: shadow test");
     const v = await as("shadow.vol@thankyou.test");
     await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "first" });
+    await ownerOpens(EMAILS.requester, id, "shadow.vol@thankyou.test");
     await pool.query("UPDATE users SET shadow_banned = TRUE WHERE email = 'shadow.vol@thankyou.test'");
     const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
     const s = await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "can anyone hear me" });
@@ -267,6 +299,7 @@ describe("live updates (SSE)", () => {
       const id = await liveRequest(EMAILS.requester, "Messaging: live test");
       const v = await as("sse.vol@thankyou.test");
       await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hello live" });
+      await ownerOpens(EMAILS.requester, id, "sse.vol@thankyou.test");
       const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
       const sent = await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "live ping" });
       expect(sent.status).toBe(201);
@@ -306,5 +339,34 @@ describe("contact privacy outside the inbox", () => {
     for (const p of ["/v1/requester/applications/pending", "/v1/requester/dashboard", `/v1/requests/${rid}/applicants`]) {
       expect(JSON.stringify((await (await as(EMAILS.requester)).get(p)).body), p).not.toContain("privacy.vol@thankyou.test");
     }
+  });
+});
+
+describe("support threads (organization ↔ ThankYou team)", () => {
+  it("org members message the platform team; admins see and answer; others can't", async () => {
+    const olivia = await as(EMAILS.orgAdmin);
+    await olivia.post("/v1/me/context", { context: "org:harbor-food-bank" });
+    const s = await olivia.post("/v1/inbox/support", { body: "How do we get our second location verified?" });
+    expect(s.status, JSON.stringify(s.body)).toBe(201);
+    expect(s.body.kind).toBe("support");
+    expect(s.body.with_name).toBe("ThankYou support");
+    expect(s.body.can_send).toBe(true);
+    // Same thread the second time.
+    expect((await olivia.post("/v1/inbox/support", {})).body.id).toBe(s.body.id);
+    expect((await olivia.get("/v1/inbox/conversations?as=org")).body.conversations.map((c: { id: string }) => c.id)).toContain(s.body.id);
+
+    const admin = await as(EMAILS.admin);
+    const list = await admin.get("/v1/admin/support");
+    expect(list.status).toBe(200);
+    const row = list.body.items.find((x: { id: string }) => x.id === s.body.id);
+    expect(row.awaiting_reply).toBe(true);
+    expect(row.org_name).toBe("Harbor Food Bank");
+    expect((await admin.post(`/v1/inbox/conversations/${s.body.id}/messages`, { body: "Send us the address and we'll review it." })).status).toBe(201);
+    expect(JSON.stringify((await olivia.get(`/v1/inbox/conversations/${s.body.id}`)).body)).toContain("we'll review it");
+
+    // Volunteers without an organization use the contact form; other org staff can't read the thread.
+    expect((await (await as(EMAILS.volunteer)).post("/v1/inbox/support", { body: "hi" })).status).toBe(403);
+    expect((await (await as(EMAILS.orgMember)).get(`/v1/inbox/conversations/${s.body.id}`)).status).toBe(404);
+    expect([403, 404]).toContain((await (await as(EMAILS.moderator)).get("/v1/admin/support")).status);
   });
 });

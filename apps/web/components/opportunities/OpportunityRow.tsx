@@ -59,7 +59,7 @@ export function WhenText({ o, viewerTz }: { o: OpportunitySummary; viewerTz?: st
 }
 
 /** One opportunity in a list: the whole row is the link. Shows "why it matches" for signed-in volunteers. */
-export default function OpportunityRow({ o, href, compact, viewerTz }: { o: OpportunitySummary; href: string; compact?: boolean; viewerTz?: string | null }) {
+export default function OpportunityRow({ o, href, compact, viewerTz, hidePoster }: { o: OpportunitySummary; href: string; compact?: boolean; viewerTz?: string | null; hidePoster?: boolean }) {
   const where = o.mode === "remote" ? "Remote" : o.public_area || o.location || modeText(o.mode);
   const by = o.organization_name || o.posted_by || null;
   return (
@@ -74,7 +74,7 @@ export default function OpportunityRow({ o, href, compact, viewerTz }: { o: Oppo
               {where}
               {o.distance_miles != null ? ` · ${miles(o.distance_miles)}` : ""}
             </span>
-            {by ? (
+            {hidePoster ? null : by ? (
               <span className="inline-flex items-center gap-1.5">
                 {by}
                 {o.organization_verified ? <VerifiedBadge /> : null}
@@ -82,7 +82,6 @@ export default function OpportunityRow({ o, href, compact, viewerTz }: { o: Oppo
             ) : (
               <span>Neighbor request</span>
             )}
-            {o.category_label ? <span>{o.category_label}</span> : null}
           </p>
           {o.match && (o.match.reasons.length || o.match.warnings.length) ? (
             <p className="m-0 mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -108,6 +107,10 @@ export default function OpportunityRow({ o, href, compact, viewerTz }: { o: Oppo
             <CalendarClock aria-hidden className="h-4 w-4" /> <WhenText o={o} viewerTz={viewerTz} />
           </span>
           {typeof o.spots_left === "number" ? <span className="whitespace-nowrap">{o.spots_left === 0 ? "Full · waitlist" : `${o.spots_left} spot${o.spots_left === 1 ? "" : "s"} left`}</span> : null}
+          {/* The whole row is the link; this is a visual cue only (a real button can't sit inside a link). */}
+          <span aria-hidden className="mt-1.5 inline-flex items-center rounded border border-primary px-3 py-1 text-sm font-semibold text-primary group-hover:bg-primary group-hover:text-primary-ink">
+            View details
+          </span>
         </div>
       </Link>
     </li>

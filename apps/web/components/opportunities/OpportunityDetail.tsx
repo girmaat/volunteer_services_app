@@ -71,10 +71,7 @@ export default function OpportunityDetail({
     <article className="grid gap-8 lg:grid-cols-[1fr_320px]">
       <div className="grid content-start gap-6">
         <header>
-          <p className="m-0 text-sm text-muted">
-            {o.category_label}
-            {o.is_sensitive ? " · verified volunteers only" : ""}
-          </p>
+          {o.is_sensitive ? <p className="m-0 text-sm text-muted">Verified volunteers only</p> : null}
           <h1 className="m-0 mt-1 text-2xl sm:text-3xl">{o.title}</h1>
           <p className="m-0 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted">
             <span className="inline-flex items-center gap-1.5">
@@ -151,7 +148,18 @@ export default function OpportunityDetail({
 
         <p className="m-0 flex items-start gap-2 text-sm text-muted">
           <ShieldCheck aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-          Coordinate in ThankYou messages. Never share bank details or passwords, and meet in a public place the first time when you can.
+          <span>
+            Coordinate in{" "}
+            <Link
+              prefetch={false}
+              href={viewer === "anon" ? `/login?returnTo=${encodeURIComponent("/inbox")}` : "/inbox"}
+              className="font-medium text-primary underline"
+            >
+              ThankYou messages
+            </Link>
+            . Never share bank details, passwords and personal information. Meet in a public place the first time when you can.
+            {viewer === "anon" ? " (Log in or create an account to see your messages.)" : ""}
+          </span>
         </p>
       </div>
 
@@ -192,7 +200,7 @@ export default function OpportunityDetail({
               </span>
             ) : (
               <span className="text-sm text-muted">
-                {o.mode === "remote" ? "Contact details are shared after you're accepted." : "The exact address and contact details are shared after you're accepted."}
+                {o.mode === "remote" ? "Contact details are shared after you're accepted." : "The exact address and contact details are shared  when you apply for this opportunity and your application is accepted."}
               </span>
             )}
           </p>

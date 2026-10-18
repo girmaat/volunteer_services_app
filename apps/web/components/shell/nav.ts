@@ -45,6 +45,7 @@ export function navFor(ctx: AppContext): NavItem[] {
         { href: "/admin/users", label: "Users", icon: "users", match: ["/admin/users", "/admin/enforcement"] },
         { href: "/admin/organizations", label: "Organizations", icon: "building", match: ["/admin/organizations", "/admin/org-verification"] },
         { href: "/admin/verification", label: "Verification", icon: "shield" },
+        { href: "/admin/support", label: "Support messages", icon: "inbox" },
         { href: "/admin/ads", label: "Ads", icon: "megaphone" },
         { href: "/admin/audit", label: "Audit log", icon: "file" }
       ];

@@ -72,7 +72,8 @@ describe("held messages, disputes, shadow-ban, metrics", () => {
     await api.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
     const v = await as("held.vol@thankyou.test");
     await v.post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hello" });
-    const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === d.body.id);
+    const conv = (await api.post("/v1/inbox/conversations", { requestId: d.body.id, volunteerUserId: await userId("held.vol@thankyou.test") })).body;
+    await api.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "Thanks for applying!" });
     const m1 = await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "Can you send it by Venmo?" });
     const m2 = await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "Buy me a gift card please" });
     const mod = await as(EMAILS.moderator);

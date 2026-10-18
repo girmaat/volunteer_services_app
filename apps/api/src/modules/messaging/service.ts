@@ -1,5 +1,5 @@
 import { pool } from "../../lib/db";
-import { orgMembership, type PolicyUser } from "../../lib/policy";
+import { can, orgMembership, type PolicyUser } from "../../lib/policy";
 import { enqueue } from "../../jobs/queue";
 import { isBlockedBetween } from "../safety/permissions";
 import { publish } from "./realtime";
@@ -8,7 +8,7 @@ import { minorSql } from "../../lib/age";
 
 export type Conversation = {
   id: string;
-  kind: "request" | "direct";
+  kind: "request" | "direct" | "support";
   request_id: string | null;
   application_id: string | null;
   org_slug: string | null;
@@ -44,6 +44,8 @@ export const contactsUnlocked = (c: Pick<Conversation, "application_status"> & {
 export function sideOf(user: PolicyUser, c: Conversation): Side | null {
   if (c.volunteer_user_id === user.id) return "volunteer";
   if (c.owner_user_id === user.id) return "owner";
+  // Support threads: any platform admin answers for the ThankYou team.
+  if (c.kind === "support") return can(user, "platform:admin") ? "owner" : null;
   if (c.org_slug) {
     const m = orgMembership(user, c.org_slug);
     if (m && (m.role === "admin" || m.role === "manager")) return "owner";
@@ -83,6 +85,39 @@ export async function ensureConversation(requestId: string, volunteerUserId: str
   return (await loadConversation(String(r.rows[0].id)))!;
 }
 
+/**
+ * Volunteers reply; they don't start conversations (girma-fixes #10). A request thread opens for the
+ * volunteer once the organizer or requester has sent the first message. Support threads are
+ * started by the person asking, so the rule doesn't apply there.
+ */
+export async function ownerHasWritten(c: Pick<Conversation, "id" | "volunteer_user_id">): Promise<boolean> {
+  const r = await pool.query("SELECT 1 FROM direct_messages WHERE conversation_id = $1 AND sender_user_id <> $2 AND status = 'sent' LIMIT 1", [c.id, c.volunteer_user_id]);
+  return Boolean(r.rowCount);
+}
+
+export const REPLY_ONLY_MESSAGE = "The organizer starts the conversation. You can reply as soon as they message you.";
+
+/** Finds or creates the support thread between an organization member and the platform team. */
+export async function ensureSupportConversation(userId: string, orgSlug: string | null): Promise<Conversation | null> {
+  const admin = await pool.query(
+    `SELECT pa.user_id FROM platform_admins pa JOIN users u ON u.id = pa.user_id
+      WHERE pa.revoked_at IS NULL AND pa.role IN ('super', 'admin') AND pa.user_id <> $1
+      ORDER BY (pa.role = 'super') DESC, pa.granted_at ASC LIMIT 1`,
+    [userId]
+  );
+  if (!admin.rowCount) return null;
+  const r = await pool.query(
+    `INSERT INTO conversations (kind, volunteer_user_id, owner_user_id, support_org_slug)
+     VALUES ('support', $1, $2, $3)
+     ON CONFLICT (volunteer_user_id) WHERE kind = 'support'
+     DO UPDATE SET support_org_slug = COALESCE(EXCLUDED.support_org_slug, conversations.support_org_slug),
+                   status = CASE WHEN conversations.status = 'archived' THEN 'active' ELSE conversations.status END
+     RETURNING id`,
+    [userId, String(admin.rows[0].user_id), orgSlug]
+  );
+  return loadConversation(String(r.rows[0].id));
+}
+
 export type ListScope = "volunteer" | "requester" | "org" | "all";
 
 export async function listConversations(user: PolicyUser, scope: ListScope) {
@@ -93,7 +128,7 @@ export async function listConversations(user: PolicyUser, scope: ListScope) {
       : scope === "requester"
         ? "c.owner_user_id = $1 AND c.org_slug IS NULL"
         : scope === "org"
-          ? "c.org_slug = $2"
+          ? "(c.org_slug = $2 OR (c.kind = 'support' AND c.volunteer_user_id = $1))"
           : `(c.volunteer_user_id = $1 OR c.owner_user_id = $1 OR c.org_slug = ANY($3::text[]))`;
   const manageable = (user.orgs || []).filter((o) => o.role === "admin" || o.role === "manager").map((o) => o.slug);
   const r = await pool.query(
@@ -101,6 +136,7 @@ export async function listConversations(user: PolicyUser, scope: ListScope) {
             a.status AS application_status, r.title AS request_title, ${minorSql("c.volunteer_user_id")} AS volunteer_minor,
             vp.display_name AS volunteer_name, op.display_name AS owner_name, o.name AS org_name,
             vp.avatar_url AS volunteer_avatar, op.avatar_url AS owner_avatar, o.logo_url AS org_logo,
+            (SELECT name FROM organizations so WHERE so.slug = c.support_org_slug) AS support_org_name,
             lm.body AS last_body, lm.sender_user_id AS last_sender_id,
             (SELECT COUNT(*)::int FROM direct_messages m WHERE m.conversation_id = c.id AND m.status = 'sent' AND m.sender_user_id <> $1
                AND m.created_at > COALESCE((SELECT last_read_at FROM conversation_reads cr WHERE cr.conversation_id = c.id AND cr.user_id = $1), 'epoch')) AS unread
@@ -128,7 +164,14 @@ export async function listConversations(user: PolicyUser, scope: ListScope) {
       request_id: row.request_id,
       request_title: row.request_title,
       // The other party, as you see them.
-      with_name: iAmVolunteer ? row.org_name || row.owner_name || "Organizer" : row.volunteer_name || "Volunteer",
+      with_name:
+        row.kind === "support"
+          ? iAmVolunteer
+            ? "ThankYou support"
+            : `${row.volunteer_name || "Member"}${row.support_org_name ? ` (${row.support_org_name})` : ""}`
+          : iAmVolunteer
+            ? row.org_name || row.owner_name || "Organizer"
+            : row.volunteer_name || "Volunteer",
       with_avatar_url: (iAmVolunteer ? (row.org_slug ? row.org_logo : row.owner_avatar) : row.volunteer_avatar) || null,
       as: iAmVolunteer ? "volunteer" : "owner",
       application_status: row.application_status,
@@ -199,6 +242,7 @@ export async function sendMessage(user: PolicyUser, c: Conversation, body: strin
   const side = sideOf(user, c);
   if (!side) throw new SendError(404, "not_found", "Conversation not found");
   if (c.status !== "active") throw new SendError(409, "closed", c.status === "ended" ? "This conversation was ended." : "This conversation is archived and read-only.");
+  if (side === "volunteer" && c.kind !== "support" && !(await ownerHasWritten(c))) throw new SendError(403, "reply_only", REPLY_ONLY_MESSAGE);
   const other = side === "volunteer" ? c.owner_user_id : c.volunteer_user_id;
   if (await isBlockedBetween(user.id, other)) throw new SendError(403, "blocked", "This conversation is unavailable because one of you has blocked the other.");
 
@@ -215,7 +259,8 @@ export async function sendMessage(user: PolicyUser, c: Conversation, body: strin
   const s = stats.rows[0];
   if (Number(s.recent) >= MAX_PER_10_MIN) throw new SendError(429, "rate_limited", "You're sending messages very quickly. Wait a few minutes and try again.");
   const ageDays = Number(s.age_days);
-  if (!s.has_sent_here && ageDays < NEW_ACCOUNT_DAYS && Number(s.first_contacts_today) >= NEW_ACCOUNT_FIRST_CONTACTS_PER_DAY) {
+  // Owners only write to people who applied to them, so the new-account cap is for the volunteer side.
+  if (side === "volunteer" && !s.has_sent_here && ageDays < NEW_ACCOUNT_DAYS && Number(s.first_contacts_today) >= NEW_ACCOUNT_FIRST_CONTACTS_PER_DAY) {
     throw new SendError(429, "first_contact_limit", "New accounts can start a few conversations a day. Try again tomorrow.");
   }
 

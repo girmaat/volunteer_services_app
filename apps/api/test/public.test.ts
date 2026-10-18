@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getApp, anon, as, EMAILS } from "./helpers";
+import { getApp, anon, as, EMAILS, pool } from "./helpers";
 
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 
@@ -40,10 +40,13 @@ describe("public read API", () => {
     expect((await anon().get("/v1/public/opportunities/not-a-uuid")).status).toBe(400);
   });
 
-  it("lists organizations for anyone, including users with reported share links", async () => {
+  it("lists only the 3 most recently active organizations, for anyone", async () => {
+    await pool.query("UPDATE organizations SET updated_at = now() + interval '1 minute' WHERE slug = 'harbor-food-bank'");
     const res = await anon().get("/v1/public/organizations");
     expect(res.status).toBe(200);
-    expect(res.body.items.map((o: { slug: string }) => o.slug)).toContain("harbor-food-bank");
+    expect(res.body.items.length).toBeLessThanOrEqual(3);
+    expect(res.body.items[0].slug).toBe("harbor-food-bank");
+    expect(res.body.nextCursor).toBeNull();
     const api = await as(EMAILS.volunteer);
     expect((await api.get("/v1/public/organizations")).status).toBe(200);
   });

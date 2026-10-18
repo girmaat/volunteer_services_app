@@ -30,6 +30,7 @@ export type PublicOrganization = {
   location: string | null;
   verified: boolean;
   updated_at: string;
+  last_active_at?: string;
 };
 
 export type PublicOrganizationDetail = PublicOrganization & {
@@ -37,6 +38,11 @@ export type PublicOrganizationDetail = PublicOrganization & {
   website_url: string | null;
   logo_url: string | null;
   open_requests: number;
+  verified_at?: string | null;
+  preferred_skills?: string[];
+  service_area?: string | null;
+  hours?: string | null;
+  contact?: "in_app" | "after_acceptance";
 };
 
 export type PublicPage = { slug: string; title: string; body: string; updated_at: string };

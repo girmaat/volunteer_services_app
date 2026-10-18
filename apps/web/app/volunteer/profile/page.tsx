@@ -90,7 +90,6 @@ export default async function Page(
 
   const displayName = (profile?.display_name || profile?.full_name || user.email || "").trim();
   const avatarText = initialsFrom(displayName);
-  const publicUrl = `/volunteers/${user.id}`;
 
   return (
     <>
@@ -155,7 +154,7 @@ export default async function Page(
             Signed in as <strong>{user.email}</strong>.
           </p>
           <p className={styles.meta}>
-            <Link prefetch={false} href={publicUrl}>View public profile</Link>
+            Your profile is private. <Link prefetch={false} href="/volunteer/profile/share">Share your profile</Link> with a link you control.
           </p>
         </div>
       </div>
@@ -305,8 +304,8 @@ export default async function Page(
               <button className={`${styles.button} ${styles.buttonPrimary}`} type="submit">
                 Save profile
               </button>
-              <Link prefetch={false} className={styles.button} href={publicUrl}>
-                Preview public profile
+              <Link prefetch={false} className={styles.button} href="/volunteer/profile/share">
+                Sharing settings
               </Link>
             </div>
           </form>

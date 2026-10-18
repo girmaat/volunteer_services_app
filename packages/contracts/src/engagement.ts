@@ -78,6 +78,10 @@ export type ThreadConversation = {
   with_name: string;
   contacts_unlocked: boolean;
   can_send: boolean;
+  kind?: "request" | "direct" | "support";
+  /** Volunteers reply only: true until the organizer or requester sends the first message. */
+  waiting_for_organizer?: boolean;
+  reply_only_message?: string | null;
 };
 
 // ---- Reviews (/v1/reviews) ---------------------------------------------------------------------

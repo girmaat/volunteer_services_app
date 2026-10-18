@@ -79,7 +79,7 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
         actions={
           <>
             <ButtonLink href={`/inbox/start?requestId=${o.id}`} variant="secondary" icon={<MessageSquare aria-hidden className="h-4 w-4" />}>
-              Message
+              Messages
             </ButtonLink>
             <ButtonLink href={`/volunteer/opportunities/${o.id}`} variant="ghost">
               View opportunity
