@@ -103,7 +103,11 @@ export default async function HoursReview({ base, status, page, flash, error, ap
           { href: `${base}?status=decided`, label: "Decided", active: tab === "decided" }
         ]}
       />
-      {!data ? <Notice tone="danger">Hours couldn’t load. Refresh to try again.</Notice> : null}
+      {!data && res.status === 403 ? (
+        <Notice tone="info">Your organization&apos;s admins and managers review volunteer hours. Ask one of them if something needs a decision.</Notice>
+      ) : !data ? (
+        <Notice tone="danger">Hours couldn’t load. Refresh to try again.</Notice>
+      ) : null}
       {data && !items.length ? (
         <EmptyState
           title={tab === "waiting" ? "Nothing to approve" : tab === "disputed" ? "No disputes" : "No decisions yet"}

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Award, BadgeCheck, Clock, Download, MessageSquareQuote, NotebookPen, Star } from "lucide-react";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { zoneOr } from "../../../lib/time";
-import ShareButton from "../../_components/share/ShareButton";
 import Evidence, { type EvidenceItem } from "../../../components/hours/Evidence";
 import { Button, ButtonLink, EmptyState, Notice, PageHeader, StatStrip, StatusPill, SubmitButton, Toast } from "../../../components/ui";
 import { disputeAction, outsideAction, reportAction, resubmitAction } from "./actions";
@@ -160,7 +159,9 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
             <ButtonLink href="/api/download?what=impact-csv" variant="secondary" prefetch={false} icon={<Download aria-hidden className="h-4 w-4" />}>
               Export CSV
             </ButtonLink>
-            {me ? <ShareButton target={{ type: "volunteer", ref: me.id, title: "My volunteer impact" }} label="Share" /> : null}
+            <ButtonLink href="/volunteer/profile/share" variant="secondary">
+              Share your profile
+            </ButtonLink>
           </>
         }
       />

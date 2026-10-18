@@ -191,11 +191,11 @@ export default async function Page(
         <div className={`${styles.tile} col-span-full`}>
           <h2 className={styles.tileTitle}>Edit profile</h2>
           <div className="mb-4"><PhotoUpload name={displayName} src={profile?.avatar_url} back="/volunteer/profile" /></div>
-          <p className={styles.meta}>Update your public-safe details. Changes persist on refresh.</p>
+          <p className={styles.meta}>Update how you appear to organizers and on your shared profile.</p>
 
           <form action={saveProfile} className={styles.form}>
             <label className={styles.label}>
-              Display name (public)
+              Display name (shown to organizers)
               <input
                 name="displayName"
                 className={styles.input}
@@ -206,7 +206,7 @@ export default async function Page(
 
             <div className={styles.twoCol}>
               <label className={styles.label}>
-                Public location (optional)
+                General location (optional)
                 <input
                   name="publicLocation"
                   className={styles.input}
@@ -291,7 +291,7 @@ export default async function Page(
             </div>
 
             <label className={styles.label}>
-              Bio (public, optional)
+              About you (optional)
               <textarea
                 name="bio"
                 className={styles.textarea}

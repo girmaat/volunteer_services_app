@@ -1,3 +1,4 @@
+import { idCheckLabel, replyTimeLabel } from "../../../lib/format";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -72,13 +73,6 @@ function formatPercent(v: number | null) {
   return `${Math.round(v * 100)}%`;
 }
 
-function formatSeconds(v: number | null) {
-  if (v === null || !isFinite(v)) return "—";
-  if (v < 60) return `${Math.round(v)}s`;
-  const minutes = Math.round(v / 60);
-  return `${minutes}m`;
-}
-
 function boolLabel(v: boolean | null) {
   if (v === null) return "—";
   return v ? "Yes" : "No";
@@ -129,7 +123,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           <div className={styles.badges}>
             <span className={styles.badge}>Email {data.verification.email_verified ? "verified" : "unverified"}</span>
             <span className={styles.badge}>Phone {data.verification.phone_verified ? "verified" : "unverified"}</span>
-            <span className={styles.badge}>ID {data.verification.id_verification_status || "not_required"}</span>
+            <span className={styles.badge}>{idCheckLabel(data.verification.id_verification_status)}</span>
           </div>
         </div>
       </div>
@@ -226,7 +220,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           <h2 className={styles.cardTitle}>Trust signals</h2>
           <div className={styles.list}>
             <div>
-              <span className={styles.listLabel}>Completed commitments</span>
+              <span className={styles.listLabel}>Completed help</span>
               <span className={styles.listValue}>{data.stats.completed_commitments_count}</span>
             </div>
             <div>
@@ -235,7 +229,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
             </div>
             <div>
               <span className={styles.listLabel}>Typical response time</span>
-              <span className={styles.listValue}>{formatSeconds(data.stats.typical_response_time_seconds)}</span>
+              <span className={styles.listValue}>{replyTimeLabel(data.stats.typical_response_time_seconds)}</span>
             </div>
             <div>
               <span className={styles.listLabel}>Thank-you notes</span>

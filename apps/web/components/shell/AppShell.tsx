@@ -123,7 +123,7 @@ export default function AppShell({
           {children}
         </main>
       </div>
-      <BottomNav items={items} label={label} />
+      <BottomNav items={items} label={label} className={adminTheme.trim()} />
     </div>
   );
 }

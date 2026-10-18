@@ -28,6 +28,16 @@ async function loadRequests(): Promise<OrgRequest[]> {
   return Array.isArray(json.requests) ? json.requests : [];
 }
 
+/** Volunteers on the roster, for the "Volunteer" filter (pick a name, not an internal id). */
+async function loadVolunteers(): Promise<{ id: string; name: string }[]> {
+  const res = await backendFetch("/v1/org/roster", { method: "GET" }).catch(() => null);
+  if (!res || !res.ok) return [];
+  const data = (await res.json()) as { roster?: { volunteer_user_id: string; volunteer_display_name: string | null; volunteer_email?: string | null }[] };
+  return (data.roster || [])
+    .map((r) => ({ id: r.volunteer_user_id, name: r.volunteer_display_name || r.volunteer_email || "Volunteer" }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 async function loadAttendance(searchParams: Record<string, string | string[] | undefined>): Promise<AttendanceRow[]> {
   const qs = new URLSearchParams();
   const requestId = typeof searchParams.requestId === "string" ? searchParams.requestId : "";
@@ -67,7 +77,7 @@ export default async function Page(
   // Volunteers' contact details and attendance are for admins and managers.
   if (ctx.membership.role === "member") redirect("/org/documents");
 
-  const [requests, rows] = await Promise.all([loadRequests(), loadAttendance(searchParams)]);
+  const [requests, rows, volunteers] = await Promise.all([loadRequests(), loadAttendance(searchParams), loadVolunteers()]);
 
   const requestId = typeof searchParams.requestId === "string" ? searchParams.requestId : "";
   const volunteerUserId = typeof searchParams.volunteerUserId === "string" ? searchParams.volunteerUserId : "";
@@ -112,8 +122,15 @@ export default async function Page(
         </div>
 
         <div>
-          <label className={styles.label}>Volunteer User ID</label>
-          <input className={styles.input} name="volunteerUserId" defaultValue={volunteerUserId} placeholder="UUID" />
+          <label className={styles.label} htmlFor="att-volunteer">Volunteer</label>
+          <select id="att-volunteer" className={styles.select} name="volunteerUserId" defaultValue={volunteerUserId}>
+            <option value="">All volunteers</option>
+            {volunteers.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

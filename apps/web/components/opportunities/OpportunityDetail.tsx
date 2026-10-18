@@ -3,6 +3,7 @@ import { AlertCircle, Bookmark, BookmarkCheck, CalendarClock, Lock, MapPin, Moni
 import { Button, ButtonLink, Card, Notice, StatusPill, VerifiedBadge } from "../ui";
 import { WhenText, modeText, type OpportunitySummary } from "./OpportunityRow";
 import { miles } from "../../lib/format";
+import ShareButton from "../../app/_components/share/ShareButton";
 
 export type OpportunityDetailData = OpportunitySummary & {
   description: string;
@@ -295,6 +296,11 @@ export default function OpportunityDetail({
               </form>
             ) : null}
           </Card>
+        ) : null}
+        {(o.status === "open" || o.status === "pending") && !o.is_sensitive ? (
+          <div>
+            <ShareButton target={{ type: "opportunity", ref: o.id, title: o.title }} label="Share this opportunity" />
+          </div>
         ) : null}
       </aside>
     </article>

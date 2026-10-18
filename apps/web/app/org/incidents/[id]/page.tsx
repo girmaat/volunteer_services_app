@@ -59,8 +59,9 @@ async function updateIncident(formData: FormData) {
   redirect(`/org/incidents/${id}?saved=1`);
 }
 
-export default async function Page(props: { params: Promise<{ id: string }> }) {
+export default async function Page(props: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string }> }) {
   const params = await props.params;
+  const sp = (await props.searchParams) || {};
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!inOrg(user)) redirect("/dashboard");
@@ -70,6 +71,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   const incident = await loadIncident(params.id);
   if (!incident) notFound();
+  const canEdit = ctx.membership.role !== "member";
 
   return (
     <div className={styles.mainFull}>
@@ -79,6 +81,16 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           Back to incidents
         </Link>
       </div>
+
+      {sp.saved === "1" ? (
+        <div className={`${styles.card} mt-3`} role="status">
+          Saved. The incident is updated.
+        </div>
+      ) : sp.saved === "0" ? (
+        <div className={`${styles.card} mt-3`} role="alert">
+          That didn&apos;t save. Check the fields and try again.
+        </div>
+      ) : null}
 
       <div className={`${styles.card} mt-3`}>
         <div className={styles.meta}>
@@ -92,6 +104,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           {incident.volunteer_user_id ? <div>Volunteer: {incident.volunteer_display_name || incident.volunteer_email || incident.volunteer_user_id}</div> : null}
         </div>
 
+        {canEdit ? (
         <form className="mt-3 grid grid-cols-2 gap-3" action={updateIncident}>
           <input type="hidden" name="id" value={incident.id} />
 
@@ -141,6 +154,9 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
             </button>
           </div>
         </form>
+        ) : (
+          <p className={`${styles.meta} mt-3`}>Status: {incident.status}. Admins and managers update incidents.</p>
+        )}
       </div>
     </div>
   );

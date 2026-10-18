@@ -105,7 +105,7 @@ export default async function Page(
         <div className={`${styles.tile} mt-3.5`}>
           <h3 className={styles.tileTitle}>Messaging permissions</h3>
           <p className={styles.tileBody}>
-            Choose who can send you direct messages. This is enforced at the API level.
+            Choose who can send you messages.
           </p>
 
           <div className={`${styles.row} mt-2.5`}>

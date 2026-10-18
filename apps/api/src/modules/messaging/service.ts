@@ -1,7 +1,7 @@
 import { pool } from "../../lib/db";
 import { can, orgMembership, type PolicyUser } from "../../lib/policy";
 import { enqueue } from "../../jobs/queue";
-import { isBlockedBetween } from "../safety/permissions";
+import { getMessagingPermission, isBlockedBetween } from "../safety/permissions";
 import { publish } from "./realtime";
 import { holdReason, maskContacts } from "./safety";
 import { minorSql } from "../../lib/age";
@@ -245,6 +245,15 @@ export async function sendMessage(user: PolicyUser, c: Conversation, body: strin
   if (side === "volunteer" && c.kind !== "support" && !(await ownerHasWritten(c))) throw new SendError(403, "reply_only", REPLY_ONLY_MESSAGE);
   const other = side === "volunteer" ? c.owner_user_id : c.volunteer_user_id;
   if (await isBlockedBetween(user.id, other)) throw new SendError(403, "blocked", "This conversation is unavailable because one of you has blocked the other.");
+  // The recipient's "Who can message you" setting (Settings → Privacy & Safety). Support threads are exempt.
+  if (c.kind !== "support") {
+    const perm = await getMessagingPermission(other);
+    if (perm === "no_one") throw new SendError(403, "not_accepting", "This person isn't accepting messages right now.");
+    if (perm === "verified_only") {
+      const v = await pool.query("SELECT email_verified_at IS NOT NULL AS ok FROM users WHERE id = $1", [user.id]);
+      if (!v.rows[0]?.ok) throw new SendError(403, "verified_only", "This person only accepts messages from people with a verified email.");
+    }
+  }
 
   const stats = await pool.query(
     `SELECT EXTRACT(EPOCH FROM (NOW() - u.created_at)) / 86400 AS age_days,

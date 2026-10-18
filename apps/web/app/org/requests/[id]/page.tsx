@@ -19,6 +19,7 @@ export default async function Page(props: { params: Promise<{ id: string }>; sea
       flash={sp.flash}
       error={sp.error}
       isOwner={ctx?.membership.role === "admin"}
+      readOnly={ctx?.membership.role === "member"}
       checkinUrl={checkinUrl}
       extraLinks={[
         { href: `/org/requests/${r.id}/documents`, label: "Documents and waivers" },

@@ -1,3 +1,4 @@
+import { idCheckLabel, replyTimeLabel } from "../../../lib/format";
 import PhotoUpload from "../../../components/profile/PhotoUpload";
 import ProfileTabs from "../../../components/shell/ProfileTabs";
 import Link from "next/link";
@@ -28,13 +29,6 @@ function parseCsv(raw: string) {
 function formatPercent(v: number | null) {
   if (v === null || !isFinite(v)) return "—";
   return `${Math.round(v * 100)}%`;
-}
-
-function formatSeconds(v: number | null) {
-  if (v === null || !isFinite(v)) return "—";
-  if (v < 60) return `${Math.round(v)}s`;
-  const minutes = Math.round(v / 60);
-  return `${minutes}m`;
 }
 
 type ReputationSummary = {
@@ -233,7 +227,7 @@ export default async function Page(
             <div className={styles.badges} aria-label="Verification badges">
               <span className={styles.badge}>Email: {verification.email_verified ? "Verified" : "Unverified"}</span>
               <span className={styles.badge}>Phone: {verification.phone_verified ? "Verified" : "Unverified"}</span>
-              <span className={styles.badge}>ID: {verification.id_verification_status || "not_required"}</span>
+              <span className={styles.badge}>{idCheckLabel(verification.id_verification_status)}</span>
             </div>
           ) : null}
         </div>
@@ -243,11 +237,11 @@ export default async function Page(
         <div className={styles.tile}>
           <h2 className={styles.tileTitle}>Trust signals</h2>
           <p className={styles.tileBody}>
-            Completed commitments: <strong>{trust?.completed_commitments_count ?? 0}</strong>
+            Completed help: <strong>{trust?.completed_commitments_count ?? 0}</strong>
             <br />
             Cancellation rate: <strong>{formatPercent(trust?.cancellation_rate ?? null)}</strong>
             <br />
-            Typical response time: <strong>{formatSeconds(trust?.typical_response_time_seconds ?? null)}</strong>
+            Typical response time: <strong>{replyTimeLabel(trust?.typical_response_time_seconds ?? null)}</strong>
             <br />
             Thank-you notes: <strong>{trust?.thank_you_notes_count ?? 0}</strong>
           </p>

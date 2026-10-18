@@ -56,6 +56,8 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
   const ctx = await getOrgContext();
   if (!ctx) redirect("/org/signup");
   if (!ctx.org.onboarding_completed) redirect("/org/onboarding");
+  // Members can see applicants; admins and managers decide.
+  const canAct = ctx.membership.role !== "member";
 
   const filter = FILTERS.some((f) => f.value === sp.status) ? sp.status! : "pending";
   const rows = await load();
@@ -65,6 +67,11 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
   return (
     <>
       <PageHeader title="Applicants" description="Review people who applied to your requests. Contact details are shared only after you accept." />
+      {!canAct ? (
+        <div className="mb-4">
+          <Notice tone="info">You can see who applied. Your organization&apos;s admins and managers accept volunteers and message them.</Notice>
+        </div>
+      ) : null}
       {sp.error ? (
         <div className="mb-4">
           <Notice tone="danger">{sp.error}</Notice>
@@ -115,6 +122,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
                   <StatusPill status={a.status} />
                 </div>
                 {a.message ? <p className="m-0 mt-2 max-w-[70ch] whitespace-pre-line text-[0.95rem]">{a.message}</p> : null}
+                {canAct ? (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {open ? (
                     <>
@@ -138,6 +146,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
                     Message
                   </Link>
                 </div>
+                ) : null}
               </li>
             );
           })}

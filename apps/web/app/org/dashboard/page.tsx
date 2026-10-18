@@ -184,7 +184,7 @@ export default async function OrgDashboardPage(props: { searchParams?: Promise<{
                       <Link prefetch={false} href={`/org/requests/${r.id}`} className="block px-1 py-3.5 text-ink no-underline hover:text-ink">
                         <div className="flex items-center justify-between gap-3">
                           <span className="font-medium">{r.title}</span>
-                          <StatusPill status={r.status} />
+                          <StatusPill status={r.status} kind="request" />
                         </div>
                         <p className="m-0 mt-0.5 text-sm text-muted">
                           {r.applications_total} applicant{r.applications_total === 1 ? "" : "s"}

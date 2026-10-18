@@ -18,6 +18,7 @@ type SharePreview = {
   first_reported_at?: string | null;
   revoked_reason?: string | null;
   is_reported?: boolean | null;
+  share_type?: string | null;
   coarse_location: string | null;
   time_window: any | null;
   verification_status: string | null;
@@ -26,6 +27,15 @@ type SharePreview = {
   is_expired: boolean;
   is_revoked: boolean;
   viewer_can_view_details?: boolean;
+};
+
+const KICKER: Record<string, string> = {
+  OPPORTUNITY: "Shared opportunity",
+  SERVICE_REQUEST: "Shared opportunity",
+  ORGANIZATION: "Shared organization",
+  IMPACT_STORY: "Shared impact story",
+  PUBLIC_PAGE: "Shared page",
+  INVITE: "Invitation"
 };
 
 async function fetchPreview(token: string): Promise<SharePreview> {
@@ -105,7 +115,7 @@ export default async function Page(props: { params: Promise<{ token: string }> }
   return (
     <section className={styles.page}>
       <header className={styles.header}>
-        <div className={styles.kicker}>Shared volunteer request</div>
+        <div className={styles.kicker}>{KICKER[String(preview.share_type || "")] || "Shared from ThankYou"}</div>
         <div className={styles.titleRow}>
           <h1 className={styles.title}>{preview.title}</h1>
           {isVerified ? <span className={styles.badge}>Verified</span> : null}
@@ -127,17 +137,19 @@ export default async function Page(props: { params: Promise<{ token: string }> }
         {showDetails ? (
           <div className={styles.metaRow}>
             {preview.coarse_location ? <div className={styles.meta}><span className={styles.metaLabel}>Location:</span> {preview.coarse_location}</div> : null}
-            {neededBy ? <div className={styles.meta}><span className={styles.metaLabel}>Needed by:</span> {neededBy}</div> : null}
+            {neededBy ? <div className={styles.meta}><span className={styles.metaLabel}>When:</span> {neededBy}</div> : null}
           </div>
         ) : null}
       </header>
 
       <div className={styles.card}>
-        <div className={styles.cardTitle}>{unavailable ? "This link is no longer available" : "Ready to help?"}</div>
+        <div className={styles.cardTitle}>{unavailable ? "This link is no longer available" : preview.share_type === "INVITE" ? "Join ThankYou" : "Ready to help?"}</div>
         <p className={styles.cardBody}>
           {unavailable
             ? "The owner has revoked this link or it has expired."
-            : "Open this shared request in ThankYou to see full details and apply to volunteer."}
+            : preview.share_type === "INVITE"
+              ? "Create a free account to volunteer or ask for help."
+              : "Open it on ThankYou to see the full details."}
         </p>
         {preview.is_expired ? <div className={styles.notice}>This link has expired.</div> : null}
         {preview.is_revoked ? <div className={styles.notice}>This link has been revoked.</div> : null}
@@ -151,7 +163,7 @@ export default async function Page(props: { params: Promise<{ token: string }> }
             </Link>
           )}
 
-          <Link prefetch={false} className={styles.secondary} href="/volunteer/opportunities/recommended">
+          <Link prefetch={false} className={styles.secondary} href="/opportunities">
             Browse opportunities
           </Link>
 

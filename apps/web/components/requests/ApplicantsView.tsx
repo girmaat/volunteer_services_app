@@ -1,7 +1,9 @@
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MessageSquare, ShieldCheck } from "lucide-react";
 import { backendFetch } from "../../app/lib/backend";
 import { applicantAction, attendanceAction, noShowAction } from "../../app/_requests/applicant-actions";
+import { getOrgContext } from "../../app/lib/org";
 import { Button, EmptyState, Notice, PageHeader, StatusPill, Toast, VerifiedBadge } from "../ui";
 import ReviewPanel, { type ReviewState } from "../reviews/ReviewPanel";
 import { formatInZone, isoToZonedLocal, zoneOr } from "../../lib/time";
@@ -63,6 +65,8 @@ function Reliability({ r }: { r: Applicant["reliability"] }) {
 
 export default async function ApplicantsView({ requestId, base, flash, error }: { requestId: string; base: "/requester/requests" | "/org/requests"; flash?: string; error?: string }) {
   const res = await backendFetch(`/v1/requests/${requestId}/applicants`);
+  // Someone else's request: same answer as a request that doesn't exist.
+  if (res.status === 403 || res.status === 404) notFound();
   if (!res.ok) return <Notice tone="danger">Applicants couldn&apos;t load.</Notice>;
   const data = (await res.json()) as {
     request: {
@@ -89,6 +93,8 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
   const accepted = data.applicants.filter((a) => ["accepted", "confirmed", "completed"].includes(a.status)).length;
   // Organizations take attendance here: who is checked in right now.
   const isOrg = base === "/org/requests";
+  // Plain organization members can look but not act (the server refuses their actions anyway).
+  const readOnly = isOrg && (await getOrgContext())?.membership.role === "member";
   const openAttendance = new Set<string>();
   if (isOrg && accepted > 0) {
     const r = await backendFetch(`/v1/org/attendance?requestId=${requestId}&status=open`);
@@ -173,6 +179,9 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
                 </p>
               ) : null}
 
+              {readOnly ? (
+                <p className="m-0 mt-3 text-sm text-muted">Admins and managers accept volunteers, take attendance and message them.</p>
+              ) : (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {a.status === "pending" || a.status === "waitlisted" || a.status === "offered" ? (
                   <>
@@ -251,6 +260,7 @@ export default async function ApplicantsView({ requestId, base, flash, error }: 
                   <MessageSquare aria-hidden className="h-4 w-4" /> Message
                 </Link>
               </div>
+              )}
               {reviews[i] ? (
                 <div className="mt-3">
                   <ReviewPanel applicationId={a.id} back={back} state={reviews[i]!} otherName={a.display_name} />

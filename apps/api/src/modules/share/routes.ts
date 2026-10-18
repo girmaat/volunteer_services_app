@@ -16,7 +16,8 @@ app.get("/v1/shares/:token", async (req, res) => {
 
   const linkRes = await pool.query(
     `
-      SELECT id, token, share_type, target_ref, destination_path, visibility, expires_at, revoked_at, created_by_user_id
+      SELECT id, token, share_type, target_ref, destination_path, visibility, expires_at, revoked_at, created_by_user_id, moderation_state,
+             (SELECT COUNT(*)::int FROM share_reports r WHERE r.share_link_id = share_links.id AND r.status <> 'dismissed') AS report_count
       FROM share_links
       WHERE token = $1
       LIMIT 1
@@ -91,7 +92,10 @@ app.get("/v1/shares/:token", async (req, res) => {
   let verificationStatus: string | null = null;
   let imageUrl: string | null = null;
   let ctaLabel = "Open";
-  const ctaHref = `/s/${encodeURIComponent(link.token)}`;
+  // Where the button goes: the shared page itself (never back to this share page).
+  const dest = String(link.destination_path || "/");
+  let ctaHref = dest.startsWith("/") && !dest.startsWith("//") ? dest : "/";
+  if (shareType === "SERVICE_REQUEST" || shareType === "OPPORTUNITY") ctaHref = `/opportunities/${encodeURIComponent(targetRef)}`;
 
   try {
     if (shareType === "PUBLIC_PAGE") {
@@ -128,7 +132,7 @@ app.get("/v1/shares/:token", async (req, res) => {
       // Primary data source: service_requests (UUID ids). This is used for both volunteer opportunities and requester posts.
       const rowRes = await pool.query(
         `
-          SELECT r.title, r.description, r.location_text, r.needed_by, r.requester_org_slug,
+          SELECT r.title, r.description, r.location_text, r.public_area, r.mode, r.needed_by, r.starts_at, r.requester_org_slug,
                  org.verification_status, org.verified_at, org.location AS org_location
           FROM service_requests r
           LEFT JOIN organizations org ON org.slug = r.requester_org_slug
@@ -142,11 +146,12 @@ app.get("/v1/shares/:token", async (req, res) => {
       title = String(row?.title || "Service request");
       summary = String(row?.description || "").replace(/\s+/g, " ").trim().slice(0, 180);
 
-      // Coarse location: prefer org location if present; otherwise sanitize free-form location_text.
-      coarseLocation = row?.org_location ? String(row.org_location) : coarseLocationFromText(row?.location_text);
+      // Coarse location: the opportunity's own public area (never the street address or the org's city).
+      coarseLocation = row?.mode === "remote" ? "Remote" : row?.public_area ? String(row.public_area) : coarseLocationFromText(row?.location_text);
 
-      if (row?.needed_by) {
-        timeWindow = { needed_by: String(row.needed_by) };
+      const when = row?.starts_at || row?.needed_by;
+      if (when) {
+        timeWindow = { needed_by: new Date(when).toISOString() };
       }
 
       const status = row?.verification_status ? String(row.verification_status) : null;
@@ -154,6 +159,11 @@ app.get("/v1/shares/:token", async (req, res) => {
       verificationStatus = verifiedAt ? "verified" : status;
 
       ctaLabel = "Volunteer / Apply";
+    } else if (shareType === "INVITE") {
+      title = "You're invited to ThankYou";
+      summary = "Find volunteer opportunities near you or online, or get a hand from your neighbors. It's free.";
+      ctaLabel = "Create a free account";
+      ctaHref = "/signup";
     } else {
       // Fallback
       title = "Shared link";
@@ -166,6 +176,7 @@ app.get("/v1/shares/:token", async (req, res) => {
 
   return res.json({
     token: link.token,
+    share_type: shareType,
     title,
     summary,
     cta_label: ctaLabel,
@@ -177,6 +188,9 @@ app.get("/v1/shares/:token", async (req, res) => {
     requires_login: requiresLogin,
     is_expired: isExpired,
     is_revoked: isRevoked,
+    // Viewers are warned when people have reported this link (it stays up until a moderator acts).
+    moderation_state: String(link.moderation_state || "clean"),
+    report_count: Number(link.report_count || 0),
     viewer_can_view_details: true
   });
 });

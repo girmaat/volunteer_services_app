@@ -88,6 +88,8 @@ export default async function Page(
   if (!ctx.org.onboarding_completed) redirect("/org/onboarding");
 
   const [requests, incidents] = await Promise.all([loadRequests(), loadIncidents(searchParams)]);
+  const canEdit = ctx.membership.role !== "member";
+  const created = typeof searchParams.created === "string" ? searchParams.created : "";
 
   const status = typeof searchParams.status === "string" ? searchParams.status : "";
   const severity = typeof searchParams.severity === "string" ? searchParams.severity : "";
@@ -101,6 +103,17 @@ export default async function Page(
         <span className={styles.meta}>Total: {incidents.length}</span>
       </div>
 
+      {created === "1" ? (
+        <div className={`${styles.card} mt-3`} role="status">
+          Incident recorded. It&apos;s in the list below, and ThankYou staff can see it.
+        </div>
+      ) : created === "0" ? (
+        <div className={`${styles.card} mt-3`} role="alert">
+          The incident wasn&apos;t recorded. Add a title and what happened, then try again.
+        </div>
+      ) : null}
+
+      {canEdit ? (
       <div className={`${styles.card} mt-3`}>
         <h2 className="mt-0">Create incident report</h2>
         <form className="grid grid-cols-2 gap-3" action={createIncident}>
@@ -143,6 +156,11 @@ export default async function Page(
           </div>
         </form>
       </div>
+      ) : (
+        <div className={`${styles.card} mt-3`} role="note">
+          You can see your organization&apos;s incidents. Admins and managers record and update them.
+        </div>
+      )}
 
       <form className={`${styles.card} mt-3 grid grid-cols-[1fr_1fr_1fr_2fr_auto] gap-2.5 items-end`}>
         <div>

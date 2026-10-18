@@ -30,7 +30,7 @@ export default async function RolesPage(props: { searchParams?: Promise<{ error?
     <section aria-labelledby="roles-h">
       <h2 id="roles-h" className="m-0 text-lg">Roles</h2>
       <p className="m-0 mt-1 max-w-[60ch] text-muted">
-        One account can volunteer and ask for help. Switch between them from the menu at the top of the sidebar.
+        One account can volunteer and ask for help. Switch between them with the switcher at the top right of the page.
       </p>
       {sp.error ? (
         <div className="mt-4">

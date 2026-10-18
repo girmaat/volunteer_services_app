@@ -117,10 +117,7 @@ export const createShareLinkHandler = async (req: express.Request, res: express.
   const expiresInDays = parsed.data.expires_in_days;
 
   // Ownership/permission checks per share type (privacy & safety)
-  if (shareType === "ORGANIZATION") {
-    const ok = user.is_platform_admin || (await isActiveOrgMember(user.id, targetRef));
-    if (!ok) return res.status(403).json({ message: "Forbidden" });
-  }
+  // Organization profiles are public pages, so anyone signed in may share one.
 
   // OPPORTUNITY is the public name for a service request; both use service_requests (UUID ids).
   if (shareType === "SERVICE_REQUEST" || shareType === "OPPORTUNITY") {
@@ -128,7 +125,7 @@ export const createShareLinkHandler = async (req: express.Request, res: express.
     if (!idParsed.success) return res.status(400).json({ message: "Invalid target_ref" });
 
     const rows = await pool.query(
-      `SELECT requester_user_id, requester_org_slug FROM service_requests WHERE id = $1`,
+      `SELECT requester_user_id, requester_org_slug, (status IN ('open', 'pending') AND NOT is_sensitive AND published_at IS NOT NULL) AS shareable FROM service_requests WHERE id = $1`,
       [targetRef]
     );
     if (rows.rowCount === 0) return res.status(404).json({ message: "Request not found" });
@@ -136,7 +133,8 @@ export const createShareLinkHandler = async (req: express.Request, res: express.
     const row = rows.rows[0];
     const isOwner = String(row.requester_user_id) === String(user.id);
     const orgSlug = row.requester_org_slug as string | null;
-    const ok = user.is_platform_admin || isOwner || (orgSlug ? await isActiveOrgMember(user.id, orgSlug) : false);
+    // Anyone signed in can pass on a live, non-sensitive opportunity; owners and staff can share their own at any time.
+    const ok = user.is_platform_admin || isOwner || (shareType === "OPPORTUNITY" && Boolean(row.shareable)) || (orgSlug ? await isActiveOrgMember(user.id, orgSlug) : false);
     if (!ok) return res.status(403).json({ message: "Forbidden" });
   }
 
@@ -211,5 +209,5 @@ export const createShareLinkHandler = async (req: express.Request, res: express.
 };
 
 export function buildLoginCtaHref(token: string) {
-  return `/login?returnTo=${encodeURIComponent("/s/" + token)}`;
+  return `/login?returnTo=${encodeURIComponent("/share/" + token)}`;
 }

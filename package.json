@@ -20,8 +20,7 @@
     "db:reset": "pnpm --filter @thankyou/api db:reset",
     "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm check:api-calls",
     "db:setup": "pnpm --filter @thankyou/api db:setup",
-    "check:api-calls": "node scripts/check-api-calls.mjs",
-    "e2e": "playwright test"
+    "check:api-calls": "node scripts/check-api-calls.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",

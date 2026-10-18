@@ -4,7 +4,7 @@ import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import Link from "next/link";
 import { ChevronDown, LifeBuoy, LogOut, Settings, UserRound } from "lucide-react";
 
-/** Avatar menu: profile, settings, help, log out. (Context switching lives at the top of the sidebar.) */
+/** Avatar menu: profile, settings, help, log out. (Context switching lives in the switcher next to it.) */
 export default function UserMenu({ name, email, profileHref, compact = false }: { name: string; email: string; profileHref: string; compact?: boolean }) {
   const initials = name
     .split(/\s+/)

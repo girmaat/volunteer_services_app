@@ -316,7 +316,7 @@ app.get("/v1/public/volunteers/:id", wrap(async (req, res) => {
       COALESCE(ups.public_profile_visible, TRUE) AS public_profile_visible,
       COALESCE((SELECT COUNT(*)::int FROM request_applications ra WHERE ra.volunteer_user_id = u.id), 0) AS applications_count,
       COALESCE((SELECT COUNT(*)::int FROM request_commitments c WHERE c.volunteer_user_id = u.id), 0) AS commitments_total_count,
-      COALESCE((SELECT COUNT(*)::int FROM request_commitments c WHERE c.volunteer_user_id = u.id AND c.status = 'completed'), 0) AS completed_count,
+      COALESCE((SELECT COUNT(*)::int FROM request_applications c WHERE c.volunteer_user_id = u.id AND c.status = 'completed'), 0) AS completed_count,
       COALESCE((SELECT COUNT(*)::int FROM request_commitments c WHERE c.volunteer_user_id = u.id AND c.status = 'canceled'), 0) AS canceled_count,
 
       COALESCE((SELECT COUNT(*)::int FROM contributions c WHERE c.volunteer_user_id = u.id AND c.status IN ('approved', 'adjusted')), 0) AS impact_entries_count,
@@ -462,7 +462,7 @@ app.get("/v1/public/requesters/:id", wrap(async (req, res) => {
         WHERE sr.requester_user_id = u.id
       ), 0) AS commitments_total_count,
       COALESCE((SELECT COUNT(*)::int
-        FROM request_commitments c
+        FROM request_applications c
         JOIN service_requests sr ON sr.id = c.request_id
         WHERE sr.requester_user_id = u.id AND c.status = 'completed'
       ), 0) AS completed_count,

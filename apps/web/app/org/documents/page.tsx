@@ -109,6 +109,7 @@ export default async function Page(props: { searchParams?: Promise<{ version?: s
   const ctx = await getOrgContext();
   if (!ctx) redirect("/org/signup");
   if (!ctx.org.onboarding_completed) redirect("/org/onboarding");
+  const canManage = ctx.membership.role !== "member";
 
   const [requests, docs] = await Promise.all([loadRequests(), loadDocuments()]);
 
@@ -129,6 +130,7 @@ export default async function Page(props: { searchParams?: Promise<{ version?: s
         </div>
       ) : null}
 
+      {canManage ? (
       <div className={`${styles.card} mt-3`}>
         <h2 className="mt-0">Upload document</h2>
         <form className="grid grid-cols-2 gap-3" action={uploadDocument}>
@@ -173,6 +175,11 @@ export default async function Page(props: { searchParams?: Promise<{ version?: s
           </div>
         </form>
       </div>
+      ) : (
+        <div className={`${styles.card} mt-3`} role="note">
+          You can see your organization&apos;s forms. Admins and managers upload new forms and assign them to requests.
+        </div>
+      )}
 
       <div className={`${styles.card} mt-3`}>
         <table className={styles.table}>
@@ -217,6 +224,8 @@ export default async function Page(props: { searchParams?: Promise<{ version?: s
                       <Link prefetch={false} className={styles.smallLink} href={`/org/documents/${d.id}/download`}>
                         Download
                       </Link>
+                      {canManage ? (
+                      <>
                       <form className="flex gap-2 items-center" action={assignDocument}>
                         <input type="hidden" name="docId" value={d.id} />
                         <select className={styles.select} name="required_before" defaultValue="check_in" aria-label={`When ${d.title} must be signed`}>
@@ -249,6 +258,8 @@ export default async function Page(props: { searchParams?: Promise<{ version?: s
                           </button>
                         </form>
                       </details>
+                      </>
+                      ) : null}
                     </div>
                   </td>
                 </tr>

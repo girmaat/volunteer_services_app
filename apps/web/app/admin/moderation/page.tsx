@@ -85,7 +85,7 @@ async function ReviewQueue({ category }: { category?: string }) {
         {data.items.map((x) => (
           <li key={x.id} className="list-none rounded-md border border-line bg-surface p-4">
             <p className="m-0 text-sm text-muted">
-              {x.category_label} · {x.public_area || "Remote"} · {x.org_name || x.requester_name} ({x.verification_status === "approved" ? "ID verified" : x.verification_status}) · {when(x.updated_at)}
+              {x.category_label} · {x.public_area || "Remote"} · {x.org_name || x.requester_name} ({x.verification_status === "approved" ? "ID verified" : x.verification_status === "submitted" ? "ID check waiting" : x.verification_status === "rejected" ? "ID check declined" : "ID not checked"}) · {when(x.updated_at)}
               {x.reports_against ? <span className="font-medium text-danger"> · {x.reports_against} report(s) against poster</span> : null}
             </p>
             <h2 className="m-0 mt-1 text-base">{x.title}</h2>

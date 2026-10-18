@@ -49,8 +49,11 @@ export default function OwnerRequestView({
   error,
   extraLinks,
   isOwner,
-  checkinUrl
+  checkinUrl,
+  readOnly = false
 }: {
+  /** Plain organization member: can look, can't change anything. */
+  readOnly?: boolean;
   /** Org admin: can approve managers' requests. */
   isOwner?: boolean;
   /** The on-site check-in link when a code exists (organization requests). */
@@ -65,7 +68,7 @@ export default function OwnerRequestView({
   const tz = zoneOr(r.timezone);
   const cat = categories.find((c) => c.slug === r.category);
   const detail = `${base}/${r.id}`;
-  const editable = !["completed", "canceled"].includes(r.status);
+  const editable = !readOnly && !["completed", "canceled"].includes(r.status);
   const when =
     r.schedule_type === "flexible_window"
       ? `Flexible${r.apply_by ? ` · apply by ${formatInZone(r.apply_by, tz, { dateOnly: true })}` : ""}`
@@ -217,6 +220,11 @@ export default function OwnerRequestView({
           </section>
         </div>
 
+        {readOnly ? (
+          <aside aria-label="Request actions" className="grid content-start gap-4">
+            <Notice tone="info">Admins and managers change, pause or complete requests and show the check-in code.</Notice>
+          </aside>
+        ) : (
         <aside aria-label="Request actions" className="grid content-start gap-4">
           {r.actions.filter((a) => a !== "cancel" && a !== "publish").map((a) => (
             <form key={a} action={requestAction}>
@@ -289,6 +297,7 @@ export default function OwnerRequestView({
             </form>
           ) : null}
         </aside>
+        )}
       </div>
     </>
   );

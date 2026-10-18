@@ -370,3 +370,24 @@ describe("support threads (organization ↔ ThankYou team)", () => {
     expect([403, 404]).toContain((await (await as(EMAILS.moderator)).get("/v1/admin/support")).status);
   });
 });
+
+describe("who can message you", () => {
+  it("'No one' stops messages to that person; 'Anyone' lets them through", async () => {
+    const vol = "perm.vol@thankyou.test";
+    await createUser({ email: vol, roles: ["volunteer"] });
+    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = $1", [vol]);
+    const id = await liveRequest(EMAILS.requester, "Messaging: permission test");
+    await (await as(vol)).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
+    const v = await as(vol);
+    const set = (perm: string) => v.post("/v1/settings/privacy-safety", { public_profile_visible: true, messaging_permission: perm });
+    const r1 = await set("no_one");
+    expect([200, 201], JSON.stringify(r1.body)).toContain(r1.status);
+    const owner = await as(EMAILS.requester);
+    const c = await owner.post("/v1/inbox/conversations", { requestId: id, volunteerUserId: await userId(vol) });
+    const blocked = await owner.post(`/v1/inbox/conversations/${c.body.id}/messages`, { body: "Hello!" });
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.error.code).toBe("not_accepting");
+    await set("anyone");
+    expect((await owner.post(`/v1/inbox/conversations/${c.body.id}/messages`, { body: "Hello!" })).status).toBe(201);
+  });
+});

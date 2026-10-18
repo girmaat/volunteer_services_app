@@ -10,28 +10,26 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-001 · Volunteer home — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test`)
-- **Page:** `/volunteer/dashboard` (top menu → Home)
+- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/dashboard` (top menu → Home)
 - **Before you start:** S1, S4, S5, S10
 - **Expected result:**
   - "Hi, Valerie" with a **Find opportunities** button.
   - Tiles: **Applications in progress 3** (two accepted, one pending), **Upcoming** (confirmed shifts), **Unread
     messages**, **Saved 2**.
   - "Picked for you" shows up to four opportunities with area and distance, and **See all** opens Recommended.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-002 · "Picked for you" cards show when each opportunity happens — P3
 
-- **Tester:** Valerie
-- **Page:** Volunteer home
+- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/dashboard`
 - **Expected result:** Each card under "Picked for you" shows its date and time (e.g. "Wed, Oct 14, 2:00 PM"), the same
-  as on the Recommended list. Known issue **K5**: the cards say "Flexible".
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
+  as on the Recommended list. Only opportunities without a fixed date say "Flexible".
 
 ### TC-VDS-003 · Recommended list explains each match — P1
 
-- **Tester:** Valerie
-- **Page:** top menu → **Find opportunities** (opens Recommended, `/volunteer/opportunities/recommended`)
+- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/recommended` (top menu → **Find opportunities**)
 - **Expected result:**
   - Heading "Recommended for you — Ranked by your skills, causes, schedule and distance." with tabs Recommended,
     Near you, Remote, Saved.
@@ -40,12 +38,11 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
   - In-person cards show the area with distance (e.g. "Astoria, NY · 7 mi"); each shows poster, category, date and
     spots left.
   - *Help hanging curtains and a shelf* (waiting for review) and *Draft: garden cleanup* never appear.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-004 · Near you respects the travel radius — P1
 
-- **Tester:** Valerie
-- **Page:** Find opportunities → **Near you**
+- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/nearby` (Find opportunities → **Near you**)
 - **Test data:** Within **2 miles**, then **25 miles**
 - **Steps:**
   1. Open Near you (default radius 15 miles from Valerie's profile).
@@ -56,12 +53,11 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
   - 2 miles: only items in Jersey City / Hoboken (e.g. *Community garden weeding* "under 1 mi", *After-school homework
     club helpers*, *Ride to a medical appointment* 2 mi).
   - 25 miles: also Queens and Manhattan items (e.g. *Saturday distribution shift* 13 mi). No remote items.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-005 · Remote tab shows only remote work — P1
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test`)
-- **Page:** Find opportunities → **Remote**
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/remote` (Find opportunities → **Remote**)
 - **Expected result:**
   - Heading "Remote opportunities — Help from anywhere by phone or video."
   - Lists Bright Futures Tutoring items (Algebra tutoring, Reading buddy, College essay feedback, Mock job interview
@@ -69,30 +65,27 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
     *Translate a flyer to Spanish* and *Pantry inventory spreadsheet cleanup*, Rose's *Fill in an online benefits form*.
   - No in-person item. **No *Explain my electricity bill*** (sensitive, Ravi isn't ID-verified).
   - Cards say "Why it matches: your time zone", and tutoring/Spanish items mention matching skills.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-006 · ID-verified volunteers also see sensitive requests — P1
 
-- **Tester:** Valerie (ID-verified)
-- **Page:** Find opportunities → **Remote**
+- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`) (ID-verified)
+- **Page:** `http://localhost:3202/volunteer/opportunities/remote` (Find opportunities → **Remote**)
 - **Expected result:** *Explain my electricity bill* (Money & paperwork, Rose) is listed. Its page says
   "Money & paperwork · verified volunteers only".
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-007 · Search matches title, description and skills — P1
 
-- **Tester:** Ravi
-- **Page:** Find opportunities → Remote
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/remote` (Find opportunities → **Remote**)
 - **Test data:** Search **`spanish`**
 - **Steps:** Type `spanish` in Search, click **Show results**.
 - **Expected result:** *Spanish–English homework help* and *Translate a flyer to Spanish* are listed (also *Weekly ESL
   conversation circle*, whose nice-to-have skill is Spanish). Items without Spanish disappear.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-008 · Category, date and "verified organizations only" filters — P2
 
-- **Tester:** Valerie
-- **Page:** Find opportunities → Recommended
+- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/recommended` (Find opportunities → **Recommended**)
 - **Test data:** (a) Category **Events & community**; (b) When **Next 7 days**; (c) tick **Verified organizations only**
 - **Steps:** Apply each filter on its own (click Show results), then **Clear filters**.
 - **Expected result:**
@@ -100,20 +93,18 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
   - (b) only items starting within the next 7 days.
   - (c) only Harbor Food Bank and Lincoln High School items (no Rose requests, no Bright Futures).
   - "Clear filters" brings back the full list.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-009 · Nothing matches — P3
 
-- **Tester:** Valerie
-- **Page:** Find opportunities → Recommended
+- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/recommended` (Find opportunities → **Recommended**)
 - **Test data:** Search `zzqx-nothing`
 - **Expected result:** "Nothing matches yet" with advice and a **Clear filters** link. No error.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-010 · Save a search and get alerts — P2
 
-- **Tester:** Ravi
-- **Page:** Find opportunities → Remote
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/remote` (Find opportunities → **Remote**)
 - **Test data:** Search `essay`; alert name `Essay help`
 - **Steps:**
   1. Search `essay`, Show results.
@@ -123,11 +114,11 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
   - 2: "Search saved. We'll tell you about new matches once a day. Manage alerts".
   - 3: Saved page, "Saved searches" section lists **Essay help** with an **Alert me** option and **How often**
     (Daily / Weekly).
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-011 · A saved search alerts about a new match — P2
 
-- **Tester:** Ravi, then Olivia (`org.admin@thankyou.test`)
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`), then Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Page:** Olivia: `http://localhost:3202/org/requests/new`; Ravi: `http://localhost:3202/notifications` (or the bell) and `http://localhost:3202/volunteer/opportunities/saved`
 - **Before you start:** TC-VDS-010
 - **Steps:**
   1. As Olivia, post and publish a remote Harbor Food Bank request titled `Essay review for our grant letter` (see
@@ -137,22 +128,20 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 - **Expected result:** A notification says there is something new for "Essay help" and links to the matching results.
   The Saved page shows "Last alert" with a time for Essay help. If email for "New requests matching your saved
   searches" is on, the API terminal shows the email too.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-012 · Turn off or delete a saved search — P3
 
-- **Tester:** Ravi
-- **Page:** Find opportunities → **Saved** → Saved searches
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/saved` → Saved searches
 - **Steps:**
   1. Untick **Alert me** for Essay help, click **Save**.
   2. Delete the saved search.
 - **Expected result:** 1: "Alert settings saved." 2: "Saved search deleted." and "No saved searches yet."
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-013 · Save an opportunity for later — P2
 
-- **Tester:** Ravi
-- **Page:** Remote → *Reading buddy (grades 2–3)*
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/remote` → open *Reading buddy (grades 2–3)* (address `/volunteer/opportunities/<id>`)
 - **Steps:**
   1. Open the opportunity, click **Save for later**.
   2. Open Find opportunities → **Saved**.
@@ -161,21 +150,19 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
   - 1: "Saved to your list."; the button now reads **Saved**.
   - 2: Reading buddy is listed under Saved.
   - 3: the opportunity is removed from Saved (button back to "Save for later").
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-014 · Saved list shows the ready-made saves — P2
 
-- **Tester:** Valerie
-- **Page:** Find opportunities → **Saved**
+- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/saved` (Find opportunities → **Saved**)
 - **Before you start:** S10
 - **Expected result:** *Event setup crew* and *Community garden weeding* are listed with area and organization, and each
-  shows its date (known issue **K5**: shows "Flexible").
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
+  shows its date and time.
 
 ### TC-VDS-015 · Opportunity page for a volunteer — P1
 
-- **Tester:** Valerie
-- **Page:** Near you → *Community garden weeding*
+- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/nearby` → open *Community garden weeding*
 - **Expected result:**
   - "← Find opportunities", category Events & community, title, "Jersey City, NJ · 1 mi away", Harbor Food Bank (link to
     its profile) with Verified badge.
@@ -183,12 +170,11 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
   - About and Skills sections and the safety line.
   - Right column: date "· about 2 h", "1 volunteer needed · 1 left", the address note, a **Message to the organizer**
     box with **Apply**, and **Saved** (she saved it in S10).
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-016 · Apply with a message — P1
 
-- **Tester:** Ravi
-- **Page:** Remote → *Algebra tutoring (grade 8)*
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/opportunities/remote` → open *Algebra tutoring (grade 8)*
 - **Test data:** Message `Hi! I tutor algebra twice a week and I'm free Monday afternoons. Happy to do a first session this week.`
 - **Steps:**
   1. Click **Apply** with the message empty.
@@ -200,59 +186,55 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
     Pending" with **Open application**.
   - 3: *Algebra tutoring (grade 8)* is under Active with status Pending.
   - Olivia gets a notification "new applicant" (check in ORG/OPS cases or the API terminal for the email).
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-017 · Can't apply twice — P2
 
-- **Tester:** Ravi
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
 - **Before you start:** TC-VDS-016
-- **Page:** *Algebra tutoring (grade 8)*
+- **Page:** `http://localhost:3202/volunteer/opportunities/remote` → open *Algebra tutoring (grade 8)* again
 - **Expected result:** No Apply form; the box shows "Your application" with its status and **Open application**.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-018 · Requirement not met: car needed — P1
 
-- **Tester:** Ravi (no car)
-- **Page:** `/opportunities` (signed in) → search `Deliver meals` → open it (it also opens at `/volunteer/opportunities/<id>`)
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`) (no car)
+- **Page:** `http://localhost:3202/opportunities?q=Deliver+meals` (signed in) → open *Deliver meals to homebound seniors* (it also opens at `/volunteer/opportunities/<id>`)
 - **Expected result:**
   - "Before you apply" lists **Has a car**.
   - Instead of Apply: "You can't apply yet" with "This opportunity needs a car. Update your profile if you have one."
     and a link **Update your profile**.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-019 · Requirement met after updating the profile — P2
 
-- **Tester:** Ravi
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/profile` (the **Update your profile** link), then *Deliver meals to homebound seniors* again
 - **Before you start:** TC-VDS-018
 - **Steps:**
   1. Follow **Update your profile**. If a "has a car" setting is available there, turn it on and save. If not, note
      it in Notes (the car is otherwise set during onboarding: "I have a car I can use").
   2. Reopen *Deliver meals to homebound seniors*.
 - **Expected result:** With a car on the profile, the Apply form appears.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-020 · Sensitive request needs ID verification — P1
 
-- **Tester:** Ravi (not verified)
-- **Page:** the address of *Explain my electricity bill* (copy it from Valerie's view in TC-VDS-006: `/volunteer/opportunities/<id>`)
+- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`) (not verified)
+- **Page:** the address of *Explain my electricity bill*, `http://localhost:3202/volunteer/opportunities/<id>` (copy it from Valerie's view in TC-VDS-006)
 - **Expected result:** Either "Opportunity not found", or "You can't apply yet" with "“Money & paperwork” opportunities are
   open to verified volunteers. Submit verification in Settings." Ravi can't apply.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-021 · Can't apply to your own request — P2
 
-- **Tester:** Diego, switched to **Volunteering**
+- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`), switched to **Volunteering**
+- **Page:** Diego (Requesting help): `http://localhost:3202/requester/requests/new`; then (Volunteering) `http://localhost:3202/volunteer/opportunities/remote?q=Diego%27s+own`
 - **Before you start:** As Diego (Requesting help), post and publish a request titled `Diego's own test request` (any category, remote) — see REQ-001.
 - **Steps:** Switch to Volunteering and open that request from Find opportunities → Remote (search `Diego's own`).
 - **Expected result:** "You can't apply yet — You can't apply to your own request." No Apply form.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:
 
 ### TC-VDS-022 · Applications are closed after the apply-by date — P3
 
-- **Tester:** Rose, then Valerie
+- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Page:** Rose: `http://localhost:3202/requester/requests/new`; Valerie: `http://localhost:3202/opportunities?q=Apply-by+test` → open it
 - **Steps:**
   1. As Rose, post a request `Apply-by test` (Errands & chores, in person, Upper West Side) with **Apply by** set to
      tomorrow and the start in 3 days; publish.
   2. The next day (after the apply-by date), as Valerie open it.
 - **Expected result:** "Applications for this opportunity have closed". Before the date, Valerie could apply.
-- **Result:** ☐ Pass ☐ Fail ☐ Blocked — Notes:

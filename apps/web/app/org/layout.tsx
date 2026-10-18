@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getCurrentUser, syncActiveContext } from "../lib/backend";
 import { getOrgContext } from "../lib/org";
@@ -30,6 +32,9 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
   // If present, render the org shell; otherwise, allow public org pages to render.
   const orgCtx = await getOrgContext();
   if (!orgCtx) {
+    // Organization tools without an organization: go to your own home instead of a broken page.
+    const path = (await headers()).get("x-pathname") || "";
+    if (/^\/org\/(dashboard|requests|applications|hours|roster|attendance|documents|incidents|reports|settings|team)(\/|$)/.test(path)) redirect("/dashboard");
     return (
       <>
         <MarketingHeader />

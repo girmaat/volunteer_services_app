@@ -18,7 +18,7 @@ and what you should see.
 | [10-org-operations.md](10-org-operations.md) | Organization requests, applicants, check-in, attendance, roster, forms, incidents, reports, contact limits | OPS-001 – OPS-030 |
 | [11-minors-safety.md](11-minors-safety.md) | Under-18 volunteers, guardian consent, age limits, minors' privacy | MIN-001 – MIN-012 |
 | [12-settings-profile.md](12-settings-profile.md) | Profiles and photos, account, privacy, blocking, reports filed, ID verification, data export, deletion | SET-001 – SET-022 |
-| [13-sharing.md](13-sharing.md) | Share links, shared pages, reporting a shared link | SHR-001 – SHR-008 |
+| [13-sharing.md](13-sharing.md) | Share links for opportunities, organizations, stories and invitations; who can open them; reporting a link | SHR-001 – SHR-011 |
 | [14-admin-moderation.md](14-admin-moderation.md) | Platform admin and moderator tools | ADM-001 – ADM-032 |
 | [15-access-control.md](15-access-control.md) | Who can open what: signed-out, wrong role, other people's records, banned users | SEC-001 – SEC-016 |
 | [16-mobile-accessibility.md](16-mobile-accessibility.md) | Phone-width layout, keyboard use, screen-reader labels | MOB-001 – MOB-010 |
@@ -152,14 +152,18 @@ Each case looks like this:
 
 - **ID and title** — `TC-AREA-NNN`. The priority follows the title: **P1** must work for launch, **P2**
   important, **P3** nice to have.
-- **Tester** — which seed user to sign in as (or *Visitor* = signed out, or a *new account* you create).
-- **Page** — the address to open (after `http://localhost:3202`) and how to get there from the menu.
+- **Tester** — who runs the case, with the sign-in email and password (for example
+  `volunteer.local@thankyou.test` / `Password!`). *Visitor* means signed out (use a private/incognito window); a
+  *new account* gives the email and password to create.
+- **Page** — the full address to open (for example `http://localhost:3202/volunteer/applications`) and, where it
+  helps, how to get there from the menu. Addresses with `<id>` contain a code that changes on every
+  `pnpm db:uat`; the case says where to copy it from.
 - **Before you start** — anything that must already be true (often a ready-made situation above, or
   another case).
 - **Test data** — exactly what to type or pick. Use it as written so results are comparable.
 - **Steps** — what to do, in order.
-- **Expected result** — what must happen. Every bullet must be true to pass.
-- **Result** — tick one and add notes (what you saw, a screenshot name) when it isn't a pass.
+- **Expected result** — what must happen. Every bullet must be true to pass. Record pass/fail and notes in
+  your own tracker (for example a spreadsheet with one row per case ID).
 
 Sample data for accounts you create: use addresses like `uat.vol1@example.test`, `uat.vol2@example.test`
 (the `example.test` domain never receives mail). If an address is already taken from an earlier round,
@@ -167,21 +171,15 @@ add a number (`uat.vol1b@example.test`) or re-run `pnpm db:uat`.
 
 ## 6. Issues found while preparing these cases
 
-These were found while checking every page for this document. The test cases describe the **correct**
-behavior, so the related cases will fail until these are fixed.
-
-| # | Where | What's wrong | Related cases |
-| --- | --- | --- | --- |
-| K4 | Shared page (`/share/…`) | Shows the organization's city instead of the opportunity's area (for *Community garden weeding* it says Queens, NY instead of Jersey City, NJ). | SHR-003 |
-| K5 | Volunteer home "Picked for you" and Saved list | Show "Flexible" instead of each opportunity's date and time. | VDS-002, VDS-014 |
-| K6 | Profiles | Requester profile and public requester page show raw values ("ID: not_required", "Typical response time 0s") and "Completed commitments 0" after completed work; a volunteer's public profile shows "Completed opportunities 0" even with completed, approved work. | PUB-008, PUB-009, SET-003 |
-| K7 | Admin → Moderation | Shows the poster's raw verification value, e.g. "Rose (not_required)". | ADM-004 |
-| K8 | Organization pages, signed in as a **member** | Shows buttons members can't use (Accept, Waitlist, Decline, Check in, Mark complete, Post a request, Upload document). The server refuses them with an error. The Hours page shows "Hours couldn't load" instead of saying hours are reviewed by admins and managers. | OPS-027, OPS-028 |
-| K9 | Organization home | Lists partly filled requests as "Pending" while the Requests page says "Partly filled". | OPS-001 |
-| K10 | Organization → Attendance | Filter asks for a "Volunteer User ID" (an internal code) instead of a name. | OPS-012 |
+All issues found while preparing these cases have been fixed, so every case should pass as written. If one
+doesn't, that's a real defect: record the case ID, what you saw and a screenshot.
 
 Already fixed while preparing these cases: the About page said "About GiveBack" (now ThankYou), and a
 moderator opening Admin → Organizations, Verification or Incidents got "Something went wrong" (now
 "Access denied"). Fixed in the October 18 round: the Help page's developer text (was K1), the Contact page's
 placeholder text and missing confirmation (K2, K11), and the "Public" tag and internal description lines on the
-information pages (K3).
+information pages (K3). Fixed on October 18 (afternoon): shared pages show the opportunity's own area (K4);
+dates on "Picked for you" and Saved (K5); plain-word ID status, reply time and completed counts on requester
+profiles (K6) and in Moderation (K7); organization members get read-only pages instead of buttons the server
+refuses (K8); "Partly filled" on the organization home (K9); incidents confirm when they are recorded or saved (K13); and the Attendance filter picks a volunteer by name
+(K10).

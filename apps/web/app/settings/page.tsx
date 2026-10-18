@@ -35,7 +35,7 @@ export default async function Page() {
   return (
     <>
       <h2 className={styles.sectionTitle}>Overview</h2>
-      <p className={styles.meta}>A quick snapshot of your trust, privacy, and safety controls—without repeating the left menu.</p>
+      <p className={styles.meta}>A quick look at your account, privacy and safety settings.</p>
 
             <div className={styles.overviewGrid}>
         <div className={styles.overviewLeft}>

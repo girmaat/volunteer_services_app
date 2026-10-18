@@ -21,6 +21,9 @@ const ALLOW_PREFIXES = [
   "/favicon.ico"
 ];
 
+/** Organization pages that need a signed-in organization member (the rest of /org is public sign-up). */
+export const ORG_PRIVATE = /^\/org\/(dashboard|requests|applications|hours|roster|attendance|documents|incidents|reports|settings|team|onboarding)(\/|$)/;
+
 // Maintenance mode is read from the API at most once every 30 seconds per server instance,
 // instead of on every request (it used to add a backend round-trip to every navigation).
 const MAINTENANCE_TTL_MS = 30_000;
@@ -102,6 +105,19 @@ export async function middleware(request: NextRequest) {
     url.pathname = "/maintenance";
     url.search = "";
     return NextResponse.redirect(url);
+  }
+
+  if (ORG_PRIVATE.test(pathname)) {
+    if (!request.cookies.get("ty_session")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = `?returnTo=${encodeURIComponent(pathname)}`;
+      return NextResponse.redirect(url);
+    }
+    // The org layout needs the path to send signed-in people without an organization away.
+    const headers = new Headers(request.headers);
+    headers.set("x-pathname", pathname);
+    return NextResponse.next({ request: { headers } });
   }
 
   return NextResponse.next();

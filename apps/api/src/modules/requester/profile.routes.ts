@@ -63,7 +63,7 @@ app.get(
           WHERE sr.requester_user_id = $1
         ), 0) AS commitments_total_count,
         COALESCE((SELECT COUNT(*)::int
-          FROM request_commitments c
+          FROM request_applications c
           JOIN service_requests sr ON sr.id = c.request_id
           WHERE sr.requester_user_id = $1 AND c.status = 'completed'
         ), 0) AS completed_count,
