@@ -1,4 +1,4 @@
-# ThankYou
+# Volunteer Services
 
 A volunteer-services marketplace: organizations and individuals post needs, volunteers find and apply, both sides coordinate, complete and review.
 
@@ -21,7 +21,7 @@ docs/               Plans, progress log, runbooks
 pnpm install
 
 # API config
-cp apps/api/.env.example apps/api/.env        # then set DATABASE_URL (database name: thankyou_next)
+cp apps/api/.env.example apps/api/.env        # then set DATABASE_URL (database name: volunteer_services_app)
 # Web config
 cp apps/web/.env.example apps/web/.env.local
 
@@ -38,15 +38,15 @@ Seed data is for local/staging only; the seed script refuses to run in productio
 
 | Persona | Email |
 | --- | --- |
-| Platform admin (super) | admin@thankyou.test |
-| Organization admin (Harbor Food Bank, Bright Futures Tutoring) | org.admin@thankyou.test |
-| Organization team member | org.member@thankyou.test |
-| In-person volunteer (has car, 15 mi) | volunteer.local@thankyou.test |
-| Remote volunteer (tutoring, Spanish) | volunteer.remote@thankyou.test |
-| Individual requester | requester@thankyou.test |
-| Dual-role user (volunteer and requester) | dual.role@thankyou.test |
-| Moderator (works queues, can't change settings) | moderator@thankyou.test |
-| 17-year-old volunteer (minor protections, guardian consent) | teen.volunteer@thankyou.test |
+| Platform admin (super) | admin@volunteer-services-app.test |
+| Organization admin (Harbor Food Bank, Bright Futures Tutoring) | org.admin@volunteer-services-app.test |
+| Organization team member | org.member@volunteer-services-app.test |
+| In-person volunteer (has car, 15 mi) | volunteer.local@volunteer-services-app.test |
+| Remote volunteer (tutoring, Spanish) | volunteer.remote@volunteer-services-app.test |
+| Individual requester | requester@volunteer-services-app.test |
+| Dual-role user (volunteer and requester) | dual.role@volunteer-services-app.test |
+| Moderator (works queues, can't change settings) | moderator@volunteer-services-app.test |
+| 17-year-old volunteer (minor protections, guardian consent) | teen.volunteer@volunteer-services-app.test |
 
 ## Everyday commands
 
@@ -55,10 +55,10 @@ Seed data is for local/staging only; the seed script refuses to run in productio
 | `pnpm dev` | API + web in watch mode (API applies pending migrations first) |
 | `pnpm check` | typecheck + lint + tests + the web→API route check |
 | `pnpm check:api-calls` | fails if the web app calls an API route that doesn't exist |
-| `pnpm --filter @thankyou/api perf:check` | adds 1,000 requests, times Recommended/Discovery (budget 300 ms), removes them |
+| `pnpm --filter @volunteer_services_app/api perf:check` | adds 1,000 requests, times Recommended/Discovery (budget 300 ms), removes them |
 | `pnpm build` | production build of every package |
 | `pnpm db:migrate` | apply pending migrations |
-| `pnpm --filter @thankyou/api db:status` | list applied / pending migrations |
+| `pnpm --filter @volunteer_services_app/api db:status` | list applied / pending migrations |
 | `pnpm db:seed` | (re)seed test data; safe to run repeatedly |
 | `pnpm db:reset` | drop and rebuild the local database, then seed (refuses in production) |
 
@@ -68,9 +68,9 @@ Seed data is for local/staging only; the seed script refuses to run in productio
 pnpm test        # API: unit + integration (~1,600 tests, ~50 s)
 ```
 
-API integration tests need a local Postgres. They create and reset a database named `thankyou_test`
+API integration tests need a local Postgres. They create and reset a database named `volunteer_services_app_test`
 on the same server as your `DATABASE_URL` (override with `TEST_DATABASE_URL`) — never your development database.
-The Postgres user needs permission to create that database once (`CREATE DATABASE thankyou_test OWNER <user>;`).
+The Postgres user needs permission to create that database once (`CREATE DATABASE volunteer_services_app_test OWNER <user>;`).
 
 ### Manual UAT
 

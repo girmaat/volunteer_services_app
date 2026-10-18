@@ -4,7 +4,7 @@ import { parse } from "dotenv";
 
 /**
  * The test database URL: TEST_DATABASE_URL, or the DATABASE_URL from apps/api/.env with the
- * database name replaced by "thankyou_test" (same server and credentials, separate database).
+ * database name replaced by "volunteer_services_app_test" (same server and credentials, separate database).
  */
 export function testDatabaseUrl(): string {
   if (process.env.TEST_DATABASE_URL) return process.env.TEST_DATABASE_URL;
@@ -14,8 +14,8 @@ export function testDatabaseUrl(): string {
     const vars = parse(fs.readFileSync(envFile));
     base = vars.DATABASE_URL_MIGRATIONS || vars.DATABASE_URL || "";
   }
-  if (!base) return "postgres://postgres@localhost:5433/thankyou_test";
+  if (!base) return "postgres://postgres@localhost:5433/volunteer_services_app_test";
   const u = new URL(base);
-  u.pathname = "/thankyou_test";
+  u.pathname = "/volunteer_services_app_test";
   return u.toString();
 }

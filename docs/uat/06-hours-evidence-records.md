@@ -14,7 +14,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-001 · Volunteer's Impact page — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/history` (top menu → **Impact**)
 - **Before you start:** S1, S5
 - **Expected result:**
@@ -24,11 +24,11 @@ S5 (Harbor has 2.5 h to approve for Valerie).
   - "Your volunteering" lists *Deliver meals to homebound seniors* (Harbor Food Bank · 0 h approved · 2.5 h waiting —
     "Reported by the volunteer", "Delivered 12 meals on the Astoria route.") and *Help me carry groceries upstairs*
     (Helped Rose · 2 h waiting — "Marked complete by the organizer; scheduled time").
-  - Each entry has **Add evidence** and **Report time you gave**. "Service outside ThankYou" and "Badges" sections follow.
+  - Each entry has **Add evidence** and **Report time you gave**. "Service outside Volunteer Services" and "Badges" sections follow.
 
 ### TC-HRS-002 · Reviewer's hours queue — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/hours` (top menu → **Hours**)
 - **Before you start:** S1
 - **Expected result:**
@@ -40,7 +40,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-003 · Approve hours — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/hours`; Valerie: `http://localhost:3202/volunteer/history`
 - **Before you start:** S1
 - **Steps:**
@@ -54,7 +54,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-004 · Approve with a change (needs a note) — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/hours` (Organization → **Hours**); Valerie: `http://localhost:3202/volunteer/history`
 - **Before you start:** S5
 - **Test data:** Hours to approve `2`; Note `The route sheet shows 2 hours, so I approved 2.`
@@ -72,7 +72,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-005 · Send hours back to fix, and resubmit — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/hours`; Valerie: `http://localhost:3202/volunteer/history`
 - **Before you start:** S1 (fresh)
 - **Test data:** Rose's note `Please add the actual start and end time — it took less than 2 hours.`; Valerie's fix: Date = the
@@ -88,7 +88,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-006 · Decline hours, and the volunteer disputes — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), Valerie (`volunteer.local@thankyou.test` / `Password!`), then Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/hours`; Valerie: `http://localhost:3202/volunteer/history`; Ada: `http://localhost:3202/admin/moderation` (disputes)
 - **Before you start:** S1 (fresh)
 - **Test data:** Rose's note `I don't think the carrying took place on this date.`; Valerie's dispute `I carried the groceries on Thursday at 5:30 pm; Rose thanked me in our messages.`
@@ -105,7 +105,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-007 · Volunteer reports time for an engagement — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** Valerie: `http://localhost:3202/volunteer/history` → *Deliver meals to homebound seniors* → **Report time you gave**; Olivia: `http://localhost:3202/org/hours`
 - **Before you start:** S5
 - **Test data:** Date = yesterday; From `09:00`; To `11:15`; What did you do? `Packed meal bags at the pantry before the route.`
@@ -120,7 +120,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-008 · Time can't be in the future, reversed or over 24 hours — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/history` → any engagement → **Report time you gave**
 - **Steps:** Try (a) tomorrow 09:00–10:00; (b) yesterday From 11:00 To 10:00; (c) hours `30`.
 - **Expected result:** (a) "You can only report time that already happened"; (b) "The end must be after the start, within
@@ -128,7 +128,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-009 · Overlapping time is flagged for the reviewer — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** Valerie: `http://localhost:3202/volunteer/history` → *Saturday distribution shift* → Report time you gave; Olivia: `http://localhost:3202/org/hours`
 - **Before you start:** TC-HRS-007 (yesterday 9:00–11:15 reported)
 - **Steps:** Report another entry on *Saturday distribution shift* (after it's accepted, S4) for yesterday 10:00–12:00, note
@@ -137,7 +137,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-010 · Approve several entries together — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/hours`
 - **Before you start:** at least two Waiting entries without warnings (e.g. two volunteers checked in and out in OPS-009, or two
   "marked complete" entries)
@@ -147,7 +147,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-011 · Declare a conflict and pass to another reviewer — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Nora (`org.manager@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Nora (`org.manager@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia, then Nora: `http://localhost:3202/org/hours`
 - **Before you start:** S5
 - **Test data:** How you know them `She's my neighbour.`
@@ -159,7 +159,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-012 · Only verified organizations approve hours — P1
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`), then Olivia (`org.admin@thankyou.test` / `Password!`) switched to **Bright Futures Tutoring** (not verified)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`), then Olivia (`org.admin@volunteer-services-app.test` / `Password!`) switched to **Bright Futures Tutoring** (not verified)
 - **Page:** Ravi: `http://localhost:3202/volunteer/history`; Olivia (switcher → Bright Futures Tutoring): `http://localhost:3202/org/hours`
 - **Steps:**
   1. Ravi applies to *Algebra tutoring (grade 8)* (message `I can tutor on Mondays.`).
@@ -171,7 +171,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-013 · Correct a decision after the fact — P3
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/hours` → **Decided** tab
 - **Before you start:** TC-HRS-003 (2 h approved)
 - **Test data:** Hours `1.5`; note `Correcting: we finished early, 1.5 hours.`
@@ -181,7 +181,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-014 · Add a link as evidence — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** Valerie: `http://localhost:3202/volunteer/history` → *Deliver meals to homebound seniors* → **Add evidence**; Olivia: `http://localhost:3202/org/hours`
 - **Before you start:** S5 (still waiting for approval)
 - **Test data:** Link `https://example.org/route-sheet-oct`; Label `Route sheet`
@@ -196,7 +196,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-015 · Upload a file as evidence — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** Valerie: `http://localhost:3202/volunteer/history` → *Deliver meals to homebound seniors* → **Add evidence**; Olivia: `http://localhost:3202/org/hours`
 - **Test data:** a small PDF or PNG from your computer (under 5 MB), Label `Sign-in sheet photo`
 - **Steps:** Add evidence → choose the file, label → **Add**. Olivia: Hours → click the file link.
@@ -205,7 +205,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-016 · Unsafe evidence is refused — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/history` → any engagement → **Add evidence**
 - **Test data:** (a) a file renamed to `notes.html`; (b) a file larger than 5 MB; (c) link `javascript:alert(1)`
 - **Expected result:** (a) "That file type isn't allowed."; (b) "Files can be up to 5 MB."; (c) refused ("Add a link that
@@ -213,7 +213,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-017 · Remove evidence; evidence locks after a decision — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/history` → *Deliver meals to homebound seniors*
 - **Before you start:** TC-HRS-014
 - **Steps:**
@@ -224,24 +224,24 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-018 · Other people can't see someone's evidence — P1
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`); Marcus (`org.member@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`); Marcus (`org.member@volunteer-services-app.test` / `Password!`)
 - **Page:** the evidence file address copied in TC-HRS-015 (it looks like `http://localhost:3202/hours/evidence/<contribution id>/<file id>`), opened by each tester
 - **Before you start:** TC-HRS-015 (copy the file link address while signed in as Valerie)
 - **Steps:** Open the copied file address as Ravi, then as Marcus.
 - **Expected result:** "Not found" for both. (Only Valerie and Harbor's admins and managers can open it.)
 
-### TC-HRS-019 · Record service done outside ThankYou — P2
+### TC-HRS-019 · Record service done outside Volunteer Services — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
-- **Page:** `http://localhost:3202/volunteer/history` → **Service outside ThankYou** → **Add service from elsewhere**
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
+- **Page:** `http://localhost:3202/volunteer/history` → **Service outside Volunteer Services** → **Add service from elsewhere**
 - **Test data:** Date = last Saturday; hours `3`; What and where? `Beach clean-up with the Jersey City Parks crew`
 - **Steps:** Fill in and click **Save as self-reported**.
-- **Expected result:** "Saved as self-reported." The entry appears under Service outside ThankYou with status
+- **Expected result:** "Saved as self-reported." The entry appears under Service outside Volunteer Services with status
   Self-reported. **Approved hours** do not change; it is not sent to any reviewer.
 
 ### TC-HRS-020 · Export Impact as CSV — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/history` → **Export CSV**
 - **Before you start:** TC-HRS-003, TC-HRS-019
 - **Expected result:** A CSV downloads. The header row includes date, status and approved hours columns; each entry is a row
@@ -249,14 +249,14 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-021 · Records need approved hours — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`) (fresh `pnpm db:uat`: no approved hours)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`) (fresh `pnpm db:uat`: no approved hours)
 - **Page:** `http://localhost:3202/volunteer/records/new` (`http://localhost:3202/volunteer/history` → **Share a verified record** → **Make a record**)
 - **Expected result:** "No approved hours yet — Records hold only hours an organizer approved. Waiting and self-reported hours
   can't go on one." with **Back to Impact**.
 
 ### TC-HRS-022 · Create a verified record — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`, Volunteering)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`, Volunteering)
 - **Page:** `http://localhost:3202/volunteer/records/new` (`http://localhost:3202/volunteer/history` → Share a verified record → **New record**)
 - **Before you start:** S3 (2 approved hours for *Set up my new phone*)
 - **Test data:** include *Set up my new phone*; Name to show **My full name (schools usually need this)**; Link works for **30 days**
@@ -273,13 +273,13 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 - **Tester:** Visitor (signed out, no login needed; use a private window)
 - **Page:** the record link from TC-HRS-022, which looks like `http://localhost:3202/verify/<token>`
-- **Expected result:** "Check a volunteer record" showing **"Valid record, issued by ThankYou"**, "Volunteer service record" for
+- **Expected result:** "Check a volunteer record" showing **"Valid record, issued by Volunteer Services"**, "Volunteer service record" for
   Diego Alvarez with the same table, and "This is a copy of the record as it was issued. If any of these hours are corrected
   later, this page will say so." No email, phone or other activity is shown.
 
 ### TC-HRS-024 · A record says when its hours were corrected — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Visitor, then Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Visitor, then Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/hours` → **Decided**; Visitor: the record link `http://localhost:3202/verify/<token>`; Diego: `http://localhost:3202/volunteer/records`
 - **Before you start:** TC-HRS-022
 - **Steps:**
@@ -291,7 +291,7 @@ S5 (Harbor has 2.5 h to approve for Valerie).
 
 ### TC-HRS-025 · Turn a record link off — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`), then Visitor
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`), then Visitor
 - **Page:** Diego: `http://localhost:3202/volunteer/records`; Visitor: the record link `http://localhost:3202/verify/<token>`
 - **Before you start:** a valid record (TC-HRS-022 on fresh data)
 - **Steps:** Verified records → **Turn off link**. Visitor reloads the link.

@@ -1,4 +1,4 @@
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import { ShieldCheck, ShieldX } from "lucide-react";
 import RecordView, { type Snapshot } from "../../../components/records/RecordView";
 
@@ -26,7 +26,7 @@ export default async function VerifyRecordPage(props: { params: Promise<{ token:
     <main className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
       <p className={`m-0 flex items-center gap-2 text-sm font-semibold ${valid ? "text-success" : "text-danger"}`}>
         {valid ? <ShieldCheck aria-hidden className="h-5 w-5" /> : <ShieldX aria-hidden className="h-5 w-5" />}
-        {valid ? "Valid record, issued by ThankYou" : "Not a valid record right now"}
+        {valid ? "Valid record, issued by Volunteer Services" : "Not a valid record right now"}
       </p>
       {valid ? (
         <>

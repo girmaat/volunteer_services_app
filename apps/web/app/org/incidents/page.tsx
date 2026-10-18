@@ -105,7 +105,7 @@ export default async function Page(
 
       {created === "1" ? (
         <div className={`${styles.card} mt-3`} role="status">
-          Incident recorded. It&apos;s in the list below, and ThankYou staff can see it.
+          Incident recorded. It&apos;s in the list below, and Volunteer Services staff can see it.
         </div>
       ) : created === "0" ? (
         <div className={`${styles.card} mt-3`} role="alert">

@@ -19,7 +19,7 @@ describe("email templates", () => {
 describe("notify()", () => {
   it("sends HTML + text with List-Unsubscribe, honors preferences and throttles digests", async () => {
     const spy = vi.spyOn(email, "sendEmail");
-    const uid = await createUser({ email: "notify.fresh@thankyou.test", roles: ["requester"] });
+    const uid = await createUser({ email: "notify.fresh@volunteer-services-app.test", roles: ["requester"] });
     await notify(uid, "message_received", { title: "t", email: { subject: "S1", heading: "H", lines: ["x"], throttleMinutes: 60 } });
     await notify(uid, "message_received", { title: "t", email: { subject: "S2", heading: "H", lines: ["x"], throttleMinutes: 60 } });
     const calls = spy.mock.calls.filter((c) => c[0].subject.startsWith("S"));
@@ -46,9 +46,9 @@ describe("notify()", () => {
 describe("notification detail (deep links from the bell)", () => {
   it("returns one of your own notifications and nobody else's", async () => {
     const { as } = await import("./helpers");
-    const uid = await createUser({ email: "notify.detail@thankyou.test", roles: ["volunteer"] });
+    const uid = await createUser({ email: "notify.detail@volunteer-services-app.test", roles: ["volunteer"] });
     const { notificationId } = await notify(uid, "message_received", { title: "New message", href: "/messages" });
-    const me = await as("notify.detail@thankyou.test");
+    const me = await as("notify.detail@volunteer-services-app.test");
     const r = await me.get(`/v1/notifications/${notificationId}`);
     expect(r.status).toBe(200);
     expect(r.body).toMatchObject({ id: notificationId, title: "New message", href: "/messages", read_at: null });

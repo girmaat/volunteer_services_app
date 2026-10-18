@@ -21,14 +21,14 @@ process.env.EMAIL_TRANSPORT = "disabled"; // scenario emails would only clutter 
 
 const PASSWORD = process.env.SEED_PASSWORD || (process.env.NODE_ENV === "production" ? "" : "Password!");
 const E = {
-  admin: "admin@thankyou.test",
-  olivia: "org.admin@thankyou.test",
-  rose: "requester@thankyou.test",
-  valerie: "volunteer.local@thankyou.test",
-  ravi: "volunteer.remote@thankyou.test",
-  diego: "dual.role@thankyou.test",
-  tara: "teen.volunteer@thankyou.test",
-  sam: "school.admin@thankyou.test"
+  admin: "admin@volunteer-services-app.test",
+  olivia: "org.admin@volunteer-services-app.test",
+  rose: "requester@volunteer-services-app.test",
+  valerie: "volunteer.local@volunteer-services-app.test",
+  ravi: "volunteer.remote@volunteer-services-app.test",
+  diego: "dual.role@volunteer-services-app.test",
+  tara: "teen.volunteer@volunteer-services-app.test",
+  sam: "school.admin@volunteer-services-app.test"
 } as const;
 
 async function main() {

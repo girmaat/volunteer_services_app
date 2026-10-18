@@ -1,7 +1,7 @@
 import { hasRole } from "../../../lib/access";
 import { notFound, redirect } from "next/navigation";
 import OpportunityDetail, { type OpportunityDetailData } from "../../../components/opportunities/OpportunityDetail";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import { getPublicOpportunity } from "../../../lib/public-api";
 import type { Metadata } from "next";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
@@ -31,7 +31,7 @@ function jsonLd(o: NonNullable<Awaited<ReturnType<typeof getPublicOpportunity>>>
     employmentType: "VOLUNTEER",
     datePosted: o.updated_at,
     ...(o.needed_by ? { validThrough: o.needed_by } : {}),
-    hiringOrganization: { "@type": "Organization", name: o.organization_name || "ThankYou community member" },
+    hiringOrganization: { "@type": "Organization", name: o.organization_name || "Volunteer Services community member" },
     ...(o.mode === "remote"
       ? { jobLocationType: "TELECOMMUTE", applicantLocationRequirements: { "@type": "Country", name: "US" } }
       : { jobLocation: { "@type": "Place", address: { "@type": "PostalAddress", addressLocality: o.location } } })

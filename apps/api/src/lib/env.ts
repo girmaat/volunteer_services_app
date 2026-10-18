@@ -1,4 +1,4 @@
-import { HttpUrl } from "@thankyou/contracts";
+import { HttpUrl } from "@volunteer_services_app/contracts";
 import "dotenv/config";
 import { z } from "zod";
 
@@ -64,7 +64,7 @@ function load(): Env {
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => `  - ${i.path.join(".") || "env"}: ${i.message}`).join("\n");
     // eslint-disable-next-line no-console
-    console.error(`[ThankYou API] Invalid configuration:\n${msg}`);
+    console.error(`[Volunteer Services API] Invalid configuration:\n${msg}`);
     throw new Error("Invalid configuration");
   }
   return parsed.data;
@@ -79,4 +79,4 @@ export const mfaRequiredForStaff = () => {
   return v === undefined || v === "" ? isProduction : ["1", "true", "yes", "on"].includes(String(v).toLowerCase());
 };
 /** Development falls back to a fixed key so local accounts keep working across restarts. */
-export const mfaKey = () => env.MFA_SECRET_KEY || "thankyou-dev-only-mfa-key";
+export const mfaKey = () => env.MFA_SECRET_KEY || "volunteer-services-app-dev-only-mfa-key";

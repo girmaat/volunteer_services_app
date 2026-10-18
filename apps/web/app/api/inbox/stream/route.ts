@@ -1,4 +1,4 @@
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

@@ -5,14 +5,14 @@ import { pool } from "../src/lib/db";
 
 export const PASSWORD = "Test-Password-123!";
 export const EMAILS = {
-  admin: "admin@thankyou.test",
-  orgAdmin: "org.admin@thankyou.test",
-  orgMember: "org.member@thankyou.test",
-  volunteer: "volunteer.local@thankyou.test",
-  remoteVolunteer: "volunteer.remote@thankyou.test",
-  requester: "requester@thankyou.test",
-  dual: "dual.role@thankyou.test",
-  moderator: "moderator@thankyou.test"
+  admin: "admin@volunteer-services-app.test",
+  orgAdmin: "org.admin@volunteer-services-app.test",
+  orgMember: "org.member@volunteer-services-app.test",
+  volunteer: "volunteer.local@volunteer-services-app.test",
+  remoteVolunteer: "volunteer.remote@volunteer-services-app.test",
+  requester: "requester@volunteer-services-app.test",
+  dual: "dual.role@volunteer-services-app.test",
+  moderator: "moderator@volunteer-services-app.test"
 } as const;
 
 let app: Express | null = null;

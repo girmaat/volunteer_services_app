@@ -107,7 +107,7 @@ export function registerOrgTeamRoutes(app: Express) {
       );
 
       const inviteUrl = `${webBaseUrl()}/org/invite?token=${encodeURIComponent(token)}`;
-      const subject = `You're invited to join ${ok.ctx.org.name} on ThankYou`;
+      const subject = `You're invited to join ${ok.ctx.org.name} on Volunteer Services`;
       const body = [
         `You've been invited to join ${ok.ctx.org.name} as a ${role}.`,
         ``,
@@ -183,7 +183,7 @@ export function registerOrgTeamRoutes(app: Express) {
       const inviteEmail = String(row.rows[0].invited_email || "").trim().toLowerCase();
       const role = String(row.rows[0].role || "member");
 
-      const subject = `Reminder: join ${ok.ctx.org.name} on ThankYou`;
+      const subject = `Reminder: join ${ok.ctx.org.name} on Volunteer Services`;
       const body = [
         `You're invited to join ${ok.ctx.org.name} as a ${role}.`,
         ``,

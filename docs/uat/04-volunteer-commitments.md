@@ -10,7 +10,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-001 · My applications lists active and past applications — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/applications` (top menu → **My applications**)
 - **Before you start:** S1, S2, S4, S5
 - **Expected result:**
@@ -21,7 +21,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-002 · Accepted volunteers see the exact address — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/applications` → open *Saturday distribution shift* (address `/volunteer/applications/<id>`)
 - **Before you start:** S4
 - **Expected result:**
@@ -33,7 +33,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-003 · Pending applicants don't see the exact address — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`, Volunteering)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`, Volunteering)
 - **Page:** `http://localhost:3202/volunteer/applications` → open *Saturday distribution shift*
 - **Before you start:** S4
 - **Expected result:** Status **Pending**. "Where: Queens, NY 🔒 exact address after you're accepted". The street
@@ -41,7 +41,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-004 · Confirm "I'm still coming" — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/applications` → open *Saturday distribution shift*
 - **Steps:** Click **I'm still coming**.
 - **Expected result:** "Thanks for confirming. See you there!" The box now reads "You confirmed you're coming. Thank
@@ -50,7 +50,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-005 · Organizer confirms the schedule; it appears in the volunteer's Schedule and calendar file — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/requests` → *Saturday distribution shift* → **Applicants**. Valerie: `http://localhost:3202/volunteer/calendar` (top menu → **Schedule**)
 - **Steps:**
   1. As Olivia, on Valerie's card keep the start time as shown and click **Confirm schedule**.
@@ -64,7 +64,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-006 · Reminder before a confirmed shift — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`) and the new volunteer `uat.vol4@example.test` / `Uat-Pass-2026!` (see README §2 "Accounts you create")
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`) and the new volunteer `uat.vol4@example.test` / `Uat-Pass-2026!` (see README §2 "Accounts you create")
 - **Page:** Rose: `http://localhost:3202/requester/requests/new`; volunteer: `http://localhost:3202/opportunities?q=Reminder+test` → open it; bell or `http://localhost:3202/notifications`
 - **Before you start:** `uat.vol4@example.test` exists and has finished onboarding (README §2).
 - **Steps:**
@@ -78,7 +78,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-007 · Cancel a spot early — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/applications` → open *Deliver meals to homebound seniors* (starts in 2 days)
 - **Test data:** note `My car is in the shop this week, sorry!`
 - **Steps:** Type the note, click **Cancel my spot**.
@@ -90,7 +90,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-008 · Late cancellation is flagged — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`) and the new volunteer `uat.vol4@example.test` / `Uat-Pass-2026!`
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`) and the new volunteer `uat.vol4@example.test` / `Uat-Pass-2026!`
 - **Page:** Rose: `http://localhost:3202/requester/requests/new`; volunteer: `http://localhost:3202/opportunities?q=Late+cancel+test` → apply, then `http://localhost:3202/volunteer/applications`
 - **Steps:**
   1. As Rose post and publish `Late cancel test: carry a box` (Errands & chores, in person, Upper West Side) starting
@@ -105,7 +105,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-009 · Waitlisted volunteer is offered a freed spot — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), Diego (`dual.role@thankyou.test` / `Password!`), Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), Diego (`dual.role@volunteer-services-app.test` / `Password!`), Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/requests` → *Walk and talk in the park* → **Applicants**; Valerie and Diego: `http://localhost:3202/volunteer/applications`
 - **Before you start:** S2 (Diego and Valerie pending, 1 spot)
 - **Steps:**
@@ -119,7 +119,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-010 · Accept a waitlist offer — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/applications` → open *Walk and talk in the park*
 - **Before you start:** TC-VCM-009
 - **Steps:** Click **Yes, I'll take it**.
@@ -128,7 +128,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-011 · Decline a waitlist offer — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Diego (`dual.role@thankyou.test` / `Password!`) (re-run `pnpm db:uat` and repeat TC-VCM-009 steps 1–2 first)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Diego (`dual.role@volunteer-services-app.test` / `Password!`) (re-run `pnpm db:uat` and repeat TC-VCM-009 steps 1–2 first)
 - **Page:** Diego: `http://localhost:3202/volunteer/applications` → open *Walk and talk in the park*
 - **Steps:** In the offer box, click **No thanks**.
 - **Expected result:** "No problem. We've offered it to the next person." The application is no longer offered a spot;
@@ -136,7 +136,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-012 · An unanswered offer expires after 24 hours — P3
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`) (the waitlisted volunteer from TC-VCM-009)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`) (the waitlisted volunteer from TC-VCM-009)
 - **Page:** `http://localhost:3202/volunteer/applications` → open *Walk and talk in the park*, 25 hours after the offer
 - **Before you start:** an offer as in TC-VCM-009, left unanswered.
 - **Steps:** Check the offer after 24 hours (plus up to one hour for the hourly job).
@@ -145,7 +145,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-013 · Withdraw a pending application — P1
 
-- **Tester:** Tara (`teen.volunteer@thankyou.test` / `Password!`)
+- **Tester:** Tara (`teen.volunteer@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/applications` → open *Saturday distribution shift* (Pending, S4)
 - **Steps:** Click **Withdraw application**.
 - **Expected result:** "Application withdrawn." Status changes to Withdrawn and it moves to Past. Harbor's applicant
@@ -153,7 +153,7 @@ Setup: `pnpm db:uat`. Two browser sessions help: the volunteer in one, the organ
 
 ### TC-VCM-014 · Declined applicants are told kindly — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/applications` → **To review**; Diego: bell and `http://localhost:3202/volunteer/applications`
 - **Before you start:** S4
 - **Steps:**

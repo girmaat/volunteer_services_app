@@ -95,7 +95,7 @@ export async function signup(pool: Pool, req: Request, res: Response) {
   const birthDate = parseBirthDate(parsed.data.birthDate);
   if (!birthDate) return res.status(400).json({ message: "Enter your date of birth", errors: { fieldErrors: { birthDate: ["Enter a real date"] } } });
   if ((ageOn(birthDate) ?? 0) < MIN_ACCOUNT_AGE) {
-    return res.status(422).json({ error: { code: "too_young", message: `ThankYou is for people ${MIN_ACCOUNT_AGE} and older.` }, message: `ThankYou is for people ${MIN_ACCOUNT_AGE} and older.` });
+    return res.status(422).json({ error: { code: "too_young", message: `Volunteer Services is for people ${MIN_ACCOUNT_AGE} and older.` }, message: `Volunteer Services is for people ${MIN_ACCOUNT_AGE} and older.` });
   }
 
   const email = parsed.data.email.toLowerCase().trim();
@@ -125,8 +125,8 @@ export async function signup(pool: Pool, req: Request, res: Response) {
       const verifyUrl = `${webBaseUrl()}/verify-email?token=${encodeURIComponent(token)}`;
       const delivery = await sendEmail({
         to: email,
-        subject: "Verify your ThankYou email",
-        text: `Welcome to ThankYou!
+        subject: "Verify your Volunteer Services email",
+        text: `Welcome to Volunteer Services!
 
 Verify your email to continue:
 ${verifyUrl}
@@ -148,8 +148,8 @@ If you didn't create this account, you can ignore this email.`
     // Don't reveal that the address has an account; tell its owner instead.
     await sendEmail({
       to: email,
-      subject: "You already have a ThankYou account",
-      text: `Someone (maybe you) tried to create a ThankYou account with this email address, which already has one.
+      subject: "You already have a Volunteer Services account",
+      text: `Someone (maybe you) tried to create a Volunteer Services account with this email address, which already has one.
 
 Sign in: ${webBaseUrl()}/login
 Forgot your password? ${webBaseUrl()}/forgot-password
@@ -192,7 +192,7 @@ If this wasn't you, you can ignore this email.`
 
   const delivery = await sendEmail({
     to: email,
-    subject: "Verify your ThankYou email",
+    subject: "Verify your Volunteer Services email",
     text: `Verify your email to continue:
 ${verifyUrl}
 
@@ -238,7 +238,7 @@ export async function resendVerification(pool: Pool, req: Request, res: Response
 
   const delivery = await sendEmail({
     to: email,
-    subject: "Verify your ThankYou email",
+    subject: "Verify your Volunteer Services email",
     text: `Verify your email to continue:
 ${verifyUrl}
 
@@ -444,7 +444,7 @@ export async function forgotPassword(pool: Pool, req: Request, res: Response) {
 
   const delivery = await sendEmail({
     to: email,
-    subject: "Reset your ThankYou password",
+    subject: "Reset your Volunteer Services password",
     text: `Reset your password using the link below:
 ${resetUrl}
 
@@ -633,7 +633,7 @@ export async function setProfile(pool: Pool, req: Request, res: Response) {
   if (d.birthDate !== undefined) {
     birthDate = parseBirthDate(d.birthDate);
     if (!birthDate) return res.status(400).json({ message: "Enter your date of birth as a real date", errors: { fieldErrors: { birthDate: ["Invalid date"] } } });
-    if ((ageOn(birthDate) ?? 0) < MIN_ACCOUNT_AGE) return res.status(422).json({ error: { code: "too_young", message: `ThankYou is for people ${MIN_ACCOUNT_AGE} and older.` }, message: `ThankYou is for people ${MIN_ACCOUNT_AGE} and older.` });
+    if ((ageOn(birthDate) ?? 0) < MIN_ACCOUNT_AGE) return res.status(422).json({ error: { code: "too_young", message: `Volunteer Services is for people ${MIN_ACCOUNT_AGE} and older.` }, message: `Volunteer Services is for people ${MIN_ACCOUNT_AGE} and older.` });
   }
 
   // Ensure a profile row exists.

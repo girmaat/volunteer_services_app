@@ -1,6 +1,6 @@
 import { forwardHeaders } from "../../lib/forward";
 import styles from "../(auth)/auth.module.css";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import SignupForm, { type SignupState } from "./SignupForm";
 
 export const metadata = { title: "Create an account", alternates: { canonical: "/signup" } };

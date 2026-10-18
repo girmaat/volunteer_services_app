@@ -11,7 +11,7 @@ export function registerDocsRoutes(app: Express) {
     res.json(cached);
   });
   app.get("/v1/docs", (_req, res) => {
-    res.type("html").send(`<!doctype html><html><head><meta charset="utf-8"><title>ThankYou API</title>
+    res.type("html").send(`<!doctype html><html><head><meta charset="utf-8"><title>Volunteer Services API</title>
 <meta name="viewport" content="width=device-width, initial-scale=1"></head>
 <body><redoc spec-url="/v1/openapi.json"></redoc>
 <script src="https://cdn.jsdelivr.net/npm/redoc@2.5.0/bundles/redoc.standalone.js"></script></body></html>`);

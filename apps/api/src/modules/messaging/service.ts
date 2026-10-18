@@ -44,7 +44,7 @@ export const contactsUnlocked = (c: Pick<Conversation, "application_status"> & {
 export function sideOf(user: PolicyUser, c: Conversation): Side | null {
   if (c.volunteer_user_id === user.id) return "volunteer";
   if (c.owner_user_id === user.id) return "owner";
-  // Support threads: any platform admin answers for the ThankYou team.
+  // Support threads: any platform admin answers for the Volunteer Services team.
   if (c.kind === "support") return can(user, "platform:admin") ? "owner" : null;
   if (c.org_slug) {
     const m = orgMembership(user, c.org_slug);
@@ -167,7 +167,7 @@ export async function listConversations(user: PolicyUser, scope: ListScope) {
       with_name:
         row.kind === "support"
           ? iAmVolunteer
-            ? "ThankYou support"
+            ? "Volunteer Services support"
             : `${row.volunteer_name || "Member"}${row.support_org_name ? ` (${row.support_org_name})` : ""}`
           : iAmVolunteer
             ? row.org_name || row.owner_name || "Organizer"

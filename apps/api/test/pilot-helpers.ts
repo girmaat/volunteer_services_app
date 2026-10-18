@@ -14,9 +14,9 @@ export async function makeOrg(opts: { verified?: boolean; policy?: string } = {}
      VALUES ($1, $2, 'A test organization for pilot rules.', 'Queens, NY', TRUE, $3, $4, $5)`,
     [slug, `Org ${slug}`, opts.verified === false ? "required" : "approved", opts.verified === false ? null : new Date(), opts.policy ?? "owner_first_and_high_risk"]
   );
-  const admin = `${slug}.admin@thankyou.test`;
-  const manager = `${slug}.manager@thankyou.test`;
-  const member = `${slug}.member@thankyou.test`;
+  const admin = `${slug}.admin@volunteer-services-app.test`;
+  const manager = `${slug}.manager@volunteer-services-app.test`;
+  const member = `${slug}.member@volunteer-services-app.test`;
   await createUser({ email: admin, org: { slug, role: "admin" } });
   await createUser({ email: manager, org: { slug, role: "manager" } });
   await createUser({ email: member, org: { slug, role: "member" } });
@@ -48,7 +48,7 @@ export async function publish(email: string, id: string) {
 export async function staffed(o: Awaited<ReturnType<typeof makeOrg>>, extra: Record<string, unknown> = {}, volunteer?: string) {
   const id = await orgRequest(o.admin, o.slug, extra);
   expect((await publish(o.admin, id)).status).toBe(200);
-  const v = volunteer ?? uniq("vol") + "@thankyou.test";
+  const v = volunteer ?? uniq("vol") + "@volunteer-services-app.test";
   if (!volunteer) await createUser({ email: v, roles: ["volunteer"] });
   const ap = await (await as(v)).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "Happy to help", ...(extra.targetValue ? { offeredAmount: 5 } : {}) });
   expect(ap.status, JSON.stringify(ap.body)).toBe(201);

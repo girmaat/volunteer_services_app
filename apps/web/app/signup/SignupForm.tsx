@@ -121,7 +121,7 @@ export default function SignupForm({ action }: { action: ServerAction }) {
             <div className={styles.meta}>Date of birth</div>
             <input className={styles.input} name="birthDate" type="date" autoComplete="bday" required max={new Date().toISOString().slice(0, 10)} aria-describedby="dob-hint" />
             <div id="dob-hint" className={styles.meta}>
-              ThankYou is for people 16 and older. We never show your birth date; it’s used to match you with opportunities you’re old enough for.
+              Volunteer Services is for people 16 and older. We never show your birth date; it’s used to match you with opportunities you’re old enough for.
             </div>
           </label>
 

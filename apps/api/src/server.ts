@@ -19,7 +19,7 @@ async function start() {
   await startRealtime();
   startGeoBackfill();
 
-  const server = app.listen(env.PORT, () => logger.info(`ThankYou API listening on http://localhost:${env.PORT}`));
+  const server = app.listen(env.PORT, () => logger.info(`Volunteer Services API listening on http://localhost:${env.PORT}`));
   server.keepAliveTimeout = 65_000; // longer than typical load-balancer idle timeouts
 
   let shuttingDown = false;

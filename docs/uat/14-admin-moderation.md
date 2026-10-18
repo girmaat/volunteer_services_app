@@ -15,7 +15,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-001 · Admin overview — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin` (account menu → switcher **Platform admin**, or open the address)
 - **Expected result:**
   - "Admin dashboard — Platform health + moderation queues." with tiles: Users, New users (7d), Organizations,
@@ -27,7 +27,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-002 · Moderators see only their queues — P1
 
-- **Tester:** Maya (`moderator@thankyou.test` / `Password!`)
+- **Tester:** Maya (`moderator@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin`
 - **Steps:** Open the address, then try `http://localhost:3202/admin/users`, `http://localhost:3202/admin/organizations`,
   `http://localhost:3202/admin/support` and `http://localhost:3202/admin/audit`.
@@ -38,7 +38,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-003 · Approve a request waiting for review — P1
 
-- **Tester:** Maya (`moderator@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Maya (`moderator@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/admin/moderation?tab=review`
 - **Steps:**
   1. Find *Help hanging curtains and a shelf*. Read the card.
@@ -54,7 +54,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-004 · Send a request back with a note — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Maya (`moderator@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Maya (`moderator@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/requests/new`. Maya: `http://localhost:3202/admin/moderation?tab=review`
 - **Test data:** Rose posts `Help moving a mattress` (category **Help inside a home**, in person, Upper West Side,
   Manhattan, NY, any date next week). Maya's note: `Please say which floor and whether there's an elevator.`
@@ -69,7 +69,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-005 · Filter the review queue by category — P3
 
-- **Tester:** Maya (`moderator@thankyou.test` / `Password!`)
+- **Tester:** Maya (`moderator@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/moderation?tab=review`
 - **Before you start:** at least one request waiting (e.g. TC-ADM-004 step 1)
 - **Steps:** Click a category chip above the cards, then **All**.
@@ -78,7 +78,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-006 · Take down a live request — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/opportunities`
 - **Test data:** search `Ride to a medical`; reason `UAT: medical rides need a licensed provider.`
 - **Steps:**
@@ -92,7 +92,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-007 · Restore a taken-down request — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/opportunities?status=removed`
 - **Before you start:** TC-ADM-006
 - **Steps:** Click **Restore** on *Ride to a medical appointment*.
@@ -100,7 +100,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-008 · Release or reject held messages — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Maya (`moderator@thankyou.test` / `Password!`), then Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Maya (`moderator@volunteer-services-app.test` / `Password!`), then Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** Valerie: `http://localhost:3202/inbox` → Rose · *Help me carry groceries upstairs*. Maya:
   `http://localhost:3202/admin/moderation?tab=messages`
 - **Test data:** Valerie sends `Can you pay me back by Venmo?` and then `Please buy me a gift card first.`
@@ -115,7 +115,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-009 · Decide a dispute — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/moderation?tab=disputes`
 - **Before you start:** a dispute exists (TC-HRS-006: Valerie disputed declined hours; or TC-REV-004's "Open a dispute")
 - **Test data:** Decision notes `UAT: checked the sign-in sheet; the hours stand.`
@@ -126,7 +126,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-010 · Reports queue — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/reports`
 - **Before you start:** S7, S9
 - **Steps:**
@@ -141,7 +141,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-011 · Strike or temporarily ban from a report — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/reports` → Valerie's report → **View details** (`http://localhost:3202/admin/reports/<id>`)
 - **Test data:** Strike reason `UAT: misleading request`
 - **Steps:**
@@ -152,7 +152,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-012 · Review an ID submission — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/verification?tab=users` → Ravi → **Review**
   (`http://localhost:3202/admin/verification/users/<id>`)
 - **Before you start:** S12
@@ -167,7 +167,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-013 · Review an organization's verification — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/verification?tab=organizations`
 - **Before you start:** TC-ORG-017 (Olivia submitted Bright Futures Tutoring for verification)
 - **Test data:** Reason `UAT: please add your registration number.`
@@ -182,7 +182,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-014 · Suspend and reinstate a verified organization — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/verification?tab=organizations` (or Organizations → **View org**)
 - **Test data:** Reason `UAT: suspension test`
 - **Steps:**
@@ -194,7 +194,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-015 · Moderate a shared link — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/admin/reports` → one of the S9 share-link reports → **View details**
 - **Before you start:** S9
 - **Steps:**
@@ -209,10 +209,10 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-016 · Find users — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/users`
 - **Steps:**
-  1. Search `thankyou.test`, click **Apply**.
+  1. Search `volunteer-services-app.test`, click **Apply**.
   2. Set **Verification** = Submitted, Apply.
   3. Set **Admin role** = Admin: Super, Apply. Then **Clear**.
 - **Expected result:** 1: all seed users with their type, trust and admin columns. 2: only Ravi. 3: only Ada.
@@ -220,7 +220,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-017 · Strike and clear strikes — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/users` → search `dual.role`
 - **Test data:** Strike reason `UAT: late twice`
 - **Steps:** Type the reason, click **Strike**; then click **Clear strikes**.
@@ -229,7 +229,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-018 · Ban and unban a user — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/users` → search `volunteer.remote`
 - **Test data:** Ban reason `UAT: ban test`; Days **1 day**
 - **Steps:**
@@ -243,7 +243,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-019 · Shadow-ban — P3
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), Valerie (`volunteer.local@thankyou.test` / `Password!`), Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/users` → search `volunteer.local`
 - **Steps:**
   1. Click **Shadow-ban** for Valerie.
@@ -254,7 +254,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-020 · Grant and revoke admin access — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Nora (`org.manager@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Nora (`org.manager@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/users` → search `org.manager`
 - **Steps:**
   1. Click **Grant admin**. Nora opens `http://localhost:3202/admin`.
@@ -265,7 +265,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-021 · Delete a user — P3
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/users`
 - **Before you start:** a test account you created (e.g. `uat.vol3@example.test` from 02)
 - **Steps:** Find it, click **Delete**, type `delete` (lower case) and confirm; then type `DELETE` and confirm.
@@ -274,7 +274,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-022 · Record a background check — P3
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/users` → search `volunteer.remote`
 - **Steps:** Set **Background check** = cleared and click **Save**. Ravi opens an opportunity that requires a cleared
   background check (e.g. one posted in TC-OPS-002).
@@ -282,7 +282,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-023 · Organizations management — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/organizations`
 - **Steps:**
   1. Search `harbor`, Apply. Then clear the search and sort by **Members**.
@@ -294,7 +294,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-024 · Categories — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/categories`
 - **Steps:**
   1. Untick **Open for new requests** on *Translation & language* and **Save**.
@@ -306,7 +306,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-025 · Incident reports — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/incidents`
 - **Before you start:** TC-OPS-020 (Olivia recorded an incident)
 - **Test data:** Internal notes `UAT: called the org`; Outcome `Resolved with the volunteer.`
@@ -316,7 +316,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-026 · Enforcement overview — P3
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/enforcement`
 - **Before you start:** TC-ADM-017 and TC-ADM-018 done (or any strike or ban)
 - **Expected result:** "Strike / ban management" with **Active bans** (user, until, reason, Unban) and **Recent
@@ -324,7 +324,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-027 · Audit log — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/audit`
 - **Before you start:** any admin or moderator action above
 - **Steps:** Read the newest entries. Copy a target id from one row, paste it in **Target id**, click **Filter**.
@@ -334,9 +334,9 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-028 · Maintenance mode — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/admin`
-- **Test data:** Message `We're upgrading ThankYou. Back in 15 minutes.`
+- **Test data:** Message `We're upgrading Volunteer Services. Back in 15 minutes.`
 - **Steps:**
   1. Tick **Enable maintenance mode**, type the message, click **Save**.
   2. Wait 30 seconds. As a visitor open `http://localhost:3202/` and `http://localhost:3202/opportunities`.
@@ -351,7 +351,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-029 · Advertisement panels — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/admin/ads`
 - **Before you start:** S13. Use a browser window at least 1280 px wide for the visitor.
 - **Steps:**
@@ -367,7 +367,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-030 · Create, schedule, turn off and delete an ad — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/admin/ads` → **New ad**
 - **Test data:** Title `Spring food drive — volunteers wanted`; Text `Help sort donations on Saturdays.`; Link
   `/opportunities`; Panel **Left**; Order `0`; Expires after **yesterday's date**; Image: a PNG under 1 MB
@@ -382,7 +382,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-031 · Support messages from organizations — P2
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin/support`
 - **Before you start:** TC-MSG-021 step 1 (Olivia messaged the team)
 - **Expected result:** "Support messages" lists "Olivia · Harbor Food Bank" with her last message and **Needs a
@@ -391,7 +391,7 @@ Some cases change accounts (bans, strikes, deletion). Run `pnpm db:uat` again be
 
 ### TC-ADM-032 · The admin portal is closed to everyone else — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Olivia (`org.admin@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/admin`, `http://localhost:3202/admin/users`, `http://localhost:3202/admin/moderation`
 - **Steps:** Open each address as each tester.
 - **Expected result:** Valerie and Olivia get **Access denied** ("You don't have permission to view this page.").

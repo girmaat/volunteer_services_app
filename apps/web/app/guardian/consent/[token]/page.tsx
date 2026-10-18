@@ -1,4 +1,4 @@
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import { redirect } from "next/navigation";
 import { CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
 import { Button, Card, Notice } from "../../../../components/ui";
@@ -48,7 +48,7 @@ export default async function GuardianConsentPage(props: { params: Promise<{ tok
     return (
       <main className="mx-auto max-w-2xl px-4 py-12">
         <h1 className="m-0 font-display text-3xl font-bold">This link isn’t valid</h1>
-        <p className="m-0 mt-2 text-lg text-muted">It may have been replaced by a newer request. Ask your teenager to send it again from ThankYou.</p>
+        <p className="m-0 mt-2 text-lg text-muted">It may have been replaced by a newer request. Ask your teenager to send it again from Volunteer Services.</p>
       </main>
     );
   }
@@ -88,7 +88,7 @@ export default async function GuardianConsentPage(props: { params: Promise<{ tok
             <p className="m-0 whitespace-pre-line">{c.description}</p>
             {c.equipment_notes ? <p className="m-0 text-sm"><span className="font-medium">What to bring:</span> {c.equipment_notes}</p> : null}
             {c.accessibility_notes ? <p className="m-0 text-sm"><span className="font-medium">Accessibility:</span> {c.accessibility_notes}</p> : null}
-            <p className="m-0 text-sm text-muted">Messages with your teenager happen only in this opportunity’s thread on ThankYou, which the organization’s staff can see, and phone numbers and email addresses are hidden in it.</p>
+            <p className="m-0 text-sm text-muted">Messages with your teenager happen only in this opportunity’s thread on Volunteer Services, which the organization’s staff can see, and phone numbers and email addresses are hidden in it.</p>
           </Card>
           <form action={respond.bind(null, token)} className="mt-6 grid gap-4">
             <label className="grid gap-1.5 text-sm font-semibold">

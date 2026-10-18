@@ -36,7 +36,7 @@ importers:
       '@asteasolutions/zod-to-openapi':
         specifier: ^7.3.4
         version: 7.3.4(zod@3.25.76)
-      '@thankyou/contracts':
+      '@volunteer_services_app/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
       bcryptjs:
@@ -142,10 +142,10 @@ importers:
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.1.25
         version: 2.1.25(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@thankyou/config':
+      '@volunteer_services_app/config':
         specifier: workspace:*
         version: link:../../packages/config
-      '@thankyou/contracts':
+      '@volunteer_services_app/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
       clsx:

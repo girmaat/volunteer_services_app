@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import { homeForContext } from "../../../lib/access";
 
 function token(req: Request) {

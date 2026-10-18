@@ -36,7 +36,7 @@ describe("authentication", () => {
   });
 
   it("rejects wrong passwords with a generic message", async () => {
-    const res = await anon().post("/v1/auth/login").send({ email: "requester@thankyou.test", password: "wrong" });
+    const res = await anon().post("/v1/auth/login").send({ email: "requester@volunteer-services-app.test", password: "wrong" });
     expect(res.status).toBe(401);
     expect(res.body.message).toBe("Invalid email or password");
     const unknown = await anon().post("/v1/auth/login").send({ email: "nobody@example.com", password: "wrong" });
@@ -45,7 +45,7 @@ describe("authentication", () => {
 
   it("forgot-password responds identically for known and unknown emails", async () => {
     process.env.DEV_EMAIL_LINKS = "false";
-    const known = await anon().post("/v1/auth/forgot-password").send({ email: "requester@thankyou.test" });
+    const known = await anon().post("/v1/auth/forgot-password").send({ email: "requester@volunteer-services-app.test" });
     const unknown = await anon().post("/v1/auth/forgot-password").send({ email: "nobody@example.com" });
     process.env.DEV_EMAIL_LINKS = "true";
     expect(known.status).toBe(202);
@@ -54,7 +54,7 @@ describe("authentication", () => {
   });
 
   it("resets a password with a valid token and revokes other sessions", async () => {
-    const victim = "volunteer.remote@thankyou.test";
+    const victim = "volunteer.remote@volunteer-services-app.test";
     const login = await anon().post("/v1/auth/login").send({ email: victim, password: PASSWORD });
     const oldSession = login.body.sessionToken;
     const fp = await anon().post("/v1/auth/forgot-password").send({ email: victim });
@@ -72,8 +72,8 @@ describe("authentication", () => {
   });
 
   it("blocks banned users", async () => {
-    const r = await pool.query("UPDATE users SET banned_until = NOW() + INTERVAL '1 day' WHERE email = 'dual.role@thankyou.test' RETURNING id");
-    const login = await anon().post("/v1/auth/login").send({ email: "dual.role@thankyou.test", password: PASSWORD });
+    const r = await pool.query("UPDATE users SET banned_until = NOW() + INTERVAL '1 day' WHERE email = 'dual.role@volunteer-services-app.test' RETURNING id");
+    const login = await anon().post("/v1/auth/login").send({ email: "dual.role@volunteer-services-app.test", password: PASSWORD });
     const session = login.body.sessionToken;
     const res = session ? await anon().get("/v1/volunteer/dashboard").set("authorization", `Bearer ${session}`) : login;
     expect([401, 403]).toContain(res.status);

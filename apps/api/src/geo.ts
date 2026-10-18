@@ -43,7 +43,7 @@ async function fetchNominatimNow(query: string): Promise<GeoPoint | null> {
     signal: AbortSignal.timeout(4000),
     headers: {
       // Nominatim usage policy requires a valid User-Agent.
-      "user-agent": "ThankYouApp/1.0 (volunteer-app)",
+      "user-agent": "VolunteerServicesApp/1.0 (volunteer-app)",
       accept: "application/json"
     }
   });

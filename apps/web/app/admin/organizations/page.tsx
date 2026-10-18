@@ -1,7 +1,7 @@
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { ORG_TYPE_LABEL, ORG_TYPES, type OrgTypeValue } from "@thankyou/contracts";
+import { ORG_TYPE_LABEL, ORG_TYPES, type OrgTypeValue } from "@volunteer_services_app/contracts";
 
 export const dynamic = "force-dynamic";
 

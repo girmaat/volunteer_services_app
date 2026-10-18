@@ -36,7 +36,7 @@ export async function reportAction(applicationId: string, fd: FormData) {
   go(r.ok ? "flash=reported" : `error=${encodeURIComponent(await msg(r))}`, `#w-${applicationId}`);
 }
 
-/** Service that happened outside ThankYou: kept, but always marked self-reported. */
+/** Service that happened outside Volunteer Services: kept, but always marked self-reported. */
 export async function outsideAction(fd: FormData) {
   const description = String(fd.get("description") || "").trim();
   const r = await backendFetch("/v1/volunteer/contributions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ description, ...timeFields(fd) }) });

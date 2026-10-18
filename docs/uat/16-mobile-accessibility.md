@@ -1,6 +1,6 @@
 # 16 · Phones, keyboard and screen readers
 
-ThankYou must work on a phone and for people who use a keyboard or a screen reader. On a phone, public pages get a
+Volunteer Services must work on a phone and for people who use a keyboard or a screen reader. On a phone, public pages get a
 menu button (☰); signed-in areas get a compact top bar and tabs along the bottom of the screen (with a **More** tab
 when an area has more than five destinations).
 
@@ -45,14 +45,14 @@ Setup: `pnpm db:uat`.
 
 ### TC-MOB-003 · Volunteer area on a phone — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/dashboard` at phone size
 - **Steps:**
   1. Look at the top bar and the bottom of the screen.
   2. Tap each bottom tab. Tap **More**, then **Impact**.
   3. Open the account menu (round avatar, top right) and the switcher.
 - **Expected result:**
-  - 1: top bar with the ThankYou logo, the "Volunteering" switcher, the bell and the avatar. Bottom tabs: Home, Find
+  - 1: top bar with the Volunteer Services logo, the "Volunteering" switcher, the bell and the avatar. Bottom tabs: Home, Find
     opportunities, My applications, Schedule, **More**. The tab for the current page is highlighted.
   - 2: each tab opens its page. **More** opens a small list with Inbox and Impact above the tabs; tapping Impact
     opens it and closes the list; the More tab is highlighted while you're on Inbox or Impact.
@@ -61,7 +61,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-MOB-004 · Organization and admin areas on a phone — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/dashboard`, `http://localhost:3202/org/applications`, then
   `http://localhost:3202/admin`, `http://localhost:3202/admin/users` at phone size
 - **Steps:** Use the bottom tabs and **More** to visit each section.
@@ -73,7 +73,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-MOB-005 · Messages on a phone — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/inbox` at phone size
 - **Before you start:** S1
 - **Steps:** Open the conversation with Rose, read it, type `Phone test` and tap **Send**. Tap **← Inbox**.
@@ -82,7 +82,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-MOB-006 · Posting a request on a phone — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests/new` at phone size
 - **Test data:** Title `Phone test: water my plants`; Errands & chores; in person; Upper West Side, Manhattan, NY;
   a date next week
@@ -92,7 +92,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-MOB-007 · Using the site with only the keyboard — P1
 
-- **Tester:** Visitor (signed out, no login needed), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Visitor (signed out, no login needed), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/`, then `http://localhost:3202/login`, then
   `http://localhost:3202/volunteer/opportunities/recommended` (desktop size, don't touch the mouse)
 - **Steps:**
@@ -111,7 +111,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-MOB-008 · Screen reader labels — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/dashboard`, `http://localhost:3202/opportunities`,
   `http://localhost:3202/settings/account` with the screen reader on
 - **Steps:** Move through each page with the screen reader's heading and form-field shortcuts.

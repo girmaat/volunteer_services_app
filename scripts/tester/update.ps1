@@ -1,7 +1,7 @@
-# ThankYou - download the newest version from GitHub, update packages and reload the test data.
+# Volunteer Services - download the newest version from GitHub, update packages and reload the test data.
 . (Join-Path $PSScriptRoot "common.ps1")
 Refresh-Path
-if ((Port-InUse 3202) -or (Port-InUse 4202)) { Fail "ThankYou is running. Close the 'ThankYou server' window first, then run Update again." }
+if ((Port-InUse 3202) -or (Port-InUse 4202)) { Fail "Volunteer Services is running. Close the 'Volunteer Services server' window first, then run Update again." }
 Say "Downloading the newest version..."
 git pull --ff-only
 if ($LASTEXITCODE -ne 0) {

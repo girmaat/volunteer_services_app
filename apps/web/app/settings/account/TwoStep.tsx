@@ -14,7 +14,7 @@ export default function TwoStep({ enabled, required }: { enabled: boolean; requi
 
   if (state.view === "scan") {
     // A short otpauth link keeps the QR small enough to scan easily.
-    const uri = `otpauth://totp/ThankYou?secret=${state.secret}&issuer=ThankYou`;
+    const uri = `otpauth://totp/Volunteer%20Services?secret=${state.secret}&issuer=Volunteer%20Services`;
     return (
       <form action={action} className="grid gap-4">
         <input type="hidden" name="step" value="enable" />
@@ -26,7 +26,7 @@ export default function TwoStep({ enabled, required }: { enabled: boolean; requi
           <li>Type the 6-digit code the app shows.</li>
         </ol>
         <div className="w-fit rounded-md border border-line bg-white p-3">
-          <QrCode text={uri} size={184} title="QR code to add ThankYou to your authenticator app" />
+          <QrCode text={uri} size={184} title="QR code to add Volunteer Services to your authenticator app" />
         </div>
         {state.error ? <Notice tone="danger">{state.error}</Notice> : null}
         <div className="grid max-w-xs gap-1.5">

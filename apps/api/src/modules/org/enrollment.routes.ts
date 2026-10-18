@@ -1,4 +1,4 @@
-import { HttpUrl, OrgType } from "@thankyou/contracts";
+import { HttpUrl, OrgType } from "@volunteer_services_app/contracts";
 import type { Express } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -66,8 +66,8 @@ export function registerOrgEnrollmentRoutes(app: Express) {
         // Don't reveal that the address has an account (the same answer as a new sign-up); tell its owner instead.
         await sendEmail({
           to: email,
-          subject: "You already have a ThankYou account",
-          text: `Someone (maybe you) tried to register an organization on ThankYou with this email address, which already has an account.
+          subject: "You already have a Volunteer Services account",
+          text: `Someone (maybe you) tried to register an organization on Volunteer Services with this email address, which already has an account.
 
 To add an organization to your account, sign in and open: ${webBaseUrl()}/org/signup
 Forgot your password? ${webBaseUrl()}/forgot-password
@@ -138,8 +138,8 @@ If this wasn't you, you can ignore this email.`
       const verifyUrl = `${webBaseUrl()}/verify-email?token=${encodeURIComponent(token)}`;
       const delivery = await sendEmail({
         to: email,
-        subject: "Verify your ThankYou email",
-        text: `Welcome to ThankYou!
+        subject: "Verify your Volunteer Services email",
+        text: `Welcome to Volunteer Services!
 
 Verify your email to continue:
 ${verifyUrl}
@@ -522,7 +522,7 @@ app.post(
         return res.status(409).json({ message: "Organization is already verified." });
       }
       if (status === "suspended") {
-        return res.status(409).json({ message: "This organization is suspended. Reply to the notice from ThankYou to ask for a review." });
+        return res.status(409).json({ message: "This organization is suspended. Reply to the notice from Volunteer Services to ask for a review." });
       }
 
       await pool.query(

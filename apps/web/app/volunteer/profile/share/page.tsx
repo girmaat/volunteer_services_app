@@ -19,7 +19,7 @@ type ShareState = {
 type Field = "show_name" | "show_location" | "show_about" | "show_total_hours" | "show_average_rating" | "show_reviews_count";
 
 const FIELDS: { key: Field; label: string; hint?: string }[] = [
-  { key: "show_name", label: "Name", hint: "Your display name. Off shows “A ThankYou volunteer”." },
+  { key: "show_name", label: "Name", hint: "Your display name. Off shows “An anonymous volunteer”." },
   { key: "show_location", label: "Location", hint: "The general area on your profile, never your address." },
   { key: "show_about", label: "About", hint: "The “About you” text from your profile." },
   { key: "show_total_hours", label: "Total hours logged", hint: "Approved hours only." },

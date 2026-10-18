@@ -7,7 +7,7 @@ describe("account self-service (U14)", () => {
   it("exports everything held about the user as JSON", async () => {
     const r = await (await as(EMAILS.requester)).get("/v1/me/export");
     expect(r.status).toBe(200);
-    expect(r.headers["content-disposition"]).toContain("thankyou-data-");
+    expect(r.headers["content-disposition"]).toContain("volunteer-services-app-data-");
     const data = JSON.parse(r.text);
     expect(data.account.email).toBe(EMAILS.requester);
     expect(Array.isArray(data.requests_posted)).toBe(true);
@@ -16,8 +16,8 @@ describe("account self-service (U14)", () => {
   });
 
   it("deletes an account after password confirmation and cancels open work", async () => {
-    await createUser({ email: "leaving@thankyou.test", roles: ["requester", "volunteer"] });
-    const api = await as("leaving@thankyou.test");
+    await createUser({ email: "leaving@volunteer-services-app.test", roles: ["requester", "volunteer"] });
+    const api = await as("leaving@volunteer-services-app.test");
     const d = await api.post("/v1/requests", { title: "Leaving: help me", description: "This request should be canceled on deletion.", category: "errands", mode: "remote", scheduleType: "flexible_window" });
     await api.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
     expect((await api.post("/v1/me/delete", { password: PASSWORD })).status).toBe(400);
@@ -25,7 +25,7 @@ describe("account self-service (U14)", () => {
     const del = await api.post("/v1/me/delete", { password: PASSWORD, confirm: "DELETE" });
     expect(del.status, JSON.stringify(del.body)).toBe(200);
     expect((await api.get("/v1/me")).status).toBe(401);
-    expect((await anon().post("/v1/auth/login").send({ email: "leaving@thankyou.test", password: PASSWORD })).status).not.toBe(200);
+    expect((await anon().post("/v1/auth/login").send({ email: "leaving@volunteer-services-app.test", password: PASSWORD })).status).not.toBe(200);
     const r = await pool.query("SELECT status, cancel_reason FROM service_requests WHERE id = $1", [d.body.id]);
     expect(r.rows[0].status).toBe("canceled");
     const p = await pool.query("SELECT display_name, full_name FROM user_profiles p JOIN users u ON u.id = p.user_id WHERE u.email LIKE 'deleted+%' AND u.id = (SELECT requester_user_id FROM service_requests WHERE id = $1)", [d.body.id]);
@@ -41,16 +41,16 @@ describe("account self-service (U14)", () => {
 
 describe("attendance confirmation and impact export (U8, U10)", () => {
   it("accepted volunteers confirm attendance", async () => {
-    await createUser({ email: "confirm.vol@thankyou.test", roles: ["volunteer"] });
+    await createUser({ email: "confirm.vol@volunteer-services-app.test", roles: ["volunteer"] });
     const owner = await as(EMAILS.requester);
     const d = await owner.post("/v1/requests", { title: "Confirm: shift", description: "Confirm attendance test request.", category: "errands", mode: "remote", scheduleType: "one_time", startsAt: soon(40) });
     await owner.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
-    const v = await as("confirm.vol@thankyou.test");
+    const v = await as("confirm.vol@volunteer-services-app.test");
     const ap = await v.post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
     expect((await v.post(`/v1/volunteer/applications/${ap.body.applicationId}/confirm-attendance`)).status).toBe(409);
     await ownerAct(owner, ap.body.applicationId, "accept");
     expect((await v.post(`/v1/volunteer/applications/${ap.body.applicationId}/confirm-attendance`)).body.confirmed).toBe(true);
-    const c = await pool.query("SELECT volunteer_confirmed_at FROM request_commitments WHERE request_id = $1 AND volunteer_user_id = $2", [d.body.id, await userId("confirm.vol@thankyou.test")]);
+    const c = await pool.query("SELECT volunteer_confirmed_at FROM request_commitments WHERE request_id = $1 AND volunteer_user_id = $2", [d.body.id, await userId("confirm.vol@volunteer-services-app.test")]);
     expect(c.rows[0].volunteer_confirmed_at).toBeTruthy();
 
     // The commitment downloads as a calendar file, for its volunteer only.
@@ -63,11 +63,11 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
   });
 
   it("completed work becomes pending hours; only the reviewer's approval counts (CON-05, REC-01, DATA-04)", async () => {
-    await createUser({ email: "hours.vol@thankyou.test", roles: ["volunteer"] });
+    await createUser({ email: "hours.vol@volunteer-services-app.test", roles: ["volunteer"] });
     const owner = await as(EMAILS.requester);
     const d = await owner.post("/v1/requests", { title: "Hours: shift", description: "Impact hours test request.", category: "errands", mode: "remote", scheduleType: "one_time", startsAt: soon(40), durationMinutes: 90 });
     await owner.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
-    const v = await as("hours.vol@thankyou.test");
+    const v = await as("hours.vol@volunteer-services-app.test");
     const ap = await v.post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
     await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "accept" });
     await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "complete" });
@@ -121,11 +121,11 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
   });
 
   it("the volunteer can dispute a decision; another reviewer or platform staff look again (CON-06)", async () => {
-    await createUser({ email: "dispute.vol@thankyou.test", roles: ["volunteer"] });
+    await createUser({ email: "dispute.vol@volunteer-services-app.test", roles: ["volunteer"] });
     const owner = await as(EMAILS.requester);
     const d = await owner.post("/v1/requests", { title: "Hours: dispute", description: "Dispute test request here.", category: "errands", mode: "remote", scheduleType: "one_time", startsAt: soon(40), durationMinutes: 120 });
     await owner.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
-    const v = await as("dispute.vol@thankyou.test");
+    const v = await as("dispute.vol@volunteer-services-app.test");
     const ap = await v.post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
     await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "accept" });
     await owner.post(`/v1/requests/${d.body.id}/applicants/${ap.body.applicationId}`, { action: "complete" });
@@ -159,17 +159,17 @@ describe("attendance confirmation and impact export (U8, U10)", () => {
 
 describe("password change (Settings → Account)", () => {
   it("needs the current password and signs out other sessions", async () => {
-    await createUser({ email: "pw.change@thankyou.test", roles: ["volunteer"] });
-    const a = await as("pw.change@thankyou.test");
+    await createUser({ email: "pw.change@volunteer-services-app.test", roles: ["volunteer"] });
+    const a = await as("pw.change@volunteer-services-app.test");
     // A second device: its own session row.
-    const uid = await userId("pw.change@thankyou.test");
+    const uid = await userId("pw.change@volunteer-services-app.test");
     const otherToken = (await pool.query("WITH t AS (SELECT gen_random_uuid()::text AS raw) INSERT INTO sessions (user_id, session_token, expires_at) SELECT $1, session_key(t.raw), NOW() + INTERVAL '1 day' FROM t RETURNING (SELECT raw FROM t) AS session_token", [uid])).rows[0].session_token;
     expect((await a.post("/v1/auth/change-password", { currentPassword: "wrong-one", newPassword: "New-Password-456!" })).status).toBe(400);
     const ok = await a.post("/v1/auth/change-password", { currentPassword: "Test-Password-123!", newPassword: "New-Password-456!" });
     expect(ok.status, JSON.stringify(ok.body)).toBe(200);
     expect((await a.get("/v1/me")).status).toBe(200);
     expect((await anon().get("/v1/me").set("authorization", `Bearer ${otherToken}`)).status).toBe(401);
-    const login = await anon().post("/v1/auth/login").send({ email: "pw.change@thankyou.test", password: "New-Password-456!" });
+    const login = await anon().post("/v1/auth/login").send({ email: "pw.change@volunteer-services-app.test", password: "New-Password-456!" });
     expect(login.status).toBe(200);
   });
 });

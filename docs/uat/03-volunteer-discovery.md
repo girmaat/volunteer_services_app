@@ -10,7 +10,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-001 · Volunteer home — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/dashboard` (top menu → Home)
 - **Before you start:** S1, S4, S5, S10
 - **Expected result:**
@@ -21,14 +21,14 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-002 · "Picked for you" cards show when each opportunity happens — P3
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/dashboard`
 - **Expected result:** Each card under "Picked for you" shows its date and time (e.g. "Wed, Oct 14, 2:00 PM"), the same
   as on the Recommended list. Only opportunities without a fixed date say "Flexible".
 
 ### TC-VDS-003 · Recommended list explains each match — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/recommended` (top menu → **Find opportunities**)
 - **Expected result:**
   - Heading "Recommended for you — Ranked by your skills, causes, schedule and distance." with tabs Recommended,
@@ -41,7 +41,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-004 · Near you respects the travel radius — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/nearby` (Find opportunities → **Near you**)
 - **Test data:** Within **2 miles**, then **25 miles**
 - **Steps:**
@@ -56,7 +56,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-005 · Remote tab shows only remote work — P1
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/remote` (Find opportunities → **Remote**)
 - **Expected result:**
   - Heading "Remote opportunities — Help from anywhere by phone or video."
@@ -68,14 +68,14 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-006 · ID-verified volunteers also see sensitive requests — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`) (ID-verified)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`) (ID-verified)
 - **Page:** `http://localhost:3202/volunteer/opportunities/remote` (Find opportunities → **Remote**)
 - **Expected result:** *Explain my electricity bill* (Money & paperwork, Rose) is listed. Its page says
   "Money & paperwork · verified volunteers only".
 
 ### TC-VDS-007 · Search matches title, description and skills — P1
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/remote` (Find opportunities → **Remote**)
 - **Test data:** Search **`spanish`**
 - **Steps:** Type `spanish` in Search, click **Show results**.
@@ -84,7 +84,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-008 · Category, date and "verified organizations only" filters — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/recommended` (Find opportunities → **Recommended**)
 - **Test data:** (a) Category **Events & community**; (b) When **Next 7 days**; (c) tick **Verified organizations only**
 - **Steps:** Apply each filter on its own (click Show results), then **Clear filters**.
@@ -96,14 +96,14 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-009 · Nothing matches — P3
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/recommended` (Find opportunities → **Recommended**)
 - **Test data:** Search `zzqx-nothing`
 - **Expected result:** "Nothing matches yet" with advice and a **Clear filters** link. No error.
 
 ### TC-VDS-010 · Save a search and get alerts — P2
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/remote` (Find opportunities → **Remote**)
 - **Test data:** Search `essay`; alert name `Essay help`
 - **Steps:**
@@ -117,7 +117,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-011 · A saved search alerts about a new match — P2
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`), then Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`), then Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/requests/new`; Ravi: `http://localhost:3202/notifications` (or the bell) and `http://localhost:3202/volunteer/opportunities/saved`
 - **Before you start:** TC-VDS-010
 - **Steps:**
@@ -131,7 +131,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-012 · Turn off or delete a saved search — P3
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/saved` → Saved searches
 - **Steps:**
   1. Untick **Alert me** for Essay help, click **Save**.
@@ -140,7 +140,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-013 · Save an opportunity for later — P2
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/remote` → open *Reading buddy (grades 2–3)* (address `/volunteer/opportunities/<id>`)
 - **Steps:**
   1. Open the opportunity, click **Save for later**.
@@ -153,7 +153,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-014 · Saved list shows the ready-made saves — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/saved` (Find opportunities → **Saved**)
 - **Before you start:** S10
 - **Expected result:** *Event setup crew* and *Community garden weeding* are listed with area and organization, and each
@@ -161,7 +161,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-015 · Opportunity page for a volunteer — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/nearby` → open *Community garden weeding*
 - **Expected result:**
   - "← Find opportunities", category Events & community, title, "Jersey City, NJ · 1 mi away", Harbor Food Bank (link to
@@ -173,7 +173,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-016 · Apply with a message — P1
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/remote` → open *Algebra tutoring (grade 8)*
 - **Test data:** Message `Hi! I tutor algebra twice a week and I'm free Monday afternoons. Happy to do a first session this week.`
 - **Steps:**
@@ -189,14 +189,14 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-017 · Can't apply twice — P2
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Before you start:** TC-VDS-016
 - **Page:** `http://localhost:3202/volunteer/opportunities/remote` → open *Algebra tutoring (grade 8)* again
 - **Expected result:** No Apply form; the box shows "Your application" with its status and **Open application**.
 
 ### TC-VDS-018 · Requirement not met: car needed — P1
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`) (no car)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`) (no car)
 - **Page:** `http://localhost:3202/opportunities?q=Deliver+meals` (signed in) → open *Deliver meals to homebound seniors* (it also opens at `/volunteer/opportunities/<id>`)
 - **Expected result:**
   - "Before you apply" lists **Has a car**.
@@ -205,7 +205,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-019 · Requirement met after updating the profile — P2
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/profile` (the **Update your profile** link), then *Deliver meals to homebound seniors* again
 - **Before you start:** TC-VDS-018
 - **Steps:**
@@ -216,14 +216,14 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-020 · Sensitive request needs ID verification — P1
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`) (not verified)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`) (not verified)
 - **Page:** the address of *Explain my electricity bill*, `http://localhost:3202/volunteer/opportunities/<id>` (copy it from Valerie's view in TC-VDS-006)
 - **Expected result:** Either "Opportunity not found", or "You can't apply yet" with "“Money & paperwork” opportunities are
   open to verified volunteers. Submit verification in Settings." Ravi can't apply.
 
 ### TC-VDS-021 · Can't apply to your own request — P2
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`), switched to **Volunteering**
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`), switched to **Volunteering**
 - **Page:** Diego (Requesting help): `http://localhost:3202/requester/requests/new`; then (Volunteering) `http://localhost:3202/volunteer/opportunities/remote?q=Diego%27s+own`
 - **Before you start:** As Diego (Requesting help), post and publish a request titled `Diego's own test request` (any category, remote) — see REQ-001.
 - **Steps:** Switch to Volunteering and open that request from Find opportunities → Remote (search `Diego's own`).
@@ -231,7 +231,7 @@ Setup: `pnpm db:uat`. Most cases use Valerie (in person only, has a car, ID-veri
 
 ### TC-VDS-022 · Applications are closed after the apply-by date — P3
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/requests/new`; Valerie: `http://localhost:3202/opportunities?q=Apply-by+test` → open it
 - **Steps:**
   1. As Rose, post a request `Apply-by test` (Errands & chores, in person, Upper West Side) with **Apply by** set to

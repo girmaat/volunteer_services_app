@@ -6,7 +6,7 @@ Run these signed out (a private/incognito window is easiest). Setup: `pnpm db:ua
 
 ---
 
-### TC-PUB-001 · Home page explains ThankYou and offers clear entry points — P1
+### TC-PUB-001 · Home page explains Volunteer Services and offers clear entry points — P1
 
 - **Tester:** Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/`
@@ -23,7 +23,7 @@ Run these signed out (a private/incognito window is easiest). Setup: `pnpm db:ua
   - Right card **For volunteers** — "Give an hour. See the difference.", a short list of benefits, a **Find
     opportunities** button and the line "New here? **Create a free account** to apply…".
   - Sections "One place for everyone who helps", "How it works" and "Safety comes first" are present.
-  - Header: ThankYou logo, links **Opportunities**, **Organizations**, **How it works**, buttons **Log in** and
+  - Header: Volunteer Services logo, links **Opportunities**, **Organizations**, **How it works**, buttons **Log in** and
     **Sign up**. Footer groups: Get involved, Learn, Trust & help, Legal.
   - On a wide screen (1280 px or more), "Sponsored" panels may show left and right if an admin has switched them
     on (see the admin test cases).
@@ -112,8 +112,8 @@ Run these signed out (a private/incognito window is easiest). Setup: `pnpm db:ua
     spanish as nice to have), date/time "· about 2 h", "6 volunteers needed · 5 left". No category label.
   - The exact address *87-10 Queens Blvd* is **not** shown; instead: "The exact address and contact details are
     shared when you apply for this opportunity and your application is accepted."
-  - A safety line: "Coordinate in **ThankYou messages**. Never share bank details, passwords and personal
-    information…". "ThankYou messages" is a link; for a visitor it opens the **Log in** page (with a link to sign
+  - A safety line: "Coordinate in **Volunteer Services messages**. Never share bank details, passwords and personal
+    information…". "Volunteer Services messages" is a link; for a visitor it opens the **Log in** page (with a link to sign
     up), and after logging in you land in **Inbox**.
   - A "Want to help?" box with **Create an account to apply** and **Log in**. There is no Apply form.
 
@@ -146,7 +146,7 @@ Run these signed out (a private/incognito window is easiest). Setup: `pnpm db:ua
 A requester's profile has a public address, but nothing on the site links to it for visitors, so you get the
 address from Rose's own account first.
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Visitor
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Visitor
 - **Page:** `http://localhost:3202/requester/profile` (as Rose) → **View public profile** → `http://localhost:3202/requesters/<Rose's id>`
 - **Before you start:** S3 (Diego reviewed Rose)
 - **Steps:**
@@ -164,7 +164,7 @@ address from Rose's own account first.
 
 ### TC-PUB-009 · Volunteer profiles are private; a share link shows what the volunteer picks — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`), then Visitor
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`), then Visitor
 - **Page:** `http://localhost:3202/volunteer/profile/share` (as Diego, Volunteering: avatar → **Profile** → **Share your profile**); the link it creates looks like `http://localhost:3202/p/<token>`
 - **Before you start:** S3
 - **Steps:**
@@ -181,7 +181,7 @@ address from Rose's own account first.
     are off. Accomplishments (*Set up my new phone* with date and hours) and badges always show.
   - 3: the visitor sees "Volunteer record — **Diego**", Opportunities completed **1**, Total hours logged, the
     accomplishment list and badges. No email, phone, birth date, full name or address.
-  - 4: the name is replaced by "A ThankYou volunteer"; About text, Average rating **5.0 / 5** and Reviews received
+  - 4: the name is replaced by "An anonymous volunteer"; About text, Average rating **5.0 / 5** and Reviews received
     **1** now show.
   - 5: the old link shows "This link isn't active"; the new link works.
   - 6: "Link turned off…"; the link shows "This link isn't active".
@@ -214,7 +214,7 @@ address from Rose's own account first.
 - **Steps:** Open each page from the footer.
 - **Expected result:**
   - Every page has a short label above the title (e.g. "LEGAL"), a title, a one-sentence introduction and readable
-    sections under the ThankYou name (never "GiveBack"). Long pages show an "On this page" list on the right.
+    sections under the Volunteer Services name (never "GiveBack"). Long pages show an "On this page" list on the right.
   - Terms of service and Privacy policy show "Last updated …".
   - The page contains only content meant for the public: no "Public" tag and no notes to the team such as
     "Explains the core flow in simple steps." or developer instructions.
@@ -234,7 +234,7 @@ address from Rose's own account first.
 
 ### TC-PUB-013 · Contact form — P2
 
-- **Tester:** Visitor (signed out, no login needed), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Visitor (signed out, no login needed), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/contact` (footer → Contact us)
 - **Test data:** Your name **`Uma Tester`**; Your email **`uma.tester@example.test`**; Message **`Testing the contact form during UAT. Please ignore.`**
 - **Steps:**
@@ -247,9 +247,9 @@ address from Rose's own account first.
     emergency" box and "Quick answers" links; no placeholder or developer text.
   - 2: the API terminal shows an `[email:log]` message to the platform team containing "From: Uma Tester
     <uma.tester@example.test>" and the message text (only if `SUPPORT_EMAIL` is set in `apps/api/.env`).
-  - 3: Your name (**Valerie**) and Your email (**volunteer.local@thankyou.test**) are filled in, grey and can't be
+  - 3: Your name (**Valerie**) and Your email (**volunteer.local@volunteer-services-app.test**) are filled in, grey and can't be
     edited, with "These come from your account."
-  - 4: "…We'll reply to volunteer.local@thankyou.test." Volunteers don't see "Message the ThankYou team" (that's
+  - 4: "…We'll reply to volunteer.local@volunteer-services-app.test." Volunteers don't see "Message the Volunteer Services team" (that's
     for organizations, see TC-ADM support cases).
 
 ### TC-PUB-014 · Contact form rejects incomplete input — P3
@@ -262,7 +262,7 @@ address from Rose's own account first.
 
 ### TC-PUB-015 · Signed-in header and unknown pages — P2
 
-- **Tester:** Visitor (signed out, no login needed), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Visitor (signed out, no login needed), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/does-not-exist`, then `http://localhost:3202/`
 - **Steps:**
   1. Signed out, open `http://localhost:3202/does-not-exist`.

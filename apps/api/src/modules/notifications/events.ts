@@ -5,7 +5,7 @@
 import { pool } from "../../lib/db";
 import { notify, notifyModerators, requestOwnerIds } from "./service";
 
-const SAFETY = "Stay on ThankYou to coordinate. Never share bank details, passwords or money. Meet in public for the first time when you can.";
+const SAFETY = "Stay on Volunteer Services to coordinate. Never share bank details, passwords or money. Meet in public for the first time when you can.";
 
 async function requestInfo(requestId: string) {
   const r = await pool.query(

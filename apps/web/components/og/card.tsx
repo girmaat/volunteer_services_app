@@ -13,7 +13,7 @@ export function OgCard({ eyebrow, title, footer }: { eyebrow: string; title: str
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#fafaf8", padding: 72, color: "#17242f", fontFamily: "sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
         <img src={MARK} width={64} height={64} alt="" />
-        <span style={{ fontSize: 34, fontWeight: 700 }}>ThankYou</span>
+        <span style={{ fontSize: 34, fontWeight: 700 }}>Volunteer Services</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <span style={{ fontSize: 28, color: "#0f6e66", fontWeight: 600 }}>{eyebrow}</span>

@@ -57,7 +57,7 @@ function Winget-Install($id, $extra) {
 
 function Ensure-Postgres {
   $svc = Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue | Select-Object -First 1
-  if (-not $svc) { Fail "PostgreSQL isn't installed. Run 'Set up ThankYou' first." }
+  if (-not $svc) { Fail "PostgreSQL isn't installed. Run 'Set up Volunteer Services' first." }
   if ($svc.Status -ne "Running") {
     Say "Starting the database (Windows may ask for permission)..."
     try { Start-Service $svc.Name } catch {

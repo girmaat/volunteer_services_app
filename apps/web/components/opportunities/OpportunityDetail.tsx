@@ -156,7 +156,7 @@ export default function OpportunityDetail({
               href={viewer === "anon" ? `/login?returnTo=${encodeURIComponent("/inbox")}` : "/inbox"}
               className="font-medium text-primary underline"
             >
-              ThankYou messages
+              Volunteer Services messages
             </Link>
             . Never share bank details, passwords and personal information. Meet in a public place the first time when you can.
             {viewer === "anon" ? " (Log in or create an account to see your messages.)" : ""}

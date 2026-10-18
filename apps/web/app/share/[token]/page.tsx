@@ -115,7 +115,7 @@ export default async function Page(props: { params: Promise<{ token: string }> }
   return (
     <section className={styles.page}>
       <header className={styles.header}>
-        <div className={styles.kicker}>{KICKER[String(preview.share_type || "")] || "Shared from ThankYou"}</div>
+        <div className={styles.kicker}>{KICKER[String(preview.share_type || "")] || "Shared from Volunteer Services"}</div>
         <div className={styles.titleRow}>
           <h1 className={styles.title}>{preview.title}</h1>
           {isVerified ? <span className={styles.badge}>Verified</span> : null}
@@ -143,13 +143,13 @@ export default async function Page(props: { params: Promise<{ token: string }> }
       </header>
 
       <div className={styles.card}>
-        <div className={styles.cardTitle}>{unavailable ? "This link is no longer available" : preview.share_type === "INVITE" ? "Join ThankYou" : "Ready to help?"}</div>
+        <div className={styles.cardTitle}>{unavailable ? "This link is no longer available" : preview.share_type === "INVITE" ? "Join Volunteer Services" : "Ready to help?"}</div>
         <p className={styles.cardBody}>
           {unavailable
             ? "The owner has revoked this link or it has expired."
             : preview.share_type === "INVITE"
               ? "Create a free account to volunteer or ask for help."
-              : "Open it on ThankYou to see the full details."}
+              : "Open it on Volunteer Services to see the full details."}
         </p>
         {preview.is_expired ? <div className={styles.notice}>This link has expired.</div> : null}
         {preview.is_revoked ? <div className={styles.notice}>This link has been revoked.</div> : null}

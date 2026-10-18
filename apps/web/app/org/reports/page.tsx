@@ -471,7 +471,7 @@ export default async function ReportsPage(props: {
           </p>
         ) : null}
         <p className="m-0 mt-3 text-xs text-muted">
-          Service volunteers log outside ThankYou is self-reported and never included here.
+          Service volunteers log outside Volunteer Services is self-reported and never included here.
         </p>
       </section>
     </>

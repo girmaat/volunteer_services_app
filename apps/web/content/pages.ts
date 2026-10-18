@@ -10,11 +10,11 @@ const UPDATED = "October 18, 2026";
 
 export const ABOUT: InfoPageContent = {
   slug: "about",
-  title: "About ThankYou",
+  title: "About Volunteer Services",
   kicker: "About us",
-  lead: "ThankYou connects volunteers with neighbors and nonprofits who need a hand, and makes it easy to do good safely.",
+  lead: "Volunteer Services connects volunteers with neighbors and nonprofits who need a hand, and makes it easy to do good safely.",
   body: `## Why we exist
-Most people want to help. Most organizations and neighbors could use more of it. What gets in the way is finding each other, agreeing on the details and trusting that it will go well. ThankYou takes care of that part so the helping can happen.
+Most people want to help. Most organizations and neighbors could use more of it. What gets in the way is finding each other, agreeing on the details and trusting that it will go well. Volunteer Services takes care of that part so the helping can happen.
 
 ## Who it's for
 - **Volunteers** who want work that fits their skills and their week: a Saturday shift nearby, or an hour of tutoring from home.
@@ -24,7 +24,7 @@ Most people want to help. Most organizations and neighbors could use more of it.
 ## How we keep it safe
 Safety is built into every step rather than added on top.
 - Exact addresses and contact details are shared only after an application is accepted.
-- Messages stay inside ThankYou. Phone numbers and emails are hidden until you accept someone, and scam-like messages are held for review.
+- Messages stay inside Volunteer Services. Phone numbers and emails are hidden until you accept someone, and scam-like messages are held for review.
 - Organizations are verified before they get the Verified badge.
 - Volunteers under 18 need a parent or guardian's consent and never have a public profile.
 - Anyone can block or report from a profile or a conversation, and a real person reviews every report.
@@ -42,14 +42,14 @@ Questions, partnership ideas or press? [Contact us](/contact). Organizations can
 
 export const HOW_IT_WORKS: InfoPageContent = {
   slug: "how-it-works",
-  title: "How ThankYou works",
+  title: "How Volunteer Services works",
   kicker: "How it works",
   lead: "From finding an opportunity to logging your hours, here's what to expect, whether you're volunteering, asking for help or running an organization.",
   body: `## For volunteers
 1. **Create a free account** and tell us what you like doing, where and when you're available.
 2. **Find an opportunity.** Browse [opportunities](/opportunities) or let us pick matches for you. Filter by date, category and in person or remote.
 3. **Apply** with a short note. The organizer reviews applications and accepts, waitlists or declines kindly.
-4. **Get the details.** Once you're accepted you'll see the exact address and any instructions. The organizer messages you to coordinate; you can reply in ThankYou messages.
+4. **Get the details.** Once you're accepted you'll see the exact address and any instructions. The organizer messages you to coordinate; you can reply in Volunteer Services messages.
 5. **Show up.** We remind you 48 hours and 2 hours before. If plans change, cancel as early as you can so someone on the waitlist can take your place.
 6. **Get credit.** After the work is marked complete, the organizer approves your hours and you both leave a review. Your hours and badges build up in Impact.
 
@@ -95,7 +95,7 @@ Open an opportunity and click **Apply**. Add a short note about why you're a goo
 Only after your application is accepted. Until then you see the general area, such as "Queens, NY".
 
 ### Can I message an organizer before I'm accepted?
-The organizer starts the conversation. Once they message you, you can reply in ThankYou messages. Your application note is shown to them with your application.
+The organizer starts the conversation. Once they message you, you can reply in Volunteer Services messages. Your application note is shown to them with your application.
 
 ### I can't make it anymore. What do I do?
 Open the application and click **Cancel my spot**, ideally more than 24 hours before the start. Cancelling within 24 hours counts as a late cancellation on your reliability.
@@ -123,15 +123,15 @@ After you register, an administrator reviews your details. Verified organization
 ### Can my whole team manage applications?
 Yes. Invite teammates as admins, managers or members from **Organization → Team**. Admins and managers share the organization inbox.
 
-### How do we contact the ThankYou team?
-Signed-in organization members can use **Message the ThankYou team** on the [Contact](/contact) page. Your conversation stays in your Inbox.
+### How do we contact the Volunteer Services team?
+Signed-in organization members can use **Message the Volunteer Services team** on the [Contact](/contact) page. Your conversation stays in your Inbox.
 
 ## Safety and privacy
 ### How do I block or report someone?
 Use **Report** or **Block** on their profile or in the conversation. A member of our team reviews every report.
 
 ### Someone asked me for money or a gift card
-Don't pay. Report the message. ThankYou never asks volunteers or neighbors for payment, and real organizers don't either.
+Don't pay. Report the message. Volunteer Services never asks volunteers or neighbors for payment, and real organizers don't either.
 
 ### How do I delete my account?
 Go to **Settings → Account** and choose **Delete my account**. See our [Privacy policy](/privacy) for what we keep and for how long.
@@ -144,7 +144,7 @@ export const TRUST_SAFETY: InfoPageContent = {
   slug: "trust-safety",
   title: "Trust & safety",
   kicker: "Trust & safety",
-  lead: "Volunteering means meeting people you don't know yet. Here's how ThankYou protects volunteers, neighbors and organizations, and what you can do too.",
+  lead: "Volunteering means meeting people you don't know yet. Here's how Volunteer Services protects volunteers, neighbors and organizations, and what you can do too.",
   body: `## Privacy until there's trust
 - **Addresses stay private.** Everyone sees only the general area until an application is accepted.
 - **Contact details are masked.** Phone numbers, emails and links in messages are hidden until the volunteer is accepted.
@@ -155,7 +155,7 @@ export const TRUST_SAFETY: InfoPageContent = {
 Organizations that complete our review show a **Verified** badge. We check that the organization exists and that the person managing it is authorized to act for it. You can filter opportunities to verified organizations only.
 
 ## Safer messaging
-- Conversations happen inside ThankYou, so there's a record if something goes wrong.
+- Conversations happen inside Volunteer Services, so there's a record if something goes wrong.
 - The organizer or requester sends the first message; volunteers reply. This stops unsolicited contact.
 - Messages that look like scams, such as requests for gift cards or payment apps, are held for review and never delivered unless a moderator releases them.
 - New accounts have limits on how many conversations they can start in a day.
@@ -169,12 +169,12 @@ You can block or report anyone from their profile or a conversation. Blocking en
 ## Tips for meeting in person
 - Meet in a public place the first time when you can.
 - Tell a friend where you're going.
-- Keep conversations in ThankYou messages until you're comfortable.
+- Keep conversations in Volunteer Services messages until you're comfortable.
 - Never share bank details or passwords, and never pay to volunteer.
 - Trust your instincts. You can always cancel and report.
 
 ## In an emergency
-ThankYou is not an emergency service. If someone is in danger, call 911 or your local emergency number first, then report what happened to us.
+Volunteer Services is not an emergency service. If someone is in danger, call 911 or your local emergency number first, then report what happened to us.
 
 ## Report a concern
 Use **Report** on a profile or in a conversation, or [contact us](/contact).`
@@ -184,7 +184,7 @@ export const CODE_OF_CONDUCT: InfoPageContent = {
   slug: "code-of-conduct",
   title: "Code of conduct",
   kicker: "Community standards",
-  lead: "ThankYou works because people treat each other with respect. These standards apply to everyone: volunteers, neighbors, organizations and our own team.",
+  lead: "Volunteer Services works because people treat each other with respect. These standards apply to everyone: volunteers, neighbors, organizations and our own team.",
   updated: UPDATED,
   body: `## Be respectful
 Treat everyone with courtesy and dignity. We don't allow harassment, hate speech, threats, bullying, or discrimination based on race, ethnicity, national origin, religion, gender, gender identity, sexual orientation, age, disability or any other protected characteristic.
@@ -221,16 +221,16 @@ export const TERMS: InfoPageContent = {
   slug: "terms",
   title: "Terms of service",
   kicker: "Legal",
-  lead: "These terms explain the rules for using ThankYou. Please read them carefully: by creating an account or using the service you agree to them.",
+  lead: "These terms explain the rules for using Volunteer Services. Please read them carefully: by creating an account or using the service you agree to them.",
   updated: UPDATED,
   body: `## 1. About these terms
-These Terms of Service ("Terms") are an agreement between you and ThankYou ("ThankYou", "we", "us") about your use of our website and services (the "Service"). Our [Privacy policy](/privacy) and [Code of conduct](/code-of-conduct) are part of these Terms.
+These Terms of Service ("Terms") are an agreement between you and Volunteer Services ("Volunteer Services", "we", "us") about your use of our website and services (the "Service"). Our [Privacy policy](/privacy) and [Code of conduct](/code-of-conduct) are part of these Terms.
 
-## 2. What ThankYou is, and isn't
-ThankYou is a platform that helps volunteers, individuals and organizations find each other and coordinate unpaid volunteer work. We are not a party to any arrangement between users, we don't employ volunteers, and we don't supervise volunteer activities. Organizations and individuals who post opportunities are responsible for them.
+## 2. What Volunteer Services is, and isn't
+Volunteer Services is a platform that helps volunteers, individuals and organizations find each other and coordinate unpaid volunteer work. We are not a party to any arrangement between users, we don't employ volunteers, and we don't supervise volunteer activities. Organizations and individuals who post opportunities are responsible for them.
 
 ## 3. Eligibility
-You must be at least 16 years old to use ThankYou. If you are under 18, you confirm that a parent or guardian has agreed to these Terms, and some opportunities require their written consent. Organizations must be lawfully established and represented by someone authorized to act for them.
+You must be at least 16 years old to use Volunteer Services. If you are under 18, you confirm that a parent or guardian has agreed to these Terms, and some opportunities require their written consent. Organizations must be lawfully established and represented by someone authorized to act for them.
 
 ## 4. Your account
 - Give accurate information and keep it up to date.
@@ -248,10 +248,10 @@ Volunteers take part voluntarily and at their own risk, and are responsible for 
 You agree to follow our [Code of conduct](/code-of-conduct). You must not misuse the Service, including by scraping it, trying to get around its security or privacy protections, sending spam, or using it to collect payment.
 
 ## 8. Content
-You keep ownership of what you post. You give ThankYou a non-exclusive, worldwide, royalty-free licence to host, display and share that content as needed to run and promote the Service, in line with your privacy choices. You're responsible for having the rights to what you post. We may remove content that breaks these Terms.
+You keep ownership of what you post. You give Volunteer Services a non-exclusive, worldwide, royalty-free licence to host, display and share that content as needed to run and promote the Service, in line with your privacy choices. You're responsible for having the rights to what you post. We may remove content that breaks these Terms.
 
 ## 9. Reviews, hours and records
-Reviews and hour approvals must be honest. Volunteer records reflect what organizers and requesters approved; ThankYou doesn't independently verify that the work took place.
+Reviews and hour approvals must be honest. Volunteer records reflect what organizers and requesters approved; Volunteer Services doesn't independently verify that the work took place.
 
 ## 10. Suspension and termination
 You can delete your account at any time in Settings. We may suspend or end access if you break these Terms, create risk for others or if required by law. Sections that by their nature should survive termination will survive.
@@ -260,10 +260,10 @@ You can delete your account at any time in Settings. We may suspend or end acces
 The Service is provided "as is" and "as available". To the fullest extent allowed by law, we disclaim all warranties, express or implied. We don't guarantee that any opportunity, user or organization is safe, suitable or as described, even if verified.
 
 ## 12. Limitation of liability
-To the fullest extent allowed by law, ThankYou is not liable for indirect, incidental, special, consequential or punitive damages, or for any loss arising from interactions or activities between users. Our total liability for any claim is limited to one hundred US dollars (US$100). Some jurisdictions don't allow these limits, so they may not apply to you.
+To the fullest extent allowed by law, Volunteer Services is not liable for indirect, incidental, special, consequential or punitive damages, or for any loss arising from interactions or activities between users. Our total liability for any claim is limited to one hundred US dollars (US$100). Some jurisdictions don't allow these limits, so they may not apply to you.
 
 ## 13. Indemnity
-You agree to indemnify ThankYou against claims arising from your content, your volunteer activities or opportunities you post, or your breach of these Terms, to the extent allowed by law.
+You agree to indemnify Volunteer Services against claims arising from your content, your volunteer activities or opportunities you post, or your breach of these Terms, to the extent allowed by law.
 
 ## 14. Changes
 We may update these Terms. If a change is material we'll tell you in the app or by email before it takes effect. Continuing to use the Service after that means you accept the updated Terms.
@@ -293,7 +293,7 @@ export const PRIVACY: InfoPageContent = {
 - **Account details:** name, email address, password (stored securely hashed) and, for volunteers, date of birth to apply age rules.
 - **Profile details:** display name, general location, skills, interests, availability, languages and "About you" text.
 - **Requests and opportunities:** descriptions, dates, general area and, when needed, an exact address that's shared only with accepted volunteers.
-- **Messages and files** you send in ThankYou, and reports you file.
+- **Messages and files** you send in Volunteer Services, and reports you file.
 - **Volunteer records:** applications, attendance, hours, reviews and badges.
 - **Organization details:** name, mission, location and verification information.
 
@@ -305,7 +305,7 @@ export const PRIVACY: InfoPageContent = {
 - To run the Service: create your account, show relevant opportunities, process applications and deliver messages and notifications.
 - To keep people safe: mask contact details, screen messages for scams, review reports and enforce our [Code of conduct](/code-of-conduct).
 - To keep records: hours, reviews and certificates you choose to share.
-- To improve ThankYou, using aggregated information.
+- To improve Volunteer Services, using aggregated information.
 - To meet legal obligations.
 
 ## Who can see your information
@@ -326,7 +326,7 @@ We keep your information while your account is open. When you delete your accoun
 - Depending on where you live (for example California or the EU/UK), you may have additional rights to access, correct, delete or port your information and to object to certain processing. [Contact us](/contact) to make a request; we'll respond within the time the law requires.
 
 ## Children
-ThankYou is not for children under 16. Volunteers aged 16 and 17 have extra protections: no shareable profile, masked contact details and guardian consent where an opportunity requires it. If you believe a child under 16 has an account, please contact us.
+Volunteer Services is not for children under 16. Volunteers aged 16 and 17 have extra protections: no shareable profile, masked contact details and guardian consent where an opportunity requires it. If you believe a child under 16 has an account, please contact us.
 
 ## Security
 We use encryption in transit, hashed passwords, two-step sign-in for staff, access controls and monitoring. No system is perfectly secure, so please use a strong, unique password.

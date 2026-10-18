@@ -1,6 +1,6 @@
 # 09 · Organizations: sign-up, team and settings
 
-Registering an organization (new account or existing account), finishing setup, verification by ThankYou
+Registering an organization (new account or existing account), finishing setup, verification by Volunteer Services
 staff, inviting teammates and approving join requests, roles (admin, manager, member, school coordinator),
 the organization profile and logo, its web address, the publishing rule (owner approval), organization
 type, and switching between organizations.
@@ -51,10 +51,10 @@ Setup: `pnpm db:uat`.
 
 - **Tester:** Visitor (signed out) trying the sign-up form; no account is created
 - **Page:** `http://localhost:3202/org/signup`
-- **Steps:** Submit with (a) the 18+ box unticked; (b) password `short`; (c) Work email `volunteer.local@thankyou.test`.
+- **Steps:** Submit with (a) the 18+ box unticked; (b) password `short`; (c) Work email `volunteer.local@volunteer-services-app.test`.
 - **Expected result:** (a) "Confirm you're 18 or older and allowed to act for the organization."; (b) "Choose a password with at
   least 8 characters."; (c) the page answers like a normal sign-up ("Check your email") without saying the address has an account; no
-  organization is created; Valerie's password still works; the API terminal shows an email to Valerie "You already have a ThankYou
+  organization is created; Valerie's password still works; the API terminal shows an email to Valerie "You already have a Volunteer Services
   account" explaining how to add an organization to her account.
 
 ### TC-ORG-004 · An existing user starts an organization — P2
@@ -63,14 +63,14 @@ Setup: `pnpm db:uat`.
 - **Page:** `http://localhost:3202/org/signup` while signed in
 - **Test data:** Organization name `Hoboken Library Friends`; What does it do? `Volunteers who help run library events.`; City `Hoboken, NJ`; Your name (if asked) `Pat Organizer`; 18+ ticked
 - **Steps:** Under **Start a new organization** fill in and click **Create organization**.
-- **Expected result:** "You'll be its admin, signed in as <email>. Anything you already do on ThankYou stays as it is." After
+- **Expected result:** "You'll be its admin, signed in as <email>. Anything you already do on Volunteer Services stays as it is." After
   creating: the Finish-setting-up page. The switcher at the top right now lists the organization alongside any personal role.
 
 ### TC-ORG-005 · Ask to join an organization — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/signup` while signed in → **Join your team's organization**
-- **Test data:** Organization's ThankYou address `harbor-food-bank`; 18+ ticked
+- **Test data:** Organization's Volunteer Services address `harbor-food-bank`; 18+ ticked
 - **Steps:** Fill in and click **Ask to join**.
 - **Expected result:** "Request sent. The organization's admins will approve it, and you'll get a notification." Diego gets no
   access to Harbor's pages yet (`/org/dashboard` doesn't show Harbor). Olivia and Nora get a notification and an email
@@ -78,7 +78,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-006 · Approve a join request — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/team` → **Requests to join** (Organization → **Organization**, Team tab); Ravi: bell, `http://localhost:3202/notifications`
 - **Before you start:** S8 (Ravi asked to join)
 - **Steps:**
@@ -91,7 +91,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-007 · Decline a join request — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/team` → **Requests to join**
 - **Before you start:** TC-ORG-005 (Diego asked to join)
 - **Steps:** Click **Decline** on Diego's request.
@@ -99,7 +99,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-008 · Invite a teammate by email — P1
 
-- **Tester:** Nora (`org.manager@thankyou.test` / `Password!`)
+- **Tester:** Nora (`org.manager@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/team` → **Invite a teammate**
 - **Test data:** Email `uat.teammate@example.test`; Role **Member**
 - **Steps:** Fill in **Invite a teammate**, click **Send invite**.
@@ -120,7 +120,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-010 · Invites only work for the invited email — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** the new invite link from the API terminal, `http://localhost:3202/org/invite?token=…`, and `http://localhost:3202/org/invite?token=abc`
 - **Before you start:** a new pending invite (repeat TC-ORG-008 with `uat.teammate2@example.test`)
 - **Steps:** Signed in as Valerie, open that invite link and try to accept.
@@ -129,7 +129,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-011 · Change a member's role and remove a member — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/team` → **Active members**
 - **Steps:**
   1. Change Marcus Lee from Member to **Manager**, click **Update**.
@@ -147,7 +147,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-013 · Managers and members have limited team powers — P1
 
-- **Tester:** Nora (`org.manager@thankyou.test` / `Password!`) (manager), then Marcus (`org.member@thankyou.test` / `Password!`) (member)
+- **Tester:** Nora (`org.manager@volunteer-services-app.test` / `Password!`) (manager), then Marcus (`org.member@volunteer-services-app.test` / `Password!`) (member)
 - **Page:** `http://localhost:3202/org/team`
 - **Expected result:**
   - Nora can invite teammates and approve/decline join requests, but can't change anyone's role (only admins can) — an attempt
@@ -156,15 +156,15 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-014 · Edit the organization profile — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/settings` (Organization → **Settings**)
-- **Test data:** Summary `Neighborhood food pantry serving Queens and Brooklyn families.`; Service area `Queens and Brooklyn`; Hours `Tue–Sat, 9am–5pm`; Skills you often need `driving, spanish, food handling`; Volunteers should reach you by **Messages in ThankYou**
+- **Test data:** Summary `Neighborhood food pantry serving Queens and Brooklyn families.`; Service area `Queens and Brooklyn`; Hours `Tue–Sat, 9am–5pm`; Skills you often need `driving, spanish, food handling`; Volunteers should reach you by **Messages in Volunteer Services**
 - **Steps:** Change the fields and click **Save profile**. Open `/organizations/harbor-food-bank` signed out.
 - **Expected result:** "Saved." The public page shows the new summary. Contact email and phone ("Contact (never shown publicly)") do not appear publicly.
 
 ### TC-ORG-015 · Upload and remove a logo — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/settings` → **Logo** ("PNG, JPEG or WebP, up to 1 MB")
 - **Test data:** a small PNG or JPG square image; then a 2 MB image; then a PDF
 - **Steps:**
@@ -185,7 +185,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-017 · Submit the organization for verification — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), switched to **Bright Futures Tutoring**
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), switched to **Bright Futures Tutoring**
 - **Page:** `http://localhost:3202/org/settings` → **Verification** (switcher on **Bright Futures Tutoring**)
 - **Test data:** Notes for the reviewer `EIN 12-3456789; website example.org/bright; contact Olivia Ortiz.`
 - **Steps:** Enter the notes, click **Submit for verification**.
@@ -199,11 +199,11 @@ Setup: `pnpm db:uat`.
 - **Test data:** Title `Riverbank clean-up`; Category **Events & community**; Description `Pick up litter along the river path. Gloves provided.`; One time next Saturday 09:00, 120 minutes; In person, area `Astoria Park, Queens, NY`
 - **Steps:** Complete the wizard and try to publish.
 - **Expected result:** The draft saves, but publishing is refused with a message that the organization must be verified first.
-  After ThankYou staff approve the organization (ADM-013), publishing works.
+  After Volunteer Services staff approve the organization (ADM-013), publishing works.
 
 ### TC-ORG-019 · Switch between organizations — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`) (admin of Harbor Food Bank and Bright Futures Tutoring)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`) (admin of Harbor Food Bank and Bright Futures Tutoring)
 - **Page:** `http://localhost:3202/org/dashboard`, then the switcher at the top right ("Harbor Food Bank")
 - **Steps:** Open the switcher, choose **Bright Futures Tutoring**; open Requests; switch back.
 - **Expected result:** The page header reads "Bright Futures Tutoring · Admin · Verification required" (or similar) and Requests lists
@@ -211,7 +211,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-020 · Publishing rule: manager's high-risk request needs the owner — P1
 
-- **Tester:** Nora (`org.manager@thankyou.test` / `Password!`) (manager), then Olivia (`org.admin@thankyou.test` / `Password!`) (admin)
+- **Tester:** Nora (`org.manager@volunteer-services-app.test` / `Password!`) (manager), then Olivia (`org.admin@volunteer-services-app.test` / `Password!`) (admin)
 - **Page:** Olivia: `http://localhost:3202/org/settings` → **Who can publish requests**; Nora: `http://localhost:3202/org/requests/new`; Olivia: `http://localhost:3202/org/requests`
 - **Test data (Nora's request):** Title `Teen helpers for the Saturday shift`; Category **Food & meals**; Description `Students 16+ help pack produce boxes.`; next Saturday 10:00, 120 min; in person, area `Queens, NY`; step 4 tick **If under 18, have a parent or guardian's consent**
 - **Steps:**
@@ -226,7 +226,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-021 · Owner sends a manager's request back — P2
 
-- **Tester:** Nora (`org.manager@thankyou.test` / `Password!`), Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Nora (`org.manager@volunteer-services-app.test` / `Password!`), Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/requests` → the request waiting for approval; Nora: `http://localhost:3202/org/requests`
 - **Steps:** Repeat TC-ORG-020 step 1 with title `Teen helpers — second try`. Olivia types `Please add what students should wear.` and clicks **Send back**. Nora opens the request.
 - **Expected result:** Olivia: "Sent back with your note. It stays private until it's resubmitted." Nora sees "The owner sent this back:
@@ -234,7 +234,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-022 · Change the publishing rule — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Nora (`org.manager@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Nora (`org.manager@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/settings` → **Who can publish requests**; Nora: `http://localhost:3202/org/requests/new`
 - **Steps:** Choose **None: managers publish on their own**, click **Save**. Nora creates and publishes a guardian-consent request again.
 - **Expected result:** "Saved." Nora's request goes live immediately ("Your request is live…"). Choosing **Every request** instead makes
@@ -242,7 +242,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-023 · Set the organization type — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/settings` → Profile → **Type of organization**
 - **Steps:** Open the list; choose **Community group**, **Save profile**; set it back to **Nonprofit**.
 - **Expected result:** Options: Nonprofit, School, Community group, Faith-based organization, Government agency, Other. "Saved." each
@@ -250,7 +250,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-024 · School coordinators exist only in schools — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`) (Harbor = Nonprofit), then Sam (`school.admin@thankyou.test` / `Password!`, Lincoln High = School)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`) (Harbor = Nonprofit), then Sam (`school.admin@volunteer-services-app.test` / `Password!`, Lincoln High = School)
 - **Page:** `http://localhost:3202/org/team` → **Invite a teammate** → Role (Olivia on Harbor Food Bank; Sam on Lincoln High School)
 - **Steps:**
   1. Olivia opens the Role list.
@@ -260,7 +260,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-025 · A school with coordinators can't change type — P2
 
-- **Tester:** Sam (`school.admin@thankyou.test` / `Password!`)
+- **Tester:** Sam (`school.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/settings` → **Type of organization**
 - **Steps:** Change School → **Nonprofit**, Save profile.
 - **Expected result:** Refused: "Change your coordinators to another role before changing the organization type". The type stays School.
@@ -268,14 +268,14 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-026 · School coordinator's access — P1
 
-- **Tester:** Cora (`school.coordinator@thankyou.test` / `Password!`)
+- **Tester:** Cora (`school.coordinator@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/dashboard` (Lincoln High School)
 - **Expected result:** Header "Lincoln High School · School coordinator…" (or Coordinator); she can view requests and applicants, but
   can't accept volunteers, edit settings, invite teammates or see volunteers' email and phone (same limits as a member, see OPS-027).
 
 ### TC-ORG-027 · Organization home — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/dashboard` (Organization → **Home**)
 - **Before you start:** S4, S5
 - **Expected result:** "Harbor Food Bank · Admin · Verified", **Post a request**; a reminder to turn on two-step sign-in ("You approve
@@ -284,7 +284,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-ORG-028 · Organization menu — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/dashboard`, then each item in the top menu
 - **Expected result:** Top menu: Home, Requests, Applicants, Hours, People, Inbox, Organization. "People" opens the roster with
   Attendance, Forms and Incidents nearby; "Organization" opens Team with tabs Team · Settings · Reports.

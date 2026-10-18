@@ -26,7 +26,7 @@ seed accounts keep `Password!`.
   1. Open Sign up and read the page.
   2. Enter the data and click **Create account**.
 - **Expected result:**
-  - Before submitting, the page explains "ThankYou is for people 16 and older. We never show your birth date…".
+  - Before submitting, the page explains "Volunteer Services is for people 16 and older. We never show your birth date…".
   - After submitting: "Account created. Please verify your email to continue." and "Check your inbox for a
     verification email to finish creating your account."
   - A line "Development only — verification link: http://localhost:3202/verify-email?token=…" is shown, plus a
@@ -49,20 +49,20 @@ seed accounts keep `Password!`.
 - **Page:** `http://localhost:3202/signup`
 - **Test data:** Email `uat.kid@example.test`, Password/Confirm `Uat-Pass-2026!`, Date of birth **a date 15 years ago** (e.g. if today is 2026-10-12, use `2011-10-20`)
 - **Steps:** Submit the form.
-- **Expected result:** Error "ThankYou is for people 16 and older." No verification link is shown and no account is created.
+- **Expected result:** Error "Volunteer Services is for people 16 and older." No verification link is shown and no account is created.
 
 ### TC-ACC-004 · Signing up with an email that already exists doesn't reveal it — P2
 
-- **Tester:** Visitor (signed out) trying Valerie's address — `volunteer.local@thankyou.test` / `Uat-Pass-2026!` (Valerie's real password stays `Password!`)
+- **Tester:** Visitor (signed out) trying Valerie's address — `volunteer.local@volunteer-services-app.test` / `Uat-Pass-2026!` (Valerie's real password stays `Password!`)
 - **Page:** `http://localhost:3202/signup`
-- **Test data:** Email `volunteer.local@thankyou.test`, Password/Confirm `Uat-Pass-2026!`, DOB `1990-05-01`
+- **Test data:** Email `volunteer.local@volunteer-services-app.test`, Password/Confirm `Uat-Pass-2026!`, DOB `1990-05-01`
 - **Steps:**
   1. Submit the form.
   2. Look at the API terminal.
 - **Expected result:**
   - The page answers the same way as for a new address (it does **not** say the account exists).
   - Valerie's existing password `Password!` still works (sign in to confirm, then sign out).
-  - The API terminal shows an email to volunteer.local@thankyou.test telling the owner someone tried to sign up with
+  - The API terminal shows an email to volunteer.local@volunteer-services-app.test telling the owner someone tried to sign up with
     their address.
 
 ### TC-ACC-005 · Verify the email address — P1
@@ -76,7 +76,7 @@ seed accounts keep `Password!`.
 - **Expected result:**
   - Step 2 shows "Verify email — Confirm uat.vol1@example.test is yours." and a **Verify my email** button (opening
     the link alone does not verify, so email scanners can't use it up).
-  - After clicking, you are signed in and taken to **Welcome to ThankYou** (`/onboarding`).
+  - After clicking, you are signed in and taken to **Welcome to Volunteer Services** (`/onboarding`).
   - Step 3: "This link has expired or was already used".
 
 ### TC-ACC-006 · Resend the verification email — P3
@@ -176,24 +176,24 @@ seed accounts keep `Password!`.
 
   | User | Lands on | Switcher (top right) shows |
   | --- | --- | --- |
-  | volunteer.local@thankyou.test | Volunteer home "Hi, Valerie" | Volunteering |
-  | requester@thankyou.test | Requester home "Hi, Rose" | Requesting help |
-  | org.admin@thankyou.test | Organization home for Harbor Food Bank ("Harbor Food Bank · Admin · Verified") | Harbor Food Bank |
-  | admin@thankyou.test | Admin dashboard | Platform admin |
-  | moderator@thankyou.test | Moderation | Platform admin |
-  | dual.role@thankyou.test | Volunteer home "Hi, Diego" (last-used role) | Volunteering |
+  | volunteer.local@volunteer-services-app.test | Volunteer home "Hi, Valerie" | Volunteering |
+  | requester@volunteer-services-app.test | Requester home "Hi, Rose" | Requesting help |
+  | org.admin@volunteer-services-app.test | Organization home for Harbor Food Bank ("Harbor Food Bank · Admin · Verified") | Harbor Food Bank |
+  | admin@volunteer-services-app.test | Admin dashboard | Platform admin |
+  | moderator@volunteer-services-app.test | Moderation | Platform admin |
+  | dual.role@volunteer-services-app.test | Volunteer home "Hi, Diego" (last-used role) | Volunteering |
 
 ### TC-ACC-013 · Wrong password and unknown email give the same answer — P1
 
 - **Tester:** Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/login`
-- **Test data:** (a) `volunteer.local@thankyou.test` / `WrongPass1`; (b) `nobody.here@example.test` / `WrongPass1`
+- **Test data:** (a) `volunteer.local@volunteer-services-app.test` / `WrongPass1`; (b) `nobody.here@example.test` / `WrongPass1`
 - **Steps:** Try (a), then (b).
 - **Expected result:** Both show **"Invalid email or password"** and stay on Log in. Neither says whether the account exists.
 
 ### TC-ACC-014 · Log out — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/dashboard` (any signed-in page works)
 - **Steps:**
   1. Open the account menu (the round avatar at the top right).
@@ -272,7 +272,7 @@ seed accounts keep `Password!`.
   2. On "Enter your code", type `000000` → **Continue**.
   3. Type the current code from the app → Continue.
 - **Expected result:**
-  - 1: "Enter your code — Open your authenticator app and type the 6-digit code for ThankYou." with a hint about recovery codes.
+  - 1: "Enter your code — Open your authenticator app and type the 6-digit code for Volunteer Services." with a hint about recovery codes.
   - 2: "That code didn't work. Check your app and try again."
   - 3: signed in, on your home page.
 
@@ -307,7 +307,7 @@ seed accounts keep `Password!`.
 
 ### TC-ACC-023 · Switch between volunteering and requesting help — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/dashboard`
 - **Steps:**
   1. Look at the menu along the top.
@@ -336,7 +336,7 @@ seed accounts keep `Password!`.
 
 ### TC-ACC-025 · A signed-in visitor without the volunteer role is invited to add it — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`, requester only)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`, requester only)
 - **Page:** `http://localhost:3202/opportunities` → open *Community garden weeding*
 - **Steps:** Read the right-hand box.
 - **Expected result:** Instead of an Apply form: "Add the volunteer role to your account to apply. Your other roles stay
@@ -344,14 +344,14 @@ seed accounts keep `Password!`.
 
 ### TC-ACC-026 · Session survives a browser refresh and new tab — P3
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/dashboard`
 - **Steps:** Refresh the page; open `http://localhost:3202/volunteer/applications` in a new tab of the same window.
 - **Expected result:** Still signed in as Valerie in both tabs; no second sign-in.
 
 ### TC-ACC-027 · Sign-in can't be redirected to another website — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/login?returnTo=//evil.example`
 - **Steps:** Sign in as Valerie from that address.
-- **Expected result:** You land on a ThankYou page (your home); the browser never goes to evil.example.
+- **Expected result:** You land on a Volunteer Services page (your home); the browser never goes to evil.example.

@@ -33,7 +33,7 @@ describe("account deletion ends shared records", () => {
 
 describe("organization team members are adults", () => {
   it("a 16-year-old can't start, join or accept an invite to an organization", async () => {
-    const teen = `${uniq("teen-org")}@thankyou.test`;
+    const teen = `${uniq("teen-org")}@volunteer-services-app.test`;
     await createUser({ email: teen, roles: ["volunteer"], birthDate: birthDateForAge(16) });
     const t = await as(teen);
     const create = await t.post("/v1/orgs/create", { org: { name: uniq("Teen org"), summary: "We run a weekly park cleanup.", location: "Queens, NY" }, admin: { adultConfirmed: true } });
@@ -52,7 +52,7 @@ describe("organization team members are adults", () => {
   });
 
   it("someone with no birth date confirms they're 18+, and an adult goes straight through", async () => {
-    const none = `${uniq("nodob")}@thankyou.test`;
+    const none = `${uniq("nodob")}@volunteer-services-app.test`;
     await createUser({ email: none, roles: ["volunteer"], birthDate: null });
     const n = await as(none);
     const body = { org: { name: uniq("New org"), summary: "We deliver groceries to neighbors.", location: "Queens, NY" } };
@@ -63,7 +63,7 @@ describe("organization team members are adults", () => {
     const row = await pool.query("SELECT adult_attested_at FROM users WHERE id = $1", [await userId(none)]);
     expect(row.rows[0].adult_attested_at).not.toBeNull();
 
-    const adult = `${uniq("adult")}@thankyou.test`;
+    const adult = `${uniq("adult")}@volunteer-services-app.test`;
     await createUser({ email: adult, roles: ["volunteer"] });
     expect((await (await as(adult)).post("/v1/orgs/create", { org: { ...body.org, name: uniq("Adult org") } })).status).toBe(201);
   });
@@ -76,7 +76,7 @@ describe("one accept rule for every accept path", () => {
     expect((await publish(o.admin, id)).status).toBe(200);
     const apps: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const v = `${uniq("goal-v")}@thankyou.test`;
+      const v = `${uniq("goal-v")}@volunteer-services-app.test`;
       await createUser({ email: v, roles: ["volunteer"] });
       const ap = await (await as(v)).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "Count me in", offeredAmount: 6 });
       expect(ap.status, JSON.stringify(ap.body)).toBe(201);
@@ -99,7 +99,7 @@ describe("one accept rule for every accept path", () => {
 
 describe("minors in staff lists and manual attendance", () => {
   it("hides a minor's email in the roster and attendance list, and manual attendance waits for prerequisites", async () => {
-    const teen = `${uniq("teen-roster")}@thankyou.test`;
+    const teen = `${uniq("teen-roster")}@volunteer-services-app.test`;
     await createUser({ email: teen, roles: ["volunteer"], birthDate: birthDateForAge(16) });
     const o = await makeOrg();
     const s = await staffed(o, { requiresGuardianConsent: true }, teen);
@@ -127,7 +127,7 @@ describe("minors in staff lists and manual attendance", () => {
     const o = await makeOrg();
     const id = await orgRequest(o.admin, o.slug);
     await publish(o.admin, id);
-    const v = `${uniq("pending-v")}@thankyou.test`;
+    const v = `${uniq("pending-v")}@volunteer-services-app.test`;
     await createUser({ email: v, roles: ["volunteer"] });
     const ap = await (await as(v)).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
     const admin = await as(o.admin);
@@ -138,7 +138,7 @@ describe("minors in staff lists and manual attendance", () => {
 
 describe("listings a minor can't take part in", () => {
   it("leave individual and too-old requests out of a teen's discovery, but keep the detail page", async () => {
-    const teen = `${uniq("teen-disc")}@thankyou.test`;
+    const teen = `${uniq("teen-disc")}@volunteer-services-app.test`;
     await createUser({ email: teen, roles: ["volunteer"], birthDate: birthDateForAge(16) });
     const tag = uniq("Zebra");
     const own = await (await as(EMAILS.requester)).post("/v1/requests", { title: `${tag} individual`, ...FIELDS, startsAt: soon(6) });
@@ -298,7 +298,7 @@ describe("lists say how much they hold, and reports stay with admins and manager
 
 describe("saved searches and alerts (VOL-03)", () => {
   it("saves a search, alerts once about requests that went live since, and respects alerts off", async () => {
-    const vol = `${uniq("alerts")}@thankyou.test`;
+    const vol = `${uniq("alerts")}@volunteer-services-app.test`;
     await createUser({ email: vol, roles: ["volunteer"] });
     const v = await as(vol);
     const tag = uniq("Quokka");

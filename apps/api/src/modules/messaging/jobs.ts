@@ -32,7 +32,7 @@ export async function onMessageReceived({ messageId }: { messageId: string }) {
         heading: `${msg.sender_name} sent you a message`,
         lines: [c.request_title ? `It's about “${c.request_title}”.` : "Open your inbox to read and reply."],
         cta: { label: "Read and reply", url: href },
-        note: "For your safety, keep conversations on ThankYou and never share bank details or passwords.",
+        note: "For your safety, keep conversations on Volunteer Services and never share bank details or passwords.",
         throttleMinutes: 60
       }
     });

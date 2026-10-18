@@ -104,7 +104,7 @@ export default async function Page() {
 {me?.id ? (
           <div className={styles.tile}>
             <h3 className={styles.tileTitle}>Invite friends</h3>
-            <p className={styles.tileBody}>Generate a shareable invite link for someone new to join ThankYou.</p>
+            <p className={styles.tileBody}>Generate a shareable invite link for someone new to join Volunteer Services.</p>
             <div className="mt-3">
               <ShareButton
                 target={{ type: "invite", ref: me.id, title: "Invite friends" }}

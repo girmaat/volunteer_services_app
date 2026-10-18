@@ -72,7 +72,7 @@ export function verifyTotp(secret: string, code: string, lastStep: number | null
   return null;
 }
 
-export function otpauthUrl(secret: string, account: string, issuer = "ThankYou") {
+export function otpauthUrl(secret: string, account: string, issuer = "Volunteer Services") {
   const label = encodeURIComponent(`${issuer}:${account}`);
   return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=${STEP_SECONDS}`;
 }

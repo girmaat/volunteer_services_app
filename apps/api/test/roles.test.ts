@@ -75,8 +75,8 @@ describe("one account, multiple roles", () => {
   });
 
   it("adds a role to an existing account", async () => {
-    await createUser({ email: "add.role@thankyou.test", roles: ["volunteer"] });
-    const api = await as("add.role@thankyou.test");
+    await createUser({ email: "add.role@volunteer-services-app.test", roles: ["volunteer"] });
+    const api = await as("add.role@volunteer-services-app.test");
     expect((await api.get("/v1/requester/dashboard")).status).toBe(403);
     const add = await api.post("/v1/me/roles", { role: "requester" });
     expect(add.status).toBe(201);
@@ -90,8 +90,8 @@ describe("one account, multiple roles", () => {
   });
 
   it("an org team member who also volunteers can use both", async () => {
-    await createUser({ email: "org.vol@thankyou.test", roles: ["volunteer"], org: { slug: "harbor-food-bank", role: "member" } });
-    const api = await as("org.vol@thankyou.test");
+    await createUser({ email: "org.vol@volunteer-services-app.test", roles: ["volunteer"], org: { slug: "harbor-food-bank", role: "member" } });
+    const api = await as("org.vol@volunteer-services-app.test");
     expect((await api.get("/v1/org/me")).status).toBe(200);
     expect((await api.get("/v1/volunteer/applications")).status).toBe(200);
     const me = await api.get("/v1/me");
@@ -121,10 +121,10 @@ describe("one account, multiple roles", () => {
 describe("org onboarding", () => {
   it("finishing org onboarding finishes the admin's account onboarding too", async () => {
     await pool.query("INSERT INTO organizations (slug, name, summary, location, contact_email, onboarding_completed) VALUES ('onb-test-org', 'Onboarding Test Org', 'A test organization summary.', 'Queens, NY', 'onb@example.org', FALSE) ON CONFLICT DO NOTHING");
-    const id = await createUser({ email: "onb.admin@thankyou.test", org: { slug: "onb-test-org", role: "admin" } });
+    const id = await createUser({ email: "onb.admin@volunteer-services-app.test", org: { slug: "onb-test-org", role: "admin" } });
     await pool.query("UPDATE users SET onboarding_completed = FALSE, profile_completed = FALSE WHERE id = $1", [id]);
     await pool.query("UPDATE user_profiles SET full_name = 'Onb Admin', phone = '718-555-0101' WHERE user_id = $1", [id]);
-    const a = await as("onb.admin@thankyou.test");
+    const a = await as("onb.admin@volunteer-services-app.test");
     expect((await a.post("/v1/requests", { as: "org", title: "x" })).status).toBe(403);
     const r = await a.patch("/v1/orgs/onb-test-org", { onboarding_completed: true });
     expect(r.status, JSON.stringify(r.body)).toBe(200);
@@ -153,7 +153,7 @@ describe("organization sign-up", () => {
     const u = await pool.query("SELECT onboarding_completed, verification_required, adult_attested_at FROM users WHERE email = 'riley.1@example.org'");
     expect(u.rows[0]).toMatchObject({ onboarding_completed: true, verification_required: false });
     expect(u.rows[0].adult_attested_at).toBeTruthy();
-    // New organizations start unverified: they can't publish until ThankYou verifies them.
+    // New organizations start unverified: they can't publish until Volunteer Services verifies them.
     const o = await pool.query("SELECT verification_status FROM organizations WHERE slug = 'riverside-mutual-aid'");
     expect(o.rows[0].verification_status).toBe("required");
   });
@@ -172,8 +172,8 @@ describe("organization sign-up", () => {
   });
 
   it("a volunteer can start an organization and keeps volunteering", async () => {
-    await createUser({ email: "vol.founder@thankyou.test", roles: ["volunteer"] });
-    const v = await as("vol.founder@thankyou.test");
+    await createUser({ email: "vol.founder@volunteer-services-app.test", roles: ["volunteer"] });
+    const v = await as("vol.founder@volunteer-services-app.test");
     const r = await v.post("/v1/orgs/create", { org: { name: "Founder Food Share", summary: "A small food share run by neighbors.", location: "Queens, NY" } });
     expect(r.status, JSON.stringify(r.body)).toBe(201);
     const me = await v.get("/v1/me");

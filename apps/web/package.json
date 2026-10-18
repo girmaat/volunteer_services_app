@@ -1,5 +1,5 @@
 {
-  "name": "@thankyou/web",
+  "name": "@volunteer_services_app/web",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3202",
@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.25",
-    "@thankyou/config": "workspace:*",
-    "@thankyou/contracts": "workspace:*",
+    "@volunteer_services_app/config": "workspace:*",
+    "@volunteer_services_app/contracts": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^0.469.0",
     "next": "15.5.27",

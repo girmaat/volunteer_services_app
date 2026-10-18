@@ -133,7 +133,7 @@ describe("request → apply → accept → message → complete → review", () 
     const sent = await vol.post(`/v1/inbox/conversations/${conversationId}/messages`, { body: "hello?" });
     expect(sent.status).toBe(403);
     const list = await req.get("/v1/settings/blocked-users");
-    expect(JSON.stringify(list.body)).not.toContain("volunteer.local@thankyou.test");
+    expect(JSON.stringify(list.body)).not.toContain("volunteer.local@volunteer-services-app.test");
     expect((await req.del(`/v1/settings/blocked-users/${volunteerId}`)).status).toBeLessThan(300);
   });
 });

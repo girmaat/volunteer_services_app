@@ -61,7 +61,7 @@ app.get("/v1/shares/:token", async (req, res) => {
 
   // Minimal response when not allowed (safe for OG + crawlers)
   if (!viewerCanViewDetails) {
-    const title = isExpired ? "Link expired" : isRevoked ? "Link revoked" : "ThankYou shared link";
+    const title = isExpired ? "Link expired" : isRevoked ? "Link revoked" : "Volunteer Services shared link";
     const summary = isExpired
       ? "This shared link has expired."
       : isRevoked
@@ -160,7 +160,7 @@ app.get("/v1/shares/:token", async (req, res) => {
 
       ctaLabel = "Volunteer / Apply";
     } else if (shareType === "INVITE") {
-      title = "You're invited to ThankYou";
+      title = "You're invited to Volunteer Services";
       summary = "Find volunteer opportunities near you or online, or get a hand from your neighbors. It's free.";
       ctaLabel = "Create a free account";
       ctaHref = "/signup";

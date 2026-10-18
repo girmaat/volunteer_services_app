@@ -42,8 +42,8 @@ export type Snapshot = {
 };
 
 const STATEMENT =
-  "Each entry was approved on ThankYou by the organization (or person) the volunteer served, using the method shown. " +
-  "ThankYou confirmed the volunteer's email address; it did not check an identity document. " +
+  "Each entry was approved on Volunteer Services by the organization (or person) the volunteer served, using the method shown. " +
+  "Volunteer Services confirmed the volunteer's email address; it did not check an identity document. " +
   "Approval by an organization is not acceptance by a school or employer.";
 
 function localDate(d: Date, tz: string | null) {
@@ -218,7 +218,7 @@ export function registerRecordRoutes(app: Express) {
       const row = r.rows[0];
       if (!row) return res.status(404).json({ state: "not_found" });
       const state = recordState(row);
-      const base = { state, issuer: "ThankYou", issued_at: row.issued_at, expires_at: row.expires_at, revoked_at: row.revoked_at };
+      const base = { state, issuer: "Volunteer Services", issued_at: row.issued_at, expires_at: row.expires_at, revoked_at: row.revoked_at };
       if (state !== "valid") return res.json(base);
       return res.json({ ...base, ...(row.snapshot as Snapshot) });
     })

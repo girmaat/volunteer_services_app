@@ -10,7 +10,7 @@ export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Organizations",
-  description: "Nonprofits and community groups posting volunteer opportunities on ThankYou.",
+  description: "Nonprofits and community groups posting volunteer opportunities on Volunteer Services.",
   alternates: { canonical: "/organizations" }
 };
 

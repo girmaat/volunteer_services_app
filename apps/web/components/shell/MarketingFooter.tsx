@@ -14,7 +14,7 @@ export default function MarketingFooter() {
       <div className="mx-auto grid max-w-content gap-10 px-5 py-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(4,1fr)]">
         <div>
           <div className="flex items-center gap-2 font-display text-lg font-bold">
-            <LogoMark size={26} /> ThankYou
+            <LogoMark size={26} /> Volunteer Services
           </div>
           <p className="mt-3 text-sm text-muted">
             Neighbors and nonprofits helping each other. Not for emergencies — if someone is in danger, call your local emergency number.
@@ -36,7 +36,7 @@ export default function MarketingFooter() {
         ))}
       </div>
       <div className="border-t border-line">
-        <p className="mx-auto my-0 max-w-content px-5 py-5 text-xs text-muted">© {new Date().getFullYear()} ThankYou</p>
+        <p className="mx-auto my-0 max-w-content px-5 py-5 text-xs text-muted">© {new Date().getFullYear()} Volunteer Services</p>
       </div>
     </footer>
   );

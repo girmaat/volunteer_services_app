@@ -1,5 +1,5 @@
 {
-  "name": "@thankyou/config",
+  "name": "@volunteer_services_app/config",
   "version": "0.0.0",
   "private": true,
   "main": "./index.ts",

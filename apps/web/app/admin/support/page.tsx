@@ -9,14 +9,14 @@ type Row = { id: string; status: string; last_message_at: string | null; created
 
 const when = (iso: string) => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
-/** Messages organizations sent to the ThankYou team (from Contact us → Message the ThankYou team). */
+/** Messages organizations sent to the Volunteer Services team (from Contact us → Message the Volunteer Services team). */
 export default async function SupportInbox() {
   const r = await backendFetch("/v1/admin/support");
   if (r.status === 403) redirect("/403");
   const data = r.ok ? ((await r.json()) as { items: Row[] }) : null;
   return (
     <>
-      <PageHeader title="Support messages" description="Organizations write to the ThankYou team from Contact us. Open a thread to reply; it lands in their Inbox." />
+      <PageHeader title="Support messages" description="Organizations write to the Volunteer Services team from Contact us. Open a thread to reply; it lands in their Inbox." />
       {!data ? <Notice tone="danger">Support messages are unavailable right now.</Notice> : null}
       {data && !data.items.length ? <EmptyState title="No support messages yet" body="When an organization member messages the team, it shows up here." /> : null}
       {data?.items.length ? (

@@ -18,7 +18,7 @@ const hrs = (n: number) => `${Math.round(n * 10) / 10} h`;
 
 /** What someone with a volunteer's share link sees: accomplishments plus the details the volunteer switched on. */
 export default function SharedProfileView({ p }: { p: SharedProfile }) {
-  const name = p.name || "A ThankYou volunteer";
+  const name = p.name || "An anonymous volunteer";
   const stats = [
     { label: "Opportunities completed", value: String(p.completed_count), icon: CalendarCheck },
     p.total_hours != null ? { label: "Total hours logged", value: hrs(p.total_hours), icon: Clock } : null,

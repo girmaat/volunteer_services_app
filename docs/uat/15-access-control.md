@@ -25,7 +25,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-002 · After logging in you land on the page you asked for — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/history` (signed out)
 - **Steps:** Open the address, log in on the page that appears.
 - **Expected result:** You land on **Impact** (`http://localhost:3202/volunteer/history`), not the home page.
@@ -33,7 +33,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-003 · A volunteer can't open requester or organization tools — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests`, `http://localhost:3202/requester/hours`,
   `http://localhost:3202/org/dashboard`, `http://localhost:3202/org/applications`
 - **Steps:** Open each address.
@@ -42,7 +42,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-004 · A requester without the volunteer role can't open volunteer tools — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/dashboard`, `http://localhost:3202/volunteer/opportunities/recommended`,
   `http://localhost:3202/volunteer/history`, `http://localhost:3202/org/dashboard`
 - **Steps:** Open each address.
@@ -51,7 +51,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-005 · Staff-only tools — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), Maya (`moderator@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), Maya (`moderator@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/admin`, `http://localhost:3202/admin/users`, `http://localhost:3202/admin/audit`
 - **Steps:** Open each address as Valerie, then as Maya.
 - **Expected result:** Valerie: **Access denied** on all three. Maya: `/admin` opens Moderation, `/admin/users` is
@@ -60,7 +60,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-006 · Someone else's application — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** Valerie: `http://localhost:3202/volunteer/applications` → *Saturday distribution shift* (copy the address,
   `http://localhost:3202/volunteer/applications/<id>`)
 - **Before you start:** S4
@@ -69,7 +69,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-007 · Someone else's conversation — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** Valerie: `http://localhost:3202/inbox` → Rose · *Help me carry groceries upstairs* (copy the address,
   `http://localhost:3202/inbox/<id>`)
 - **Before you start:** S1
@@ -79,7 +79,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-008 · Someone else's request and its applicants — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/requests` → *Walk and talk in the park* (copy the address,
   `http://localhost:3202/requester/requests/<id>`), and its **Applicants** page (`…/<id>/applications`)
 - **Steps:** Diego switches to **Requesting help** and opens both addresses.
@@ -88,7 +88,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-009 · Another organization's requests — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Sam (`school.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Sam (`school.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia (Harbor Food Bank): `http://localhost:3202/org/requests` → *Saturday distribution shift* (copy
   `http://localhost:3202/org/requests/<id>` and `…/<id>/applications`)
 - **Steps:** Sam (Lincoln High School) opens both addresses.
@@ -96,7 +96,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-010 · Organization members can look but not act — P1
 
-- **Tester:** Marcus (`org.member@thankyou.test` / `Password!`)
+- **Tester:** Marcus (`org.member@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/applications`, `http://localhost:3202/org/requests` → *Saturday distribution
   shift* → **Applicants**, `http://localhost:3202/org/documents`, `http://localhost:3202/org/hours`,
   `http://localhost:3202/org/requests/new`
@@ -116,7 +116,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-011 · Unpublished, in-review and sensitive requests can't be opened by address — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Visitor (signed out, no login needed), then Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed), then Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/requests` → *Draft: garden cleanup (not published)*, *Help hanging
   curtains and a shelf* and *Explain my electricity bill*. Copy each request's id (the last part of the address)
   and open `http://localhost:3202/opportunities/<id>`.
@@ -126,7 +126,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-012 · Exact addresses stay hidden from people who aren't accepted — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`), Tara (`teen.volunteer@thankyou.test` / `Password!`), Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`), Tara (`teen.volunteer@volunteer-services-app.test` / `Password!`), Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/<id>` of *Saturday distribution shift* (open it from Find
   opportunities)
 - **Before you start:** S4 (Valerie accepted; Diego and Tara pending)
@@ -137,7 +137,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-013 · Private volunteer profiles — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Diego (`dual.role@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Diego (`dual.role@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/volunteers/<Valerie's id>`. To get the id: as Valerie open
   `http://localhost:3202/settings/account` → **Download my data (JSON)**, open the file and copy the `id` under
   `"account"` at the top.
@@ -148,7 +148,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-014 · A banned user is locked out — P1
 
-- **Tester:** Ada (`admin@thankyou.test` / `Password!`), then Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Ada (`admin@volunteer-services-app.test` / `Password!`), then Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** Ada: `http://localhost:3202/admin/users`. Ravi: `http://localhost:3202/volunteer/dashboard`
 - **Steps:**
   1. Ravi signs in and stays on his dashboard.
@@ -159,7 +159,7 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-015 · Logging out closes every private page — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/applications`
 - **Steps:**
   1. Open Applicants, then avatar → **Log out**.
@@ -170,12 +170,12 @@ Setup: `pnpm db:uat`.
 
 ### TC-SEC-016 · Files and records belong to their owners — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Sam (`school.admin@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Sam (`school.admin@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** Olivia: `http://localhost:3202/org/documents` → **Download** on a form (copy the address,
   `http://localhost:3202/org/documents/<id>/download`). Use a form uploaded in TC-OPS-014.
 - **Before you start:** TC-OPS-014
 - **Steps:** Open the download address as Sam, then as a visitor. Also try a message attachment address from
-  TC-MSG-008 (`http://localhost:3202/api/inbox/attachments/<id>`) as Diego (`dual.role@thankyou.test` / `Password!`).
+  TC-MSG-008 (`http://localhost:3202/api/inbox/attachments/<id>`) as Diego (`dual.role@volunteer-services-app.test` / `Password!`).
 - **Expected result:** Sam and Diego don't get the file (a not-found or error page instead of a download); the
   visitor gets the log-in page. Hour
   evidence follows the same rule (TC-HRS-018).

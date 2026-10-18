@@ -25,7 +25,7 @@ describe("private volunteer profiles and share links", () => {
     expect(pub.body.about).toBeNull();
     expect(pub.body.location).toBeNull();
     expect(Array.isArray(pub.body.accomplishments)).toBe(true);
-    expect(JSON.stringify(pub.body)).not.toMatch(/@thankyou\.test/);
+    expect(JSON.stringify(pub.body)).not.toMatch(/@volunteer-services-app\.test/);
 
     // Switch details on and off.
     await v.put("/v1/volunteer/profile-share/settings", { show_name: false, show_about: true, show_location: true, show_total_hours: false, show_average_rating: true, show_reviews_count: true });
@@ -48,7 +48,7 @@ describe("private volunteer profiles and share links", () => {
   });
 
   it("volunteers under 18 can't share their profile", async () => {
-    const teen = `share.teen.${Date.now()}@thankyou.test`;
+    const teen = `share.teen.${Date.now()}@volunteer-services-app.test`;
     await createUser({ email: teen, roles: ["volunteer"], birthDate: birthDateForAge(16) });
     const t = await as(teen);
     expect((await t.get("/v1/volunteer/profile-share")).body.can_share).toBe(false);

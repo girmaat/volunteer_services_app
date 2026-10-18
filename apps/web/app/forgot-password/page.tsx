@@ -1,7 +1,7 @@
 import { forwardHeaders } from "../../lib/forward";
 import styles from "../(auth)/auth.module.css";
 import Link from "next/link";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 

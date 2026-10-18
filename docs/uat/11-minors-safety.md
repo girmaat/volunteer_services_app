@@ -1,10 +1,10 @@
 # 11 · Volunteers under 18
 
-ThankYou is for people 16 and older. Volunteers aged 16 and 17 get extra protection: they don't see or apply to
+Volunteer Services is for people 16 and older. Volunteers aged 16 and 17 get extra protection: they don't see or apply to
 individuals' requests, their contact details stay hidden even after they're accepted, they can't share a profile
 or join an organization's team, and organizations can ask for a parent or guardian's consent.
 
-The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pnpm db:uat`. S4 = Tara waiting on
+The seeded teenager is **Tara** (`teen.volunteer@volunteer-services-app.test`, 17). Setup: `pnpm db:uat`. S4 = Tara waiting on
 *Saturday distribution shift*; S6 = Tara accepted on Lincoln High's *After-school homework club helpers*.
 
 ---
@@ -15,7 +15,7 @@ The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pn
 - **Page:** `http://localhost:3202/signup`
 - **Test data:** Email `uat.kid2@example.test`; Password/Confirm `Uat-Pass-2026!`; Date of birth **15 years and 6 months ago**
 - **Steps:** Fill in the form and click **Create account**.
-- **Expected result:** "ThankYou is for people 16 and older." No account is created and no verification link is shown.
+- **Expected result:** "Volunteer Services is for people 16 and older." No account is created and no verification link is shown.
   (Same rule as TC-ACC-003, with a different date.)
 
 ### TC-MIN-002 · A 16-year-old can sign up — P2
@@ -31,7 +31,7 @@ The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pn
 
 ### TC-MIN-003 · Teens don't see individuals' requests in their lists — P1
 
-- **Tester:** Tara (`teen.volunteer@thankyou.test` / `Password!`)
+- **Tester:** Tara (`teen.volunteer@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/recommended`, then `http://localhost:3202/volunteer/opportunities/nearby`
 - **Steps:** Look through Recommended and Near you. Search `groceries`, then `phone`.
 - **Expected result:**
@@ -41,7 +41,7 @@ The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pn
 
 ### TC-MIN-004 · A teen who opens an individual's request is told why they can't apply — P1
 
-- **Tester:** Tara (`teen.volunteer@thankyou.test` / `Password!`)
+- **Tester:** Tara (`teen.volunteer@volunteer-services-app.test` / `Password!`)
 - **Page:** the address of *Ride to a medical appointment*, `http://localhost:3202/volunteer/opportunities/<id>` (copy it from
   Valerie's view: sign in as Valerie, `http://localhost:3202/volunteer/opportunities/nearby`, open it, copy the address)
 - **Steps:** Open the copied address as Tara.
@@ -50,7 +50,7 @@ The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pn
 
 ### TC-MIN-005 · A minimum age on an opportunity is enforced — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Tara (`teen.volunteer@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Tara (`teen.volunteer@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/requests` → *Sort donations at the pantry* → **Edit** → step 4 **Requirements**;
   Tara and Valerie: `http://localhost:3202/volunteer/opportunities/nearby` → *Sort donations at the pantry*
 - **Test data:** Minimum age `18`
@@ -66,7 +66,7 @@ The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pn
 
 ### TC-MIN-006 · Organizers see that an applicant is under 18 — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests` → *Saturday distribution shift* → **Applicants**
 - **Before you start:** S4
 - **Expected result:** Tara's card shows "Under 18 · talk in messages; contact details stay hidden". No email address or
@@ -74,7 +74,7 @@ The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pn
 
 ### TC-MIN-007 · A teen's contact details stay hidden even after acceptance — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Tara (`teen.volunteer@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Tara (`teen.volunteer@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/requests` → *Saturday distribution shift* → **Applicants**, then
   `http://localhost:3202/inbox`; Tara: `http://localhost:3202/inbox`
 - **Before you start:** S4
@@ -91,7 +91,7 @@ The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pn
 
 ### TC-MIN-008 · An organization asks for a parent or guardian's consent — P1
 
-- **Tester:** Sam (`school.admin@thankyou.test` / `Password!`), then Tara (`teen.volunteer@thankyou.test` / `Password!`)
+- **Tester:** Sam (`school.admin@volunteer-services-app.test` / `Password!`), then Tara (`teen.volunteer@volunteer-services-app.test` / `Password!`)
 - **Page:** Sam: `http://localhost:3202/org/requests` → *After-school homework club helpers* → **Edit** → step 4
   **Requirements**; Tara: `http://localhost:3202/volunteer/applications` → *After-school homework club helpers*
 - **Before you start:** S6 (Tara accepted)
@@ -122,14 +122,14 @@ The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pn
 - **Expected result:**
   - 1: "Parent or guardian consent — Tara would like to volunteer with Lincoln High School", the opportunity's title,
     organization ("verified organization"), date and area, description, and "Messages with your teenager happen only in
-    this opportunity's thread on ThankYou… phone numbers and email addresses are hidden in it." No account is needed.
+    this opportunity's thread on Volunteer Services… phone numbers and email addresses are hidden in it." No account is needed.
   - 2: the browser asks you to tick the box; nothing is recorded.
   - 3: "Thank you. You gave consent for "After-school homework club helpers". Tara and the organizer have been told."
   - 4: the consent item shows a green tick and "done"; Tara gets a notification.
 
 ### TC-MIN-010 · The parent declines, and Tara asks again — P2
 
-- **Tester:** Tara (`teen.volunteer@thankyou.test` / `Password!`), then Visitor (the parent)
+- **Tester:** Tara (`teen.volunteer@volunteer-services-app.test` / `Password!`), then Visitor (the parent)
 - **Page:** Tara: `http://localhost:3202/volunteer/applications` → *After-school homework club helpers*; parent: the new
   `http://localhost:3202/guardian/consent/<token>` link
 - **Before you start:** re-run `pnpm db:uat` and repeat TC-MIN-008 steps 1–3
@@ -144,7 +144,7 @@ The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pn
 
 ### TC-MIN-011 · Check-in waits for consent — P2
 
-- **Tester:** Sam (`school.admin@thankyou.test` / `Password!`), then Tara (`teen.volunteer@thankyou.test` / `Password!`)
+- **Tester:** Sam (`school.admin@volunteer-services-app.test` / `Password!`), then Tara (`teen.volunteer@volunteer-services-app.test` / `Password!`)
 - **Page:** Sam: `http://localhost:3202/org/requests` → *After-school homework club helpers* → **Applicants** and
   **On-site check-in**; Tara: the check-in link `http://localhost:3202/check-in/<token>`
 - **Before you start:** TC-MIN-008 done but **not** TC-MIN-009 (consent requested, no answer). Check-in opens 2 hours before
@@ -161,7 +161,7 @@ The seeded teenager is **Tara** (`teen.volunteer@thankyou.test`, 17). Setup: `pn
 
 ### TC-MIN-012 · Teens can't share a profile or join an organization's team — P1
 
-- **Tester:** Tara (`teen.volunteer@thankyou.test` / `Password!`)
+- **Tester:** Tara (`teen.volunteer@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/profile/share`, then `http://localhost:3202/org/signup`
 - **Steps:**
   1. Open Share your profile.

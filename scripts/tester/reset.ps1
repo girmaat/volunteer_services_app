@@ -1,4 +1,4 @@
-# ThankYou - put the test data back to its starting point (all test accounts and ready-made situations).
+# Volunteer Services - put the test data back to its starting point (all test accounts and ready-made situations).
 . (Join-Path $PSScriptRoot "common.ps1")
 Refresh-Path
 Write-Host ""
@@ -9,5 +9,5 @@ if ($ok -ne "y" -and $ok -ne "Y") { Write-Host "  Nothing changed."; exit 0 }
 Ensure-Postgres
 Run "Loading the starting test data..." { pnpm db:uat }
 Write-Host ""
-Write-Host "  Done. Refresh the browser. If ThankYou was running, close the 'ThankYou server' window and start it again" -ForegroundColor Green
+Write-Host "  Done. Refresh the browser. If Volunteer Services was running, close the 'Volunteer Services server' window and start it again" -ForegroundColor Green
 Write-Host "  so no page shows old data." -ForegroundColor Green

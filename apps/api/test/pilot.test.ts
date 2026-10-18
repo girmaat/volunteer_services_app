@@ -182,7 +182,7 @@ describe("shareable service records (REC-02/03, ID-07, TEST-02, CASE-07)", () =>
     const rec = await v.post("/v1/volunteer/records", { contributionIds: [cid], nameMode: "legal", expiresInDays: 30, confirmed: true });
     expect(rec.status).toBe(201);
     const pub = await anon().get(`/v1/public/records/${rec.body.token}`);
-    expect(pub.body).toMatchObject({ state: "valid", issuer: "ThankYou" });
+    expect(pub.body).toMatchObject({ state: "valid", issuer: "Volunteer Services" });
     expect(pub.body.entries).toHaveLength(1);
     expect(JSON.stringify(pub.body)).not.toContain("@");
     // Someone else can't revoke it.
@@ -224,7 +224,7 @@ describe("age gate and minors (SAFE-01/04, ID-01, FORM-03, CASE-02)", () => {
   });
 
   it("minors work only with organizations, contact stays masked, and guardian consent gates check-in", async () => {
-    const teen = `${uniq("teen")}@thankyou.test`;
+    const teen = `${uniq("teen")}@volunteer-services-app.test`;
     await createUser({ email: teen, roles: ["volunteer"], birthDate: birthDateForAge(16) });
     // Individual requests are for adults.
     const own = await (await as(EMAILS.requester)).post("/v1/requests", {
@@ -265,7 +265,7 @@ describe("age gate and minors (SAFE-01/04, ID-01, FORM-03, CASE-02)", () => {
   });
 
   it("an adult-only opportunity is visible to a minor but they can't apply, and the rule is explained", async () => {
-    const teen = `${uniq("teen")}@thankyou.test`;
+    const teen = `${uniq("teen")}@volunteer-services-app.test`;
     await createUser({ email: teen, roles: ["volunteer"], birthDate: birthDateForAge(17) });
     const o = await makeOrg();
     const id = await orgRequest(o.admin, o.slug, { minAge: 18 });
@@ -289,7 +289,7 @@ describe("versioned waivers as prerequisites (FORM-01/02/04)", () => {
     await publish(o.admin, id);
     expect((await (await as(o.admin)).post(`/v1/org/documents/${docId}/assign`, { request_id: id, required_before: "apply" })).status).toBe(200);
 
-    const v = `${uniq("signer")}@thankyou.test`;
+    const v = `${uniq("signer")}@volunteer-services-app.test`;
     await createUser({ email: v, roles: ["volunteer"] });
     const va = await as(v);
     const early = await va.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
@@ -332,7 +332,7 @@ describe("targets, units and partial offers (REQ-01/05/06, scenario: 40-hour tut
     const o = await makeOrg();
     const id = await orgRequest(o.admin, o.slug, { targetValue: 40, targetUnit: "hours", minContribution: 2, volunteersNeeded: 10, title: uniq("Tutoring") });
     await publish(o.admin, id);
-    const vols = [1, 2, 3, 4].map((n) => `${uniq(`tutor${n}`)}@thankyou.test`);
+    const vols = [1, 2, 3, 4].map((n) => `${uniq(`tutor${n}`)}@volunteer-services-app.test`);
     for (const v of vols) await createUser({ email: v, roles: ["volunteer"] });
     expect((await (await as(vols[0])).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" })).status).toBe(400);
     expect((await (await as(vols[0])).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi", offeredAmount: 1 })).status).toBe(422);
@@ -363,8 +363,8 @@ describe("waitlist offers (REQ-07)", () => {
     const o = await makeOrg();
     const id = await orgRequest(o.admin, o.slug, { volunteersNeeded: 1 });
     await publish(o.admin, id);
-    const a = `${uniq("wa")}@thankyou.test`;
-    const b = `${uniq("wb")}@thankyou.test`;
+    const a = `${uniq("wa")}@volunteer-services-app.test`;
+    const b = `${uniq("wb")}@volunteer-services-app.test`;
     await createUser({ email: a, roles: ["volunteer"] });
     await createUser({ email: b, roles: ["volunteer"] });
     const appA = (await (await as(a)).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" })).body.applicationId;
@@ -391,7 +391,7 @@ describe("calendar updates and QR check-in (CAL-01/02, CON-04)", () => {
     await admin.patch(`/v1/requests/${s.id}`, { startsAt: soon(6) });
     const second = (await v.get(`/v1/volunteer/calendar/commitments/${cid}/ics`)).text;
     expect(second).toContain("SEQUENCE:1");
-    expect(second).toContain(`UID:commitment-${cid}@thankyou`);
+    expect(second).toContain(`UID:commitment-${cid}@volunteer_services_app`);
     expect(second).toContain("METHOD:REQUEST");
     const n = await pool.query("SELECT title FROM notifications WHERE user_id = $1 AND type = 'calendar'", [await userId(s.volunteer)]);
     expect(n.rows.map((r) => r.title).join()).toMatch(/New time/);
@@ -402,7 +402,7 @@ describe("calendar updates and QR check-in (CAL-01/02, CON-04)", () => {
     expect(third).toContain("STATUS:CANCELLED");
     expect(third).toContain("SEQUENCE:2");
     // A minor's contact details never go into the invite.
-    expect(third).not.toMatch(/@thankyou\.test/);
+    expect(third).not.toMatch(/@volunteer-services-app\.test/);
   });
 
   it("volunteers check themselves in and out with the on-site code, near the shift only", async () => {
@@ -415,7 +415,7 @@ describe("calendar updates and QR check-in (CAL-01/02, CON-04)", () => {
     const early = await v.post(`/v1/checkin/${code.body.token}`, { action: "in" });
     expect(early.body.error.code).toBe("outside_window");
     await pool.query("UPDATE service_requests SET starts_at = NOW() - INTERVAL '10 minutes', ends_at = NOW() + INTERVAL '2 hours' WHERE id = $1", [s.id]);
-    const stranger = `${uniq("stranger")}@thankyou.test`;
+    const stranger = `${uniq("stranger")}@volunteer-services-app.test`;
     await createUser({ email: stranger, roles: ["volunteer"] });
     expect((await (await as(stranger)).post(`/v1/checkin/${code.body.token}`, { action: "in" })).body.error.code).toBe("not_assigned");
     expect((await v.post(`/v1/checkin/${code.body.token}`, { action: "in" })).status).toBe(201);
@@ -438,7 +438,7 @@ describe("organization reports on approved hours (OPS-02, OPS-05)", () => {
     const s = await staffed(o);
     const meals = await orgRequest(o.admin, o.slug, { targetValue: 100, targetUnit: "meals", title: uniq("Meals") });
     await publish(o.admin, meals);
-    const teen = `${uniq("teen")}@thankyou.test`;
+    const teen = `${uniq("teen")}@volunteer-services-app.test`;
     await createUser({ email: teen, roles: ["volunteer"], birthDate: birthDateForAge(17) });
     const tApp = (await (await as(teen)).post(`/v1/volunteer/opportunities/${meals}/apply`, { message: "hi", offeredAmount: 30 })).body.applicationId;
     await admin.post(`/v1/requests/${meals}/applicants/${tApp}`, { action: "accept", acceptedAmount: 25 });

@@ -10,7 +10,7 @@ import { Pool, type PoolClient } from "pg";
  * Password for every seeded account comes from SEED_PASSWORD (default only outside production).
  */
 
-const DOMAIN = "thankyou.test";
+const DOMAIN = "volunteer-services-app.test";
 
 type Persona = {
   key: string;
@@ -191,7 +191,7 @@ const STORIES = [
 Every Saturday, Harbor Food Bank in Queens hands out produce boxes to around 300 families. Last winter two regular volunteers moved away just as the holiday rush began.
 
 ## Filling the gap
-Olivia, who coordinates volunteers, posted a recurring Saturday distribution shift on ThankYou with five spots and a waitlist. Within a week twelve people had applied, most of them first-time volunteers from the neighborhood.
+Olivia, who coordinates volunteers, posted a recurring Saturday distribution shift on Volunteer Services with five spots and a waitlist. Within a week twelve people had applied, most of them first-time volunteers from the neighborhood.
 
 "The waitlist was the surprise," Olivia says. "When someone cancelled on a Friday night, the next person got the spot offered automatically. I didn't have to make a single phone call."
 
@@ -208,10 +208,10 @@ Harbor Food Bank posts new shifts every week. [See their opportunities](/organiz
     title: "A new phone, and a new friend",
     excerpt: "Rose wanted to video-call her grandchildren. Diego spent an afternoon making it happen.",
     body: `## The request
-Rose, who is 81, was given a smartphone for her birthday and couldn't get past the setup screen. She posted a request on ThankYou: "Set up my new phone so I can video-call my grandkids."
+Rose, who is 81, was given a smartphone for her birthday and couldn't get past the setup screen. She posted a request on Volunteer Services: "Set up my new phone so I can video-call my grandkids."
 
 ## The visit
-Diego, a software tester who volunteers on weekends, applied with a short note. They met at Rose's local library, a public place, as ThankYou suggests for a first meeting. In an hour he moved her contacts across, set up video calling and wrote the steps on a card she keeps by the phone.
+Diego, a software tester who volunteers on weekends, applied with a short note. They met at Rose's local library, a public place, as Volunteer Services suggests for a first meeting. In an hour he moved her contacts across, set up video calling and wrote the steps on a card she keeps by the phone.
 
 ## Afterwards
 Both left five-star reviews. Rose wrote: "Diego was patient and explained everything twice without making me feel silly." Diego has since helped three more neighbors with technology.`
@@ -224,7 +224,7 @@ Both left five-star reviews. Rose wrote: "Diego was patient and explained everyt
 Lincoln High School asks every student to complete 40 hours of community service. Tracking those hours used to mean signature sheets that went missing.
 
 ## How it works now
-The school's coordinator posts an after-school homework club on ThankYou. Students aged 16 and over apply, a parent or guardian gives consent in the app, and the coordinator takes attendance with a check-in code.
+The school's coordinator posts an after-school homework club on Volunteer Services. Students aged 16 and over apply, a parent or guardian gives consent in the app, and the coordinator takes attendance with a check-in code.
 
 ## The result
 - **38 students** volunteered at the homework club this term.
@@ -242,7 +242,7 @@ Not everyone can give up a Saturday morning. Bright Futures Tutoring created a r
 Volunteers filtered for **Remote** opportunities and applied from across the country. Bright Futures required a short training session before the first call and a background check for everyone.
 
 ## What kids gained
-Teachers reported that 80% of the children in the program moved up at least one reading level by the end of the semester. Volunteers kept a running total of their hours in ThankYou's Impact page.`
+Teachers reported that 80% of the children in the program moved up at least one reading level by the end of the semester. Volunteers kept a running total of their hours in Volunteer Services' Impact page.`
   }
 ];
 

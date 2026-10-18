@@ -278,7 +278,7 @@ app.get(
     if (!ics) return res.status(404).json({ message: "Commitment not found" });
     const body = ics.body;
     res.setHeader("content-type", "text/calendar; charset=utf-8");
-    res.setHeader("content-disposition", 'attachment; filename="thankyou-commitment.ics"');
+    res.setHeader("content-disposition", 'attachment; filename="volunteer-services-app-commitment.ics"');
     res.setHeader("cache-control", "private, no-store");
     return res.send(body);
   })

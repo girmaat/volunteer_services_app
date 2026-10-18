@@ -249,9 +249,9 @@ export default async function ImpactPage(props: { searchParams?: Promise<{ flash
 
               <section id="outside" aria-labelledby="outside-h" className="mt-10">
                 <h3 id="outside-h" className="m-0 flex items-center gap-2 text-base">
-                  <Clock aria-hidden className="h-4 w-4 text-muted" /> Service outside ThankYou
+                  <Clock aria-hidden className="h-4 w-4 text-muted" /> Service outside Volunteer Services
                 </h3>
-                <p className="m-0 mt-1 text-sm text-muted">Keep a note of other volunteering here. It stays marked self-reported because nobody on ThankYou can confirm it.</p>
+                <p className="m-0 mt-1 text-sm text-muted">Keep a note of other volunteering here. It stays marked self-reported because nobody on Volunteer Services can confirm it.</p>
                 {data.outside.length ? (
                   <ul className="m-0 mt-3 grid gap-2 p-0">
                     {data.outside.map((o) => (

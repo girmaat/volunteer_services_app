@@ -1,6 +1,6 @@
-# ThankYou — UAT test cases
+# Volunteer Services — UAT test cases
 
-These files are the user-acceptance test cases for every feature of the ThankYou app. Each file covers one
+These files are the user-acceptance test cases for every feature of the Volunteer Services app. Each file covers one
 area and holds related test cases. Every case says who runs it, where in the app, the exact data to type
 and what you should see.
 
@@ -13,7 +13,7 @@ and what you should see.
 | [05-requester-requests.md](05-requester-requests.md) | Posting and managing a request as an individual, applicants, sensitive requests, goals | REQ-001 – REQ-026 |
 | [06-hours-evidence-records.md](06-hours-evidence-records.md) | Reporting and approving hours, evidence, disputes, Impact, CSV, verified records | HRS-001 – HRS-026 |
 | [07-reviews-reputation.md](07-reviews-reputation.md) | Two-sided reviews, reputation pages, reliability, badges | REV-001 – REV-010 |
-| [08-messaging-notifications.md](08-messaging-notifications.md) | Inbox, volunteers reply only, contact masking, attachments, report/block/end, notifications, email preferences, messaging the ThankYou team | MSG-001 – MSG-021 |
+| [08-messaging-notifications.md](08-messaging-notifications.md) | Inbox, volunteers reply only, contact masking, attachments, report/block/end, notifications, email preferences, messaging the Volunteer Services team | MSG-001 – MSG-021 |
 | [09-org-setup-team.md](09-org-setup-team.md) | Organization sign-up, join requests, team and roles, settings, verification, publishing rules, school coordinators | ORG-001 – ORG-028 |
 | [10-org-operations.md](10-org-operations.md) | Organization requests, applicants, check-in, attendance, roster, forms, incidents, reports, contact limits | OPS-001 – OPS-030 |
 | [11-minors-safety.md](11-minors-safety.md) | Under-18 volunteers, guardian consent, age limits, minors' privacy | MIN-001 – MIN-012 |
@@ -32,12 +32,12 @@ commands:
 
 | Shortcut on the desktop | What it does |
 | --- | --- |
-| **Start ThankYou** | Starts the app, opens `http://localhost:3202` and this tracker. A window called "ThankYou server" opens: keep it open while you test (emails appear there). Close it to stop. |
-| **ThankYou UAT Tracker** | Opens the list of test cases, one at a time, where you record Pass / Fail / Blocked and notes. |
-| **Reset ThankYou test data** | Puts the test data back to its starting point. Do this before each full round, and whenever a case says so. Your tracker results are kept. |
-| **Update ThankYou** | Downloads the newest version and reloads the test data. Close the "ThankYou server" window first. |
+| **Start Volunteer Services** | Starts the app, opens `http://localhost:3202` and this tracker. A window called "Volunteer Services server" opens: keep it open while you test (emails appear there). Close it to stop. |
+| **Volunteer Services UAT Tracker** | Opens the list of test cases, one at a time, where you record Pass / Fail / Blocked and notes. |
+| **Reset Volunteer Services test data** | Puts the test data back to its starting point. Do this before each full round, and whenever a case says so. Your tracker results are kept. |
+| **Update Volunteer Services** | Downloads the newest version and reloads the test data. Close the "Volunteer Services server" window first. |
 
-In VS Code the same actions are under **Terminal → Run Task…** ("ThankYou: Start (for testing)" and so on).
+In VS Code the same actions are under **Terminal → Run Task…** ("Volunteer Services: Start (for testing)" and so on).
 
 ### Developers: set up the test data from a terminal
 
@@ -54,9 +54,9 @@ Open **http://localhost:3202**. If the web app was already running (especially `
 restart it after `pnpm db:uat` so no page shows data from before the reset.
 
 > If `pnpm db:uat` stops with *"must be owner of schema public"*, a Postgres superuser needs to run once:
-> `ALTER SCHEMA public OWNER TO thankyou_app;` (in the `thankyou_next` database), then run it again.
+> `ALTER SCHEMA public OWNER TO volunteer_services_app;` (in the `volunteer_services_app` database), then run it again.
 
-You can re-run `pnpm db:uat` (testers: **Reset ThankYou test data**) at any time to get back to the starting
+You can re-run `pnpm db:uat` (testers: **Reset Volunteer Services test data**) at any time to get back to the starting
 point, for example after a test that cancels or deletes something other tests need.
 
 ### Emails and links
@@ -66,7 +66,7 @@ Locally, no real email is sent. With the settings in `apps/api/.env` (`EMAIL_TRA
 
 - **Sign-up verification, password reset and guardian consent links appear on the page** under
   "Development only — …". Click the link there instead of opening an inbox.
-- **Every other email is printed in the API terminal** — the "ThankYou server" window (look for `[email:log] To: … Subject: …`). Test
+- **Every other email is printed in the API terminal** — the "Volunteer Services server" window (look for `[email:log] To: … Subject: …`). Test
   cases that say "an email is sent" are checked there.
 
 ### Browsers and sessions
@@ -91,18 +91,18 @@ The **User ID** you sign in with is the email address. Internal record IDs (long
 
 | User ID (sign-in email) | Password | Name shown | What they are | Notes for testing |
 | --- | --- | --- | --- | --- |
-| `admin@thankyou.test` | `Password!` | Ada (Admin) — Ada Admin | Platform **super admin** | All admin tools: users, organizations, categories, verification, audit log, maintenance mode. Also has the volunteer role. |
-| `moderator@thankyou.test` | `Password!` | Maya (Moderator) — Maya Moderator | Platform **moderator** | Works the moderation queues (requests to review, held messages, disputes, reports). Can't open user or organization management. |
-| `org.admin@thankyou.test` | `Password!` | Olivia — Olivia Ortiz | **Admin** of Harbor Food Bank (verified) and of Bright Futures Tutoring (not verified) | Organization owner: posts requests, accepts volunteers, approves hours, manages the team and settings. Switch organization from the switcher at the top right. |
-| `org.manager@thankyou.test` | `Password!` | Nora — Nora Bennett | **Manager** at Harbor Food Bank | Can do day-to-day work (requests, applicants, hours, invites) but not admin-only settings. Sees volunteers' contact details. |
-| `org.member@thankyou.test` | `Password!` | Marcus — Marcus Lee | **Member** at Harbor Food Bank | Lowest staff role: can view requests and applicants, can't act on them, never sees volunteers' email or phone. |
-| `school.admin@thankyou.test` | `Password!` | Sam — Samuel Okafor | **Admin** of Lincoln High School (organization type: School, verified) | Posts school opportunities; can add school coordinators. |
-| `school.coordinator@thankyou.test` | `Password!` | Cora — Cora Lindqvist | **School coordinator** at Lincoln High School | Member-level access for now (release 2 adds student-record review). |
-| `volunteer.local@thankyou.test` | `Password!` | Valerie — Valerie Nguyen | Volunteer, **ID-verified**, in person only, has a car, 15-mile radius, Jersey City NJ | Skills: driving, cooking, lifting. Interests: food, seniors, transport. Free Sat, Sun, Wed. |
-| `volunteer.remote@thankyou.test` | `Password!` | Ravi — Ravi Patel | Volunteer, **not verified** (ID submitted, waiting), remote only, no car, Hoboken NJ | Skills: tutoring, Spanish, web design. Has asked to join Harbor Food Bank. |
-| `requester@thankyou.test` | `Password!` | Rose — Rose Martin | Individual requester, **ID-verified**, Manhattan NY | Posts neighbor requests; can post sensitive categories (help inside a home, money…). |
-| `dual.role@thankyou.test` | `Password!` | Diego — Diego Alvarez | Both **volunteer and requester**, not verified, Newark NJ | Switches between "Volunteering" and "Requesting help". Has 2 approved hours and a published review. |
-| `teen.volunteer@thankyou.test` | `Password!` | Tara — Tara Young | Volunteer, **17 years old**, Jersey City NJ | Minor protections: can't apply to individuals' requests, contact details hidden, guardian consent where required. |
+| `admin@volunteer-services-app.test` | `Password!` | Ada (Admin) — Ada Admin | Platform **super admin** | All admin tools: users, organizations, categories, verification, audit log, maintenance mode. Also has the volunteer role. |
+| `moderator@volunteer-services-app.test` | `Password!` | Maya (Moderator) — Maya Moderator | Platform **moderator** | Works the moderation queues (requests to review, held messages, disputes, reports). Can't open user or organization management. |
+| `org.admin@volunteer-services-app.test` | `Password!` | Olivia — Olivia Ortiz | **Admin** of Harbor Food Bank (verified) and of Bright Futures Tutoring (not verified) | Organization owner: posts requests, accepts volunteers, approves hours, manages the team and settings. Switch organization from the switcher at the top right. |
+| `org.manager@volunteer-services-app.test` | `Password!` | Nora — Nora Bennett | **Manager** at Harbor Food Bank | Can do day-to-day work (requests, applicants, hours, invites) but not admin-only settings. Sees volunteers' contact details. |
+| `org.member@volunteer-services-app.test` | `Password!` | Marcus — Marcus Lee | **Member** at Harbor Food Bank | Lowest staff role: can view requests and applicants, can't act on them, never sees volunteers' email or phone. |
+| `school.admin@volunteer-services-app.test` | `Password!` | Sam — Samuel Okafor | **Admin** of Lincoln High School (organization type: School, verified) | Posts school opportunities; can add school coordinators. |
+| `school.coordinator@volunteer-services-app.test` | `Password!` | Cora — Cora Lindqvist | **School coordinator** at Lincoln High School | Member-level access for now (release 2 adds student-record review). |
+| `volunteer.local@volunteer-services-app.test` | `Password!` | Valerie — Valerie Nguyen | Volunteer, **ID-verified**, in person only, has a car, 15-mile radius, Jersey City NJ | Skills: driving, cooking, lifting. Interests: food, seniors, transport. Free Sat, Sun, Wed. |
+| `volunteer.remote@volunteer-services-app.test` | `Password!` | Ravi — Ravi Patel | Volunteer, **not verified** (ID submitted, waiting), remote only, no car, Hoboken NJ | Skills: tutoring, Spanish, web design. Has asked to join Harbor Food Bank. |
+| `requester@volunteer-services-app.test` | `Password!` | Rose — Rose Martin | Individual requester, **ID-verified**, Manhattan NY | Posts neighbor requests; can post sensitive categories (help inside a home, money…). |
+| `dual.role@volunteer-services-app.test` | `Password!` | Diego — Diego Alvarez | Both **volunteer and requester**, not verified, Newark NJ | Switches between "Volunteering" and "Requesting help". Has 2 approved hours and a published review. |
+| `teen.volunteer@volunteer-services-app.test` | `Password!` | Tara — Tara Young | Volunteer, **17 years old**, Jersey City NJ | Minor protections: can't apply to individuals' requests, contact details hidden, guardian consent where required. |
 
 Organizations:
 
@@ -168,7 +168,7 @@ Each case looks like this:
 - **ID and title** — `TC-AREA-NNN`. The priority follows the title: **P1** must work for launch, **P2**
   important, **P3** nice to have.
 - **Tester** — who runs the case, with the sign-in email and password (for example
-  `volunteer.local@thankyou.test` / `Password!`). *Visitor* means signed out (use a private/incognito window); a
+  `volunteer.local@volunteer-services-app.test` / `Password!`). *Visitor* means signed out (use a private/incognito window); a
   *new account* gives the email and password to create.
 - **Page** — the full address to open (for example `http://localhost:3202/volunteer/applications`) and, where it
   helps, how to get there from the menu. Addresses with `<id>` contain a code that changes on every
@@ -189,7 +189,7 @@ add a number (`uat.vol1b@example.test`) or re-run `pnpm db:uat`.
 All issues found while preparing these cases have been fixed, so every case should pass as written. If one
 doesn't, that's a real defect: record the case ID, what you saw and a screenshot.
 
-Already fixed while preparing these cases: the About page said "About GiveBack" (now ThankYou), and a
+Already fixed while preparing these cases: the About page said "About GiveBack" (now Volunteer Services), and a
 moderator opening Admin → Organizations, Verification or Incidents got "Something went wrong" (now
 "Access denied"). Fixed in the October 18 round: the Help page's developer text (was K1), the Contact page's
 placeholder text and missing confirmation (K2, K11), and the "Public" tag and internal description lines on the

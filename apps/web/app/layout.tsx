@@ -14,11 +14,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3202";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: "ThankYou — volunteer with neighbors and nonprofits", template: "%s · ThankYou" },
+  title: { default: "Volunteer Services — volunteer with neighbors and nonprofits", template: "%s · Volunteer Services" },
   description: "Find in-person and remote volunteer opportunities, ask neighbors for help, and track the difference you make.",
   icons: { icon: "/brand/favicon.svg" },
   // The default share image is app/opengraph-image.tsx (PNG, 1200×630).
-  openGraph: { type: "website", siteName: "ThankYou" },
+  openGraph: { type: "website", siteName: "Volunteer Services" },
   twitter: { card: "summary_large_image" }
 };
 

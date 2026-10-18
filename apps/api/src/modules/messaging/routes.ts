@@ -4,7 +4,7 @@
 import type { Express, Request, Response } from "express";
 import multer from "multer";
 import { z } from "zod";
-import { ReportBody, SendMessageBody } from "@thankyou/contracts";
+import { ReportBody, SendMessageBody } from "@volunteer_services_app/contracts";
 import { pool } from "../../lib/db";
 import { contentDisposition, wrap } from "../../lib/http";
 import { can, type PolicyUser } from "../../lib/policy";
@@ -84,7 +84,7 @@ async function conversationView(user: PolicyUser, c: Conversation) {
     with_name:
       c.kind === "support"
         ? side === "volunteer"
-          ? "ThankYou support"
+          ? "Volunteer Services support"
           : `${n.volunteer_name || "Member"}${supportOrg ? ` (${supportOrg})` : ""}`
         : side === "volunteer"
           ? n.org_name || n.owner_name || "Organizer"
@@ -139,11 +139,11 @@ export function registerMessagingRoutes(app: Express) {
       const user = (await requireAuthedUser(req, res)) as PolicyUser | null;
       if (!user) return;
       const m = (user.orgs || [])[0] ? (user.orgs || []).find((o) => `org:${o.slug}` === user.active_context) || (user.orgs || [])[0] : null;
-      if (!m) return res.status(403).json({ message: "Messaging the ThankYou team is available to organization members. Use the contact form instead." });
+      if (!m) return res.status(403).json({ message: "Messaging the Volunteer Services team is available to organization members. Use the contact form instead." });
       const p = z.object({ body: z.string().trim().min(1).max(5000).optional() }).safeParse(req.body ?? {});
       if (!p.success) return res.status(400).json({ message: "Invalid payload", errors: p.error.flatten() });
       const c = await ensureSupportConversation(user.id, m.slug);
-      if (!c) return res.status(503).json({ message: "The ThankYou team isn't set up to receive messages yet. Use the contact form." });
+      if (!c) return res.status(503).json({ message: "The Volunteer Services team isn't set up to receive messages yet. Use the contact form." });
       if (p.data.body) {
         try {
           await sendMessage(user, c, p.data.body);

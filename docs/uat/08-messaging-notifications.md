@@ -15,7 +15,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-001 · Inbox lists conversations — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/inbox` (top menu → **Inbox**)
 - **Before you start:** S1, S4, S5
 - **Expected result:** "Conversations about your requests and applications." with a filter **This role / All**. Rows show the
@@ -24,7 +24,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-002 · Read and reply in a conversation — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/inbox` → Rose · *Help me carry groceries upstairs* (address `/inbox/<id>`)
 - **Test data:** `I'll bring my own bags. See you at 5:30!`
 - **Steps:**
@@ -41,7 +41,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-003 · Volunteers can't start a conversation; contact details are hidden before acceptance — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`, Volunteering), Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`, Volunteering), Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** Diego: `http://localhost:3202/volunteer/applications` → *Walk and talk in the park* (Pending, S2) → **Messages**; Rose: `http://localhost:3202/requester/requests` → *Walk and talk in the park* → **Applicants** → Diego → **Message**
 - **Test data:** Rose: `Hi Diego, thanks for applying! Which mornings suit you?`; Diego:
   `Text me at 917-555-0123 or diego.walks@example.org, or find me on instagram @diegowalks`
@@ -62,7 +62,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-004 · Contact details show after acceptance — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/requests` → *Walk and talk in the park* → **Applicants**; Diego and Rose: `http://localhost:3202/inbox` → the *Walk and talk in the park* conversation
 - **Before you start:** TC-MSG-003
 - **Steps:** Rose accepts Diego on *Walk and talk in the park*; Diego sends `Here it is again: 917-555-0123`; Rose reopens the conversation.
@@ -70,7 +70,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-005 · Links hidden before acceptance — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`), then Rose
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Rose
 - **Page:** Rose: `http://localhost:3202/requester/requests` → *Walk and talk in the park* → **Applicants** → Valerie → **Message**; Valerie: `http://localhost:3202/inbox`
 - **Before you start:** Rose sends Valerie `Hi Valerie, thanks for applying!` (Valerie can't write first).
 - **Test data:** Valerie replies `Here's my volunteer profile: https://example.org/valerie and www.example.com/about`
@@ -78,7 +78,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-006 · Scam-like messages are held for a moderator — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), Rose (`requester@thankyou.test` / `Password!`), then Maya (`moderator@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), Rose (`requester@volunteer-services-app.test` / `Password!`), then Maya (`moderator@volunteer-services-app.test` / `Password!`)
 - **Page:** Valerie and Rose: `http://localhost:3202/inbox` → the groceries conversation; Maya: `http://localhost:3202/admin/moderation` → **Held messages**
 - **Test data:** `Could you buy two gift cards for me before Thursday?`
 - **Steps:**
@@ -92,7 +92,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-007 · Other held patterns — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`) (groceries conversation)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`) (groceries conversation)
 - **Page:** `http://localhost:3202/inbox` → the groceries conversation
 - **Test data (send each separately):** `Please send me money for the bus`; `What's your bank account number?`;
   `Tell me the verification code you got`; `I can pay you on Venmo`
@@ -100,7 +100,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-008 · Attach a file — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/inbox` → the groceries conversation
 - **Test data:** a small PDF or JPG (under 5 MB); a file renamed `script.html`
 - **Steps:**
@@ -111,7 +111,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-009 · Organizer starts a conversation from an application — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** Ravi: `http://localhost:3202/volunteer/applications` → the Bright Futures application → **Messages**; Olivia: `http://localhost:3202/org/applications`; Ravi: `http://localhost:3202/inbox`
 - **Before you start:** Ravi applied to a Bright Futures request (e.g. VDS-016)
 - **Steps:**
@@ -124,7 +124,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-010 · Report a conversation — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/inbox` → the groceries conversation → **Safety**
 - **Test data:** Report a concern **Harassment**; What happened? `Testing the report button during UAT.`
 - **Steps:** Open Safety, choose the category, type the text, click **Send report**.
@@ -133,7 +133,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-011 · Block from a conversation — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose, then Valerie: `http://localhost:3202/inbox` → the groceries conversation → **Safety**
 - **Before you start:** this blocks Valerie for Rose; re-run `pnpm db:uat` afterwards if other tests need them talking.
 - **Steps:**
@@ -144,23 +144,23 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-012 · End a conversation — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/inbox` → Harbor Food Bank · *Deliver meals…* conversation → **Safety** → **End conversation**
 - **Expected result:** "Conversation ended. It stays here, read-only." The page says "This conversation has ended and is
   read-only." No message box for either side.
 
 ### TC-MSG-013 · Organization inbox — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/inbox` (switcher on **Harbor Food Bank**; Organization → **Inbox**)
 - **Before you start:** S4, S5
 - **Expected result:** Conversations with Valerie (Deliver meals, Saturday shift), Diego and Tara (Saturday shift), each
   starting with Harbor's welcome message. Replies are sent as the organization ("Harbor Food Bank"). Olivia's own
-  "ThankYou support" thread also appears here once she has written to the team (TC-MSG-021).
+  "Volunteer Services support" thread also appears here once she has written to the team (TC-MSG-021).
 
 ### TC-MSG-014 · Notifications bell — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/dashboard`, then the bell icon at the top right ("Notifications, N unread")
 - **Before you start:** S1–S5 (Valerie has several unread)
 - **Steps:**
@@ -171,7 +171,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-015 · Notifications page — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/notifications` (bell → **See all**)
 - **Steps:**
   1. Read the page; switch to **Unread**.
@@ -183,7 +183,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-016 · Notifications reach the right person for key events — P1
 
-- **Tester:** the person named in each row — Olivia (`org.admin@thankyou.test`), Rose (`requester@thankyou.test`), Valerie (`volunteer.local@thankyou.test`), Ravi (`volunteer.remote@thankyou.test`); all `Password!`
+- **Tester:** the person named in each row — Olivia (`org.admin@volunteer-services-app.test`), Rose (`requester@volunteer-services-app.test`), Valerie (`volunteer.local@volunteer-services-app.test`), Ravi (`volunteer.remote@volunteer-services-app.test`); all `Password!`
 - **Page:** `http://localhost:3202/notifications` for the person notified (or the bell on any page)
 - **Steps and expected notifications:**
 
@@ -203,7 +203,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-017 · Choose which emails you get — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/settings/notifications` (Settings → **Notifications**)
 - **Steps:**
   1. Read the table. Untick **Email** for "New messages (email at most once an hour)". Click **Save preferences**.
@@ -216,7 +216,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-018 · One-click unsubscribe from an email — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** the unsubscribe link at the bottom of any email to Valerie in the API terminal ("Unsubscribe from these emails: http://localhost:3202/unsubscribe?token=…")
 - **Steps:** Open the link (no sign-in needed) and click **Unsubscribe**.
 - **Expected result:** "Stop emails for <type>?" then "You won't get emails for “<type>” any more. In-app notifications are
@@ -230,7 +230,7 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
 
 ### TC-MSG-020 · Who can message you (privacy setting) — P2
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`), then Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`), then Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** Diego: `http://localhost:3202/settings/privacy-safety` (Settings → **Privacy & Safety**); Rose: `http://localhost:3202/inbox` → the *Set up my new phone* conversation
 - **Steps:**
   1. Diego chooses **No one** under Messaging permissions, **Save changes**.
@@ -238,20 +238,20 @@ Harbor Food Bank has written to Valerie, Diego and Tara (S4, S5) and Rose to Die
   3. Diego sets it back to **Anyone**.
 - **Expected result:** 2: the message is refused (Diego accepts no messages). 3: messaging works again.
 
-### TC-MSG-021 · Organizations message the ThankYou team; admins reply — P2
+### TC-MSG-021 · Organizations message the Volunteer Services team; admins reply — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Ada (`admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Ada (`admin@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/contact`, then `http://localhost:3202/inbox`; Ada: `http://localhost:3202/admin/support` (Admin → **Support messages**)
 - **Test data:** Olivia: `How do we get our second location verified?`; Ada: `Send us the address and we'll review it.`
 - **Steps:**
-  1. Olivia opens Contact us. Under **Message the ThankYou team** types her message and clicks **Send message**.
+  1. Olivia opens Contact us. Under **Message the Volunteer Services team** types her message and clicks **Send message**.
   2. Ada opens Admin → **Support messages**.
   3. Ada opens the thread, types her reply and clicks **Send**.
   4. Olivia opens Inbox.
 - **Expected result:**
-  - 1: Olivia lands in a conversation titled "ThankYou support" with her message. Below it, the email form still
+  - 1: Olivia lands in a conversation titled "Volunteer Services support" with her message. Below it, the email form still
     works with her name and email filled in and locked.
   - 2: a row "Olivia · Harbor Food Bank" with her message and a **Needs a reply** tag.
   - 3: the reply is sent; the row now says **Answered**.
-  - 4: Olivia sees Ada's reply in the "ThankYou support" conversation and gets a notification.
-  - Volunteers and requesters without an organization don't see "Message the ThankYou team" on Contact us.
+  - 4: Olivia sees Ada's reply in the "Volunteer Services support" conversation and gets a notification.
+  - Volunteers and requesters without an organization don't see "Message the Volunteer Services team" on Contact us.

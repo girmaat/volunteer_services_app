@@ -1,7 +1,7 @@
 import { forwardHeaders } from "../../../lib/forward";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import { Building2, Users } from "lucide-react";
 import { backendFetch, getCurrentUser } from "../../lib/backend";
 import { Button, Notice } from "../../../components/ui";
@@ -39,7 +39,7 @@ async function joinOrgAction(fd: FormData) {
   const orgSlug = String(fd.get("orgSlug") || "")
     .trim()
     .replace(/^.*\/organizations\//, "");
-  if (!orgSlug) redirect(`/org/signup?error=${encodeURIComponent("Paste the organization’s ThankYou address or name.")}`);
+  if (!orgSlug) redirect(`/org/signup?error=${encodeURIComponent("Paste the organization’s Volunteer Services address or name.")}`);
   const res = await backendFetch("/v1/orgs/join", {
     method: "POST",
     headers: { "content-type": "application/json", ...(await forwardHeaders()) },
@@ -102,7 +102,7 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
               <h2 className="m-0 flex items-center gap-2 text-lg font-semibold">
                 <Building2 aria-hidden className="h-5 w-5 text-primary" /> Start a new organization
               </h2>
-              <p className="m-0 -mt-2 text-sm text-muted">You’ll be its admin, signed in as {user.email}. Anything you already do on ThankYou stays as it is.</p>
+              <p className="m-0 -mt-2 text-sm text-muted">You’ll be its admin, signed in as {user.email}. Anything you already do on Volunteer Services stays as it is.</p>
               <div className="grid gap-1.5">
                 <label htmlFor="c-name" className={label}>
                   Organization name
@@ -149,9 +149,9 @@ export default async function Page(props: { searchParams?: Promise<{ error?: str
               </p>
               <div className="grid gap-1.5">
                 <label htmlFor="j-slug" className={label}>
-                  Organization’s ThankYou address
+                  Organization’s Volunteer Services address
                 </label>
-                <input id="j-slug" name="orgSlug" required placeholder="e.g. thankyou.org/organizations/harbor-food-bank" className={input} />
+                <input id="j-slug" name="orgSlug" required placeholder="e.g. volunteer-services-app.org/organizations/harbor-food-bank" className={input} />
               </div>
               <label htmlFor="j-adult" className="flex items-start gap-2 text-sm">
                 <input id="j-adult" name="adultConfirmed" value="yes" type="checkbox" required className="mt-1 h-4 w-4" />

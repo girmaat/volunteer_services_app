@@ -1,4 +1,4 @@
-import { RequestFields, type RequestFieldsInput } from "@thankyou/contracts";
+import { RequestFields, type RequestFieldsInput } from "@volunteer_services_app/contracts";
 import type { Pool } from "pg";
 import { pool as defaultPool } from "../../lib/db";
 import type { PolicyUser } from "../../lib/policy";

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { backendFetch } from "../lib/backend";
 import { zonedLocalToIso, zoneOr } from "../../lib/time";
-import { ReviewBody } from "@thankyou/contracts";
+import { ReviewBody } from "@volunteer_services_app/contracts";
 
 const ok = (s: string) => /^[0-9a-f-]{36}$/i.test(s);
 const backOk = (b: string) => /^\/(requester|org)\/requests\/[0-9a-f-]{36}\/applications$|^\/volunteer\/applications\/[0-9a-f-]{36}$/.test(b);

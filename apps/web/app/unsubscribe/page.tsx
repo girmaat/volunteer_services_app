@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import { Button, Card, Notice } from "../../components/ui";
 
 export const metadata: Metadata = { title: "Unsubscribe", robots: { index: false } };

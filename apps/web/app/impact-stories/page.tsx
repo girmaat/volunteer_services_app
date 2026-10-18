@@ -1,13 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import { buttonClass } from "../../components/ui/Button";
 import { Card, EmptyState } from "../../components/ui/Card";
 
 export const metadata: Metadata = {
   title: "Impact stories",
-  description: "Real moments of help from volunteers, neighbors and organizations on ThankYou.",
+  description: "Real moments of help from volunteers, neighbors and organizations on Volunteer Services.",
   alternates: { canonical: "/impact-stories" }
 };
 export const revalidate = 300;

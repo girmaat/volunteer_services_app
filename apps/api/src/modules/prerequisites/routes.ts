@@ -142,7 +142,7 @@ export function registerPrerequisiteRoutes(app: Express) {
         text: [
           `Hello ${body.data.guardianName},`,
           "",
-          `${first} signed up on ThankYou to volunteer for “${a.title}” with ${a.org_name ?? "a local organization"}. Because they're under 18, the organization asks for a parent or guardian's consent.`,
+          `${first} signed up on Volunteer Services to volunteer for “${a.title}” with ${a.org_name ?? "a local organization"}. Because they're under 18, the organization asks for a parent or guardian's consent.`,
           "",
           `Read the details and give or decline consent: ${url}`,
           "",

@@ -11,7 +11,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-001 · Post a one-time, in-person request — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests/new` (Requester home → **Ask for help**, or My requests → **New request**)
 - **Test data:**
 
@@ -50,7 +50,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-002 · Save a draft and continue later — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests/new`
 - **Test data:** Title `Help me sort old photos`; Category **Something else**; What do you need? `Two boxes of printed photos to sort into albums by year.`
 - **Steps:**
@@ -63,7 +63,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-003 · Publishing is blocked until required details are given — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → **Drafts** → open the draft from TC-REQ-002 → Review step
 - **Before you start:** TC-REQ-002 draft
 - **Steps:** Open the draft's Review step without adding a date or area. Try to publish.
@@ -73,7 +73,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-004 · Wizard checks dates and fields — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests/new`
 - **Steps:**
   1. Step 1: Title `Hi` (2 letters) → Continue.
@@ -89,7 +89,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-005 · Remote and recurring requests — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`), switched to **Requesting help**
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`), switched to **Requesting help**
 - **Page:** `http://localhost:3202/requester/requests/new` (as Diego, switcher set to **Requesting help**)
 - **Test data:** Title `Weekly English conversation practice`; Category **Translation & language**; Description
   `Practice English conversation with me by video, 45 minutes each time.`; Schedule **Recurring**, Starts next Monday
@@ -100,7 +100,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-006 · Flexible timing ("any time before a date") — P3
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests/new`
 - **Test data:** Title `Return library books`; Category **Errands & chores**; Description `Three books to return to the
   St. Agnes library before they're overdue.`; Schedule **Flexible**; Apply by: 10 days from today; In person, area `Upper West Side, Manhattan, NY`
@@ -108,7 +108,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-007 · Sensitive category needs a verified account — P1
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`) (Requesting help; **not** verified)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`) (Requesting help; **not** verified)
 - **Page:** `http://localhost:3202/requester/requests/new`
 - **Steps:** Open the Category list.
 - **Expected result:** Everyday categories are selectable. The sensitive group "Sensitive — verified accounts, reviewed
@@ -118,7 +118,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-008 · Sensitive request is reviewed before going live — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`) (verified), then Maya (`moderator@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`) (verified), then Maya (`moderator@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/requests/new`; Valerie/Ravi: `http://localhost:3202/volunteer/opportunities/recommended?q=water+my+plants`; Maya: `http://localhost:3202/admin/moderation`
 - **Test data:** Title `Let a volunteer in to water my plants`; Category **Help inside a home**; Description `I'm away for
   a week. Plants need watering on Tuesday and Friday; keys are with the doorman.`; One time next Tuesday 11:00, 30 minutes;
@@ -137,7 +137,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-009 · Moderator sends a request back for changes — P1
 
-- **Tester:** Maya (`moderator@thankyou.test` / `Password!`), then Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Maya (`moderator@volunteer-services-app.test` / `Password!`), then Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** Maya: `http://localhost:3202/admin/moderation` → *Help hanging curtains and a shelf*; Rose: `http://localhost:3202/requester/requests` → **Drafts**
 - **Before you start:** S-seed request *Help hanging curtains and a shelf* (waiting for review)
 - **Steps:**
@@ -149,7 +149,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-010 · My requests tabs — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` (top menu → **My requests**)
 - **Before you start:** S1–S3
 - **Expected result:** Tabs **Active**, **Drafts**, **Past**, **All** with counts. Active lists *Set up my new phone*
@@ -159,7 +159,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-011 · Review applicants: accept, waitlist, decline — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → *Walk and talk in the park* → **Applicants (0/1)** (address `/requester/requests/<id>/applications`)
 - **Before you start:** S2
 - **Steps:**
@@ -171,13 +171,13 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
     card: first name, area, completed count, reliability %, rating (Diego "5.0★ from 1 review"), "ID verified" for
     Valerie, status Pending, their message, skills, **Accept / Waitlist / Decline / Message**. No email or phone yet.
   - 2: "Accepted. They can now see the exact address and your contact details." Valerie's card shows Accepted and
-    "Contact: volunteer.local@thankyou.test".
+    "Contact: volunteer.local@volunteer-services-app.test".
   - 3: "Waitlisted. If a spot opens they'll be offered it and have 24 hours to say yes." "1 of 1 spots filled". The
     request status becomes **Filled** ("Every spot is filled. New applicants join the waitlist.").
 
 ### TC-REQ-012 · Move a waitlisted applicant back, or decline — P3
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → *Walk and talk in the park* → **Applicants**
 - **Before you start:** TC-REQ-011
 - **Steps:** On Diego's waitlisted card use **Decline**. (Repeat with a fresh `pnpm db:uat` to try putting a waitlisted applicant back to review if a "reconsider" option is shown.)
@@ -185,7 +185,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-013 · Applicants page across all requests — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/applications` (top menu → **Applicants**)
 - **Before you start:** S2 (fresh data)
 - **Expected result:** "Pending volunteer applications across your requests." lists Valerie and Diego, each "Applied to
@@ -193,7 +193,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-014 · Confirm the schedule with a volunteer — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → *Walk and talk in the park* → **Applicants**
 - **Before you start:** TC-REQ-011 (Valerie accepted)
 - **Steps:** On Valerie's card change the start time to the same day at 11:00 and click **Confirm schedule**.
@@ -202,7 +202,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-015 · Mark an applicant's work complete — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → *Walk and talk in the park* → **Applicants**
 - **Before you start:** TC-REQ-011
 - **Steps:** On Valerie's card click **Mark complete**.
@@ -212,7 +212,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-016 · Cancel an accepted volunteer — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → *Walk and talk in the park* → **Applicants**
 - **Before you start:** fresh `pnpm db:uat`, then accept Valerie on *Walk and talk in the park* and waitlist Diego
 - **Steps:** On Valerie's card click **Cancel**.
@@ -221,7 +221,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-017 · Record a no-show after the start time — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`) and the new volunteer `uat.vol4@example.test` / `Uat-Pass-2026!` (README §2)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`) and the new volunteer `uat.vol4@example.test` / `Uat-Pass-2026!` (README §2)
 - **Page:** Rose: `http://localhost:3202/requester/requests/new`, then `http://localhost:3202/requester/requests` → *No-show test* → **Applicants**; volunteer: `http://localhost:3202/opportunities?q=No-show+test`
 - **Steps:**
   1. Rose posts `No-show test` (Errands & chores, in person, Upper West Side) starting **30 minutes from now**, 30 minutes long; a volunteer applies; Rose accepts.
@@ -232,7 +232,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-018 · Edit a live request — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → *Walk and talk in the park* → **Edit** (address `/requester/requests/<id>/edit`)
 - **Test data:** Title `Walk and talk in Riverside Park`
 - **Steps:** Change the title on step 1 and click **Save changes**. Open the request page.
@@ -241,7 +241,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-019 · Moving a live request's time tells accepted volunteers — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/requests` → the request → **Edit**; Valerie: bell, `http://localhost:3202/volunteer/applications`
 - **Before you start:** Valerie accepted on a Rose request (e.g. TC-REQ-011) and schedule confirmed (TC-REQ-014)
 - **Steps:** Edit the request, step 2: move the start one day later; save.
@@ -250,7 +250,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-020 · Can't reduce spots below the people already accepted — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), Valerie (`volunteer.local@thankyou.test` / `Password!`), Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → *Assemble a bookshelf* → **Edit**; Valerie/Diego: `http://localhost:3202/opportunities?q=Assemble+a+bookshelf`
 - **Before you start:** TC-REQ-001 (*Assemble a bookshelf*, 2 spots)
 - **Steps:**
@@ -262,7 +262,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-021 · Pause and resume — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → open *Ride to a medical appointment*
 - **Steps:**
   1. Click **Pause (hide from search)**. As Valerie search `medical appointment`.
@@ -272,7 +272,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-022 · Cancel a request — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → open *Walk and talk in the park* (S2: two pending applicants)
 - **Test data:** reason `I found a walking group at the senior center, thank you all!`
 - **Steps:**
@@ -283,21 +283,21 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-023 · Mark the whole request completed — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → open *Help me carry groceries upstairs* (Filled, S1)
 - **Steps:** Click **Mark as completed**.
 - **Expected result:** "Marked complete. Volunteers have 14 days to leave a review." Status Completed, moved to Past.
 
 ### TC-REQ-024 · Delete a draft — P3
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/requests` → **Drafts** → *Draft: garden cleanup (not published)*
 - **Steps:** Click **Delete draft**.
 - **Expected result:** The draft is removed and you return to My requests; it no longer appears under Drafts.
 
 ### TC-REQ-025 · A goal counted in units with partial offers — P1
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`) and Diego (`dual.role@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`) and Diego (`dual.role@volunteer-services-app.test` / `Password!`)
 - **Page:** Rose: `http://localhost:3202/requester/requests/new`, then `http://localhost:3202/requester/requests` → *Bake cookies for the shelter* → **Applicants**; Valerie/Diego: `http://localhost:3202/opportunities?q=Bake+cookies`
 - **Test data (Rose):** Title `Bake cookies for the shelter`; Category **Food & meals**; Description `We need 120 homemade
   cookies for Friday's shelter dinner. Any amount helps.`; Volunteers needed `4`; Goal: Amount `120`, Counted in
@@ -316,7 +316,7 @@ Times below are New York time; "next week" means any date 5–9 days ahead.
 
 ### TC-REQ-026 · Requester home — P2
 
-- **Tester:** Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/requester/dashboard` (top menu → **Home**)
 - **Before you start:** fresh `pnpm db:uat`
 - **Expected result:** "Hi, Rose" with **Ask for help** and **Inbox**; tiles Open requests, Applicants to review **2**,

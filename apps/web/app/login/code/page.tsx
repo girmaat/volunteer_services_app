@@ -23,7 +23,7 @@ export default async function Page() {
     <section className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.title}>Enter your code</h1>
-        <p className={styles.subtitle}>Open your authenticator app and type the 6-digit code for ThankYou.</p>
+        <p className={styles.subtitle}>Open your authenticator app and type the 6-digit code for Volunteer Services.</p>
       </header>
       <div className={styles.card}>
         {error ? <div className={styles.error}>{error}</div> : null}

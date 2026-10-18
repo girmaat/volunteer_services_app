@@ -5,7 +5,7 @@ import { getOrgContext } from "../../lib/org";
 import { redirect } from "next/navigation";
 import { Button, Card, Notice, PageHeader, VerifiedBadge } from "../../../components/ui";
 import OrgTabs from "../../../components/org/OrgTabs";
-import { ORG_TYPE_LABEL, ORG_TYPES } from "@thankyou/contracts";
+import { ORG_TYPE_LABEL, ORG_TYPES } from "@volunteer_services_app/contracts";
 
 export const dynamic = "force-dynamic";
 
@@ -225,7 +225,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
               <label className={label}>
                 Volunteers should reach you by
                 <select name="preferred_contact_method" defaultValue={org.preferred_contact_method || "in_app"} className={input}>
-                  <option value="in_app">Messages in ThankYou</option>
+                  <option value="in_app">Messages in Volunteer Services</option>
                   <option value="email">Email, after they&apos;re accepted</option>
                   <option value="phone">Phone, after they&apos;re accepted</option>
                 </select>
@@ -267,7 +267,7 @@ export default async function Page(props: { searchParams?: Promise<{ saved?: str
         {org.suspended_at ? (
           <div className="mt-3">
             <Notice tone="danger">
-              Suspended{org.suspended_reason ? `: ${org.suspended_reason}` : "."} Your requests are hidden and hours can’t be approved. Reply to the email from ThankYou to ask for a review.
+              Suspended{org.suspended_reason ? `: ${org.suspended_reason}` : "."} Your requests are hidden and hours can’t be approved. Reply to the email from Volunteer Services to ask for a review.
             </Notice>
           </div>
         ) : null}

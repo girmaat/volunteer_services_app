@@ -26,9 +26,9 @@ async function setup(title: string, vol: string, startsInHours = 72) {
 
 describe("double-blind structured reviews", () => {
   it("hides each review until both sides submit, then locks them", async () => {
-    const { requestId, applicationId } = await setup("Reviews: blind", "rev.vol@thankyou.test");
+    const { requestId, applicationId } = await setup("Reviews: blind", "rev.vol@volunteer-services-app.test");
     const owner = await as(EMAILS.requester);
-    const vol = await as("rev.vol@thankyou.test");
+    const vol = await as("rev.vol@volunteer-services-app.test");
     expect((await owner.post("/v1/reviews", { applicationId, overall: 5 })).status).toBe(409); // not completed yet
     await ownerAct(owner, applicationId, "confirm", { startAt: soon(-3), endAt: soon(-1) });
     await ownerAct(owner, applicationId, "complete");
@@ -41,7 +41,7 @@ describe("double-blind structured reviews", () => {
     let mine = await vol.get(`/v1/reviews/applications/${applicationId}`);
     expect(mine.body.theirs).toBeNull();
     expect(mine.body.theirs_submitted).toBe(true);
-    const volId = await userId("rev.vol@thankyou.test");
+    const volId = await userId("rev.vol@volunteer-services-app.test");
     expect((await anon().get(`/v1/public/volunteers/${volId}`)).body?.reviews_count ?? 0).toBe(0);
 
     const second = await vol.post("/v1/reviews", { applicationId, overall: 4, clarity: 3, comment: "Instructions could be clearer" });
@@ -58,25 +58,25 @@ describe("double-blind structured reviews", () => {
   });
 
   it("publishes a lone review 14 days after completion", async () => {
-    const { applicationId } = await setup("Reviews: timeout", "rev2.vol@thankyou.test");
+    const { applicationId } = await setup("Reviews: timeout", "rev2.vol@volunteer-services-app.test");
     const owner = await as(EMAILS.requester);
     await ownerAct(owner, applicationId, "confirm", { startAt: soon(-3), endAt: soon(-1) });
     await ownerAct(owner, applicationId, "complete");
     await owner.post("/v1/reviews", { applicationId, overall: 4 });
     await pool.query("UPDATE request_applications SET completed_at = NOW() - INTERVAL '15 days' WHERE id = $1", [applicationId]);
     expect(await revealDueReviews()).toBeGreaterThan(0);
-    const v = await (await as("rev2.vol@thankyou.test")).get(`/v1/reviews/applications/${applicationId}`);
+    const v = await (await as("rev2.vol@volunteer-services-app.test")).get(`/v1/reviews/applications/${applicationId}`);
     expect(v.body.theirs.overall).toBe(4);
   });
 });
 
 describe("reliability: late cancellations and no-shows", () => {
   it("a volunteer canceling inside 24 hours is a late cancellation; the waitlist moves up", async () => {
-    const { requestId, applicationId } = await setup("Reliability: late cancel", "late.vol@thankyou.test", 10);
-    const r = await (await as("late.vol@thankyou.test")).post(`/v1/volunteer/applications/${applicationId}/cancel`, { reason: "Sick" });
+    const { requestId, applicationId } = await setup("Reliability: late cancel", "late.vol@volunteer-services-app.test", 10);
+    const r = await (await as("late.vol@volunteer-services-app.test")).post(`/v1/volunteer/applications/${applicationId}/cancel`, { reason: "Sick" });
     expect(r.status, JSON.stringify(r.body)).toBe(200);
     expect(r.body.late_cancel).toBe(true);
-    const rel = { body: (await pool.query(`SELECT ${RELIABILITY_SQL("$1")} AS r`, [await userId("late.vol@thankyou.test")])).rows[0].r };
+    const rel = { body: (await pool.query(`SELECT ${RELIABILITY_SQL("$1")} AS r`, [await userId("late.vol@volunteer-services-app.test")])).rows[0].r };
     expect(rel.body.late_cancels).toBe(1);
     const n = await pool.query("SELECT COUNT(*)::int AS c FROM notifications n JOIN users u ON u.id = n.user_id WHERE u.email = $1 AND n.title LIKE 'A volunteer canceled%'", [EMAILS.requester]);
     expect(n.rows[0].c).toBeGreaterThan(0);
@@ -84,22 +84,22 @@ describe("reliability: late cancellations and no-shows", () => {
   });
 
   it("canceling days ahead is not late", async () => {
-    const { applicationId } = await setup("Reliability: early cancel", "early.vol@thankyou.test", 96);
-    const r = await (await as("early.vol@thankyou.test")).post(`/v1/volunteer/applications/${applicationId}/cancel`, {});
+    const { applicationId } = await setup("Reliability: early cancel", "early.vol@volunteer-services-app.test", 96);
+    const r = await (await as("early.vol@volunteer-services-app.test")).post(`/v1/volunteer/applications/${applicationId}/cancel`, {});
     expect(r.body.late_cancel).toBe(false);
   });
 
   it("organizers mark no-shows only after the start; the volunteer can dispute", async () => {
-    const { requestId, applicationId } = await setup("Reliability: no-show", "noshow.vol@thankyou.test", 48);
+    const { requestId, applicationId } = await setup("Reliability: no-show", "noshow.vol@volunteer-services-app.test", 48);
     const owner = await as(EMAILS.requester);
     expect((await owner.post(`/v1/applications/${applicationId}/no-show`)).status).toBe(409);
     await pool.query("UPDATE service_requests SET starts_at = NOW() - INTERVAL '2 hours' WHERE id = $1", [requestId]);
     expect((await (await as(EMAILS.remoteVolunteer)).post(`/v1/applications/${applicationId}/no-show`)).status).toBe(404);
     const ns = await owner.post(`/v1/applications/${applicationId}/no-show`);
     expect(ns.status, JSON.stringify(ns.body)).toBe(200);
-    const rel = await { body: (await pool.query(`SELECT ${RELIABILITY_SQL("$1")} AS r`, [await userId("noshow.vol@thankyou.test")])).rows[0].r };
+    const rel = await { body: (await pool.query(`SELECT ${RELIABILITY_SQL("$1")} AS r`, [await userId("noshow.vol@volunteer-services-app.test")])).rows[0].r };
     expect(rel.body.no_shows).toBe(1);
-    const vol = await as("noshow.vol@thankyou.test");
+    const vol = await as("noshow.vol@volunteer-services-app.test");
     expect((await vol.post("/v1/disputes", { applicationId, kind: "no_show", reason: "short" })).status).toBe(400);
     const d = await vol.post("/v1/disputes", { applicationId, kind: "no_show", reason: "I was there at 10 and signed in at the front desk." });
     expect(d.status).toBe(201);
@@ -112,14 +112,14 @@ describe("reliability: late cancellations and no-shows", () => {
 
 describe("unified applicants API (requesters and organizations)", () => {
   it("lists applicants with reliability and runs every decision", async () => {
-    await createUser({ email: "appl.a@thankyou.test", roles: ["volunteer"] });
-    await createUser({ email: "appl.b@thankyou.test", roles: ["volunteer"] });
+    await createUser({ email: "appl.a@volunteer-services-app.test", roles: ["volunteer"] });
+    await createUser({ email: "appl.b@volunteer-services-app.test", roles: ["volunteer"] });
     const admin = await as(EMAILS.orgAdmin);
     await admin.post("/v1/me/context", { context: "org:harbor-food-bank" });
     const d = await admin.post("/v1/requests", { as: "org", title: "Applicants: pantry", description: "A request for the applicants API tests.", category: "food", mode: "remote", scheduleType: "one_time", startsAt: soon(30), volunteersNeeded: 1 });
     await admin.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
-    const a1 = await (await as("appl.a@thankyou.test")).post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
-    const a2 = await (await as("appl.b@thankyou.test")).post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
+    const a1 = await (await as("appl.a@volunteer-services-app.test")).post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
+    const a2 = await (await as("appl.b@volunteer-services-app.test")).post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
     const list = await admin.get(`/v1/requests/${d.body.id}/applicants`);
     expect(list.status).toBe(200);
     expect(list.body.applicants).toHaveLength(2);
@@ -132,7 +132,7 @@ describe("unified applicants API (requesters and organizations)", () => {
     expect((await go(a1.body.applicationId, "confirm")).body.status).toBe("confirmed");
     expect((await go(a1.body.applicationId, "decline")).status).toBe(409);
     const after = await admin.get(`/v1/requests/${d.body.id}/applicants`);
-    expect(after.body.applicants.find((x: { id: string }) => x.id === a1.body.applicationId).email).toBe("appl.a@thankyou.test");
+    expect(after.body.applicants.find((x: { id: string }) => x.id === a1.body.applicationId).email).toBe("appl.a@volunteer-services-app.test");
     expect((await go(a1.body.applicationId, "cancel")).body.status).toBe("canceled");
     // The waitlisted applicant is offered the spot; the organizer can accept them straight away.
     const st = await pool.query("SELECT status FROM request_applications WHERE id = $1", [a2.body.applicationId]);

@@ -10,7 +10,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-001 · Requests list — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests` (Organization → **Requests**)
 - **Before you start:** S4, S5
 - **Expected result:** "Shifts and projects posted by Harbor Food Bank." with **New request** and tabs Active (8) · Drafts · Past · All.
@@ -19,7 +19,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-002 · Post an organization request with requirements — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests/new` (Requests → **New request**) — the same five-step wizard as REQ-001, "For Harbor Food Bank"
 - **Test data:** Title `Holiday food drive sorting`; Category **Food & meals**; Description `Sort donated cans and dry goods by type and expiry date. Closed-toe shoes required.`; Volunteers `5`; Skills `lifting`; One time, 3 weeks from today 09:00, 180 min; Apply by 2 weeks from today; In person, area `Queens, NY`, exact address `87-10 Queens Blvd, Elmhurst, NY`, access notes `Loading dock entrance on 88th St.`; Requirements: Minimum age `16`, tick **Complete training first** and **Sign a waiver**; Equipment `Closed-toe shoes, gloves`
 - **Steps:** Complete the wizard and publish.
@@ -30,7 +30,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-003 · Applicants across the organization — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/applications` (Organization → **Applicants**)
 - **Before you start:** S4, S5
 - **Expected result:** "Review people who applied to your requests. Contact details are shared only after you accept." Tabs **To review (2)**,
@@ -39,7 +39,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-004 · Waitlist then accept from the organization list — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/applications` → **To review**
 - **Steps:** **Waitlist** Diego; open the Waitlisted tab; **Accept** him.
 - **Expected result:** "Waitlisted. If a spot opens they'll be offered it and have 24 hours to say yes." then he moves to Accepted:
@@ -47,7 +47,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-005 · Request page for staff — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests` → *Saturday distribution shift* (address `/org/requests/<id>`)
 - **Expected result:** Status Partly filled ("Some spots are filled; still taking applicants."), **Applicants (1/6)**, **Edit**; details Category,
   When, Where "Queens, NY — 87-10 Queens Blvd, Elmhurst, NY — shown only to accepted volunteers", Volunteers "1 of 6 filled", Skills,
@@ -56,7 +56,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-006 · Staff check a volunteer in and out — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests` → *Saturday distribution shift* → **Applicants** (address `/org/requests/<id>/applications`)
 - **Before you start:** S4 (Valerie accepted)
 - **Steps:** On Valerie's card click **Check in**; then **Check out**.
@@ -66,7 +66,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-007 · Show the on-site check-in code — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests` → *Saturday distribution shift* → **On-site check-in**
 - **Steps:** Click **Show check-in code**.
 - **Expected result:** "Show or print this code at the site. Volunteers scan it with their phone to check in and out; their hours come to
@@ -75,7 +75,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-008 · Volunteer checks in with the code — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`) (shows the code), then Valerie (`volunteer.local@thankyou.test` / `Password!`) (checks in)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`) (shows the code), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`) (checks in)
 - **Page:** Olivia: `http://localhost:3202/org/requests/new`, then `http://localhost:3202/org/requests` → *QR check-in test* → **On-site check-in**; Valerie: the check-in link, `http://localhost:3202/check-in/<token>`
 - **Before you start:** check-in opens **2 hours before** the start. Post a Harbor request starting **in 1 hour** (Olivia: `QR check-in test`,
   Food & meals, in person, Queens, NY, 60 min), have Valerie apply and Olivia accept, then show its check-in code.
@@ -89,7 +89,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-009 · Check-in code rules — P2
 
-- **Tester:** Ravi (`volunteer.remote@thankyou.test` / `Password!`), Valerie (`volunteer.local@thankyou.test` / `Password!`), Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`), Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** the check-in links `http://localhost:3202/check-in/<token>` from TC-OPS-007 and TC-OPS-008
 - **Steps:**
   1. Ravi (not signed up for the shift) opens the code link from TC-OPS-008.
@@ -100,7 +100,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-010 · Unfinished forms block check-in — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Valerie: the check-in link `http://localhost:3202/check-in/<token>`; Olivia: `http://localhost:3202/org/requests` → *Saturday distribution shift* → **Applicants**
 - **Before you start:** TC-OPS-016 (a waiver assigned "Sign before check-in" to the request Valerie is on)
 - **Steps:** Valerie opens the check-in link before signing.
@@ -109,7 +109,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-011 · Attendance page — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/attendance` (Organization → People → **Attendance**)
 - **Before you start:** TC-OPS-006
 - **Steps:** Filter Request = Saturday distribution shift, Status = Closed, **Apply**; click **Export CSV**.
@@ -118,7 +118,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-012 · Attendance filter by volunteer — P3
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/attendance`
 - **Steps:** In **Volunteer** choose *Valerie* and click the filter button.
 - **Expected result:** The Volunteer list shows the people on the roster by name ("All volunteers" first) — never an
@@ -126,7 +126,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-013 · Volunteer roster and export — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/roster` (Organization → **People**)
 - **Before you start:** S4, S5
 - **Steps:** Look at the default list; change Status to **All**, **Apply**; search `Valerie`; click **Export CSV**.
@@ -135,7 +135,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-014 · Upload a form (waiver) — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/documents` (Organization → People → **Forms**, "Forms and waivers")
 - **Test data:** Type **Waiver**; File = a small PDF; Title `Harbor volunteer waiver 2026`; Description `Liability waiver for all pantry shifts.`; tick **Require acknowledgement** and **Active**
 - **Steps:** Fill in and click **Upload**.
@@ -144,14 +144,14 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-015 · Only PDF, JPG or PNG forms — P3
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/documents`
 - **Test data:** a `.docx` or `.txt` file renamed to `waiver.pdf`
 - **Expected result:** Refused (the file isn't really a PDF/JPG/PNG); nothing is added.
 
 ### TC-OPS-016 · Assign a form to a request; volunteer signs it — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/documents`; Valerie: `http://localhost:3202/volunteer/applications` → *Saturday distribution shift*
 - **Before you start:** TC-OPS-014
 - **Steps:**
@@ -164,7 +164,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-017 · Sign before applying — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Ravi (`volunteer.remote@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/documents`; Ravi: `http://localhost:3202/volunteer/opportunities/remote` → *Translate a flyer to Spanish*
 - **Steps:** Olivia assigns the waiver **Sign before applying** to *Translate a flyer to Spanish*. Ravi opens that opportunity.
 - **Expected result:** Instead of the Apply form: "Before you apply — This organization asks you to sign these first." with the waiver and
@@ -172,7 +172,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-018 · New form version asks volunteers to sign again — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/documents`; Valerie: `http://localhost:3202/volunteer/applications` → *Saturday distribution shift*
 - **Before you start:** TC-OPS-016 (Valerie signed v1)
 - **Steps:** Olivia: **New version** → choose a PDF, What changed `Added the allergy section.`, keep **Volunteers must sign again** ticked → **Upload version 2**. Valerie reopens her application.
@@ -181,34 +181,34 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-019 · Unassign a form — P3
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests` → *Saturday distribution shift* → **Documents and waivers** (address `/org/requests/<id>/documents`)
 - **Steps:** Click **Unassign** on the waiver.
 - **Expected result:** The waiver disappears from the request; volunteers on it no longer need to sign it.
 
 ### TC-OPS-020 · Record an incident — P1
 
-- **Tester:** Nora (`org.manager@thankyou.test` / `Password!`)
+- **Tester:** Nora (`org.manager@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/incidents` (Organization → People → **Incidents**)
 - **Test data:** Request **Saturday distribution shift**; Severity **Medium**; Title `Volunteer slipped on wet floor`; Description `A volunteer slipped near the loading dock at 10:40. No injury; area marked and mopped.`
 - **Steps:** Fill in **Create incident report** and click **Create**.
-- **Expected result:** "Incident recorded. It's in the list below, and ThankYou staff can see it." The incident appears in the list (When,
+- **Expected result:** "Incident recorded. It's in the list below, and Volunteer Services staff can see it." The incident appears in the list (When,
   Status Open, Severity Medium, Title, Request). Platform staff see it in Admin → Incidents.
 
 ### TC-OPS-021 · Update and close an incident — P2
 
-- **Tester:** Nora (`org.manager@thankyou.test` / `Password!`)
+- **Tester:** Nora (`org.manager@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/incidents` → the incident from TC-OPS-020
 - **Before you start:** TC-OPS-020
 - **Test data:** Status **Resolved**; Internal notes (org-only) `Added a wet-floor sign to the dock checklist.`; Outcome `Resolved: no injury, process updated.`
 - **Steps:** Open the incident title, change the fields, save. Filter the list by Status = Resolved.
 - **Expected result:** "Saved. The incident is updated." The new status, notes and outcome stay after reload, and the
-  filter finds it. Marcus (`org.member@thankyou.test` / `Password!`) can view incidents but sees "Admins and managers
+  filter finds it. Marcus (`org.member@volunteer-services-app.test` / `Password!`) can view incidents but sees "Admins and managers
   record and update them." instead of the create and update forms.
 
 ### TC-OPS-022 · Reports and exports — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/reports` (Organization → Organization → **Reports**)
 - **Before you start:** S5, and TC-HRS-004 (2 h approved) for non-zero numbers
 - **Steps:** Look at the page; choose Request **Deliver meals to homebound seniors** → **Show**; download **Requests CSV**, **Volunteers CSV**, **Summary PDF**.
@@ -220,14 +220,14 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-023 · Report date range — P3
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/reports`
 - **Steps:** Set From/To to a range before any activity (e.g. last year), **Show**.
 - **Expected result:** All totals 0; no error.
 
 ### TC-OPS-024 · Edit an organization request (material change) — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** Olivia: `http://localhost:3202/org/requests` → *Saturday distribution shift* → **Edit** → step 3; Valerie: bell and `http://localhost:3202/volunteer/applications`
 - **Steps:** Change Area shown publicly to `Elmhurst, Queens, NY`, **Save changes**. Check the History and Valerie's notifications.
 - **Expected result:** "Changes saved." History shows the edit (for material changes "Edited (volunteers asked to re-confirm)"); Valerie
@@ -235,7 +235,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-025 · Pause, complete and cancel an organization request — P2
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests` → *Sort donations at the pantry*
 - **Steps:** **Pause (hide from search)** → **Resume** → **Mark as completed**. On *Event setup crew*: Cancel this request with reason `Venue cancelled the fundraiser.`
 - **Expected result:** Same messages as REQ-021/REQ-022/REQ-023: "Paused…", "Resumed…", "Marked complete. Volunteers have 14 days to leave
@@ -243,15 +243,15 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-026 · Admins and managers see volunteers' contact details — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Nora (`org.manager@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Nora (`org.manager@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests` → *Saturday distribution shift* → **Applicants**; `http://localhost:3202/org/applications`; `http://localhost:3202/org/dashboard`; `http://localhost:3202/org/incidents` (after OPS-020)
 - **Before you start:** S4
-- **Expected result:** For accepted adult volunteers (Valerie) both see "Contact: volunteer.local@thankyou.test" on the card, and the email on
+- **Expected result:** For accepted adult volunteers (Valerie) both see "Contact: volunteer.local@volunteer-services-app.test" on the card, and the email on
   the roster/reports. Under-18 volunteers (Tara) never show contact details: "Under 18 · talk in messages; contact details stay hidden".
 
 ### TC-OPS-027 · Members don't see volunteers' contact details — P1
 
-- **Tester:** Marcus (`org.member@thankyou.test` / `Password!`)
+- **Tester:** Marcus (`org.member@volunteer-services-app.test` / `Password!`)
 - **Page:** the same pages as TC-OPS-026: `http://localhost:3202/org/requests` → *Saturday distribution shift* → **Applicants**, `http://localhost:3202/org/applications`, `http://localhost:3202/org/dashboard`, `http://localhost:3202/org/incidents`
 - **Expected result:**
   - Valerie's card shows **no** "Contact:" line and no email anywhere (Applicants, Home's latest applicants, incident lists, document
@@ -262,7 +262,7 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-028 · Members' Hours and People pages — P2
 
-- **Tester:** Marcus (`org.member@thankyou.test` / `Password!`)
+- **Tester:** Marcus (`org.member@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/hours` and `http://localhost:3202/org/roster`
 - **Expected result:** Hours says "Your organization's admins and managers review volunteer hours. Ask one of them if
   something needs a decision." (no error message).
@@ -270,14 +270,14 @@ Setup: `pnpm db:uat`. Harbor Food Bank team: Olivia (admin), Nora (manager), Mar
 
 ### TC-OPS-029 · Manager does the day-to-day work — P1
 
-- **Tester:** Nora (`org.manager@thankyou.test` / `Password!`)
+- **Tester:** Nora (`org.manager@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests` → *Saturday distribution shift* → **Applicants**; `http://localhost:3202/org/hours`; `http://localhost:3202/org/roster`
 - **Steps:** Accept Diego on *Saturday distribution shift*; approve Valerie's 2.5 h in Hours (S5); export the roster.
 - **Expected result:** All three work exactly as for Olivia. Nora's own requests may need owner approval (ORG-020).
 
 ### TC-OPS-030 · No-show from the organization side — P3
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/org/requests` → the request from TC-OPS-008 → **Applicants**
 - **Before you start:** a Harbor request whose start time has passed with an accepted volunteer (e.g. TC-OPS-008's request after it ends, with
   a second volunteer who didn't check in)

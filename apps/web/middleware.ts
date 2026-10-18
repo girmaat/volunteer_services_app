@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { API_BASE_URL_SERVER as API_BASE_URL } from "@thankyou/config";
+import { API_BASE_URL_SERVER as API_BASE_URL } from "@volunteer_services_app/config";
 
 function stripTrailingSlash(url: string) {
   return url.endsWith("/") ? url.slice(0, -1) : url;

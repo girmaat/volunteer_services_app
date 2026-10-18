@@ -1,7 +1,7 @@
 import { minorSql } from "../../lib/age";
 import { can, type PolicyUser } from "../../lib/policy";
 import type { Express } from "express";
-import { ContactRequest } from "@thankyou/contracts";
+import { ContactRequest } from "@volunteer_services_app/contracts";
 import crypto from "crypto";
 import { clientIp } from "../../lib/clientIp";
 import { sendEmail } from "../../auth/email";
@@ -623,7 +623,7 @@ app.post(
     const parsed = ContactRequest.safeParse(body);
     if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.flatten() });
 
-    const ipHash = crypto.createHash("sha256").update(`${clientIp(req)}|${process.env.IP_HASH_SALT || "thankyou"}`).digest("hex");
+    const ipHash = crypto.createHash("sha256").update(`${clientIp(req)}|${process.env.IP_HASH_SALT || "volunteer_services_app"}`).digest("hex");
     await pool.query(
       `INSERT INTO contact_messages (name, email, message, user_id, ip_hash) VALUES ($1, $2, $3, $4, $5)`,
       [parsed.data.name, parsed.data.email, parsed.data.message, viewer?.id ?? null, ipHash]
@@ -633,7 +633,7 @@ app.post(
     if (supportEmail) {
       await sendEmail({
         to: supportEmail,
-        subject: `[ThankYou contact] ${parsed.data.name}`,
+        subject: `[Volunteer Services contact] ${parsed.data.name}`,
         text: `From: ${parsed.data.name} <${parsed.data.email}>\n\n${parsed.data.message}`
       }).catch(() => null);
     }

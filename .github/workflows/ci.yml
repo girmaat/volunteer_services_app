@@ -19,13 +19,13 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: thankyou_test
+          POSTGRES_DB: volunteer_services_app_test
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/thankyou_test
-      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/thankyou_test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/volunteer_services_app_test
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/volunteer_services_app_test
       NEXT_PUBLIC_API_BASE_URL: http://localhost:4202
       NEXT_TELEMETRY_DISABLED: "1"
     steps:

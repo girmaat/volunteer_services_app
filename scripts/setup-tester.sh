@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ThankYou — one-time setup for a tester's macOS or Linux laptop.
+# Volunteer Services — one-time setup for a tester's macOS or Linux laptop.
 # Run from the project folder:   bash scripts/setup-tester.sh
 # Needs: Node.js 22 and PostgreSQL 16 installed first (see docs/TESTER-SETUP.md).
 # Safe to run again: it keeps existing .env files and only re-creates the test data.
@@ -15,16 +15,16 @@ command -v pnpm >/dev/null || { corepack enable; corepack prepare pnpm@10.28.0 -
 read -rp "PostgreSQL port [5432]: " PGPORT; PGPORT=${PGPORT:-5432}
 read -rp "PostgreSQL superuser name [postgres] (Homebrew: your macOS username): " PGSUPER; PGSUPER=${PGSUPER:-postgres}
 read -rsp "Superuser password (Enter if none): " PGPASSWORD; echo; export PGPASSWORD
-APP_PASS=thankyou_local_pw
+APP_PASS=volunteer_services_local_pw
 q() { psql -h localhost -p "$PGPORT" -U "$PGSUPER" -d "${2:-postgres}" -tAc "$1"; }
 
-[ -n "$(q "SELECT 1 FROM pg_roles WHERE rolname='thankyou_app'")" ] || q "CREATE ROLE thankyou_app LOGIN PASSWORD '$APP_PASS'" >/dev/null
-[ -n "$(q "SELECT 1 FROM pg_database WHERE datname='thankyou_next'")" ] || q "CREATE DATABASE thankyou_next OWNER thankyou_app" >/dev/null
-q "ALTER SCHEMA public OWNER TO thankyou_app" thankyou_next >/dev/null
+[ -n "$(q "SELECT 1 FROM pg_roles WHERE rolname='volunteer_services_app'")" ] || q "CREATE ROLE volunteer_services_app LOGIN PASSWORD '$APP_PASS'" >/dev/null
+[ -n "$(q "SELECT 1 FROM pg_database WHERE datname='volunteer_services_app'")" ] || q "CREATE DATABASE volunteer_services_app OWNER volunteer_services_app" >/dev/null
+q "ALTER SCHEMA public OWNER TO volunteer_services_app" volunteer_services_app >/dev/null
 unset PGPASSWORD
 
 if [ ! -f apps/api/.env ]; then
-  sed -e "s#^DATABASE_URL=.*#DATABASE_URL=postgres://thankyou_app:$APP_PASS@localhost:$PGPORT/thankyou_next#" \
+  sed -e "s#^DATABASE_URL=.*#DATABASE_URL=postgres://volunteer_services_app:$APP_PASS@localhost:$PGPORT/volunteer_services_app#" \
       -e "s#^AUTH_RATE_LIMIT_PER_MINUTE=.*#AUTH_RATE_LIMIT_PER_MINUTE=60#" apps/api/.env.example > apps/api/.env
 fi
 [ -f apps/web/.env.local ] || cp apps/web/.env.example apps/web/.env.local

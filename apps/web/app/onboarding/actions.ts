@@ -21,7 +21,7 @@ async function post(path: string, body: unknown, back: string) {
   }
 }
 
-/** Step 1: how you'll use ThankYou. Organizations continue in the organization flow. */
+/** Step 1: how you'll use Volunteer Services. Organizations continue in the organization flow. */
 export async function chooseRole(fd: FormData) {
   const choice = str(fd, "role");
   if (choice === "organization") redirect("/org/signup");

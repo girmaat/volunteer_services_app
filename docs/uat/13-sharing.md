@@ -1,7 +1,7 @@
 # 13 · Sharing links
 
 Anyone signed in can share an open opportunity, an organization's profile, an impact story or an invitation to
-join ThankYou. A share link opens a ThankYou page (`/share/<code>`) with a short, safe preview — the general area,
+join Volunteer Services. A share link opens a Volunteer Services page (`/share/<code>`) with a short, safe preview — the general area,
 never a street address or contact details — and a button to open the real page. The person who made the link
 chooses who can open it and for how long, and can replace it. Anyone can report a link; three different people
 reporting it takes it down automatically, and moderators handle the rest (TC-ADM-015).
@@ -12,7 +12,7 @@ Volunteer profile share links are a separate feature, covered in TC-PUB-009. Ver
 Setup: `pnpm db:uat`. S9 = Olivia shared *Community garden weeding* and Valerie and Diego reported the link.
 
 > **Share window on Windows/Mac:** when you click **Share**, some browsers open the computer's own share panel
-> first. Close it (Cancel / Esc) and ThankYou's share window opens. The steps below use ThankYou's window.
+> first. Close it (Cancel / Esc) and Volunteer Services' share window opens. The steps below use Volunteer Services' window.
 
 Two browser windows help: a normal window signed in, and a private/incognito window for the signed-out visitor.
 
@@ -20,7 +20,7 @@ Two browser windows help: a normal window signed in, and a private/incognito win
 
 ### TC-SHR-001 · Share an open opportunity — P1
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`)
 - **Page:** `http://localhost:3202/volunteer/opportunities/recommended` → *Community garden weeding* (its page is
   `http://localhost:3202/volunteer/opportunities/<id>`)
 - **Steps:**
@@ -51,7 +51,7 @@ Two browser windows help: a normal window signed in, and a private/incognito win
 
 ### TC-SHR-003 · A shared page shows only public details — P1
 
-- **Tester:** Olivia (`org.admin@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Olivia (`org.admin@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** Olivia: `http://localhost:3202/opportunities` → search `Saturday distribution` → *Saturday distribution
   shift*. Visitor: the copied link.
 - **Steps:**
@@ -65,22 +65,22 @@ Two browser windows help: a normal window signed in, and a private/incognito win
 
 ### TC-SHR-004 · "Logged-in users" links hide details from visitors — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** Valerie: `http://localhost:3202/volunteer/opportunities/<id>` of *Event setup crew* → **Share this
   opportunity**. Visitor: the copied link.
 - **Steps:**
   1. In the share window choose **Logged-in users**, click **Update link**, then **Copy**.
   2. Open the link in the private window.
-  3. Click **Log in to view** and sign in as Ravi (`volunteer.remote@thankyou.test` / `Password!`).
+  3. Click **Log in to view** and sign in as Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`).
 - **Expected result:**
   - 1: the link changes (a new code).
-  - 2: the page says "ThankYou shared link — Sign in to view details." with no title, place or date, a **Log in to
+  - 2: the page says "Volunteer Services shared link — Sign in to view details." with no title, place or date, a **Log in to
     view** button and "Some details are hidden. Sign in to view the full preview and open the shared content."
   - 3: after signing in you come back to the same share page and now see *Event setup crew* with its details.
 
 ### TC-SHR-005 · "Only me" links work only for their owner — P3
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** Valerie: *Event setup crew* (`http://localhost:3202/volunteer/opportunities/<id>`) → **Share this
   opportunity**
 - **Steps:**
@@ -91,7 +91,7 @@ Two browser windows help: a normal window signed in, and a private/incognito win
 
 ### TC-SHR-006 · Replacing a link turns the old one off; expiry is shown — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** *Community garden weeding* (`http://localhost:3202/volunteer/opportunities/<id>`) → **Share this
   opportunity**
 - **Steps:**
@@ -106,7 +106,7 @@ Two browser windows help: a normal window signed in, and a private/incognito win
 
 ### TC-SHR-007 · Share an organization and an impact story — P2
 
-- **Tester:** Diego (`dual.role@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Diego (`dual.role@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/organizations/harbor-food-bank`, then
   `http://localhost:3202/impact-stories/a-new-phone-and-a-new-friend`
 - **Steps:**
@@ -120,19 +120,19 @@ Two browser windows help: a normal window signed in, and a private/incognito win
 
 ### TC-SHR-008 · Invite a friend — P3
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), then Visitor (signed out, no login needed)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), then Visitor (signed out, no login needed)
 - **Page:** `http://localhost:3202/settings` (account menu → **Settings**)
 - **Steps:**
   1. Under "Invite friends" click **Generate invite link**, then **Copy**.
   2. Open the link in the private window and click the button.
-- **Expected result:** The page says "Invitation", "You're invited to ThankYou — Find volunteer opportunities near
-  you or online, or get a hand from your neighbors. It's free.", "Join ThankYou", and **Create a free account**
+- **Expected result:** The page says "Invitation", "You're invited to Volunteer Services — Find volunteer opportunities near
+  you or online, or get a hand from your neighbors. It's free.", "Join Volunteer Services", and **Create a free account**
   opens `http://localhost:3202/signup`.
 
 ### TC-SHR-009 · A reported link warns viewers; three reports take it down — P1
 
-- **Tester:** Visitor (signed out, no login needed), then Ravi (`volunteer.remote@thankyou.test` / `Password!`)
-- **Page:** the S9 link. Find it as Ada (`admin@thankyou.test` / `Password!`): `http://localhost:3202/admin/reports`
+- **Tester:** Visitor (signed out, no login needed), then Ravi (`volunteer.remote@volunteer-services-app.test` / `Password!`)
+- **Page:** the S9 link. Find it as Ada (`admin@volunteer-services-app.test` / `Password!`): `http://localhost:3202/admin/reports`
   → a "Share link" report → **Open shared page**, and copy that address (`http://localhost:3202/share/<code>`).
 - **Before you start:** S9
 - **Test data:** Reason **Scam / fraud**; Details `UAT: third report on this link.`
@@ -151,7 +151,7 @@ Two browser windows help: a normal window signed in, and a private/incognito win
 
 ### TC-SHR-010 · Sensitive, unpublished and finished requests can't be shared — P2
 
-- **Tester:** Valerie (`volunteer.local@thankyou.test` / `Password!`), Rose (`requester@thankyou.test` / `Password!`)
+- **Tester:** Valerie (`volunteer.local@volunteer-services-app.test` / `Password!`), Rose (`requester@volunteer-services-app.test` / `Password!`)
 - **Page:** Valerie: *Explain my electricity bill* (`http://localhost:3202/volunteer/opportunities/<id>`, find it
   with Search on `http://localhost:3202/volunteer/opportunities/recommended`). Rose:
   `http://localhost:3202/requester/requests` → *Draft: garden cleanup*.

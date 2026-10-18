@@ -1,6 +1,6 @@
 <# : batch portion
 @echo off
-title ThankYou - install for testing
+title Volunteer Services - install for testing
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = '%~f0'; Invoke-Expression ((Get-Content -LiteralPath $f -Raw))"
 echo.
 pause
@@ -8,7 +8,7 @@ exit /b
 #>
 # The lines above start PowerShell, which runs the rest of this file.
 # ---------------------------------------------------------------------------------------------
-# ThankYou - install for testing (Windows 10/11).
+# Volunteer Services - install for testing (Windows 10/11).
 #
 $RepoUrl = "https://github.com/girmaat/volunteer_services_app.git"
 $RepoName = "volunteer_services_app"
@@ -23,7 +23,7 @@ function Refresh-Path { $env:Path = [Environment]::GetEnvironmentVariable("Path"
 function Stop-With($msg) { Write-Host ""; Write-Host "  PROBLEM: $msg" -ForegroundColor Red; Write-Host "  Take a screenshot of this window and send it to the developer." -ForegroundColor Red; exit 1 }
 
 Write-Host ""
-Write-Host "  ThankYou - install for testing" -ForegroundColor White
+Write-Host "  Volunteer Services - install for testing" -ForegroundColor White
 Write-Host "  This takes 15-30 minutes. Leave this window open until it says it's finished." -ForegroundColor Gray
 Write-Host ""
 
@@ -34,7 +34,7 @@ $parent = $null
 try {
   Add-Type -AssemblyName System.Windows.Forms
   $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
-  $dlg.Description = "Choose the folder to put the ThankYou project in (a '$RepoName' folder is created inside it)"
+  $dlg.Description = "Choose the folder to put the Volunteer Services project in (a '$RepoName' folder is created inside it)"
   $dlg.SelectedPath = [Environment]::GetFolderPath("MyDocuments")
   $dlg.ShowNewFolderButton = $true
   Write-Host "  A window opens to choose where to put the project (it may be behind this one)." -ForegroundColor Gray
@@ -56,7 +56,7 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
   if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Stop-With "Git didn't install. Restart the computer and run this file again." }
 }
 
-Write-Host "  Downloading ThankYou into $Folder ..." -ForegroundColor Cyan
+Write-Host "  Downloading Volunteer Services into $Folder ..." -ForegroundColor Cyan
 Write-Host "  If a GitHub sign-in window opens, sign in with the GitHub account the developer gave access to." -ForegroundColor Gray
 if (Test-Path (Join-Path $Folder ".git")) {
   git -C $Folder pull --ff-only

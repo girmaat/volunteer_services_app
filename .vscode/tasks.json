@@ -3,32 +3,32 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "ThankYou: Start (for testing)",
+      "label": "Volunteer Services: Start (for testing)",
       "type": "shell",
       "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tester/start.ps1",
       "problemMatcher": []
     },
     {
-      "label": "ThankYou: Open the UAT tracker",
+      "label": "Volunteer Services: Open the UAT tracker",
       "type": "shell",
       "command": "start docs/uat/uat-tracker.html",
       "windows": { "command": "Start-Process docs/uat/uat-tracker.html" },
       "problemMatcher": []
     },
     {
-      "label": "ThankYou: Reset test data",
+      "label": "Volunteer Services: Reset test data",
       "type": "shell",
       "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tester/reset.ps1",
       "problemMatcher": []
     },
     {
-      "label": "ThankYou: Update to the newest version",
+      "label": "Volunteer Services: Update to the newest version",
       "type": "shell",
       "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tester/update.ps1",
       "problemMatcher": []
     },
     {
-      "label": "ThankYou: Set up this computer (first time)",
+      "label": "Volunteer Services: Set up this computer (first time)",
       "type": "shell",
       "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tester/setup.ps1",
       "problemMatcher": []

@@ -1,6 +1,6 @@
 import { cookieSecure } from "../../../../lib/cookies";
 import { NextResponse } from "next/server";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 
 /** Old links pointed here directly; they now open the page with the "Verify my email" button. */
 export async function GET(req: Request) {

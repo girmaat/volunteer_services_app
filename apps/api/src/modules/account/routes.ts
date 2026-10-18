@@ -76,7 +76,7 @@ export function registerAccountRoutes(app: Express) {
         blocks: await q("SELECT created_at FROM user_blocks WHERE blocker_user_id = $1")
       };
       res.setHeader("content-type", "application/json; charset=utf-8");
-      res.setHeader("content-disposition", `attachment; filename="thankyou-data-${new Date().toISOString().slice(0, 10)}.json"`);
+      res.setHeader("content-disposition", `attachment; filename="volunteer-services-app-data-${new Date().toISOString().slice(0, 10)}.json"`);
       res.setHeader("cache-control", "private, no-store");
       return res.send(JSON.stringify(data, null, 2));
     })
@@ -214,7 +214,7 @@ export function registerAccountRoutes(app: Express) {
         );
       }
       res.setHeader("content-type", "text/csv; charset=utf-8");
-      res.setHeader("content-disposition", 'attachment; filename="thankyou-impact.csv"');
+      res.setHeader("content-disposition", 'attachment; filename="volunteer-services-app-impact.csv"');
       return res.send("﻿" + lines.join("\r\n"));
     })
   );

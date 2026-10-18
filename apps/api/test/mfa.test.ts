@@ -21,7 +21,7 @@ async function enable(token: string) {
   expect((await anon().post("/v1/me/mfa/setup").set(bearer(token)).send({ password: "wrong" })).status).toBe(403);
   const setup = await anon().post("/v1/me/mfa/setup").set(bearer(token)).send({ password: PASSWORD });
   expect(setup.status).toBe(200);
-  expect(setup.body.otpauth_url).toMatch(/^otpauth:\/\/totp\/ThankYou%3A.+\?secret=[A-Z2-7]+&issuer=ThankYou/);
+  expect(setup.body.otpauth_url).toMatch(/^otpauth:\/\/totp\/Volunteer%20Services%3A.+\?secret=[A-Z2-7]+&issuer=Volunteer%20Services/);
   const secret = String(setup.body.secret);
   expect((await anon().post("/v1/me/mfa/enable").set(bearer(token)).send({ code: "000000" })).status).toBe(422);
   // A code from the previous step, so the next sign-in can use the current one.
@@ -37,7 +37,7 @@ afterEach(() => {
 
 describe("two-step sign-in", () => {
   it("asks for a code after the password, refuses wrong and replayed codes, and signs in with a good one", async () => {
-    const email = `${uniq("mfa")}@thankyou.test`;
+    const email = `${uniq("mfa")}@volunteer-services-app.test`;
     await createUser({ email, roles: ["volunteer"] });
     const first = await signedIn(email);
     const other = await signedIn(email);
@@ -62,7 +62,7 @@ describe("two-step sign-in", () => {
   });
 
   it("locks a challenge after five wrong codes", async () => {
-    const email = `${uniq("mfa-lock")}@thankyou.test`;
+    const email = `${uniq("mfa-lock")}@volunteer-services-app.test`;
     await createUser({ email, roles: ["volunteer"] });
     const { secret } = await enable(await signedIn(email));
     const t = (await login(email)).body.mfa_token;
@@ -73,7 +73,7 @@ describe("two-step sign-in", () => {
   });
 
   it("a recovery code works once, and turning it off needs the password and a code", async () => {
-    const email = `${uniq("mfa-rec")}@thankyou.test`;
+    const email = `${uniq("mfa-rec")}@volunteer-services-app.test`;
     await createUser({ email, roles: ["volunteer"] });
     const { codes } = await enable(await signedIn(email));
     const r1 = await anon().post("/v1/auth/mfa").send({ mfaToken: (await login(email)).body.mfa_token, code: codes[0].toUpperCase() });
@@ -89,7 +89,7 @@ describe("two-step sign-in", () => {
   });
 
   it("stores the secret encrypted, never as the plain code seed", async () => {
-    const email = `${uniq("mfa-enc")}@thankyou.test`;
+    const email = `${uniq("mfa-enc")}@volunteer-services-app.test`;
     await createUser({ email, roles: ["volunteer"] });
     const { secret } = await enable(await signedIn(email));
     const row = (await pool.query("SELECT mfa_secret FROM users WHERE id = $1", [await userId(email)])).rows[0];
@@ -98,7 +98,7 @@ describe("two-step sign-in", () => {
   });
 
   it("platform staff can't use admin tools without it when it's required", async () => {
-    const email = `${uniq("staff")}@thankyou.test`;
+    const email = `${uniq("staff")}@volunteer-services-app.test`;
     await createUser({ email, roles: ["volunteer"] });
     await pool.query("INSERT INTO platform_admins (user_id, role) VALUES ($1, 'admin')", [await userId(email)]);
     const t = await signedIn(email);

@@ -62,7 +62,7 @@ describe("conversations", () => {
   let requestId = "";
   let convId = "";
   let applicationId = "";
-  const vol = "msg.vol@thankyou.test";
+  const vol = "msg.vol@volunteer-services-app.test";
 
   it("volunteers can't start a conversation; they reply once the organizer writes", async () => {
     await createUser({ email: vol, roles: ["volunteer"] });
@@ -188,33 +188,33 @@ describe("conversations", () => {
 
 describe("organization inbox, limits, blocking and archiving", () => {
   it("org admins and managers share the org inbox; plain members and outsiders don't", async () => {
-    await createUser({ email: "orgmsg.vol@thankyou.test", roles: ["volunteer"] });
-    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'orgmsg.vol@thankyou.test'");
+    await createUser({ email: "orgmsg.vol@volunteer-services-app.test", roles: ["volunteer"] });
+    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'orgmsg.vol@volunteer-services-app.test'");
     const admin = await as(EMAILS.orgAdmin);
     await admin.post("/v1/me/context", { context: "org:harbor-food-bank" });
     const id = await liveRequest(EMAILS.orgAdmin, "Messaging: org pantry shift", {}, "org");
-    await (await as("orgmsg.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "Count me in" });
-    await ownerOpens(EMAILS.orgAdmin, id, "orgmsg.vol@thankyou.test", "Thanks for signing up!");
-    await createUser({ email: "org.manager2@thankyou.test", org: { slug: "harbor-food-bank", role: "manager" } });
-    const mgr = await as("org.manager2@thankyou.test");
+    await (await as("orgmsg.vol@volunteer-services-app.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "Count me in" });
+    await ownerOpens(EMAILS.orgAdmin, id, "orgmsg.vol@volunteer-services-app.test", "Thanks for signing up!");
+    await createUser({ email: "org.manager2@volunteer-services-app.test", org: { slug: "harbor-food-bank", role: "manager" } });
+    const mgr = await as("org.manager2@volunteer-services-app.test");
     const list = await mgr.get("/v1/inbox/conversations?as=org");
     const conv = list.body.conversations.find((c: { request_id: string }) => c.request_id === id);
     expect(conv).toBeTruthy();
     expect(conv.with_name).toBeTruthy();
     const reply = await mgr.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "Welcome aboard!" });
     expect(reply.status).toBe(201);
-    const volView = await (await as("orgmsg.vol@thankyou.test")).get(`/v1/inbox/conversations/${conv.id}`);
+    const volView = await (await as("orgmsg.vol@volunteer-services-app.test")).get(`/v1/inbox/conversations/${conv.id}`);
     expect(volView.body.conversation.with_name).toBe("Harbor Food Bank");
     expect((await (await as(EMAILS.orgMember)).get(`/v1/inbox/conversations/${conv.id}`)).status).toBe(404);
   });
 
   it("rate-limits bursts of messages", async () => {
-    await createUser({ email: "burst.vol@thankyou.test", roles: ["volunteer"] });
-    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'burst.vol@thankyou.test'");
+    await createUser({ email: "burst.vol@volunteer-services-app.test", roles: ["volunteer"] });
+    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'burst.vol@volunteer-services-app.test'");
     const id = await liveRequest(EMAILS.requester, "Messaging: burst test");
-    const v = await as("burst.vol@thankyou.test");
+    const v = await as("burst.vol@volunteer-services-app.test");
     await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hello" });
-    await ownerOpens(EMAILS.requester, id, "burst.vol@thankyou.test");
+    await ownerOpens(EMAILS.requester, id, "burst.vol@volunteer-services-app.test");
     const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
     let last = 0;
     for (let i = 0; i < 31; i++) last = (await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: `msg ${i}` })).status;
@@ -222,7 +222,7 @@ describe("organization inbox, limits, blocking and archiving", () => {
   });
 
   it("limits how many new conversations a brand-new account can start per day", async () => {
-    const uid = await createUser({ email: "fresh.vol@thankyou.test", roles: ["volunteer"] });
+    const uid = await createUser({ email: "fresh.vol@volunteer-services-app.test", roles: ["volunteer"] });
     // Five first contacts already today, each in its own conversation.
     const open = await pool.query("SELECT id, requester_user_id FROM service_requests WHERE status = 'open' AND requester_user_id <> $1 LIMIT 5", [uid]);
     for (const r of open.rows) {
@@ -230,10 +230,10 @@ describe("organization inbox, limits, blocking and archiving", () => {
       await pool.query("INSERT INTO direct_messages (sender_user_id, recipient_user_id, body, conversation_id) VALUES ($1, $2, 'hi', $3)", [uid, r.requester_user_id, c.rows[0].id]);
     }
     const id = await liveRequest(EMAILS.requester, "Messaging: sixth contact");
-    const v = await as("fresh.vol@thankyou.test");
+    const v = await as("fresh.vol@volunteer-services-app.test");
     const ap = await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hello there" });
     expect(ap.status).toBe(201); // the application itself still goes through
-    await ownerOpens(EMAILS.requester, id, "fresh.vol@thankyou.test");
+    await ownerOpens(EMAILS.requester, id, "fresh.vol@volunteer-services-app.test");
     const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
     const s = await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "Following up" });
     expect(s.status).toBe(429);
@@ -241,26 +241,26 @@ describe("organization inbox, limits, blocking and archiving", () => {
   });
 
   it("blocking from a thread ends it and stops replies", async () => {
-    await createUser({ email: "block.vol@thankyou.test", roles: ["volunteer"] });
-    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'block.vol@thankyou.test'");
+    await createUser({ email: "block.vol@volunteer-services-app.test", roles: ["volunteer"] });
+    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'block.vol@volunteer-services-app.test'");
     const id = await liveRequest(EMAILS.requester, "Messaging: block test");
-    const v = await as("block.vol@thankyou.test");
+    const v = await as("block.vol@volunteer-services-app.test");
     await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
-    await ownerOpens(EMAILS.requester, id, "block.vol@thankyou.test");
+    await ownerOpens(EMAILS.requester, id, "block.vol@volunteer-services-app.test");
     const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
     const b = await (await as(EMAILS.requester)).post(`/v1/inbox/conversations/${conv.id}/block`, { reason: "rude" });
     expect(b.body.blocked).toBe(true);
     expect((await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "why?" })).status).toBe(409);
-    await pool.query("DELETE FROM user_blocks WHERE blocked_user_id = $1", [await userId("block.vol@thankyou.test")]);
+    await pool.query("DELETE FROM user_blocks WHERE blocked_user_id = $1", [await userId("block.vol@volunteer-services-app.test")]);
   });
 
   it("archives conversations 14 days after the request completes", async () => {
-    await createUser({ email: "archive.vol@thankyou.test", roles: ["volunteer"] });
-    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'archive.vol@thankyou.test'");
+    await createUser({ email: "archive.vol@volunteer-services-app.test", roles: ["volunteer"] });
+    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'archive.vol@volunteer-services-app.test'");
     const id = await liveRequest(EMAILS.requester, "Messaging: archive test");
-    const v = await as("archive.vol@thankyou.test");
+    const v = await as("archive.vol@volunteer-services-app.test");
     await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
-    await ownerOpens(EMAILS.requester, id, "archive.vol@thankyou.test");
+    await ownerOpens(EMAILS.requester, id, "archive.vol@volunteer-services-app.test");
     await pool.query("UPDATE service_requests SET status = 'completed', completed_at = NOW() - INTERVAL '15 days' WHERE id = $1", [id]);
     await runHourly();
     const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
@@ -269,13 +269,13 @@ describe("organization inbox, limits, blocking and archiving", () => {
   });
 
   it("shadow-banned senders see their messages; nobody else does", async () => {
-    await createUser({ email: "shadow.vol@thankyou.test", roles: ["volunteer"] });
-    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'shadow.vol@thankyou.test'");
+    await createUser({ email: "shadow.vol@volunteer-services-app.test", roles: ["volunteer"] });
+    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'shadow.vol@volunteer-services-app.test'");
     const id = await liveRequest(EMAILS.requester, "Messaging: shadow test");
-    const v = await as("shadow.vol@thankyou.test");
+    const v = await as("shadow.vol@volunteer-services-app.test");
     await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "first" });
-    await ownerOpens(EMAILS.requester, id, "shadow.vol@thankyou.test");
-    await pool.query("UPDATE users SET shadow_banned = TRUE WHERE email = 'shadow.vol@thankyou.test'");
+    await ownerOpens(EMAILS.requester, id, "shadow.vol@volunteer-services-app.test");
+    await pool.query("UPDATE users SET shadow_banned = TRUE WHERE email = 'shadow.vol@volunteer-services-app.test'");
     const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
     const s = await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "can anyone hear me" });
     expect(s.body.status).toBe("sent");
@@ -294,12 +294,12 @@ describe("live updates (SSE)", () => {
       const res = await fetch(`http://127.0.0.1:${port}/v1/inbox/stream`, { headers: { authorization: `Bearer ${token}` }, signal: ctrl.signal });
       expect(res.headers.get("content-type")).toContain("text/event-stream");
       const reader = res.body!.getReader();
-      await createUser({ email: "sse.vol@thankyou.test", roles: ["volunteer"] });
-      await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'sse.vol@thankyou.test'");
+      await createUser({ email: "sse.vol@volunteer-services-app.test", roles: ["volunteer"] });
+      await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'sse.vol@volunteer-services-app.test'");
       const id = await liveRequest(EMAILS.requester, "Messaging: live test");
-      const v = await as("sse.vol@thankyou.test");
+      const v = await as("sse.vol@volunteer-services-app.test");
       await v.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hello live" });
-      await ownerOpens(EMAILS.requester, id, "sse.vol@thankyou.test");
+      await ownerOpens(EMAILS.requester, id, "sse.vol@volunteer-services-app.test");
       const conv = (await v.get("/v1/inbox/conversations?as=volunteer")).body.conversations.find((c: { request_id: string }) => c.request_id === id);
       const sent = await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "live ping" });
       expect(sent.status).toBe(201);
@@ -320,36 +320,36 @@ describe("live updates (SSE)", () => {
 
 describe("contact privacy outside the inbox", () => {
   it("organizations and requesters don't see applicant emails before acceptance", async () => {
-    await createUser({ email: "privacy.vol@thankyou.test", roles: ["volunteer"] });
+    await createUser({ email: "privacy.vol@volunteer-services-app.test", roles: ["volunteer"] });
     const admin = await as(EMAILS.orgAdmin);
     await admin.post("/v1/me/context", { context: "org:harbor-food-bank" });
     const id = await liveRequest(EMAILS.orgAdmin, "Privacy: org shift", {}, "org");
-    const ap = await (await as("privacy.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi, call 917-555-0142" });
+    const ap = await (await as("privacy.vol@volunteer-services-app.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi, call 917-555-0142" });
     const before = await admin.get("/v1/org/applications");
-    expect(JSON.stringify(before.body)).not.toContain("privacy.vol@thankyou.test");
+    expect(JSON.stringify(before.body)).not.toContain("privacy.vol@volunteer-services-app.test");
     expect(JSON.stringify(before.body)).not.toContain("917-555-0142");
     expect(JSON.stringify((await admin.get(`/v1/requests/${id}/applicants`)).body)).not.toContain("917-555-0142");
     await admin.patch(`/v1/org/applications/${ap.body.applicationId}`, { status: "accepted" });
     const after = await admin.get("/v1/org/applications");
-    expect(JSON.stringify(after.body)).toContain("privacy.vol@thankyou.test");
+    expect(JSON.stringify(after.body)).toContain("privacy.vol@volunteer-services-app.test");
     expect(JSON.stringify(after.body)).toContain("917-555-0142");
 
     const rid = await liveRequest(EMAILS.requester, "Privacy: requester ask");
-    await (await as("privacy.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${rid}/apply`, { message: "hi" });
+    await (await as("privacy.vol@volunteer-services-app.test")).post(`/v1/volunteer/opportunities/${rid}/apply`, { message: "hi" });
     for (const p of ["/v1/requester/applications/pending", "/v1/requester/dashboard", `/v1/requests/${rid}/applicants`]) {
-      expect(JSON.stringify((await (await as(EMAILS.requester)).get(p)).body), p).not.toContain("privacy.vol@thankyou.test");
+      expect(JSON.stringify((await (await as(EMAILS.requester)).get(p)).body), p).not.toContain("privacy.vol@volunteer-services-app.test");
     }
   });
 });
 
-describe("support threads (organization ↔ ThankYou team)", () => {
+describe("support threads (organization ↔ Volunteer Services team)", () => {
   it("org members message the platform team; admins see and answer; others can't", async () => {
     const olivia = await as(EMAILS.orgAdmin);
     await olivia.post("/v1/me/context", { context: "org:harbor-food-bank" });
     const s = await olivia.post("/v1/inbox/support", { body: "How do we get our second location verified?" });
     expect(s.status, JSON.stringify(s.body)).toBe(201);
     expect(s.body.kind).toBe("support");
-    expect(s.body.with_name).toBe("ThankYou support");
+    expect(s.body.with_name).toBe("Volunteer Services support");
     expect(s.body.can_send).toBe(true);
     // Same thread the second time.
     expect((await olivia.post("/v1/inbox/support", {})).body.id).toBe(s.body.id);
@@ -373,7 +373,7 @@ describe("support threads (organization ↔ ThankYou team)", () => {
 
 describe("who can message you", () => {
   it("'No one' stops messages to that person; 'Anyone' lets them through", async () => {
-    const vol = "perm.vol@thankyou.test";
+    const vol = "perm.vol@volunteer-services-app.test";
     await createUser({ email: vol, roles: ["volunteer"] });
     await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = $1", [vol]);
     const id = await liveRequest(EMAILS.requester, "Messaging: permission test");

@@ -1,6 +1,6 @@
 import { cookieSecure } from "../../../../lib/cookies";
 import { NextResponse } from "next/server";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 
 // POST only: a GET logout can be triggered by any <img> on another site.
 export async function POST(req: Request) {

@@ -1,6 +1,6 @@
 import type { Express, Response } from "express";
 import { z } from "zod";
-import { ReviewBody } from "@thankyou/contracts";
+import { ReviewBody } from "@volunteer_services_app/contracts";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import type { PolicyUser } from "../../lib/policy";

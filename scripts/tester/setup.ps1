@@ -1,10 +1,10 @@
-# ThankYou - one-time setup of a tester's Windows computer. Safe to run again.
+# Volunteer Services - one-time setup of a tester's Windows computer. Safe to run again.
 # Installs what's missing (Node.js, PostgreSQL), creates the local database, writes the settings files,
 # installs the app's packages, loads the test data and puts shortcuts on the desktop.
 . (Join-Path $PSScriptRoot "common.ps1")
 
 Write-Host ""
-Write-Host "  ThankYou tester setup" -ForegroundColor White
+Write-Host "  Volunteer Services tester setup" -ForegroundColor White
 Write-Host "  This takes 10-20 minutes the first time. Windows may ask 'Do you want to allow this app to make changes?' - click Yes." -ForegroundColor Gray
 Write-Host ""
 Refresh-Path
@@ -28,12 +28,12 @@ Ok "pnpm $(pnpm -v)"
 
 # 2. PostgreSQL (the database). Installed as a Windows service that starts with the computer.
 # The app's database login is the same on every computer (the developer's local settings).
-$DbName = "thankyou_next"
-$DbUser = "thankyou_app"
+$DbName = "volunteer_services_app"
+$DbUser = "volunteer_services_app"
 $DbPassword = "pYarsema,21"
 $cfg = Read-Config
 if (-not $cfg) {
-  $cfg = [pscustomobject]@{ pgPort = 5433; pgSuperPassword = "ThankYouLocal-" + (New-Secret 4); internalKey = (New-Secret 24); ipSalt = (New-Secret 16); notifySecret = (New-Secret 24) }
+  $cfg = [pscustomobject]@{ pgPort = 5433; pgSuperPassword = "VsaLocal-" + (New-Secret 4); internalKey = (New-Secret 24); ipSalt = (New-Secret 16); notifySecret = (New-Secret 24) }
 }
 $svc = Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue | Select-Object -First 1
 if (-not $svc) {
@@ -65,7 +65,7 @@ if (-not (Has "psql")) { Fail "Can't find psql. Restart the computer and run set
 Ok "PostgreSQL on port $($cfg.pgPort)"
 
 # 3. The app's own database and login
-Say "[3/7] Creating the ThankYou database..."
+Say "[3/7] Creating the Volunteer Services database..."
 $env:PGPASSWORD = $cfg.pgSuperPassword
 $psql = @("-h", "localhost", "-p", "$($cfg.pgPort)", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-tAc")
 $role = & psql @psql "SELECT 1 FROM pg_roles WHERE rolname='$DbUser'"
@@ -104,10 +104,10 @@ Say "[7/7] Adding desktop shortcuts..."
 $desktop = [Environment]::GetFolderPath("Desktop")
 $shell = New-Object -ComObject WScript.Shell
 $links = @(
-  @{ name = "Start ThankYou"; file = "Start ThankYou.bat"; icon = "shell32.dll,137" },
-  @{ name = "ThankYou UAT Tracker"; file = "UAT Tracker.bat"; icon = "shell32.dll,165" },
-  @{ name = "Reset ThankYou test data"; file = "Reset test data.bat"; icon = "shell32.dll,238" },
-  @{ name = "Update ThankYou"; file = "Update ThankYou.bat"; icon = "shell32.dll,46" }
+  @{ name = "Start Volunteer Services"; file = "Start Volunteer Services.bat"; icon = "shell32.dll,137" },
+  @{ name = "Volunteer Services UAT Tracker"; file = "UAT Tracker.bat"; icon = "shell32.dll,165" },
+  @{ name = "Reset Volunteer Services test data"; file = "Reset test data.bat"; icon = "shell32.dll,238" },
+  @{ name = "Update Volunteer Services"; file = "Update Volunteer Services.bat"; icon = "shell32.dll,46" }
 )
 foreach ($l in $links) {
   $s = $shell.CreateShortcut((Join-Path $desktop "$($l.name).lnk"))
@@ -116,11 +116,11 @@ foreach ($l in $links) {
   $s.IconLocation = "$env:SystemRoot\System32\$($l.icon)"
   $s.Save()
 }
-Ok "Shortcuts: Start ThankYou, ThankYou UAT Tracker, Reset ThankYou test data, Update ThankYou"
+Ok "Shortcuts: Start Volunteer Services, Volunteer Services UAT Tracker, Reset Volunteer Services test data, Update Volunteer Services"
 
 Write-Host ""
 Write-Host "  Setup finished." -ForegroundColor Green
-Write-Host "  To test: double-click 'Start ThankYou' on the desktop. It opens the app and the UAT tracker." -ForegroundColor Green
+Write-Host "  To test: double-click 'Start Volunteer Services' on the desktop. It opens the app and the UAT tracker." -ForegroundColor Green
 Write-Host ""
-$go = Read-Host "  Start ThankYou now? (Y/n)"
+$go = Read-Host "  Start Volunteer Services now? (Y/n)"
 if ($go -ne "n" -and $go -ne "N") { & (Join-Path $PSScriptRoot "start.ps1") }

@@ -20,6 +20,6 @@ export const logger = pino({
     ],
     censor: "[redacted]"
   },
-  base: { service: "thankyou-api" },
+  base: { service: "volunteer-services-app-api" },
   transport: !isProduction && !isTest ? { target: "pino-pretty", options: { singleLine: true, ignore: "pid,hostname,service" } } : undefined
 });

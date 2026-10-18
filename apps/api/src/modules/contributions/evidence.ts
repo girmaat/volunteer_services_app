@@ -11,7 +11,7 @@
 import type { Express, Request, Response } from "express";
 import multer from "multer";
 import { z } from "zod";
-import { HttpUrl } from "@thankyou/contracts";
+import { HttpUrl } from "@volunteer_services_app/contracts";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
 import { orgMembership, type PolicyUser } from "../../lib/policy";

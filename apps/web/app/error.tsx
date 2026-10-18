@@ -12,7 +12,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     // eslint-disable-next-line no-console
-    console.error("[ThankYou Web] Global error", error);
+    console.error("[Volunteer Services Web] Global error", error);
   }, [error]);
 
   return (

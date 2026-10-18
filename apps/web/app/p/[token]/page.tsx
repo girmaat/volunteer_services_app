@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import SharedProfileView, { type SharedProfile } from "../../../components/profile/SharedProfileView";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export default async function SharedProfilePage(props: { params: Promise<{ token
         <p className="m-0 text-muted">The volunteer may have turned it off or replaced it with a new one. Ask them for a fresh link.</p>
         <p className="m-0">
           <Link prefetch={false} href="/" className="font-medium text-primary underline">
-            Go to ThankYou
+            Go to Volunteer Services
           </Link>
         </p>
       </div>

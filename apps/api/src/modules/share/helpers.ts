@@ -26,7 +26,7 @@ export async function isActiveOrgMember(userId: string, orgSlug: string) {
 
 export function hashIp(req: express.Request) {
   // A dedicated salt if set; otherwise the unsubscribe-link secret (required in production).
-  const salt = String(process.env.IP_HASH_SALT || process.env.NOTIFICATION_SECRET || (process.env.NODE_ENV === "production" ? "" : "thankyou-dev-ip-salt"));
+  const salt = String(process.env.IP_HASH_SALT || process.env.NOTIFICATION_SECRET || (process.env.NODE_ENV === "production" ? "" : "volunteer-services-app-dev-ip-salt"));
   if (!salt) return null;
 
   // Never trust a raw X-Forwarded-For here: report thresholds count distinct IPs.

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { forwardHeaders } from "../../lib/forward";

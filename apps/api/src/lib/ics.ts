@@ -45,7 +45,7 @@ export function icsEvent(e: {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//ThankYou//Volunteer commitments//EN",
+    "PRODID:-//Volunteer Services//Volunteer commitments//EN",
     "CALSCALE:GREGORIAN",
     `METHOD:${method}`,
     "BEGIN:VEVENT",

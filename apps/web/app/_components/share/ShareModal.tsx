@@ -30,7 +30,7 @@ function encodeURIComponentSafe(v: string) {
 }
 
 function buildActions(url: string, title?: string) {
-  const t = (title || "Shared from ThankYou").trim();
+  const t = (title || "Shared from Volunteer Services").trim();
   const subject = encodeURIComponentSafe(t);
   const body = encodeURIComponentSafe(`${t}\n${url}`);
 

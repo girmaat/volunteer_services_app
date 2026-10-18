@@ -3,11 +3,11 @@
 -- Create a least-privilege runtime role (LOGIN) and grant it access to the app schema.
 -- Usage (PowerShell):
 --   psql $env:DATABASE_URL_ADMIN ^
---     -v runtime_user=thankyou_app ^
+--     -v runtime_user=volunteer_services_app ^
 --     -v runtime_pass=change_me ^
---     -v dbname=thankyou ^
+--     -v dbname=volunteer_services_app ^
 --     -v schema=public ^
---     -v owner_role=thankyou ^
+--     -v owner_role=volunteer_services_app ^
 --     -f backend/scripts/db/create_runtime_role_and_grants.sql
 --
 -- NOTE: This file intentionally avoids PL/pgSQL DO blocks because psql variable
@@ -15,7 +15,7 @@
 
 \if :{?runtime_user}
 \else
-\set runtime_user thankyou_app
+\set runtime_user volunteer_services_app
 \endif
 
 \if :{?schema}
@@ -25,7 +25,7 @@
 
 \if :{?owner_role}
 \else
-\set owner_role thankyou
+\set owner_role volunteer_services_app
 \endif
 
 \if :{?dbname}

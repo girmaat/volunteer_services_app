@@ -13,8 +13,8 @@ const waitFor = async (fn: () => Promise<boolean>) => {
 };
 
 async function sensitiveDraft(title: string) {
-  await createUser({ email: "trusted.poster@thankyou.test", roles: ["requester"], trusted: true });
-  const api = await as("trusted.poster@thankyou.test");
+  await createUser({ email: "trusted.poster@volunteer-services-app.test", roles: ["requester"], trusted: true });
+  const api = await as("trusted.poster@volunteer-services-app.test");
   const d = await api.post("/v1/requests", { title, description: "Needs help inside the home, reviewed first.", category: "home-access", mode: "in-person", publicArea: "Harlem, NY", scheduleType: "one_time", startsAt: soon(72) });
   const p = await api.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
   expect(p.body.review_status).toBe("pending_review");
@@ -37,7 +37,7 @@ describe("sensitive-request review queue", () => {
     expect((await mod.post(`/v1/admin/requests/${b}/review`, { decision: "reject" })).status).toBe(422);
     const no = await mod.post(`/v1/admin/requests/${b}/review`, { decision: "reject", notes: "Please add the floor and access details." });
     expect(no.body.review_status).toBe("rejected");
-    const owner = await (await as("trusted.poster@thankyou.test")).get(`/v1/requests/${b}`);
+    const owner = await (await as("trusted.poster@volunteer-services-app.test")).get(`/v1/requests/${b}`);
     expect(owner.body.review_notes).toContain("floor");
     // Trusted volunteers now see the approved one.
     expect((await (await as(EMAILS.volunteer)).get(`/v1/discovery/opportunities/${a}`)).status).toBe(200);
@@ -65,14 +65,14 @@ describe("sensitive-request review queue", () => {
 
 describe("held messages, disputes, shadow-ban, metrics", () => {
   it("moderators release or reject held messages", async () => {
-    await createUser({ email: "held.vol@thankyou.test", roles: ["volunteer"] });
-    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'held.vol@thankyou.test'");
+    await createUser({ email: "held.vol@volunteer-services-app.test", roles: ["volunteer"] });
+    await pool.query("UPDATE users SET created_at = NOW() - INTERVAL '30 days' WHERE email = 'held.vol@volunteer-services-app.test'");
     const api = await as(EMAILS.requester);
     const d = await api.post("/v1/requests", { title: "Queue: held message", description: "Request used to test held messages.", category: "errands", mode: "remote", scheduleType: "flexible_window" });
     await api.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
-    const v = await as("held.vol@thankyou.test");
+    const v = await as("held.vol@volunteer-services-app.test");
     await v.post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hello" });
-    const conv = (await api.post("/v1/inbox/conversations", { requestId: d.body.id, volunteerUserId: await userId("held.vol@thankyou.test") })).body;
+    const conv = (await api.post("/v1/inbox/conversations", { requestId: d.body.id, volunteerUserId: await userId("held.vol@volunteer-services-app.test") })).body;
     await api.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "Thanks for applying!" });
     const m1 = await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "Can you send it by Venmo?" });
     const m2 = await v.post(`/v1/inbox/conversations/${conv.id}/messages`, { body: "Buy me a gift card please" });
@@ -89,28 +89,28 @@ describe("held messages, disputes, shadow-ban, metrics", () => {
   });
 
   it("overturning a no-show dispute clears it from reliability", async () => {
-    await createUser({ email: "disp.vol@thankyou.test", roles: ["volunteer"] });
+    await createUser({ email: "disp.vol@volunteer-services-app.test", roles: ["volunteer"] });
     const api = await as(EMAILS.requester);
     const d = await api.post("/v1/requests", { title: "Queue: dispute", description: "Request used to test disputes.", category: "errands", mode: "remote", scheduleType: "one_time", startsAt: soon(30) });
     await api.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
-    const ap = await (await as("disp.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
+    const ap = await (await as("disp.vol@volunteer-services-app.test")).post(`/v1/volunteer/opportunities/${d.body.id}/apply`, { message: "hi" });
     await ownerAct(api, ap.body.applicationId, "accept");
     await pool.query("UPDATE service_requests SET starts_at = NOW() - INTERVAL '1 hour' WHERE id = $1", [d.body.id]);
     await api.post(`/v1/applications/${ap.body.applicationId}/no-show`);
-    const disp = await (await as("disp.vol@thankyou.test")).post("/v1/disputes", { applicationId: ap.body.applicationId, kind: "no_show", reason: "I was there; the door was locked and nobody answered." });
+    const disp = await (await as("disp.vol@volunteer-services-app.test")).post("/v1/disputes", { applicationId: ap.body.applicationId, kind: "no_show", reason: "I was there; the door was locked and nobody answered." });
     const mod = await as(EMAILS.moderator);
     expect((await mod.get("/v1/admin/disputes")).body.items.some((x: { id: string }) => x.id === disp.body.id)).toBe(true);
     expect((await mod.post(`/v1/admin/disputes/${disp.body.id}/decide`, { status: "overturned" })).status).toBe(400);
     const dec = await mod.post(`/v1/admin/disputes/${disp.body.id}/decide`, { status: "overturned", notes: "Photo shows the volunteer at the door on time." });
     expect(dec.body.status).toBe("overturned");
     expect((await mod.post(`/v1/admin/disputes/${disp.body.id}/decide`, { status: "upheld", notes: "again" })).status).toBe(409);
-    const rel = await { body: (await pool.query(`SELECT ${RELIABILITY_SQL("$1")} AS r`, [await userId("disp.vol@thankyou.test")])).rows[0].r };
+    const rel = await { body: (await pool.query(`SELECT ${RELIABILITY_SQL("$1")} AS r`, [await userId("disp.vol@volunteer-services-app.test")])).rows[0].r };
     expect(rel.body.no_shows).toBe(0);
   });
 
   it("shadow-ban is admin-only and hides the user's requests from others", async () => {
-    const uid = await createUser({ email: "shadow.req@thankyou.test", roles: ["requester"] });
-    const api = await as("shadow.req@thankyou.test");
+    const uid = await createUser({ email: "shadow.req@volunteer-services-app.test", roles: ["requester"] });
+    const api = await as("shadow.req@volunteer-services-app.test");
     const d = await api.post("/v1/requests", { title: "Queue: shadow listing", description: "Should vanish for everyone else.", category: "errands", mode: "remote", scheduleType: "flexible_window" });
     await api.post(`/v1/requests/${d.body.id}/transition`, { event: "publish" });
     expect((await (await as(EMAILS.moderator)).post(`/v1/admin/users/${uid}/shadow-ban`, { on: true })).status).toBe(403);
@@ -120,7 +120,7 @@ describe("held messages, disputes, shadow-ban, metrics", () => {
   });
 
   it("admins set background checks and manage categories; metrics load", async () => {
-    const uid = await createUser({ email: "bgc.vol@thankyou.test", roles: ["volunteer"] });
+    const uid = await createUser({ email: "bgc.vol@volunteer-services-app.test", roles: ["volunteer"] });
     const admin = await as(EMAILS.admin);
     expect((await admin.post(`/v1/admin/users/${uid}/background-check`, { status: "cleared" })).body.background_check_status).toBe("cleared");
     const c = await admin.patch("/v1/admin/categories/children", { enabled: false });

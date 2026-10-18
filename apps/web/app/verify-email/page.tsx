@@ -1,4 +1,4 @@
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import styles from "../(auth)/auth.module.css";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,7 @@ export default async function Page(props: { searchParams?: Promise<{ token?: str
                 Verify my email
               </button>
             </div>
-            <p className={styles.meta}>If you didn’t create a ThankYou account, ignore this page and the email.</p>
+            <p className={styles.meta}>If you didn’t create a Volunteer Services account, ignore this page and the email.</p>
           </form>
         )}
       </div>

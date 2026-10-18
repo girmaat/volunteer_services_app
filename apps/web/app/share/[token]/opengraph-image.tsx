@@ -33,7 +33,7 @@ export default async function Image({ params }: { params: { token: string } }) {
     // ignore
   }
 
-  const title = String(preview.title || "ThankYou shared link");
+  const title = String(preview.title || "Volunteer Services shared link");
   const summaryRaw = String(preview.summary || "Open to view details.");
   const summary = summaryRaw.length > 140 ? summaryRaw.slice(0, 140) + "…" : summaryRaw;
 
@@ -69,7 +69,7 @@ export default async function Image({ params }: { params: { token: string } }) {
             >
               TY
             </div>
-            <div style={{ fontSize: 22, fontWeight: 700, opacity: 0.95 }}>ThankYou</div>
+            <div style={{ fontSize: 22, fontWeight: 700, opacity: 0.95 }}>Volunteer Services</div>
           </div>
 
           {verified ? (
@@ -95,7 +95,7 @@ export default async function Image({ params }: { params: { token: string } }) {
 
         <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", opacity: 0.75 }}>
           <div style={{ fontSize: 18 }}>Preview link</div>
-          <div style={{ fontSize: 18 }}>thankyou.app</div>
+          <div style={{ fontSize: 18 }}>volunteer-services-app.app</div>
         </div>
       </div>
     ),

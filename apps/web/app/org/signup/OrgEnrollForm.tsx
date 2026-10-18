@@ -123,7 +123,7 @@ export default function OrgEnrollForm({ action }: { action: ServerAction }) {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="m-0 text-sm text-muted">
-          Already have a ThankYou account?{" "}
+          Already have a Volunteer Services account?{" "}
           <Link prefetch={false} href="/login?returnTo=/org/signup" className="font-medium text-primary">
             Log in to add an organization
           </Link>

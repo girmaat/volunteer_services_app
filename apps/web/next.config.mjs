@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ["@thankyou/config", "@thankyou/contracts"],
+  transpilePackages: ["@volunteer_services_app/config", "@volunteer_services_app/contracts"],
 
   async redirects() {
     // Section roots go to their home page; /s/ is the short form of share links.

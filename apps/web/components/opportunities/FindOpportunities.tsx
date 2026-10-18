@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { saveSearchAction } from "../../app/_alerts/actions";
 import { SlidersHorizontal } from "lucide-react";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import { backendFetch } from "../../app/lib/backend";
 import OpportunityRow, { type OpportunitySummary } from "./OpportunityRow";
 import { buttonClass } from "../ui/Button";

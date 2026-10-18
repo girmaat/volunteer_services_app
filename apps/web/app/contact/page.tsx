@@ -50,7 +50,7 @@ export default async function Page(props: { searchParams?: Promise<{ sent?: stri
       <header className="grid gap-2">
         <h1 className="m-0 text-3xl">Contact us</h1>
         <p className="m-0 max-w-2xl text-muted">
-          Questions, feedback or a problem with the site? Send us a note and a member of the ThankYou team will reply by email, usually within two business days.
+          Questions, feedback or a problem with the site? Send us a note and a member of the Volunteer Services team will reply by email, usually within two business days.
         </p>
       </header>
 
@@ -62,10 +62,10 @@ export default async function Page(props: { searchParams?: Promise<{ sent?: stri
           {isOrgMember ? (
             <Card id="team" className="grid gap-3 border-primary">
               <h2 className="m-0 inline-flex items-center gap-2 text-lg">
-                <MessageSquare aria-hidden className="h-5 w-5 text-primary" /> Message the ThankYou team
+                <MessageSquare aria-hidden className="h-5 w-5 text-primary" /> Message the Volunteer Services team
               </h2>
               <p className="m-0 text-sm text-muted">
-                As an organization member you can talk with us in ThankYou messages instead of email. Your conversation stays in your Inbox.
+                As an organization member you can talk with us in Volunteer Services messages instead of email. Your conversation stays in your Inbox.
               </p>
               <form action={messageTeam} className="grid gap-3">
                 <label htmlFor="team-body" className="sr-only">
@@ -128,7 +128,7 @@ export default async function Page(props: { searchParams?: Promise<{ sent?: stri
                 <Link prefetch={false} href="/help" className="text-primary underline">Help center</Link>
               </li>
               <li>
-                <Link prefetch={false} href="/how-it-works" className="text-primary underline">How ThankYou works</Link>
+                <Link prefetch={false} href="/how-it-works" className="text-primary underline">How Volunteer Services works</Link>
               </li>
               <li>
                 <Link prefetch={false} href="/trust-safety" className="text-primary underline">Trust &amp; safety</Link>

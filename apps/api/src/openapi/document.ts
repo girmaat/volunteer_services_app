@@ -17,7 +17,7 @@ import {
   PublicPageContent,
   ResetPasswordRequest,
   SignupRequest
-} from "@thankyou/contracts";
+} from "@volunteer_services_app/contracts";
 
 extendZodWithOpenApi(z);
 
@@ -89,7 +89,7 @@ export function buildOpenApiDocument(app: Express) {
 
   return new OpenApiGeneratorV31(registry.definitions).generateDocument({
     openapi: "3.1.0",
-    info: { title: "ThankYou API", version: "1.0.0", description: "Volunteer-services marketplace API. Versioned under /v1." },
+    info: { title: "Volunteer Services API", version: "1.0.0", description: "Volunteer-services marketplace API. Versioned under /v1." },
     servers: [{ url: "/" }]
   });
 }

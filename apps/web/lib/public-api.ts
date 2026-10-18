@@ -1,5 +1,5 @@
 import "server-only";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 
 /**
  * Fetchers for the API's public (unauthenticated) endpoints.

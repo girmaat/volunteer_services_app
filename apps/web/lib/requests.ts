@@ -1,7 +1,7 @@
 import "server-only";
 import { backendFetch } from "../app/lib/backend";
 
-import type { Category, OwnerRequest } from "@thankyou/contracts";
+import type { Category, OwnerRequest } from "@volunteer_services_app/contracts";
 export type { Category, OwnerRequest };
 
 export async function getCategories(): Promise<Category[]> {

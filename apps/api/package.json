@@ -1,5 +1,5 @@
 {
-  "name": "@thankyou/api",
+  "name": "@volunteer_services_app/api",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.3.4",
-    "@thankyou/contracts": "workspace:*",
+    "@volunteer_services_app/contracts": "workspace:*",
     "bcryptjs": "^2.4.3",
     "compression": "1.8.2",
     "cors": "^2.8.5",

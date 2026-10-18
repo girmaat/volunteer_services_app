@@ -56,7 +56,7 @@ describe("organization types and coordinators", () => {
     const member = await as(EMAILS.orgMember);
     expect((await member.patch(`/v1/orgs/${slug}`, { org_type: "school" })).status).toBe(403);
 
-    const email = `coord.${Date.now()}@thankyou.test`;
+    const email = `coord.${Date.now()}@volunteer-services-app.test`;
     expect((await admin.post("/v1/org/members", { email, role: "coordinator" })).status).toBe(400);
     expect((await admin.patch(`/v1/orgs/${slug}`, { org_type: "spaceship" })).status).toBe(400);
 
@@ -75,7 +75,7 @@ describe("organization types and coordinators", () => {
   it("a coordinator has member-level access: they see the org but can't manage it", async () => {
     const admin = await as(EMAILS.orgAdmin);
     const slug = (await admin.get("/v1/org/me")).body.org.slug as string;
-    const email = `coord.active.${Date.now()}@thankyou.test`;
+    const email = `coord.active.${Date.now()}@volunteer-services-app.test`;
     const id = await createUser({ email, org: { slug, role: "member" } });
     await pool.query("UPDATE organization_members SET role = 'coordinator' WHERE org_slug = $1 AND user_id = $2", [slug, id]);
     try {
@@ -84,7 +84,7 @@ describe("organization types and coordinators", () => {
       expect(me.status).toBe(200);
       expect(me.body.membership.role).toBe("coordinator");
       expect((await c.get("/v1/org/roster")).status).toBe(403);
-      expect((await c.post("/v1/org/members", { email: "x@thankyou.test" })).status).toBe(403);
+      expect((await c.post("/v1/org/members", { email: "x@volunteer-services-app.test" })).status).toBe(403);
     } finally {
       await pool.query("DELETE FROM organization_members WHERE org_slug = $1 AND user_id = $2", [slug, id]);
     }
@@ -166,7 +166,7 @@ describe("volunteer contact details are for admins and managers", () => {
     // An adult volunteer the organization has accepted (accepted adults' contacts are shared with staff).
     const slug = (await admin.get("/v1/org/me")).body.org.slug as string;
     const opp = (await anon().get(`/v1/public/opportunities?org=${slug}&mode=remote&limit=5`)).body.items[0];
-    const vEmail = `contacts.${Date.now()}@thankyou.test`;
+    const vEmail = `contacts.${Date.now()}@volunteer-services-app.test`;
     await createUser({ email: vEmail, roles: ["volunteer"], trusted: true });
     const applied = await (await as(vEmail)).post(`/v1/volunteer/opportunities/${opp.id}/apply`, { message: "Happy to help." });
     expect([200, 201], JSON.stringify(applied.body)).toContain(applied.status);

@@ -29,7 +29,7 @@ export async function commitmentIcs(commitmentId: string) {
     row: c,
     start,
     body: icsEvent({
-      uid: `commitment-${c.id}@thankyou`,
+      uid: `commitment-${c.id}@volunteer_services_app`,
       start,
       end,
       title: `Volunteering: ${c.title}`,
@@ -61,7 +61,7 @@ export async function calendarChanged(commitmentIds: string[], kind: "update" | 
         heading: title,
         lines: [kind === "cancel" ? "This shift is off, and the attached update removes it from your calendar." : `It's now ${when}. The attached invite updates your calendar.`],
         cta: { label: "Open your application", url: ics.row.application_id ? `/volunteer/applications/${ics.row.application_id}` : "/volunteer/schedule" },
-        icalEvent: { method: kind === "cancel" ? "CANCEL" : "REQUEST", content: ics.body, filename: "thankyou-shift.ics" },
+        icalEvent: { method: kind === "cancel" ? "CANCEL" : "REQUEST", content: ics.body, filename: "volunteer-services-app-shift.ics" },
         dedupeKey: `calendar:${id}:${kind}:${Date.now()}`
       }
     });

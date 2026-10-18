@@ -34,8 +34,8 @@ export async function needsOwnerApproval(user: PolicyUser, row: Record<string, a
 
 /** The message shown when an organization can't publish. */
 export function standingMessage(s: OrgStanding) {
-  if (s.suspended) return "Your organization is suspended, so requests can't go public. Reply to the notice from ThankYou to ask for a review.";
-  if (s.status === "needs_info") return "ThankYou asked for more information before verifying your organization. Answer it in Organization settings; your drafts are saved.";
+  if (s.suspended) return "Your organization is suspended, so requests can't go public. Reply to the notice from Volunteer Services to ask for a review.";
+  if (s.status === "needs_info") return "Volunteer Services asked for more information before verifying your organization. Answer it in Organization settings; your drafts are saved.";
   if (s.status === "submitted") return "Your organization's verification is being reviewed. Requests can go public once it's verified; your drafts are saved.";
   return "Only verified organizations can publish requests. Submit verification in Organization settings; your drafts are saved.";
 }

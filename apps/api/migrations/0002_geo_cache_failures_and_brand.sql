@@ -5,7 +5,7 @@ ALTER TABLE geo_cache ADD COLUMN IF NOT EXISTS failed_at TIMESTAMPTZ;
 
 -- The home page copy still carried an earlier working name ("GiveBack").
 UPDATE public_pages
-   SET title = 'ThankYou — where volunteering meets real needs',
-       body  = replace(body, 'GiveBack', 'ThankYou'),
+   SET title = 'Volunteer Services — where volunteering meets real needs',
+       body  = replace(body, 'GiveBack', 'Volunteer Services'),
        updated_at = NOW()
  WHERE slug = 'home' AND title LIKE 'GiveBack%';

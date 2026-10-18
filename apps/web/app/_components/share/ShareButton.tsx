@@ -60,7 +60,7 @@ function saveSettings(s: ShareSettings) {
 }
 
 function buildShareText(title?: string, url?: string) {
-  const t = (title || "Shared from ThankYou").trim();
+  const t = (title || "Shared from Volunteer Services").trim();
   const u = (url || "").trim();
   return u ? `${t}\n${u}` : t;
 }
@@ -201,7 +201,7 @@ export default function ShareButton({ target, label, className }: Props) {
     if (typeof navigator !== "undefined" && (navigator as any).share) {
       try {
         await (navigator as any).share({
-          title: target.title || "Shared from ThankYou",
+          title: target.title || "Shared from Volunteer Services",
           text: shareText,
           url: minted.shareUrl
         });

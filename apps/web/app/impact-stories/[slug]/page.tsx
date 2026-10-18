@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 import ShareButton from "../../_components/share/ShareButton";
 import Markdown from "../../../components/content/Markdown";
 import { buttonClass } from "../../../components/ui/Button";

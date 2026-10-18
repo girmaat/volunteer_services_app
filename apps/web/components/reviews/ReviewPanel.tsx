@@ -1,6 +1,6 @@
 import { reviewAction } from "../../app/_requests/applicant-actions";
 import { Button } from "../ui";
-import type { ReviewState } from "@thankyou/contracts";
+import type { ReviewState } from "@volunteer_services_app/contracts";
 
 export type { ReviewState };
 

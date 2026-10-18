@@ -2,11 +2,11 @@
  * Performance check for the Phase 1 budget: Recommended and Discovery answer in < 300 ms
  * with 1,000 open requests in the database.
  *
- *   pnpm --filter @thankyou/api perf:check            # add 1,000 copies, time the endpoints, remove them
- *   pnpm --filter @thankyou/api perf:check -- --keep  # leave the copies in place afterwards
+ *   pnpm --filter @volunteer_services_app/api perf:check            # add 1,000 copies, time the endpoints, remove them
+ *   pnpm --filter @volunteer_services_app/api perf:check -- --keep  # leave the copies in place afterwards
  *
  * Needs the API running (API_URL, default http://localhost:4202) and the dev seed
- * (it signs in as volunteer.local@thankyou.test). Never run against production.
+ * (it signs in as volunteer.local@volunteer-services-app.test). Never run against production.
  */
 import "dotenv/config";
 import { Pool } from "pg";
@@ -60,7 +60,7 @@ async function main() {
     const login = await fetch(`${API}/v1/auth/login`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: "volunteer.local@thankyou.test", password: process.env.SEED_PASSWORD || "Password!" })
+      body: JSON.stringify({ email: "volunteer.local@volunteer-services-app.test", password: process.env.SEED_PASSWORD || "Password!" })
     });
     const token = ((await login.json()) as { sessionToken?: string }).sessionToken;
     if (!token) throw new Error(`Sign-in failed (${login.status}). Is the API running and the dev seed loaded?`);

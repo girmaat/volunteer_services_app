@@ -8,7 +8,7 @@ import { buttonClass } from "../components/ui/Button";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: { absolute: "ThankYou — volunteer with neighbors and nonprofits" },
+  title: { absolute: "Volunteer Services — volunteer with neighbors and nonprofits" },
   alternates: { canonical: "/" }
 };
 
@@ -49,7 +49,7 @@ const VOLUNTEER_POINTS = [
 const STEPS = [
   ["Find something that fits", "Search by place, schedule or skill. Remote work shows up for everyone."],
   ["Apply with a short note", "Say why you're a good fit. The requester reviews and accepts."],
-  ["Coordinate safely", "Message inside ThankYou. The exact address is shared only after you're accepted."],
+  ["Coordinate safely", "Message inside Volunteer Services. The exact address is shared only after you're accepted."],
   ["Say thank you", "Mark it complete and leave each other a review. Your impact log updates itself."]
 ];
 
@@ -57,7 +57,7 @@ const SAFETY = [
   { icon: EyeOff, text: "Addresses and contact details stay hidden until a match is accepted." },
   { icon: MessageSquareLock, text: "Message in the app; block or report anyone in one step." },
   { icon: ShieldCheck, text: "Organizations are reviewed before they get a verified badge." },
-  { icon: Siren, text: "ThankYou isn't for emergencies. If someone is in danger, call your local emergency number." }
+  { icon: Siren, text: "Volunteer Services isn't for emergencies. If someone is in danger, call your local emergency number." }
 ];
 
 export default async function Home() {

@@ -97,9 +97,9 @@ describe("sensitive categories and verification tiers", () => {
   });
 
   it("a verified requester's sensitive request waits for review and stays hidden", async () => {
-    await createUser({ email: "trusted.requester@thankyou.test", roles: ["requester"], trusted: true });
-    const id = await draft("trusted.requester@thankyou.test", { ...BASICS, ...WHEN, ...WHERE, title: "Sensitive: fix a cabinet door", category: "home-access" });
-    const api = await as("trusted.requester@thankyou.test");
+    await createUser({ email: "trusted.requester@volunteer-services-app.test", roles: ["requester"], trusted: true });
+    const id = await draft("trusted.requester@volunteer-services-app.test", { ...BASICS, ...WHEN, ...WHERE, title: "Sensitive: fix a cabinet door", category: "home-access" });
+    const api = await as("trusted.requester@volunteer-services-app.test");
     const pub = await api.post(`/v1/requests/${id}/transition`, { event: "publish" });
     expect(pub.status, JSON.stringify(pub.body)).toBe(200);
     expect(pub.body.review_status).toBe("pending_review");
@@ -116,7 +116,7 @@ describe("sensitive categories and verification tiers", () => {
 describe("staffing: open → pending → filled, waitlist auto-promotion", () => {
   let requestId = "";
   const apps: Record<string, string> = {};
-  const vols = ["staff.a@thankyou.test", "staff.b@thankyou.test", "staff.c@thankyou.test"];
+  const vols = ["staff.a@volunteer-services-app.test", "staff.b@volunteer-services-app.test", "staff.c@volunteer-services-app.test"];
 
   it("sets up a request for two volunteers", async () => {
     for (const v of vols) await createUser({ email: v, roles: ["volunteer"] });
@@ -176,7 +176,7 @@ describe("staffing: open → pending → filled, waitlist auto-promotion", () =>
     const api = await as(EMAILS.requester);
     const id = await draft(EMAILS.requester, { ...BASICS, ...WHEN, ...WHERE, title: "Offer expiry", volunteersNeeded: 1 });
     await api.post(`/v1/requests/${id}/transition`, { event: "publish" });
-    const people = ["offer.a@thankyou.test", "offer.b@thankyou.test", "offer.c@thankyou.test"];
+    const people = ["offer.a@volunteer-services-app.test", "offer.b@volunteer-services-app.test", "offer.c@volunteer-services-app.test"];
     for (const e of people) await createUser({ email: e, roles: ["volunteer"] });
     const ids: string[] = [];
     for (const e of people) ids.push((await (await as(e)).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" })).body.applicationId);
@@ -224,18 +224,18 @@ describe("staffing: open → pending → filled, waitlist auto-promotion", () =>
 
 describe("apply eligibility", () => {
   it("enforces car, age and background-check requirements", async () => {
-    await createUser({ email: "elig.vol@thankyou.test", roles: ["volunteer"], birthDate: null });
+    await createUser({ email: "elig.vol@volunteer-services-app.test", roles: ["volunteer"], birthDate: null });
     const id = await draft(EMAILS.requester, { ...BASICS, ...WHEN, ...WHERE, title: "Eligibility: driver", requiresCar: true, minAge: 21, requiresBackgroundCheck: true });
     await (await as(EMAILS.requester)).post(`/v1/requests/${id}/transition`, { event: "publish" });
-    const r = await (await as("elig.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
+    const r = await (await as("elig.vol@volunteer-services-app.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
     expect(r.status).toBe(422);
     expect(r.body.problems.map((p: { code: string }) => p.code).sort()).toEqual(["age_unknown", "background_check", "car_required"]);
-    await pool.query("UPDATE user_profiles SET has_car = TRUE, birth_date = $2::date, background_check_status = 'cleared' WHERE user_id = $1", [await userId("elig.vol@thankyou.test"), birthDateForAge(20)]);
+    await pool.query("UPDATE user_profiles SET has_car = TRUE, birth_date = $2::date, background_check_status = 'cleared' WHERE user_id = $1", [await userId("elig.vol@volunteer-services-app.test"), birthDateForAge(20)]);
     // 20 is still under the 21+ limit.
-    const young = await (await as("elig.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
+    const young = await (await as("elig.vol@volunteer-services-app.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
     expect(young.body.problems.map((p: { code: string }) => p.code)).toEqual(["too_young"]);
-    await pool.query("UPDATE user_profiles SET birth_date = '1990-01-01' WHERE user_id = $1", [await userId("elig.vol@thankyou.test")]);
-    const ok = await (await as("elig.vol@thankyou.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
+    await pool.query("UPDATE user_profiles SET birth_date = '1990-01-01' WHERE user_id = $1", [await userId("elig.vol@volunteer-services-app.test")]);
+    const ok = await (await as("elig.vol@volunteer-services-app.test")).post(`/v1/volunteer/opportunities/${id}/apply`, { message: "hi" });
     expect(ok.status, JSON.stringify(ok.body)).toBe(201);
   });
 });
@@ -287,8 +287,8 @@ describe("profiles to spec", () => {
   });
 
   it("volunteers can record a birth year; background-check status is read-only", async () => {
-    await createUser({ email: "profile.vol@thankyou.test", roles: ["volunteer"] });
-    const api = await as("profile.vol@thankyou.test");
+    await createUser({ email: "profile.vol@volunteer-services-app.test", roles: ["volunteer"] });
+    const api = await as("profile.vol@volunteer-services-app.test");
     const save = await api.post("/v1/volunteer/profile", { fullName: "Pat Vol", birthYear: 1995 });
     expect(save.status, JSON.stringify(save.body)).toBe(200);
     const got = await api.get("/v1/volunteer/profile");

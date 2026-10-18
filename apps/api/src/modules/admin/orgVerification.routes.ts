@@ -83,7 +83,7 @@ export function registerAdminOrgVerificationRoutes(app: Express) {
         [slug, notes]
       );
       if (!u.rowCount) return { status: 404, body: { message: "Organization not found" } };
-      await tellOrgAdmins(slug, "ThankYou needs more information to verify your organization", notes ?? "");
+      await tellOrgAdmins(slug, "Volunteer Services needs more information to verify your organization", notes ?? "");
       return { status: 200, body: { ok: true, status: "needs_info" } };
     },
     true
@@ -111,7 +111,7 @@ export function registerAdminOrgVerificationRoutes(app: Express) {
         [slug, notes]
       );
       if (!u.rowCount) return { status: 409, body: { message: "Organization not found or already suspended" } };
-      await tellOrgAdmins(slug, "Your organization is suspended", `${notes ?? ""} Your requests are hidden and hours can't be approved until ThankYou reviews this. Reply to this notice to ask for a review.`.trim());
+      await tellOrgAdmins(slug, "Your organization is suspended", `${notes ?? ""} Your requests are hidden and hours can't be approved until Volunteer Services reviews this. Reply to this notice to ask for a review.`.trim());
       return { status: 200, body: { ok: true, status: "suspended" } };
     },
     true

@@ -1,9 +1,9 @@
-# Running ThankYou for UAT
+# Running Volunteer Services for UAT
 
 ## A. For the developer: give a tester access
 
 The code is on GitHub at **https://github.com/girmaat/volunteer_services_app** (the local folder is called
-`thankyou-next`; the names don't need to match).
+`volunteer_services_app`; the names don't need to match).
 
 1. Push your latest work: `git push` (the first time: `git remote add origin https://github.com/girmaat/volunteer_services_app.git`
    then `git push -u origin main`).
@@ -23,7 +23,7 @@ You need: a GitHub account that the developer invited, an internet connection, a
    - When Windows asks **"Do you want to allow this app to make changes to your device?"**, click **Yes**
      (it installs Git, Node.js and PostgreSQL).
    - If a **GitHub sign-in** window opens, sign in with the account the developer invited.
-2. Wait until the window says **Setup finished** and answer **Y** to start ThankYou. Your browser opens the app
+2. Wait until the window says **Setup finished** and answer **Y** to start Volunteer Services. Your browser opens the app
    (`http://localhost:3202`) and the **UAT Tracker**.
 3. In the tracker, type your name at the top, read **How to test**, then work through the cases with **Next →**.
    For each case pick **Pass**, **Fail** or **Blocked** and write notes. Everything you record is kept in the
@@ -34,13 +34,13 @@ Four shortcuts are added to the desktop:
 
 | Shortcut | Use it to |
 | --- | --- |
-| **Start ThankYou** | start testing. Keep the "ThankYou server" window open; close it to stop. |
-| **ThankYou UAT Tracker** | open the test cases and your results. |
-| **Reset ThankYou test data** | go back to the starting test data (before each round, or when a case says so). |
-| **Update ThankYou** | get a new version from the developer (close the "ThankYou server" window first). |
+| **Start Volunteer Services** | start testing. Keep the "Volunteer Services server" window open; close it to stop. |
+| **Volunteer Services UAT Tracker** | open the test cases and your results. |
+| **Reset Volunteer Services test data** | go back to the starting test data (before each round, or when a case says so). |
+| **Update Volunteer Services** | get a new version from the developer (close the "Volunteer Services server" window first). |
 
 The project is in the `volunteer_services_app` folder you chose. If you prefer VS Code: **File → Open Folder…** →
-that folder, then **Terminal → Run Task…** → "ThankYou: Start (for testing)".
+that folder, then **Terminal → Run Task…** → "Volunteer Services: Start (for testing)".
 
 Every test account's password is `Password!`. The accounts are listed under **How to test** in the tracker.
 
@@ -51,8 +51,8 @@ Every test account's password is `Password!`. The accounts are listed under **Ho
 | The window shows **PROBLEM:** in red | Take a screenshot and send it to the developer. Running the same shortcut again is safe. |
 | "winget is missing" | Open the Microsoft Store, install **App Installer**, then run `TESTER-INSTALL.bat` again. |
 | "Couldn't download the project" | Check you accepted the GitHub invitation and signed in with that account. |
-| "Something else is using port 3202 or 4202" | Close any open "ThankYou server" window, or restart the computer, then **Start ThankYou**. |
-| A page shows old data after **Reset** | Close the "ThankYou server" window, then **Start ThankYou** again. |
+| "Something else is using port 3202 or 4202" | Close any open "Volunteer Services server" window, or restart the computer, then **Start Volunteer Services**. |
+| A page shows old data after **Reset** | Close the "Volunteer Services server" window, then **Start Volunteer Services** again. |
 | "Too many requests" after many sign-ins | Wait one minute and try again. |
 | The tracker lost my results | Results live in the browser you used; open the tracker in that same browser. Use **More… → Save a backup** now and then. |
 
@@ -73,12 +73,12 @@ the repository into `<folder>\volunteer_services_app` and runs `scripts\tester\s
 2. installs PostgreSQL 16 as a Windows service (winget, unattended, generated `postgres` superuser password, port
    5433 like the developer's machine, or 5434 if 5433 is taken). If PostgreSQL was already installed it asks for
    its `postgres` password and port instead;
-3. creates the same database login and database as the developer's machine (`thankyou_app` /
-   the same password, database `thankyou_next`; set at the top of `scripts\tester\setup.ps1`);
+3. creates the same database login and database as the developer's machine (`volunteer_services_app` /
+   the same password, database `volunteer_services_app`; set at the top of `scripts\tester\setup.ps1`);
 4. writes `apps\api\.env` and `apps\web\.env.local` (ports 4202 / 3202, emails printed to the server window,
    development links on screen, generated secrets);
 5. runs `pnpm install`, `pnpm db:uat` and `pnpm uat:tracker`;
 6. adds the desktop shortcuts (`tester\*.bat`).
 
 The generated passwords are kept in `tester.local.json` in the project folder (never committed). Every step can
-be re-run safely: **Update ThankYou** runs `git pull` and then the same setup again.
+be re-run safely: **Update Volunteer Services** runs `git pull` and then the same setup again.

@@ -2,7 +2,7 @@ import "server-only";
 
 import { backendFetch } from "../lib/backend";
 import { zonedLocalToIso, zoneOr } from "../../lib/time";
-import { RequestFields } from "@thankyou/contracts";
+import { RequestFields } from "@volunteer_services_app/contracts";
 
 const LABELS: Record<string, string> = {
   title: "Title", description: "Description", category: "Category", volunteersNeeded: "Volunteers needed", startsAt: "Start", endsAt: "End",

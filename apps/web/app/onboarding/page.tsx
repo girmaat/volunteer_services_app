@@ -86,7 +86,7 @@ export default async function OnboardingPage(props: { searchParams?: Promise<{ s
 
       {step === "role" ? (
         <>
-          <h1 className="m-0 font-display text-3xl font-bold">Welcome to ThankYou</h1>
+          <h1 className="m-0 font-display text-3xl font-bold">Welcome to Volunteer Services</h1>
           <p className="m-0 mt-2 text-lg text-muted">How will you use it? You can add the other later.</p>
           <form action={chooseRole} className="mt-8 grid gap-3">
             {[
@@ -156,7 +156,7 @@ export default async function OnboardingPage(props: { searchParams?: Promise<{ s
                   </label>
                   <input id="ob-dob" name="birthDate" type="date" required autoComplete="bday" className={input} aria-describedby="ob-dob-hint" />
                   <p id="ob-dob-hint" className="m-0 text-sm text-muted">
-                    Never shown. It keeps you to opportunities you’re old enough for; ThankYou is for people 16 and older.
+                    Never shown. It keeps you to opportunities you’re old enough for; Volunteer Services is for people 16 and older.
                   </p>
                 </div>
               ) : null}

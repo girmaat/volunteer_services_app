@@ -38,7 +38,7 @@ describe("joining an organization needs an admin's approval (critical #1)", () =
 
   it("a declined request leaves no membership", async () => {
     const o = await makeOrg();
-    const v = `${uniq("asker")}@thankyou.test`;
+    const v = `${uniq("asker")}@volunteer-services-app.test`;
     await createUser({ email: v, roles: ["volunteer"] });
     await (await as(v)).post("/v1/orgs/join", { orgSlug: o.slug, adultConfirmed: true });
     const admin = await as(o.admin);
@@ -126,10 +126,10 @@ describe("bans (high #4, medium #8)", () => {
   });
 
   it("only a super admin can ban platform staff", async () => {
-    const plain = `${uniq("plainadmin")}@thankyou.test`;
+    const plain = `${uniq("plainadmin")}@volunteer-services-app.test`;
     await createUser({ email: plain, roles: ["volunteer"] });
     await pool.query("INSERT INTO platform_admins (user_id, role) VALUES ($1, 'admin')", [await userId(plain)]);
-    const other = `${uniq("otheradmin")}@thankyou.test`;
+    const other = `${uniq("otheradmin")}@volunteer-services-app.test`;
     await createUser({ email: other, roles: ["volunteer"] });
     await pool.query("INSERT INTO platform_admins (user_id, role) VALUES ($1, 'admin')", [await userId(other)]);
     const p = await as(plain);
@@ -141,7 +141,7 @@ describe("bans (high #4, medium #8)", () => {
 
 describe("minors' profiles and public hours (high #5, medium #11)", () => {
   it("a 16-year-old's profile isn't public; they still see their own", async () => {
-    const teen = `${uniq("teenprofile")}@thankyou.test`;
+    const teen = `${uniq("teenprofile")}@volunteer-services-app.test`;
     await createUser({ email: teen, roles: ["volunteer"], birthDate: birthDateForAge(16) });
     const id = await userId(teen);
     expect((await anon().get(`/v1/public/volunteers/${id}`)).status).toBe(404);
@@ -150,7 +150,7 @@ describe("minors' profiles and public hours (high #5, medium #11)", () => {
   });
 
   it("public hours are approved hours, never self-reported ones", async () => {
-    const v = `${uniq("hours")}@thankyou.test`;
+    const v = `${uniq("hours")}@volunteer-services-app.test`;
     await createUser({ email: v, roles: ["volunteer"] });
     await pool.query("INSERT INTO contributions (volunteer_user_id, source, reported_hours, status, verification_method) VALUES ($1, 'outside', 999, 'self_reported', 'self_reported')", [await userId(v)]);
     const r = await anon().get(`/v1/public/volunteers/${await userId(v)}`);
@@ -174,7 +174,7 @@ describe("team admin rules (medium #7)", () => {
 
 describe("abuse limits (medium #9, low)", () => {
   it("guardian consent emails are limited", async () => {
-    const teen = `${uniq("teenlimit")}@thankyou.test`;
+    const teen = `${uniq("teenlimit")}@volunteer-services-app.test`;
     await createUser({ email: teen, roles: ["volunteer"], birthDate: birthDateForAge(16) });
     const o = await makeOrg();
     const s = await staffed(o, { requiresGuardianConsent: true }, teen);
@@ -185,7 +185,7 @@ describe("abuse limits (medium #9, low)", () => {
   });
 
   it("two-step codes: ten wrong codes across sign-ins pause the account for 15 minutes", async () => {
-    const email = `${uniq("mfalock")}@thankyou.test`;
+    const email = `${uniq("mfalock")}@volunteer-services-app.test`;
     await createUser({ email, roles: ["volunteer"] });
     const t = (await anon().post("/v1/auth/login").send({ email, password: PASSWORD })).body.sessionToken;
     const setup = await anon().post("/v1/me/mfa/setup").set(bearer(t)).send({ password: PASSWORD });
@@ -200,7 +200,7 @@ describe("abuse limits (medium #9, low)", () => {
   });
 
   it("a reset link can't be used twice, even at the same moment", async () => {
-    const email = `${uniq("reset")}@thankyou.test`;
+    const email = `${uniq("reset")}@volunteer-services-app.test`;
     await createUser({ email, roles: ["volunteer"] });
     const f = await anon().post("/v1/auth/forgot-password").send({ email });
     const token = new URL(f.body.dev_reset_url).searchParams.get("token");

@@ -9,7 +9,7 @@ describe("discovery: public", () => {
     expect(res.status).toBe(200);
     const body = JSON.stringify(res.body);
     expect(res.body.items.length).toBeGreaterThan(10);
-    expect(body).not.toMatch(/exact_address|location_lat|location_lng|requester_user_id|@thankyou\.test/);
+    expect(body).not.toMatch(/exact_address|location_lat|location_lng|requester_user_id|@volunteer-services-app\.test/);
     expect(body).not.toContain("87-10 Queens Blvd");
     const titles = res.body.items.map((i: Item) => i.title);
     expect(titles).not.toContain("Help hanging curtains and a shelf"); // sensitive, in review
@@ -76,8 +76,8 @@ describe("discovery: matching", () => {
   });
 
   it("asks for a location when the volunteer has none", async () => {
-    await createUser({ email: "noloc.vol@thankyou.test", roles: ["volunteer"] });
-    const res = await (await as("noloc.vol@thankyou.test")).get("/v1/discovery/opportunities?tab=nearby");
+    await createUser({ email: "noloc.vol@volunteer-services-app.test", roles: ["volunteer"] });
+    const res = await (await as("noloc.vol@volunteer-services-app.test")).get("/v1/discovery/opportunities?tab=nearby");
     expect(res.body.needsLocation).toBe(true);
     expect(res.body.items).toEqual([]);
   });
@@ -102,10 +102,10 @@ describe("sensitive requests and location privacy", () => {
   });
 
   it("reveals the exact address only after acceptance", async () => {
-    await createUser({ email: "addr.vol@thankyou.test", roles: ["volunteer"] });
+    await createUser({ email: "addr.vol@volunteer-services-app.test", roles: ["volunteer"] });
     const r = await pool.query("SELECT id FROM service_requests WHERE title = 'Saturday distribution shift'");
     const id = r.rows[0].id as string;
-    const vol = await as("addr.vol@thankyou.test");
+    const vol = await as("addr.vol@volunteer-services-app.test");
     let d = await vol.get(`/v1/discovery/opportunities/${id}`);
     expect(d.body.exact_address).toBeNull();
     expect(d.body.address_hidden).toBe(true);
@@ -131,14 +131,14 @@ describe("sensitive requests and location privacy", () => {
   });
 
   it("masks phone numbers and emails in the description until the volunteer is accepted", async () => {
-    await createUser({ email: "mask.vol@thankyou.test", roles: ["volunteer"] });
+    await createUser({ email: "mask.vol@volunteer-services-app.test", roles: ["volunteer"] });
     const r = await pool.query("SELECT id FROM service_requests WHERE title = 'Saturday distribution shift'");
     const id = r.rows[0].id as string;
     await pool.query("UPDATE service_requests SET description = description || ' Text me at 718-555-0142 or write to shift.lead@example.org.' WHERE id = $1", [id]);
     try {
       const pub = await anon().get(`/v1/discovery/opportunities?q=distribution&limit=50`);
       expect(JSON.stringify(pub.body)).not.toMatch(/718-555-0142|shift\.lead@example\.org/);
-      const vol = await as("mask.vol@thankyou.test");
+      const vol = await as("mask.vol@volunteer-services-app.test");
       let d = await vol.get(`/v1/discovery/opportunities/${id}`);
       expect(d.body.description).not.toMatch(/718-555-0142|shift\.lead@example\.org/);
       const applied = await vol.post(`/v1/volunteer/opportunities/${id}/apply`, { message: "Happy to help" });

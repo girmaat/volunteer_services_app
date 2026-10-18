@@ -1,7 +1,7 @@
 # Progress log — Plan to UAT and Production
 
-Each phase is one or more commits on `main` in this repository (`Thank-you-App/thankyou-next`).
-The original app in `Thank-you-App/thankyou` is untouched.
+Each phase is one or more commits on `main` in this repository (`volunteer_services_app`).
+The original app's folder is untouched.
 
 ## Phase 0 — Stabilize the repo (done 2026-10-10)
 
@@ -182,7 +182,7 @@ layouts and called the API several times).
 | Phase | Done-when | Status |
 | --- | --- | --- |
 | 0 | Clean clone runs with three commands; CI green | Met (CI also runs E2E now) |
-| 1 | Real data logged out; ≤ 2 backend calls per signed-in dashboard; Recommended < 300 ms with 1,000 requests; static pages cached | Met: 2 calls on volunteer, requester and org dashboards (unread count and org context ride on `/v1/me`, top picks / activity ride on the dashboard call); `pnpm --filter @thankyou/api perf:check`: Recommended p90 34 ms, Discovery p90 18 ms with 1,025 requests |
+| 1 | Real data logged out; ≤ 2 backend calls per signed-in dashboard; Recommended < 300 ms with 1,000 requests; static pages cached | Met: 2 calls on volunteer, requester and org dashboards (unread count and org context ride on `/v1/me`, top picks / activity ride on the dashboard call); `pnpm --filter @volunteer_services_app/api perf:check`: Recommended p90 34 ms, Discovery p90 18 ms with 1,025 requests |
 | 2 | server.ts < 100 lines; tests in < 2 min; OpenAPI lists every route; no extra columns | Met: server.ts 46 lines; 1,600 API tests in ~50 s; a test fails if any route is missing from OpenAPI |
 | 3 | Lighthouse a11y ≥ 95 on UAT pages; no sideways scroll at 375 px; no serious axe issues; one nav per shell | Met (100 / 0 / 0) |
 | 4 | Each UAT script passes end to end with seeded personas | Met locally (staging is Phase 5) |
@@ -250,7 +250,7 @@ Built from `requirements_document.docx` (Draft 2). Migration `0012_trust_hours_r
    plain approval needs a note the volunteer sees. Bulk approval skips entries with something to check.
    Decisions live in `contribution_decisions`, which a database trigger makes append-only. Impact,
    summary, badges and the CSV count **approved** hours only; waiting and self-reported hours are shown
-   separately. Service outside ThankYou stays "self-reported". Volunteers can resubmit what was sent
+   separately. Service outside Volunteer Services stays "self-reported". Volunteers can resubmit what was sent
    back and dispute a decision.
 2. **Shareable service record** (REC-02/03, ID-07). `/volunteer/records`: pick approved entries,
    choose display or full name and an expiry, preview exactly what's shown, confirm, get a link.

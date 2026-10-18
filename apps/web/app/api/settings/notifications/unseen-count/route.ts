@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { API_BASE_URL_SERVER } from "@thankyou/config";
+import { API_BASE_URL_SERVER } from "@volunteer_services_app/config";
 
 export async function GET(req: Request) {
   const cookieHeader = req.headers.get("cookie") || "";

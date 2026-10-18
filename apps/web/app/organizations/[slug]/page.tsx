@@ -157,7 +157,7 @@ export default async function Page(props: Props) {
                 <dd className="m-0">
                   {org.contact === "after_acceptance"
                     ? "Contact details are shared with volunteers after they're accepted."
-                    : "Volunteers talk with this organization in ThankYou messages."}
+                    : "Volunteers talk with this organization in Volunteer Services messages."}
                 </dd>
               </div>
             </dl>
@@ -182,7 +182,7 @@ export default async function Page(props: Props) {
             <Card className="grid gap-2 bg-sun-tint">
               <h2 className="m-0 text-base">What “Verified” means</h2>
               <p className="m-0 text-sm">
-                ThankYou checked this organization&apos;s registration and the person who manages it.{" "}
+                Volunteer Services checked this organization&apos;s registration and the person who manages it.{" "}
                 <Link prefetch={false} href="/trust-safety" className="font-medium text-primary underline">
                   How we keep people safe
                 </Link>

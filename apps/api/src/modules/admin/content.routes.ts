@@ -1,7 +1,7 @@
 import { MediaPath } from "../../lib/media";
 import type { Express } from "express";
 import { z } from "zod";
-import { OrgType } from "@thankyou/contracts";
+import { OrgType } from "@volunteer_services_app/contracts";
 import { requireModerator, requirePlatformAdmin } from "../../admin/auth";
 import { pool } from "../../lib/db";
 import { wrap } from "../../lib/http";
