@@ -25,7 +25,21 @@ and what you should see.
 
 ## 1. Before you start
 
-### Set up the test data (do this before each full UAT round)
+### Testers: use the desktop shortcuts
+
+If your computer was set up with `TESTER-INSTALL.bat` (see `docs/TESTER-SETUP.md`), you don't need any
+commands:
+
+| Shortcut on the desktop | What it does |
+| --- | --- |
+| **Start ThankYou** | Starts the app, opens `http://localhost:3202` and this tracker. A window called "ThankYou server" opens: keep it open while you test (emails appear there). Close it to stop. |
+| **ThankYou UAT Tracker** | Opens the list of test cases, one at a time, where you record Pass / Fail / Blocked and notes. |
+| **Reset ThankYou test data** | Puts the test data back to its starting point. Do this before each full round, and whenever a case says so. Your tracker results are kept. |
+| **Update ThankYou** | Downloads the newest version and reloads the test data. Close the "ThankYou server" window first. |
+
+In VS Code the same actions are under **Terminal → Run Task…** ("ThankYou: Start (for testing)" and so on).
+
+### Developers: set up the test data from a terminal
 
 The local database is disposable. One command wipes it, re-creates every table, adds the seed accounts
 and loads ready-made situations to test (applications waiting, hours to approve, reports…):
@@ -33,6 +47,7 @@ and loads ready-made situations to test (applications waiting, hours to approve,
 ```bash
 pnpm db:uat
 pnpm dev          # API on http://localhost:4202, web app on http://localhost:3202
+pnpm uat:tracker  # builds docs/uat/uat-tracker.html from these files
 ```
 
 Open **http://localhost:3202**. If the web app was already running (especially `pnpm build` + `start`),
@@ -41,8 +56,8 @@ restart it after `pnpm db:uat` so no page shows data from before the reset.
 > If `pnpm db:uat` stops with *"must be owner of schema public"*, a Postgres superuser needs to run once:
 > `ALTER SCHEMA public OWNER TO thankyou_app;` (in the `thankyou_next` database), then run it again.
 
-You can re-run `pnpm db:uat` at any time to get back to the starting point, for example after a test
-that cancels or deletes something other tests need.
+You can re-run `pnpm db:uat` (testers: **Reset ThankYou test data**) at any time to get back to the starting
+point, for example after a test that cancels or deletes something other tests need.
 
 ### Emails and links
 
@@ -51,7 +66,7 @@ Locally, no real email is sent. With the settings in `apps/api/.env` (`EMAIL_TRA
 
 - **Sign-up verification, password reset and guardian consent links appear on the page** under
   "Development only — …". Click the link there instead of opening an inbox.
-- **Every other email is printed in the API terminal** (look for `[email:log] To: … Subject: …`). Test
+- **Every other email is printed in the API terminal** — the "ThankYou server" window (look for `[email:log] To: … Subject: …`). Test
   cases that say "an email is sent" are checked there.
 
 ### Browsers and sessions
@@ -162,8 +177,8 @@ Each case looks like this:
   another case).
 - **Test data** — exactly what to type or pick. Use it as written so results are comparable.
 - **Steps** — what to do, in order.
-- **Expected result** — what must happen. Every bullet must be true to pass. Record pass/fail and notes in
-  your own tracker (for example a spreadsheet with one row per case ID).
+- **Expected result** — what must happen. Every bullet must be true to pass. Record Pass / Fail / Blocked and
+  notes in the **UAT tracker**; **Export results (CSV)** there gives one row per case to send to the developer.
 
 Sample data for accounts you create: use addresses like `uat.vol1@example.test`, `uat.vol2@example.test`
 (the `example.test` domain never receives mail). If an address is already taken from an earlier round,
