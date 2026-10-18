@@ -9,17 +9,21 @@ The code is on GitHub at **https://github.com/girmaat/volunteer_services_app** (
    then `git push -u origin main`).
 2. If the repository is private, invite the tester: on GitHub open the repository → **Settings → Collaborators →
    Add people**, and enter the tester's GitHub username or email. The tester accepts the invitation from GitHub's email.
-3. Send the tester one file: `TESTER-INSTALL.bat` from the project folder (email, Teams, USB…). It already contains
-   the repository address.
+3. Send the tester the install command below (email and chat apps block `.bat` attachments, so don't attach
+   the file). The tester pastes it into PowerShell; it downloads `TESTER-INSTALL.bat` from GitHub and runs it.
+
+   ```powershell
+   $f="$env:TEMP\install-volunteer-services.bat"; (Invoke-RestMethod https://raw.githubusercontent.com/girmaat/volunteer_services_app/main/TESTER-INSTALL.bat) -replace "`r?`n","`r`n" | Set-Content $f -Encoding ascii -NoNewline; & $f
+   ```
 
 ## B. For the tester (Windows 10 or 11)
 
-You need: a GitHub account that the developer invited, an internet connection, and about 30 minutes.
+You need: an internet connection and about 30 minutes (plus a GitHub account the developer invited, only if the repository is private).
 
-1. Save `TESTER-INSTALL.bat` (from the developer) anywhere, for example on the desktop, and double-click it.
+1. Click **Start**, type **PowerShell** and open **Windows PowerShell**. Paste the install command the developer
+   sent you (right-click pastes) and press **Enter**.
    - A window asks **where to put the project**. Pick any folder (Documents is fine); a
      `volunteer_services_app` folder is created inside it.
-   - If Windows says **"Windows protected your PC"**, click **More info → Run anyway**.
    - When Windows asks **"Do you want to allow this app to make changes to your device?"**, click **Yes**
      (it installs Git, Node.js and PostgreSQL).
    - If a **GitHub sign-in** window opens, sign in with the account the developer invited.
